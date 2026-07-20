@@ -133,11 +133,12 @@ Proveri da anonimni korisnik ne može da čita banku pitanja ni rezultate:
 ```bash
 curl "https://<project-ref>.supabase.co/rest/v1/questions?select=*" \
   -H "apikey: <anon-key>"
-# Očekivano: prazan niz [] (RLS blokira pristup bez admin prijave)
+# Očekivano: {"code":"42501",...,"message":"permission denied for table questions"}
+# (RLS + REVOKE u potpunosti blokiraju anonimni pristup, bez izuzetka)
 
 curl "https://<project-ref>.supabase.co/rest/v1/attempts?select=*" \
   -H "apikey: <anon-key>"
-# Očekivano: prazan niz []
+# Očekivano: ista "permission denied" greška
 ```
 
 To je sve — aplikacija je spremna za korišćenje! 🎉
