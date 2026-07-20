@@ -1,0 +1,26 @@
+/* Stilovi prikaza pitanja — krupni elementi pogodni za dečje prste */
+.opcije { display: flex; flex-direction: column; gap: 0.6rem; }
+.opcije--red { flex-direction: row; flex-wrap: wrap; }
+
+.opcija {
+  display: flex; align-items: center; gap: 0.7rem;
+  padding: 0.75rem 1rem; min-height: 54px;
+  background: #fff; border: 2px solid var(--boja-ivica); border-radius: var(--radius);
+  cursor: pointer; font-size: 1.05rem; font-weight: 600;
+  transition: border-color 0.12s ease, background 0.12s ease;
+}
+.opcija:hover { border-color: var(--boja-primarna); }
+.opcija--izabrana { border-color: var(--boja-primarna); background: var(--boja-primarna-svetla); }
+.opcija--pola { flex: 1; min-width: 140px; justify-content: center; }
+.opcija input { width: 22px; height: 22px; accent-color: var(--boja-primarna); flex-shrink: 0; }
+.opcija:has(input:disabled) { cursor: default; opacity: 0.85; }
+
+.unos-broja { font-size: 1.3rem; font-weight: 700; text-align: center; max-width: 220px; }
+
+.uparivanje { display: flex; flex-direction: column; gap: 0.6rem; }
+.uparivanje-red {
+  display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap;
+  padding: 0.5rem 0.8rem; background: #fff; border: 2px solid var(--boja-ivica); border-radius: var(--radius);
+}
+.uparivanje-levo { font-weight: 700; min-width: 110px; }
+.uparivanje-red select { flex: 1; min-width: 140px; }

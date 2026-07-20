@@ -1,0 +1,24 @@
+/* Navigacija admin panela */
+.admin-zaglavlje {
+  background: var(--boja-kartica);
+  box-shadow: var(--senka);
+  position: sticky; top: 0; z-index: 50;
+}
+.admin-zaglavlje-unutra {
+  max-width: 1080px; margin: 0 auto; padding: 0.6rem 1.2rem;
+  display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+}
+.admin-logo { font-size: 1.15rem; font-weight: 800; color: var(--boja-tekst); }
+.admin-logo:hover { text-decoration: none; }
+.admin-nav { display: flex; gap: 0.2rem; flex-wrap: wrap; flex: 1; }
+.admin-nav a {
+  padding: 0.45rem 0.85rem; border-radius: var(--radius-mali);
+  font-weight: 700; color: var(--boja-tekst-blagi); font-size: 0.95rem;
+}
+.admin-nav a:hover { background: var(--boja-primarna-svetla); text-decoration: none; }
+.admin-nav a.active { background: var(--boja-primarna); color: #fff; }
+
+@media (max-width: 640px) {
+  .admin-zaglavlje-unutra { padding: 0.5rem 0.8rem; }
+  .admin-nav { order: 3; width: 100%; }
+}
