@@ -1,0 +1,24 @@
+# Sprečava automatsku pauzu besplatnog Supabase projekta posle 7 dana neaktivnosti.
+# Napomena: GitHub sam isključuje scheduled workflow-e posle 60 dana bez ijednog
+# commit-a u repozitorijumu — ako stigne mejl o tome, dovoljno je ručno kliknuti
+# "Re-enable workflow" u Actions tabu (videti SETUP.md).
+name: Supabase keepalive
+
+on:
+  schedule:
+    - cron: '23 5 * * 1,4' # ponedeljak i četvrtak u 05:23 UTC
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dodirni bazu preko PostgREST-a
+        run: |
+          if [ -z "${{ vars.VITE_SUPABASE_URL }}" ] || [ -z "${{ vars.VITE_SUPABASE_ANON_KEY }}" ]; then
+            echo "VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY nisu podešeni u repository Variables — preskačem."
+            exit 0
+          fi
+          curl -fsS "${{ vars.VITE_SUPABASE_URL }}/rest/v1/topics?select=id&limit=1" \
+            -H "apikey: ${{ vars.VITE_SUPABASE_ANON_KEY }}" \
+            -H "Authorization: Bearer ${{ vars.VITE_SUPABASE_ANON_KEY }}"

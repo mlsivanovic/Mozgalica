@@ -21,10 +21,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!backendPodesen) return
     supabase()
       .auth.getSession()
-      .then(({ data }) => {
-        setSession(data.session)
-        setUcitava(false)
-      })
+      .then(({ data }) => setSession(data.session))
+      .catch(() => setSession(null))
+      .finally(() => setUcitava(false))
     const { data: pretplata } = supabase().auth.onAuthStateChange((_dogadjaj, novaSesija) => {
       setSession(novaSesija)
     })

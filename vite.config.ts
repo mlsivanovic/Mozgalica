@@ -9,6 +9,9 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'prompt',
+      // Registracija se radi ručno u src/pwa.ts (custom toast obaveštenje) —
+      // ne dozvoli pluginu da ubaci sopstveni auto-registracioni skript
+      injectRegister: false,
       devOptions: { enabled: false },
       includeAssets: ['favicon.svg'],
       manifest: {

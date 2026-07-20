@@ -4,6 +4,7 @@ import type {
   PokusajOdgovor,
 } from '../types/db'
 import type { KvizMeta, PokusajPayload, RezultatPayload, SavePotvrda } from '../types/kviz'
+import { SEED_PITANJA } from '../data/seedPitanja'
 import { supabase } from './supabase'
 
 // Pretvori Supabase grešku u čitljivu srpsku poruku
@@ -23,6 +24,24 @@ export async function listajOblasti(): Promise<Oblast[]> {
 export async function dodajOblast(name: string, slug: string): Promise<void> {
   const { error } = await supabase().from('topics').insert({ name, slug, sort_order: 100 })
   if (error) throw new Error(opisiGresku(error)!)
+}
+
+// Umeće početnih 30 primera pitanja (po dva za svaku oblast), vlasnik = trenutni admin.
+// Namenjeno za jednokratno pokretanje sa prve stranice banke pitanja.
+export async function ucitajPocetnaPitanja(oblasti: Oblast[]): Promise<number> {
+  const mapaSlugova = new Map(oblasti.map((o) => [o.slug, o.id]))
+  const redovi: NovoPitanje[] = SEED_PITANJA.flatMap((p) => {
+    const topicId = mapaSlugova.get(p.topicSlug)
+    if (!topicId) return []
+    return [{
+      topic_id: topicId, type: p.type, difficulty: p.difficulty, text: p.text,
+      options: p.options, correct: p.correct, explanation: p.explanation, hint: p.hint,
+      points: p.points, source: 'manual' as const, gen_signature: null,
+    }]
+  })
+  const { data, error } = await supabase().from('questions').insert(redovi).select('id')
+  if (error) throw new Error(opisiGresku(error)!)
+  return data?.length ?? 0
 }
 
 // ---------- Pitanja ----------
@@ -145,6 +164,34 @@ export async function napraviLink(quizId: string, label: string | null, maxAttem
 export async function izmeniLink(id: string, izmene: Partial<Pick<KvizLink, 'is_active' | 'expires_at' | 'max_attempts' | 'label'>>): Promise<void> {
   const { error } = await supabase().from('quiz_links').update(izmene).eq('id', id)
   if (error) throw new Error(opisiGresku(error)!)
+}
+
+export interface StatusLinka {
+  link_id: string
+  quiz_id: string
+  token: string
+  label: string | null
+  is_active: boolean
+  expires_at: string | null
+  max_attempts: number
+  attempts_count: number
+  in_progress_count: number
+  submitted_count: number
+  last_submitted_at: string | null
+}
+
+export async function statusLinkovaKviza(quizId: string): Promise<StatusLinka[]> {
+  const { data, error } = await supabase().from('v_link_status').select('*').eq('quiz_id', quizId)
+  if (error) throw new Error(opisiGresku(error)!)
+  return data as StatusLinka[]
+}
+
+// Da li kviz već ima bar jedan pokušaj (snapshot pitanja je tada zamrznut)
+export async function kvizImaPokusaje(quizId: string): Promise<boolean> {
+  const { count, error } = await supabase()
+    .from('attempts').select('id', { count: 'exact', head: true }).eq('quiz_id', quizId)
+  if (error) throw new Error(opisiGresku(error)!)
+  return (count ?? 0) > 0
 }
 
 // ---------- Rezultati (admin) ----------

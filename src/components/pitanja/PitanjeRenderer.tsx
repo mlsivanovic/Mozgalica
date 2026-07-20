@@ -5,7 +5,7 @@ import type { PitanjeZaDete } from '../../types/kviz'
 import './pitanja.css'
 
 export interface PitanjeProps {
-  pitanje: Pick<PitanjeZaDete, 'id' | 'type' | 'text' | 'options' | 'hint'>
+  pitanje: Pick<PitanjeZaDete, 'id' | 'type' | 'text' | 'options'>
   value: OdgovorDeteta
   onChange: (novi: OdgovorDeteta) => void
   disabled?: boolean
