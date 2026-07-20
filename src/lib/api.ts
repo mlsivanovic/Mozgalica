@@ -79,11 +79,22 @@ export async function sacuvajPitanje(pitanje: NovoPitanje, id?: string): Promise
 
 // Grupni upis generisanih pitanja; duplikati po potpisu se tiho preskaču.
 // Vraća broj stvarno upisanih.
+//
+// Napomena: uq_questions_signature je PARCIJALNI unique indeks (where gen_signature
+// is not null), a PostgREST .upsert(onConflict) uvek generiše ON CONFLICT bez WHERE
+// dela — Postgres to odbija jer se ne poklapa sa parcijalnim indeksom. Zato se
+// duplikati proveravaju ručno (SELECT pa filter), umesto oslanjanja na upsert.
 export async function upisiGenerisana(pitanja: NovoPitanje[]): Promise<number> {
-  const { data, error } = await supabase()
-    .from('questions')
-    .upsert(pitanja, { onConflict: 'owner_id,gen_signature', ignoreDuplicates: true })
-    .select('id')
+  const potpisi = pitanja.map((p) => p.gen_signature).filter((s): s is string => !!s)
+  const { data: postojeci, error: erSelect } = await supabase()
+    .from('questions').select('gen_signature').in('gen_signature', potpisi)
+  if (erSelect) throw new Error(opisiGresku(erSelect)!)
+
+  const zauzeti = new Set((postojeci ?? []).map((p) => p.gen_signature))
+  const nova = pitanja.filter((p) => !p.gen_signature || !zauzeti.has(p.gen_signature))
+  if (nova.length === 0) return 0
+
+  const { data, error } = await supabase().from('questions').insert(nova).select('id')
   if (error) throw new Error(opisiGresku(error)!)
   return data?.length ?? 0
 }
@@ -141,6 +152,22 @@ export async function postaviPitanjaKviza(quizId: string, unosi: SnapshotUnos[])
   if (unosi.length === 0) return
   const { error } = await supabase().from('quiz_questions').insert(unosi)
   if (error) throw new Error(opisiGresku(error)!)
+}
+
+// Dodaje nova pitanja NA KRAJ postojećeg sastava kviza (ne briše ništa postojeće).
+// Koriste je i generator-pregled i banka pitanja za "dodaj u postojeći kviz".
+// Ako kviz već ima pokušaje, guard trigger unutar postaviPitanjaKviza baca jasnu grešku.
+export async function dodajPitanjaUKviz(
+  quizId: string,
+  noviUnosi: Array<Omit<SnapshotUnos, 'quiz_id' | 'position'>>,
+): Promise<void> {
+  const postojeci = await listajPitanjaKviza(quizId)
+  const pocetnaPozicija = postojeci.length ? Math.max(...postojeci.map((p) => p.position)) + 1 : 0
+  const kombinovano: SnapshotUnos[] = [
+    ...postojeci.map(({ id, ...rest }) => rest),
+    ...noviUnosi.map((u, i) => ({ ...u, quiz_id: quizId, position: pocetnaPozicija + i })),
+  ]
+  await postaviPitanjaKviza(quizId, kombinovano)
 }
 
 // ---------- Linkovi ----------

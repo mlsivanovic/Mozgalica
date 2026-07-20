@@ -19,7 +19,7 @@ export function KvizForma() {
       const id = await sacuvajKviz({
         title: title.trim(), description: description.trim() || null, time_limit_seconds: null,
         default_max_attempts: 1, shuffle_questions: true, shuffle_answers: true,
-        show_result: true, show_correct: true, pass_threshold_pct: 50,
+        show_result: true, show_correct: true, pass_threshold_pct: 90,
         require_name: true, require_label: false, label_name: 'Odeljenje',
       })
       navigate(`/admin/kvizovi/${id}`)

@@ -1,47 +1,35 @@
-// Generator: sabiranje (do 1000, kontrolisani prenosi po težini)
+// Generator: sabiranje (do 1000). Nivo 1: dva sabirka uz kontrolisan prenos.
+// Nivoi 2/3: VIŠE sabiraka (3, pa 4) — obuhvatnost umesto samo većih brojeva.
 import { bezPrenosa, zamenaCifara } from '../distraktori'
 import { ceoBroj, izaberi, type Rng } from '../random'
 import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types'
 import { dvaImena, genMn, izaberiPredmet, kolicina, upakujRacun } from './zajednicko'
 
-// Konstruktivno pravljenje sabiraka sa tačno kontrolisanim brojem prenosa
-function napraviSabirke(rng: Rng, tezina: 1 | 2 | 3): [number, number] {
-  if (tezina === 1) {
-    // Do 100, bez prenosa
-    const aj = ceoBroj(rng, 0, 9)
-    const bj = ceoBroj(rng, 0, 9 - aj)
-    const ad = ceoBroj(rng, 1, 8)
-    const bd = ceoBroj(rng, 1, 9 - ad)
-    return [ad * 10 + aj, bd * 10 + bj]
-  }
-  if (tezina === 2) {
-    // Trocifreni, tačno jedan prenos (na jedinicama ili deseticama)
-    const prenosNaJedinicama = rng() < 0.5
-    if (prenosNaJedinicama) {
-      const aj = ceoBroj(rng, 1, 9)
-      const bj = ceoBroj(rng, 10 - aj, 9) // aj + bj ≥ 10
-      const ad = ceoBroj(rng, 0, 8)
-      const bd = ceoBroj(rng, 0, 8 - ad) // + prenos ostaje ≤ 9
-      const as = ceoBroj(rng, 1, 8)
-      const bs = ceoBroj(rng, 1, 9 - as)
-      return [as * 100 + ad * 10 + aj, bs * 100 + bd * 10 + bj]
-    }
-    const aj = ceoBroj(rng, 0, 9)
-    const bj = ceoBroj(rng, 0, 9 - aj)
-    const ad = ceoBroj(rng, 1, 9)
-    const bd = ceoBroj(rng, 10 - ad, 9) // prenos na deseticama
-    const as = ceoBroj(rng, 1, 7) // stotine primaju prenos, pa as + bs + 1 ≤ 9
-    const bs = ceoBroj(rng, 1, 8 - as)
-    return [as * 100 + ad * 10 + aj, bs * 100 + bd * 10 + bj]
-  }
-  // Teško: prenos i na jedinicama i na deseticama
-  const aj = ceoBroj(rng, 1, 9)
-  const bj = ceoBroj(rng, 10 - aj, 9)
-  const ad = ceoBroj(rng, 1, 9)
-  const bd = ceoBroj(rng, Math.max(0, 9 - ad), 9) // ad + bd + 1 ≥ 10
-  const as = ceoBroj(rng, 1, 7)
-  const bs = ceoBroj(rng, 1, 8 - as)
-  return [as * 100 + ad * 10 + aj, bs * 100 + bd * 10 + bj]
+// Nivo 1: tačno dva sabirka sa kontrolisanim prenosom (nepromenjeno)
+function dvaSabirkaNivo1(rng: Rng): number[] {
+  const aj = ceoBroj(rng, 0, 9)
+  const bj = ceoBroj(rng, 0, 9 - aj)
+  const ad = ceoBroj(rng, 1, 8)
+  const bd = ceoBroj(rng, 1, 9 - ad)
+  return [ad * 10 + aj, bd * 10 + bj]
+}
+
+// Nivo 2/3: N sabiraka — izaberi ciljnu sumu pa je razbij na N pozitivnih delova
+// preko N-1 različitih tačaka preseka (composition), pa je zbir uvek tačno suma.
+function viseSabiraka(rng: Rng, brojSabiraka: number, minSuma: number, maxSuma: number): number[] {
+  const suma = ceoBroj(rng, minSuma, maxSuma)
+  const preseci = new Set<number>()
+  while (preseci.size < brojSabiraka - 1) preseci.add(ceoBroj(rng, 1, suma - 1))
+  const granice = [0, ...[...preseci].sort((a, b) => a - b), suma]
+  const delovi: number[] = []
+  for (let i = 0; i < granice.length - 1; i++) delovi.push(granice[i + 1] - granice[i])
+  return delovi
+}
+
+function napraviSabirke(rng: Rng, tezina: 1 | 2 | 3): number[] {
+  if (tezina === 1) return dvaSabirkaNivo1(rng)
+  if (tezina === 2) return viseSabiraka(rng, 3, 100, 1000)
+  return viseSabiraka(rng, 4, 300, 1000)
 }
 
 export const sabiranje: TopicGenerator = {
@@ -50,35 +38,46 @@ export const sabiranje: TopicGenerator = {
   supportsWordProblems: true,
 
   generateOne(cfg: GeneratorConfig, rng: Rng, taken: Set<string>): GenerisanoPitanje | null {
-    const [a, b] = napraviSabirke(rng, cfg.difficulty)
-    const tacan = a + b
-    const signature = `sabiranje:${Math.min(a, b)}+${Math.max(a, b)}`
+    const operandi = napraviSabirke(rng, cfg.difficulty)
+    const tacan = operandi.reduce((s, x) => s + x, 0)
+    const signature = `sabiranje:${[...operandi].sort((a, b) => a - b).join('+')}`
     if (taken.has(signature)) return null
 
-    let text = `Izračunaj: ${a} + ${b} = ?`
+    let text = `Izračunaj: ${operandi.join(' + ')} = ?`
     if (cfg.wordProblems) {
       const predmet = izaberiPredmet(rng)
       const [ime1, ime2] = dvaImena(rng)
-      const sabloni = [
-        `${ime1} ima ${kolicina(a, predmet, 'akuz')}, a ${ime2} ima ${kolicina(b, predmet, 'akuz')}. Koliko ${genMn(predmet)} imaju zajedno?`,
-        `U prvoj kutiji nalazi se ${kolicina(a, predmet)}, a u drugoj ${kolicina(b, predmet)}. Koliko je ukupno ${genMn(predmet)}?`,
-        `${ime1} sakupi ${kolicina(a, predmet, 'akuz')}, a zatim dobije još ${kolicina(b, predmet, 'akuz')}. Koliko ${genMn(predmet)} sada ima?`,
-      ]
-      text = izaberi(rng, sabloni)
+      if (operandi.length === 2) {
+        const [a, b] = operandi
+        const sabloni = [
+          `${ime1} ima ${kolicina(a, predmet, 'akuz')}, a ${ime2} ima ${kolicina(b, predmet, 'akuz')}. Koliko ${genMn(predmet)} imaju zajedno?`,
+          `U prvoj kutiji nalazi se ${kolicina(a, predmet)}, a u drugoj ${kolicina(b, predmet)}. Koliko je ukupno ${genMn(predmet)}?`,
+          `${ime1} sakupi ${kolicina(a, predmet, 'akuz')}, a zatim dobije još ${kolicina(b, predmet, 'akuz')}. Koliko ${genMn(predmet)} sada ima?`,
+        ]
+        text = izaberi(rng, sabloni)
+      } else {
+        const spisak = operandi.map((o) => kolicina(o, predmet, 'akuz'))
+        const poslednji = spisak[spisak.length - 1]
+        text = `${ime1} sakupi redom: ${spisak.slice(0, -1).join(', ')} i na kraju još ${poslednji}. Koliko je to ukupno ${genMn(predmet)}?`
+      }
     }
 
+    const kandidati = operandi.length === 2
+      ? [
+          bezPrenosa(operandi[0], operandi[1]),
+          tacan + 10, tacan - 10,
+          zamenaCifara(tacan),
+          operandi[0] - operandi[1] >= 0 ? operandi[0] - operandi[1] : tacan + 1,
+        ]
+      : [
+          operandi.slice(0, -1).reduce((s, x) => s + x, 0), // stao pre poslednjeg sabirka
+          tacan + 10, tacan - 10, zamenaCifara(tacan),
+        ]
+
     return upakujRacun(cfg, rng, {
-      text,
-      tacan,
-      kandidati: [
-        bezPrenosa(a, b), // sabiranje bez prenosa
-        tacan + 10,
-        tacan - 10, // greška u prenosu za jedno mesto
-        zamenaCifara(tacan), // zamena cifara rezultata
-        a - b >= 0 ? a - b : tacan + 1, // pogrešna operacija
-      ],
-      explanation: `${a} + ${b} = ${tacan}`,
-      hint: cfg.difficulty >= 2 ? 'Saberi prvo jedinice, pa desetice, pa stotine. Ne zaboravi prenos!' : 'Saberi jedinice, pa desetice.',
+      text, tacan, kandidati,
+      explanation: `${operandi.join(' + ')} = ${tacan}`,
+      hint: cfg.difficulty >= 2 ? 'Saberi brojeve jedan po jedan, sleva nadesno.' : 'Saberi jedinice, pa desetice.',
       signature,
     })
   },

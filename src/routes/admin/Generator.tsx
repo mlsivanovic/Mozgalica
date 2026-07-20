@@ -1,4 +1,6 @@
-// Konfiguracija automatskog generisanja pitanja + pokretanje pregleda
+// Konfiguracija automatskog generisanja pitanja + pokretanje pregleda.
+// Podržava izbor VIŠE oblasti odjednom (automatski kviz iz više tema) —
+// ukupan broj pitanja se ravnomerno raspoređuje po izabranim oblastima.
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { podrzaneOblasti } from '../../generator'
@@ -13,12 +15,13 @@ const NAZIVI_OBLASTI: Record<string, string> = {
   'kombinovane-operacije': 'Kombinovane računske operacije', 'poredjenje-brojeva': 'Poređenje brojeva',
   'nizovi-i-obrasci': 'Nizovi i obrasci', 'obim-i-merenje': 'Obim i merenje dužine',
   'merne-jedinice': 'Merne jedinice', 'novac': 'Novac',
+  'rimski-brojevi': 'Rimski brojevi', 'jednacine': 'Jednačine', 'nejednacine': 'Nejednačine',
 }
 
 export function Generator() {
   const navigate = useNavigate()
   const [oblasti, setOblasti] = useState<Oblast[]>([])
-  const [topicSlug, setTopicSlug] = useState('sabiranje')
+  const [topicSlugovi, setTopicSlugovi] = useState<string[]>(['sabiranje'])
   const [difficulty, setDifficulty] = useState<1 | 2 | 3>(1)
   const [count, setCount] = useState(10)
   const [type, setType] = useState<TipPitanja | 'auto'>('auto')
@@ -31,22 +34,38 @@ export function Generator() {
 
   const podrzane = podrzaneOblasti()
 
+  function preklopiOblast(slug: string) {
+    setTopicSlugovi(
+      topicSlugovi.includes(slug) ? topicSlugovi.filter((s) => s !== slug) : [...topicSlugovi, slug],
+    )
+  }
+
   function pokreni() {
-    const cfg: GeneratorConfig = { topicSlug, difficulty, count, type, wordProblems, allowRepeats }
-    const r = generisi(cfg)
-    setRezultat(r.questions)
-    setUpozorenje(r.warning)
+    const n = topicSlugovi.length
+    if (n === 0) return
+    const svaPitanja: GenerisanoPitanje[] = []
+    const upozorenja: string[] = []
+    topicSlugovi.forEach((topicSlug, i) => {
+      // Ravnomerna raspodela: ostatak ide prvim izabranim oblastima
+      const brojZaOblast = Math.floor(count / n) + (i < count % n ? 1 : 0)
+      if (brojZaOblast === 0) return
+      const cfg: GeneratorConfig = { topicSlug, difficulty, count: brojZaOblast, type, wordProblems, allowRepeats }
+      const r = generisi(cfg)
+      svaPitanja.push(...r.questions)
+      if (r.warning) upozorenja.push(r.warning)
+    })
+    setRezultat(svaPitanja)
+    setUpozorenje(upozorenja.length > 0 ? upozorenja.join(' ') : null)
   }
 
   if (rezultat) {
-    const oblast = oblasti.find((o) => o.slug === topicSlug)
+    const izabraneOblasti = oblasti.filter((o) => topicSlugovi.includes(o.slug))
     return (
       <GeneratorPregled
         pocetnaPitanja={rezultat}
         upozorenje={upozorenje}
-        cfg={{ topicSlug, difficulty, count, type, wordProblems, allowRepeats }}
-        oblastId={oblast?.id ?? null}
-        oblastNaziv={oblast?.name ?? topicSlug}
+        cfg={{ topicSlug: topicSlugovi[0], difficulty, count, type, wordProblems, allowRepeats }}
+        oblasti={izabraneOblasti}
         onNazad={() => setRezultat(null)}
         onZavrseno={(kvizId) => kvizId ? navigate(`/admin/kvizovi/${kvizId}`) : navigate('/admin/pitanja')}
       />
@@ -58,14 +77,23 @@ export function Generator() {
       <h1>Automatski generator pitanja</h1>
       <p className="blago razmak-dole">
         Generisana pitanja NIKAD se ne objavljuju direktno — prvo prolaze tvoj pregled na sledećem koraku.
+        Izaberi jednu ili više oblasti da napraviš mešoviti kviz.
       </p>
 
       <div className="kartica">
         <div className="polje">
-          <label htmlFor="g-oblast">Oblast</label>
-          <select id="g-oblast" value={topicSlug} onChange={(e) => setTopicSlug(e.target.value)}>
-            {podrzane.map((s) => <option key={s} value={s}>{NAZIVI_OBLASTI[s] ?? s}</option>)}
-          </select>
+          <label>Oblasti</label>
+          <div className="red" style={{ flexWrap: 'wrap' }}>
+            {podrzane.map((s) => (
+              <label key={s} className="stiklir" style={{ minWidth: 180 }}>
+                <input
+                  type="checkbox" checked={topicSlugovi.includes(s)}
+                  onChange={() => preklopiOblast(s)}
+                />
+                {NAZIVI_OBLASTI[s] ?? s}
+              </label>
+            ))}
+          </div>
         </div>
 
         <div className="red-polja">
@@ -76,7 +104,7 @@ export function Generator() {
             </select>
           </div>
           <div className="polje">
-            <label htmlFor="g-broj">Broj pitanja</label>
+            <label htmlFor="g-broj">Broj pitanja (ukupno)</label>
             <input id="g-broj" type="number" min={1} max={50} value={count} onChange={(e) => setCount(Number(e.target.value))} />
           </div>
           <div className="polje">
@@ -98,7 +126,7 @@ export function Generator() {
           Dozvoli ponavljanje sličnih zadataka
         </label>
 
-        <button type="button" className="dugme dugme--akcenat" onClick={pokreni}>
+        <button type="button" className="dugme dugme--akcenat" disabled={topicSlugovi.length === 0} onClick={pokreni}>
           Generiši pitanja za pregled
         </button>
       </div>

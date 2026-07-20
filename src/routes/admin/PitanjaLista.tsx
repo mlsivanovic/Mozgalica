@@ -1,26 +1,35 @@
-// Banka pitanja: filteri + tabela + CRUD
+// Banka pitanja: filteri + tabela + CRUD + bulk selekcija (dodaj u kviz / novi kviz)
 import { useEffect, useMemo, useState } from 'react'
-import { listajOblasti, listajPitanja, obrisiPitanje, ucitajPocetnaPitanja } from '../../lib/api'
+import { useNavigate } from 'react-router-dom'
+import {
+  dodajPitanjaUKviz, listajKvizove, listajOblasti, listajPitanja, obrisiPitanje,
+  postaviPitanjaKviza, sacuvajKviz, ucitajPocetnaPitanja,
+} from '../../lib/api'
 import { Loader, Modal } from '../../components/Zajednicke'
-import { NAZIVI_TEZINA, NAZIVI_TIPOVA, type Oblast, type Pitanje } from '../../types/db'
+import { NAZIVI_TEZINA, NAZIVI_TIPOVA, type Kviz, type Oblast, type Pitanje } from '../../types/db'
 import { PitanjeForma } from './PitanjeForma'
 
 export function PitanjaLista() {
+  const navigate = useNavigate()
   const [ucitava, setUcitava] = useState(true)
   const [greska, setGreska] = useState<string | null>(null)
   const [oblasti, setOblasti] = useState<Oblast[]>([])
   const [pitanja, setPitanja] = useState<Pitanje[]>([])
+  const [kvizovi, setKvizovi] = useState<Kviz[]>([])
   const [filterOblast, setFilterOblast] = useState('')
   const [filterTip, setFilterTip] = useState('')
   const [filterTezina, setFilterTezina] = useState('')
   const [filterIzvor, setFilterIzvor] = useState('')
   const [pretraga, setPretraga] = useState('')
   const [uredjivanje, setUredjivanje] = useState<Pitanje | 'novo' | null>(null)
+  const [izabrana, setIzabrana] = useState<string[]>([])
+  const [izabraniKviz, setIzabraniKviz] = useState('')
+  const [radiBulk, setRadiBulk] = useState(false)
 
   async function ucitaj() {
     setUcitava(true)
     try {
-      const [o, p] = await Promise.all([
+      const [o, p, k] = await Promise.all([
         listajOblasti(),
         listajPitanja({
           topicId: filterOblast || undefined,
@@ -29,9 +38,12 @@ export function PitanjaLista() {
           source: filterIzvor || undefined,
           pretraga: pretraga || undefined,
         }),
+        listajKvizove(),
       ])
       setOblasti(o)
       setPitanja(p)
+      setKvizovi(k)
+      setIzabrana([])
     } catch (e) {
       setGreska(String((e as Error).message ?? e))
     } finally {
@@ -61,6 +73,61 @@ export function PitanjaLista() {
       await ucitaj()
     } catch (e) {
       setGreska(String((e as Error).message ?? e))
+    }
+  }
+
+  function preklopi(id: string) {
+    setIzabrana(izabrana.includes(id) ? izabrana.filter((x) => x !== id) : [...izabrana, id])
+  }
+
+  function preklopiSve() {
+    const sviVidljivi = pitanja.map((p) => p.id)
+    const svePrisutne = sviVidljivi.every((id) => izabrana.includes(id))
+    setIzabrana(svePrisutne ? [] : sviVidljivi)
+  }
+
+  function snapshotIzabranih() {
+    return pitanja.filter((p) => izabrana.includes(p.id)).map((p) => ({
+      source_question_id: p.id, topic_id: p.topic_id, topic_name: mapaOblasti.get(p.topic_id) ?? '—',
+      type: p.type, text: p.text, options: p.options, correct: p.correct,
+      explanation: p.explanation, hint: p.hint, points: p.points,
+    }))
+  }
+
+  async function dodajUKviz() {
+    if (!izabraniKviz) { setGreska('Izaberi kviz kome dodaješ pitanja.'); return }
+    setGreska(null)
+    setRadiBulk(true)
+    try {
+      await dodajPitanjaUKviz(izabraniKviz, snapshotIzabranih())
+      alert(`Dodato je ${izabrana.length} pitanja u kviz.`)
+      setIzabrana([])
+      setIzabraniKviz('')
+    } catch (e) {
+      setGreska(String((e as Error).message ?? e))
+    } finally {
+      setRadiBulk(false)
+    }
+  }
+
+  async function napraviNoviKvizOdIzabranih() {
+    const naziv = prompt('Naziv novog kviza?', '')
+    if (!naziv || naziv.trim().length < 2) return
+    setGreska(null)
+    setRadiBulk(true)
+    try {
+      const kvizId = await sacuvajKviz({
+        title: naziv.trim(), description: null, time_limit_seconds: null,
+        default_max_attempts: 1, shuffle_questions: true, shuffle_answers: true,
+        show_result: true, show_correct: true, pass_threshold_pct: 90,
+        require_name: true, require_label: false, label_name: 'Odeljenje',
+      })
+      const unosi = snapshotIzabranih().map((u, i) => ({ ...u, quiz_id: kvizId, position: i }))
+      await postaviPitanjaKviza(kvizId, unosi)
+      navigate(`/admin/kvizovi/${kvizId}`)
+    } catch (e) {
+      setGreska(String((e as Error).message ?? e))
+      setRadiBulk(false)
     }
   }
 
@@ -125,17 +192,46 @@ export function PitanjaLista() {
         </div>
       </div>
 
+      {izabrana.length > 0 && (
+        <div className="kartica razmak-dole" style={{ background: 'var(--boja-primarna-svetla)' }}>
+          <div className="red red--razmak" style={{ flexWrap: 'wrap' }}>
+            <p style={{ fontWeight: 700 }}>{izabrana.length} pitanja izabrano</p>
+            <div className="red">
+              <select value={izabraniKviz} onChange={(e) => setIzabraniKviz(e.target.value)}>
+                <option value="">— izaberi kviz —</option>
+                {kvizovi.map((k) => <option key={k.id} value={k.id}>{k.title}</option>)}
+              </select>
+              <button type="button" className="dugme dugme--senka dugme--malo" disabled={radiBulk || !izabraniKviz} onClick={dodajUKviz}>
+                Dodaj u postojeći kviz
+              </button>
+              <button type="button" className="dugme dugme--akcenat dugme--malo" disabled={radiBulk} onClick={napraviNoviKvizOdIzabranih}>
+                Napravi novi kviz od izabranih
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {ucitava ? <Loader /> : (
         <div className="tabela-omot">
           <table className="tabela">
             <thead>
               <tr>
+                <th>
+                  <input
+                    type="checkbox"
+                    checked={pitanja.length > 0 && pitanja.every((p) => izabrana.includes(p.id))}
+                    onChange={preklopiSve}
+                    aria-label="Izaberi sva vidljiva pitanja"
+                  />
+                </th>
                 <th>Pitanje</th><th>Oblast</th><th>Tip</th><th>Težina</th><th>Poeni</th><th>Izvor</th><th></th>
               </tr>
             </thead>
             <tbody>
               {pitanja.map((p) => (
                 <tr key={p.id}>
+                  <td><input type="checkbox" checked={izabrana.includes(p.id)} onChange={() => preklopi(p.id)} /></td>
                   <td style={{ maxWidth: 340 }}>{p.text}</td>
                   <td>{mapaOblasti.get(p.topic_id) ?? '—'}</td>
                   <td>{NAZIVI_TIPOVA[p.type]}</td>
@@ -157,7 +253,7 @@ export function PitanjaLista() {
                 </tr>
               ))}
               {pitanja.length === 0 && (
-                <tr><td colSpan={7} className="centar blago" style={{ padding: '2rem' }}>Nema pitanja za izabrane filtere.</td></tr>
+                <tr><td colSpan={8} className="centar blago" style={{ padding: '2rem' }}>Nema pitanja za izabrane filtere.</td></tr>
               )}
             </tbody>
           </table>

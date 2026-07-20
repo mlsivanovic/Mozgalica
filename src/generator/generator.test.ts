@@ -5,6 +5,7 @@ import { generisi, podrzaneOblasti, REGISTAR } from './index'
 import { napraviRng } from './random'
 import type { GeneratorConfig, GenerisanoPitanje } from './types'
 import { bezPozajmice, bezPrenosa, napraviDistraktore, zamenaCifara } from './distraktori'
+import { izRimskog, uRimski } from './moduli/rimski'
 
 const TEZINE = [1, 2, 3] as const
 
@@ -57,20 +58,23 @@ describe('matematička pravila po oblastima', () => {
     }
   })
 
-  it('sabiranje težine 2 i 3 ima prenos i rezultat do 1000', () => {
+  it('sabiranje težine 2 i 3 ima više sabiraka i rezultat do 1000', () => {
     for (const tezina of [2, 3] as const) {
+      const ocekivanoSabiraka = tezina === 2 ? 3 : 4
       for (let seed = 0; seed < 30; seed++) {
         const r = generisi(cfg({ seed, difficulty: tezina, count: 5, type: 'numeric' }))
         for (const p of r.questions) {
-          const [a, b] = p.signature.replace('sabiranje:', '').split('+').map(Number)
-          expect(a + b).toBeLessThanOrEqual(1000)
-          expect(bezPrenosa(a, b)).not.toBe(a + b) // postoji bar jedan prenos
+          const operandi = p.signature.replace('sabiranje:', '').split('+').map(Number)
+          expect(operandi).toHaveLength(ocekivanoSabiraka)
+          const suma = operandi.reduce((s, x) => s + x, 0)
+          expect(suma).toBeLessThanOrEqual(1000)
+          expect(tacnaVrednost(p)).toBe(suma)
         }
       }
     }
   })
 
-  it('oduzimanje nikad ne daje negativan rezultat', () => {
+  it('oduzimanje nikad ne daje negativan rezultat (uklj. međurezultate u lancu)', () => {
     for (const tezina of TEZINE) {
       for (let seed = 0; seed < 30; seed++) {
         const r = generisi(cfg({ topicSlug: 'oduzimanje', difficulty: tezina, seed, count: 5, type: 'numeric' }))
@@ -81,31 +85,42 @@ describe('matematička pravila po oblastima', () => {
     }
   })
 
-  it('oduzimanje težine 1 nema pozajmicu, težine 2 i 3 imaju', () => {
+  it('oduzimanje težine 1 nema pozajmicu; težine 2 i 3 su lanac koji nikad ne postane negativan', () => {
     for (let seed = 0; seed < 30; seed++) {
       for (const p of generisi(cfg({ topicSlug: 'oduzimanje', seed, count: 5, type: 'numeric' })).questions) {
         const [a, b] = p.signature.replace('oduzimanje:', '').split('-').map(Number)
         expect(bezPozajmice(a, b)).toBe(a - b)
       }
       for (const tezina of [2, 3] as const) {
+        const ocekivanoOperanada = tezina === 2 ? 3 : 4
         const r = generisi(cfg({ topicSlug: 'oduzimanje', difficulty: tezina, seed, count: 5, type: 'numeric' }))
         for (const p of r.questions) {
-          const [a, b] = p.signature.replace('oduzimanje:', '').split('-').map(Number)
-          expect(a).toBeGreaterThanOrEqual(b)
-          expect(bezPozajmice(a, b)).not.toBe(a - b)
+          const operandi = p.signature.replace('oduzimanje:', '').split('-').map(Number)
+          expect(operandi).toHaveLength(ocekivanoOperanada)
+          let medjurezultat = operandi[0]
+          for (let i = 1; i < operandi.length; i++) {
+            medjurezultat -= operandi[i]
+            expect(medjurezultat).toBeGreaterThanOrEqual(0)
+          }
+          expect(tacnaVrednost(p)).toBe(medjurezultat)
         }
       }
     }
   })
 
-  it('deljenje nikad nema ostatak', () => {
+  it('deljenje nikad nema ostatak (uklj. lanac deljenja na težem nivou)', () => {
     for (const tezina of TEZINE) {
       for (let seed = 0; seed < 30; seed++) {
         const r = generisi(cfg({ topicSlug: 'deljenje', difficulty: tezina, seed, count: 5, type: 'numeric' }))
         for (const p of r.questions) {
-          const [deljenik, delilac] = p.signature.replace('deljenje:', '').split(':').map(Number)
-          expect(deljenik % delilac).toBe(0)
-          expect(tacnaVrednost(p)).toBe(deljenik / delilac)
+          const brojevi = p.signature.replace('deljenje:', '').split(':').map(Number)
+          const [deljenik, ...delioci] = brojevi
+          let medjurezultat = deljenik
+          for (const d of delioci) {
+            expect(medjurezultat % d).toBe(0)
+            medjurezultat /= d
+          }
+          expect(tacnaVrednost(p)).toBe(medjurezultat)
         }
       }
     }
@@ -113,7 +128,7 @@ describe('matematička pravila po oblastima', () => {
 
   it('svi rezultati su u opsegu 0–1000 (osim mernih jedinica do 10000)', () => {
     for (const oblast of podrzaneOblasti()) {
-      if (oblast === 'poredjenje-brojeva') continue // odgovor je znak, ne broj
+      if (oblast === 'poredjenje-brojeva' || oblast === 'rimski-brojevi') continue // odgovor može biti znak/rimski string, ne broj
       const maks = oblast === 'merne-jedinice' ? 10000 : 1000
       for (const tezina of TEZINE) {
         for (let seed = 0; seed < 15; seed++) {
@@ -220,15 +235,49 @@ describe('tekstualni zadaci', () => {
 })
 
 describe('registar', () => {
-  it('svih 10 oblasti ima generator', () => {
-    expect(REGISTAR.size).toBe(10)
+  it('svih 13 oblasti ima generator', () => {
+    expect(REGISTAR.size).toBe(13)
     expect(podrzaneOblasti()).toContain('sabiranje')
     expect(podrzaneOblasti()).toContain('novac')
+    expect(podrzaneOblasti()).toContain('rimski-brojevi')
+    expect(podrzaneOblasti()).toContain('jednacine')
+    expect(podrzaneOblasti()).toContain('nejednacine')
   })
 
   it('nepoznata oblast vraća upozorenje bez pitanja', () => {
     const r = generisi(cfg({ topicSlug: 'geometrija' }))
     expect(r.questions).toHaveLength(0)
     expect(r.warning).toBeTruthy()
+  })
+})
+
+describe('nove oblasti — čista matematika', () => {
+  it('rimski brojevi: konverzija u oba smera je tačna i invertuje se (1–1000)', () => {
+    const provere = [1, 3, 4, 9, 14, 40, 49, 90, 444, 999, 1000]
+    for (const n of provere) {
+      const rimski = uRimski(n)
+      expect(izRimskog(rimski), `${n} → ${rimski}`).toBe(n)
+    }
+  })
+
+  it('jednačine: sve oblasti generišu pitanja sa tačno invertovanim x', () => {
+    for (let seed = 0; seed < 20; seed++) {
+      const r = generisi(cfg({ topicSlug: 'jednacine', difficulty: 3, seed, count: 5, type: 'numeric' }))
+      for (const p of r.questions) {
+        expect((p.correct as { value: number }).value).toBeGreaterThan(0)
+        expect(p.text).toContain('x')
+      }
+    }
+  })
+
+  it('nejednačine: granica je tačno za jedan pomerena i unutar 0–1000', () => {
+    for (let seed = 0; seed < 20; seed++) {
+      const r = generisi(cfg({ topicSlug: 'nejednacine', difficulty: 1, seed, count: 5, type: 'numeric' }))
+      for (const p of r.questions) {
+        const v = (p.correct as { value: number }).value
+        expect(v).toBeGreaterThanOrEqual(0)
+        expect(v).toBeLessThanOrEqual(1000)
+      }
+    }
   })
 })

@@ -2,19 +2,23 @@
 import { napraviRng } from './random'
 import type { GeneratorConfig, GenerisanoPitanje, RezultatGenerisanja, TopicGenerator } from './types'
 import { deljenje } from './moduli/deljenje'
+import { jednacine } from './moduli/jednacine'
 import { jedinice } from './moduli/jedinice'
 import { kombinovane } from './moduli/kombinovane'
 import { mnozenje } from './moduli/mnozenje'
+import { nejednacine } from './moduli/nejednacine'
 import { nizovi } from './moduli/nizovi'
 import { novac } from './moduli/novac'
 import { obim } from './moduli/obim'
 import { oduzimanje } from './moduli/oduzimanje'
 import { poredjenje } from './moduli/poredjenje'
+import { rimski } from './moduli/rimski'
 import { sabiranje } from './moduli/sabiranje'
 
 const MODULI: TopicGenerator[] = [
   sabiranje, oduzimanje, mnozenje, deljenje, kombinovane,
   poredjenje, nizovi, obim, jedinice, novac,
+  rimski, jednacine, nejednacine,
 ]
 
 export const REGISTAR = new Map<string, TopicGenerator>(MODULI.map((m) => [m.slug, m]))

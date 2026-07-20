@@ -1,4 +1,5 @@
-// Generator: deljenje — UVEK konstruisano kao proizvod ÷ činilac, pa nema ostatka
+// Generator: deljenje — UVEK konstruisano iz proizvoda, pa nema ostatka.
+// Nivo 1/2: jedno deljenje. Nivo 3: LANAC dva uzastopna deljenja (deljenik : d1 : d2).
 import { ceoBroj, izaberi, type Rng } from '../random'
 import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types'
 import { genMn, izaberiPredmet, kolicina, upakujRacun, dvaImena } from './zajednicko'
@@ -6,22 +7,23 @@ import { genMn, izaberiPredmet, kolicina, upakujRacun, dvaImena } from './zajedn
 const DRUG: [string, string, string, string] = ['drug', 'druga', 'drugova', 'druga']
 const KUTIJA: [string, string, string, string] = ['kutija', 'kutije', 'kutija', 'kutiju']
 
-// Vraća [deljenik, delilac, količnik]
-function napraviDeljenje(rng: Rng, tezina: 1 | 2 | 3): [number, number, number] {
+// Vraća [deljenik, delilac1, delilac2, ...] (bez konačnog količnika)
+function napraviDeljenje(rng: Rng, tezina: 1 | 2 | 3): number[] {
   if (tezina === 1) {
     const delilac = ceoBroj(rng, 2, 5)
     const kolicnik = ceoBroj(rng, 2, 10)
-    return [delilac * kolicnik, delilac, kolicnik]
+    return [delilac * kolicnik, delilac]
   }
   if (tezina === 2) {
     const delilac = ceoBroj(rng, 6, 9)
     const kolicnik = ceoBroj(rng, 2, 10)
-    return [delilac * kolicnik, delilac, kolicnik]
+    return [delilac * kolicnik, delilac]
   }
-  // Teško: količnik je pun broj desetica (npr. 480 ÷ 6 = 80)
-  const delilac = ceoBroj(rng, 2, 9)
-  const kolicnik = ceoBroj(rng, 2, Math.floor(100 / delilac)) * 10
-  return [delilac * kolicnik, delilac, kolicnik]
+  // Teško: lanac dva deljenja, konstruisan iznutra-napolje (nema ostatka nikad)
+  const kolicnik = ceoBroj(rng, 2, 10)
+  const delilac1 = ceoBroj(rng, 2, 9)
+  const delilac2 = ceoBroj(rng, 2, 9)
+  return [kolicnik * delilac1 * delilac2, delilac1, delilac2]
 }
 
 export const deljenje: TopicGenerator = {
@@ -30,32 +32,39 @@ export const deljenje: TopicGenerator = {
   supportsWordProblems: true,
 
   generateOne(cfg: GeneratorConfig, rng: Rng, taken: Set<string>): GenerisanoPitanje | null {
-    const [deljenik, delilac, kolicnik] = napraviDeljenje(rng, cfg.difficulty)
-    const signature = `deljenje:${deljenik}:${delilac}`
+    const [deljenik, ...delioci] = napraviDeljenje(rng, cfg.difficulty)
+    const tacan = delioci.reduce((kol, d) => kol / d, deljenik)
+    const signature = `deljenje:${[deljenik, ...delioci].join(':')}`
     if (taken.has(signature)) return null
 
-    let text = `Izračunaj: ${deljenik} : ${delilac} = ?`
+    const izraz = `${deljenik} : ${delioci.join(' : ')}`
+    let text = `Izračunaj: ${izraz} = ?`
     if (cfg.wordProblems) {
       const predmet = izaberiPredmet(rng)
       const [ime1] = dvaImena(rng)
-      const sabloni = [
-        `${ime1} ima ${kolicina(deljenik, predmet, 'akuz')} i podeli ih podjednako na ${kolicina(delilac, DRUG, 'akuz')}. Koliko ${genMn(predmet)} dobije svaki?`,
-        `${kolicina(deljenik, predmet)} treba podjednako rasporediti u ${kolicina(delilac, KUTIJA, 'akuz')}. Koliko ${genMn(predmet)} ide u svaku kutiju?`,
-      ]
-      text = izaberi(rng, sabloni)
+      if (delioci.length === 1) {
+        const delilac = delioci[0]
+        const sabloni = [
+          `${ime1} ima ${kolicina(deljenik, predmet, 'akuz')} i podeli ih podjednako na ${kolicina(delilac, DRUG, 'akuz')}. Koliko ${genMn(predmet)} dobije svaki?`,
+          `${kolicina(deljenik, predmet)} treba podjednako rasporediti u ${kolicina(delilac, KUTIJA, 'akuz')}. Koliko ${genMn(predmet)} ide u svaku kutiju?`,
+        ]
+        text = izaberi(rng, sabloni)
+      } else {
+        text = `Podeli broj ${deljenik} prvo sa ${delioci[0]}, pa dobijeni rezultat podeli sa ${delioci[1]}. Koliki je konačan rezultat?`
+      }
     }
 
+    const kandidati = delioci.length === 1
+      ? [tacan + 1, tacan - 1, tacan + 2, delioci[0], deljenik - delioci[0]]
+      : [deljenik / delioci[0], tacan + 1, tacan - 1] // stao posle prvog deljenja (zaboravio drugi korak)
+
+    const objasnjenje = delioci.length === 1
+      ? `${deljenik} : ${delioci[0]} = ${tacan}, jer je ${tacan} · ${delioci[0]} = ${deljenik}`
+      : `${deljenik} : ${delioci[0]} = ${deljenik / delioci[0]}, pa ${deljenik / delioci[0]} : ${delioci[1]} = ${tacan}`
+
     return upakujRacun(cfg, rng, {
-      text,
-      tacan: kolicnik,
-      kandidati: [
-        kolicnik + 1, // greška u tablici
-        kolicnik - 1,
-        kolicnik + 2,
-        delilac, // zamena delioca i količnika
-        deljenik - delilac, // pogrešna operacija
-      ],
-      explanation: `${deljenik} : ${delilac} = ${kolicnik}, jer je ${kolicnik} · ${delilac} = ${deljenik}`,
+      text, tacan, kandidati,
+      explanation: objasnjenje,
       hint: 'Pomozi se tablicom množenja: koji broj pomnožen deliocem daje deljenik?',
       signature,
     })

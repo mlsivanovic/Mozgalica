@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# Supabase CLI lokalni keš (project ref, verzije servisa — ne treba u git)
+supabase/.temp
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
