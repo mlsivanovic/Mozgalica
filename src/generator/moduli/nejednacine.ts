@@ -39,8 +39,8 @@ export const nejednacine: TopicGenerator = {
 
     if (cfg.difficulty === 3) {
       // Dve granice — x je između L i U
-      const L = ceoBroj(rng, 2, 500)
-      const U = L + ceoBroj(rng, 2, 60)
+      const L = ceoBroj(rng, 2, 700)
+      const U = L + ceoBroj(rng, 2, 80)
       const trazi = izaberi(rng, ['max', 'min'] as const)
       const signature = `nejednacine:dva:${L},${U},${trazi}`
       if (taken.has(signature)) return null
@@ -72,13 +72,14 @@ export const nejednacine: TopicGenerator = {
       let N: number
       let izraz: string
       if (jeProizvod) {
-        const a = ceoBroj(rng, 8, 30)
-        const b = ceoBroj(rng, 8, 30)
+        // Granica proizvoda mora ostati ≤ 999 (a·x je odgovor u ovom testu granice)
+        const a = ceoBroj(rng, 9, 31)
+        const b = ceoBroj(rng, 8, 31)
         N = a * b
         izraz = `${a} · ${b}`
       } else {
-        const a = ceoBroj(rng, 100, 450)
-        const b = ceoBroj(rng, 50, 450)
+        const a = ceoBroj(rng, 100, 470)
+        const b = ceoBroj(rng, 60, 470)
         N = a + b
         izraz = `${a} + ${b}`
       }
@@ -105,54 +106,34 @@ export const nejednacine: TopicGenerator = {
       })
     }
 
-    // Ekspert: nejednačina sa operacijom nad x — a · x ? b ili x + a ? b
+    // Ekspert: dvokoračna granica a·x ± c ? b — prvo se poništava ±c, tek onda deli
+    // sa a (jedna operacija više nego na nivou 4, a k (granica za x) sme biti
+    // veliko jer se b nigde ne proverava — samo k∓1 mora ostati ≤ 1000).
     const smer = izaberi(rng, ['lt', 'gt'] as const)
-    if (rng() < 0.5) {
-      const a = ceoBroj(rng, 2, 9)
-      const k = ceoBroj(rng, 3, 100)
-      const b = a * k
-      const signature = `nejednacine:mnozenje:${smer}:${a},${b}`
-      if (taken.has(signature)) return null
-      if (smer === 'lt') {
-        return upakujRacun(cfg, rng, {
-          text: `Važi: ${a} · x < ${b}. Koji je najveći mogući ceo broj x?`,
-          tacan: k - 1,
-          kandidati: [k, k + 1, k - 2],
-          explanation: `${a} · x < ${b} znači x < ${k} (jer ${a} · ${k} = ${b}). Najveći ceo broj manji od ${k} je ${k - 1}.`,
-          hint: `Podeli obe strane sa ${a} da dobiješ granicu za x.`,
-          signature,
-        })
-      }
-      return upakujRacun(cfg, rng, {
-        text: `Važi: ${a} · x > ${b}. Koji je najmanji mogući ceo broj x?`,
-        tacan: k + 1,
-        kandidati: [k, k - 1, k + 2],
-        explanation: `${a} · x > ${b} znači x > ${k} (jer ${a} · ${k} = ${b}). Najmanji ceo broj veći od ${k} je ${k + 1}.`,
-        hint: `Podeli obe strane sa ${a} da dobiješ granicu za x.`,
-        signature,
-      })
-    }
-    const a = ceoBroj(rng, 5, 300)
-    const k = ceoBroj(rng, 2, 600)
-    const b = k + a
-    const signature = `nejednacine:sabiranje:${smer}:${a},${b}`
+    const a = ceoBroj(rng, 2, 9)
+    const k = ceoBroj(rng, 5, 900)
+    const ax = a * k
+    const plus = rng() < 0.5
+    const c = plus ? ceoBroj(rng, 3, 200) : ceoBroj(rng, 3, Math.max(3, Math.min(200, ax)))
+    const b = plus ? ax + c : ax - c
+    const signature = `nejednacine:dvokorak:${smer}:${plus ? '+' : '-'}:${a},${k},${c}`
     if (taken.has(signature)) return null
     if (smer === 'lt') {
       return upakujRacun(cfg, rng, {
-        text: `Važi: x + ${a} < ${b}. Koji je najveći mogući ceo broj x?`,
+        text: `Važi: ${a} · x ${plus ? '+' : '−'} ${c} < ${b}. Koji je najveći mogući ceo broj x?`,
         tacan: k - 1,
         kandidati: [k, k + 1, k - 2],
-        explanation: `x + ${a} < ${b} znači x < ${k} (jer ${b} − ${a} = ${k}). Najveći ceo broj manji od ${k} je ${k - 1}.`,
-        hint: `Oduzmi ${a} sa obe strane da dobiješ granicu za x.`,
+        explanation: `${a} · x ${plus ? '+' : '−'} ${c} < ${b} znači ${a} · x < ${ax}, pa x < ${k} (jer ${a} · ${k} = ${ax}). Najveći ceo broj manji od ${k} je ${k - 1}.`,
+        hint: `Prvo poništi ${plus ? 'sabiranje' : 'oduzimanje'} sa ${c}, pa podeli sa ${a} da dobiješ granicu za x.`,
         signature,
       })
     }
     return upakujRacun(cfg, rng, {
-      text: `Važi: x + ${a} > ${b}. Koji je najmanji mogući ceo broj x?`,
+      text: `Važi: ${a} · x ${plus ? '+' : '−'} ${c} > ${b}. Koji je najmanji mogući ceo broj x?`,
       tacan: k + 1,
       kandidati: [k, k - 1, k + 2],
-      explanation: `x + ${a} > ${b} znači x > ${k} (jer ${b} − ${a} = ${k}). Najmanji ceo broj veći od ${k} je ${k + 1}.`,
-      hint: `Oduzmi ${a} sa obe strane da dobiješ granicu za x.`,
+      explanation: `${a} · x ${plus ? '+' : '−'} ${c} > ${b} znači ${a} · x > ${ax}, pa x > ${k} (jer ${a} · ${k} = ${ax}). Najmanji ceo broj veći od ${k} je ${k + 1}.`,
+      hint: `Prvo poništi ${plus ? 'sabiranje' : 'oduzimanje'} sa ${c}, pa podeli sa ${a} da dobiješ granicu za x.`,
       signature,
     })
   },

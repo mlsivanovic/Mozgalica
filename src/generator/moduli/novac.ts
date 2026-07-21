@@ -52,9 +52,9 @@ export const novac: TopicGenerator = {
       })
     }
     if (cfg.difficulty === 3) {
-      // Dve kupovine + kusur od 1000
-      const c1 = ceoBroj(rng, 15, 45) * 10 + izaberi(rng, [0, 5])
-      const c2 = ceoBroj(rng, 12, 40) * 10 + izaberi(rng, [0, 5])
+      // Dve kupovine + kusur od 1000 (max zbir 485+445=930, kusur bar 70)
+      const c1 = ceoBroj(rng, 15, 48) * 10 + izaberi(rng, [0, 5])
+      const c2 = ceoBroj(rng, 12, 44) * 10 + izaberi(rng, [0, 5])
       const ukupno = c1 + c2
       const tacan = 1000 - ukupno
       const signature = `novac:kusur1000:${Math.min(c1, c2)}+${Math.max(c1, c2)}`
@@ -73,10 +73,10 @@ export const novac: TopicGenerator = {
       })
     }
     if (cfg.difficulty === 4) {
-      // Tri kupovine + kusur od 1000
-      const c1 = ceoBroj(rng, 8, 25) * 10 + izaberi(rng, [0, 5])
-      const c2 = ceoBroj(rng, 8, 25) * 10 + izaberi(rng, [0, 5])
-      const c3 = ceoBroj(rng, 8, 25) * 10 + izaberi(rng, [0, 5])
+      // Tri kupovine + kusur od 1000 (max zbir 305·3=915, kusur bar 85)
+      const c1 = ceoBroj(rng, 10, 30) * 10 + izaberi(rng, [0, 5])
+      const c2 = ceoBroj(rng, 10, 30) * 10 + izaberi(rng, [0, 5])
+      const c3 = ceoBroj(rng, 10, 30) * 10 + izaberi(rng, [0, 5])
       const ukupno = c1 + c2 + c3
       const tacan = 1000 - ukupno
       const signature = `novac:tri:${[c1, c2, c3].sort((x, y) => x - y).join('+')}`
@@ -96,21 +96,30 @@ export const novac: TopicGenerator = {
         sufiks: 'dinara',
       })
     }
-    // Ekspert: N komada iste cene + kusur od 1000
-    const cena = ceoBroj(rng, 3, 18) * 10 + izaberi(rng, [0, 5])
-    const budzetKom = Math.max(3, Math.min(8, Math.floor(950 / cena)))
-    const kom = ceoBroj(rng, 3, budzetKom)
-    const ukupno = cena * kom
+    // Ekspert: DVA različita artikla, svaki u više komada + kusur od 1000
+    // (dva množenja + sabiranje + oduzimanje — više operacija nego na nivou 4).
+    // Gornja cena je izvedena iz broja komada tako da zbir uvek stane u budžet
+    // od 950 dinara, bez obzira na nasumičan izbor kom1/kom2 (dokazano ispod).
+    const kom1 = ceoBroj(rng, 2, 5)
+    const kom2 = ceoBroj(rng, 2, 5)
+    const cenaGornjaDes = Math.floor(950 / (kom1 + kom2) / 10)
+    const cena1 = ceoBroj(rng, 3, cenaGornjaDes) * 10 + izaberi(rng, [0, 5])
+    const cena2 = ceoBroj(rng, 3, cenaGornjaDes) * 10 + izaberi(rng, [0, 5])
+    const trosak1 = kom1 * cena1
+    const trosak2 = kom2 * cena2
+    const ukupno = trosak1 + trosak2
     const tacan = 1000 - ukupno
-    const signature = `novac:komada:${cena}x${kom}`
+    const signature = `novac:dvaartikla:${cena1}x${kom1}+${cena2}x${kom2}`
     if (taken.has(signature)) return null
-    const artikal = izaberi(rng, ARTIKLI)
+    const a1 = izaberi(rng, ARTIKLI)
+    let a2 = izaberi(rng, ARTIKLI)
+    while (a2 === a1) a2 = izaberi(rng, ARTIKLI)
     return upakujRacun(cfg, rng, {
-      text: `${ime} kupuje ${kom} artikla „${artikal}" po ceni od ${cena} dinara za jedan, pa plaća novčanicom od 1000 dinara. Koliko dinara kusura dobija?`,
+      text: `${ime} kupuje ${kom1} artikla „${a1}" po ceni od ${cena1} dinara za jedan i ${kom2} artikla „${a2}" po ceni od ${cena2} dinara za jedan, pa plaća novčanicom od 1000 dinara. Koliko dinara kusura dobija?`,
       tacan,
-      kandidati: [1000 - cena, ukupno, tacan + 10, tacan - 10],
-      explanation: `Ukupno: ${kom} · ${cena} = ${ukupno} dinara. Kusur: 1000 − ${ukupno} = ${tacan} dinara.`,
-      hint: 'Prvo pomnoži cenu sa brojem komada, pa oduzmi od 1000.',
+      kandidati: [1000 - trosak1, 1000 - trosak2, tacan + 10, tacan - 10],
+      explanation: `Ukupno: ${kom1} · ${cena1} + ${kom2} · ${cena2} = ${trosak1} + ${trosak2} = ${ukupno} dinara. Kusur: 1000 − ${ukupno} = ${tacan} dinara.`,
+      hint: 'Prvo izračunaj cenu za svaki artikal (broj komada puta cena po komadu), pa saberi obe i oduzmi od 1000.',
       signature,
       sufiks: 'dinara',
     })

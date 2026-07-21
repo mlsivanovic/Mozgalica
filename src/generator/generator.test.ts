@@ -384,9 +384,9 @@ describe('nivoi 4 i 5 (Vrlo teško / Ekspert)', () => {
     }
   })
 
-  it('jednačine t5 (dvostepeno): x tačno rešava a·x ± b = c', () => {
+  it('jednačine t4 (dvostepeno): x tačno rešava a·x ± b = c', () => {
     for (let seed = 0; seed < 20; seed++) {
-      const r = generisi(cfg({ topicSlug: 'jednacine', difficulty: 5, seed, count: 5, type: 'numeric' }))
+      const r = generisi(cfg({ topicSlug: 'jednacine', difficulty: 4, seed, count: 5, type: 'numeric' }))
       for (const p of r.questions) {
         const m = p.signature.match(/^jednacine:dvokorak:([+-]):(\d+),(\d+),(\d+)$/)
         expect(m, p.signature).toBeTruthy()
@@ -397,6 +397,26 @@ describe('nivoi 4 i 5 (Vrlo teško / Ekspert)', () => {
         expect(tacnaVrednost(p)).toBe(x)
         const c = znak === '+' ? a * x + b : a * x - b
         expect(c).toBeGreaterThanOrEqual(0)
+      }
+    }
+  })
+
+  it('jednačine t5 (trostepeno): x tačno rešava a·x ± b ± c = d', () => {
+    for (let seed = 0; seed < 20; seed++) {
+      const r = generisi(cfg({ topicSlug: 'jednacine', difficulty: 5, seed, count: 5, type: 'numeric' }))
+      for (const p of r.questions) {
+        const m = p.signature.match(/^jednacine:trokorak:(\d+),(\d+),([+-])(\d+),([+-])(\d+)$/)
+        expect(m, p.signature).toBeTruthy()
+        const [, as, xs, znak1, bs, znak2, cs] = m!
+        const a = Number(as)
+        const x = Number(xs)
+        const b = Number(bs)
+        const c = Number(cs)
+        expect(tacnaVrednost(p)).toBe(x)
+        const posle1 = znak1 === '+' ? a * x + b : a * x - b
+        const d = znak2 === '+' ? posle1 + c : posle1 - c
+        expect(posle1).toBeGreaterThanOrEqual(0)
+        expect(d).toBeGreaterThanOrEqual(0)
       }
     }
   })

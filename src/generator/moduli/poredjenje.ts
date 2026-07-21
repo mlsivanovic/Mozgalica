@@ -15,12 +15,12 @@ function napraviStranu(rng: Rng, tezina: Tezina, izraz: boolean): Strana {
     return { prikaz: String(n), vrednost: n }
   }
   if (rng() < 0.5) {
-    const a = ceoBroj(rng, 100, 800)
-    const b = ceoBroj(rng, 10, 199)
+    const a = ceoBroj(rng, 100, 900)
+    const b = ceoBroj(rng, 10, 250)
     return { prikaz: `${a} + ${b}`, vrednost: a + b }
   }
-  const a = ceoBroj(rng, 2, 9)
-  const b = ceoBroj(rng, 2, 9)
+  const a = ceoBroj(rng, 2, 12)
+  const b = ceoBroj(rng, 2, 12)
   return { prikaz: `${a} · ${b}`, vrednost: a * b }
 }
 
@@ -28,18 +28,18 @@ function napraviStranu(rng: Rng, tezina: Tezina, izraz: boolean): Strana {
 function napraviStranuTesku(rng: Rng, dvaKoraka: boolean): Strana {
   if (!dvaKoraka) {
     if (rng() < 0.5) {
-      const a = ceoBroj(rng, 6, 30)
-      const b = ceoBroj(rng, 6, 30)
+      const a = ceoBroj(rng, 8, 40)
+      const b = ceoBroj(rng, 8, 40)
       return { prikaz: `${a} · ${b}`, vrednost: a * b }
     }
-    const a = ceoBroj(rng, 300, 700)
-    const b = ceoBroj(rng, 100, 400)
+    const a = ceoBroj(rng, 400, 900)
+    const b = ceoBroj(rng, 150, 600)
     return { prikaz: `${a} + ${b}`, vrednost: a + b }
   }
-  const a = ceoBroj(rng, 3, 9)
-  const b = ceoBroj(rng, 11, 30)
+  const a = ceoBroj(rng, 4, 15)
+  const b = ceoBroj(rng, 15, 45)
   const minus = rng() < 0.5
-  const c = minus ? ceoBroj(rng, 5, Math.max(5, Math.min(99, a * b))) : ceoBroj(rng, 5, 99)
+  const c = minus ? ceoBroj(rng, 10, Math.max(10, Math.min(150, a * b))) : ceoBroj(rng, 10, 150)
   const vrednost = minus ? a * b - c : a * b + c
   return { prikaz: `${a} · ${b} ${minus ? '−' : '+'} ${c}`, vrednost }
 }
@@ -55,6 +55,19 @@ function napraviStranuNaVrednosti(rng: Rng, izraz: boolean, cilj: number, maxSab
     return { prikaz: `${cilj - b} + ${b}`, vrednost: cilj }
   }
   return { prikaz: `${cilj + b} − ${b}`, vrednost: cilj }
+}
+
+// Nivo 5: pokušava dvokoračnu rekonstrukciju desne strane (p·q+r=cilj), tako da
+// I desna strana zahteva računanje, ne samo leva. Pada nazad na jednostavnu
+// rekonstrukciju kad mali činioci p,q ne mogu da stanu ispod cilja.
+function napraviStranuNaVrednostiTesku(rng: Rng, cilj: number, maxSabirak: number): Strana {
+  const p = ceoBroj(rng, 2, 9)
+  const q = ceoBroj(rng, 2, 9)
+  const pq = p * q
+  if (pq <= cilj) {
+    return { prikaz: `${p} · ${q} + ${cilj - pq}`, vrednost: cilj }
+  }
+  return napraviStranuNaVrednosti(rng, true, cilj, maxSabirak)
 }
 
 export const poredjenje: TopicGenerator = {
@@ -73,7 +86,9 @@ export const poredjenje: TopicGenerator = {
     const delta = ceoBroj(rng, Math.max(-3, 1 - levo.vrednost), 3)
     const ciljDesno = levo.vrednost + delta
     const izrazDesno = cfg.difficulty >= 2
-    const desno = napraviStranuNaVrednosti(rng, izrazDesno, ciljDesno, cfg.difficulty >= 4 ? 60 : 40)
+    const desno = cfg.difficulty === 5
+      ? napraviStranuNaVrednostiTesku(rng, ciljDesno, 80)
+      : napraviStranuNaVrednosti(rng, izrazDesno, ciljDesno, cfg.difficulty >= 4 ? 60 : 40)
 
     const signature = `poredjenje:${levo.prikaz}?${desno.prikaz}`
     if (taken.has(signature)) return null
