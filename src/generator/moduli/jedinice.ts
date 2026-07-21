@@ -19,6 +19,11 @@ const LAKE: Konverzija[] = [
 const SREDNJE: Konverzija[] = [
   { iz: 'km', u: 'm', faktor: 1000 },
   { iz: 'l', u: 'dl', faktor: 10 },
+  { iz: 'l', u: 'cl', faktor: 100 },
+  { iz: 'l', u: 'ml', faktor: 1000 },
+  { iz: 'dl', u: 'cl', faktor: 10 },
+  { iz: 'dl', u: 'ml', faktor: 100 },
+  { iz: 'cl', u: 'ml', faktor: 10 },
   { iz: 'cm', u: 'mm', faktor: 10 },
 ]
 
@@ -70,6 +75,9 @@ export const jedinice: TopicGenerator = {
       const par = izaberi(rng, [
         { iz1: 'kg', iz2: 'g', u: 'g', faktor: 1000, maks2: 999 },
         { iz1: 'l', iz2: 'dl', u: 'dl', faktor: 10, maks2: 9 },
+        { iz1: 'l', iz2: 'cl', u: 'cl', faktor: 100, maks2: 99 },
+        { iz1: 'l', iz2: 'ml', u: 'ml', faktor: 1000, maks2: 999 },
+        { iz1: 'dl', iz2: 'ml', u: 'ml', faktor: 100, maks2: 99 },
       ] as const)
       const v1 = ceoBroj(rng, 1, 9)
       const v2 = ceoBroj(rng, 1, par.maks2)
@@ -87,22 +95,34 @@ export const jedinice: TopicGenerator = {
         maxDistraktor: 10000,
       })
     }
-    // Ekspert: sabiranje dve mešovite dužine, npr. 2 m 35 cm + 1 m 80 cm = ? cm
-    const m1 = ceoBroj(rng, 1, 6)
-    const cm1 = ceoBroj(rng, 1, 99)
-    const m2 = ceoBroj(rng, 1, 6)
-    const cm2 = ceoBroj(rng, 1, 99)
-    const tacan = (m1 * 100 + cm1) + (m2 * 100 + cm2)
-    const signature = `jedinice:zbirmesovito:${m1}m${cm1}cm+${m2}m${cm2}cm`
+    // Ekspert: sabiranje dve mešovite veličine (dužina ili zapremina), npr.
+    // 2 m 35 cm + 1 m 80 cm = ? cm ili 3 l 495 ml + 2 l 800 ml = ? ml.
+    // maks1 je posebno stegnut za l→ml (faktor 1000) da zbir dva člana ne pređe
+    // opšti limit od 10000 za merne jedinice (test „svi rezultati u opsegu…").
+    const par = izaberi(rng, [
+      { iz1: 'm', iz2: 'cm', u: 'cm', faktor: 100, maks1: 9, maks2: 99 },
+      { iz1: 'l', iz2: 'dl', u: 'dl', faktor: 10, maks1: 9, maks2: 9 },
+      { iz1: 'l', iz2: 'cl', u: 'cl', faktor: 100, maks1: 9, maks2: 99 },
+      { iz1: 'l', iz2: 'ml', u: 'ml', faktor: 1000, maks1: 4, maks2: 999 },
+      { iz1: 'dl', iz2: 'ml', u: 'ml', faktor: 100, maks1: 9, maks2: 99 },
+    ] as const)
+    const v1a = ceoBroj(rng, 1, par.maks1)
+    const v2a = ceoBroj(rng, 1, par.maks2)
+    const v1b = ceoBroj(rng, 1, par.maks1)
+    const v2b = ceoBroj(rng, 1, par.maks2)
+    const zbir1 = v1a * par.faktor + v2a
+    const zbir2 = v1b * par.faktor + v2b
+    const tacan = zbir1 + zbir2
+    const signature = `jedinice:zbirmesovito:${v1a}${par.iz1}${v2a}${par.iz2}+${v1b}${par.iz1}${v2b}${par.iz2}`
     if (taken.has(signature)) return null
     return upakujRacun(cfg, rng, {
-      text: `Koliko je ${m1} m ${cm1} cm + ${m2} m ${cm2} cm izraženo u centimetrima?`,
+      text: `Koliko je ${v1a} ${par.iz1} ${v2a} ${par.iz2} + ${v1b} ${par.iz1} ${v2b} ${par.iz2} izraženo u jedinici ${par.u}?`,
       tacan,
-      kandidati: [(m1 + m2) * 10 + (cm1 + cm2), m1 * 100 + cm1 + m2 + cm2, tacan + 100, tacan - 100],
-      explanation: `${m1} m ${cm1} cm = ${m1 * 100 + cm1} cm, ${m2} m ${cm2} cm = ${m2 * 100 + cm2} cm. Zbir: ${m1 * 100 + cm1} + ${m2 * 100 + cm2} = ${tacan} cm.`,
-      hint: 'Prvo svaku dužinu pretvori u centimetre, pa ih saberi.',
+      kandidati: [(v1a + v1b) * 10 + (v2a + v2b), zbir1 + v1b + v2b, tacan + par.faktor, tacan - par.faktor],
+      explanation: `${v1a} ${par.iz1} ${v2a} ${par.iz2} = ${zbir1} ${par.u}, ${v1b} ${par.iz1} ${v2b} ${par.iz2} = ${zbir2} ${par.u}. Zbir: ${zbir1} + ${zbir2} = ${tacan} ${par.u}.`,
+      hint: `Prvo svaku veličinu pretvori u ${par.u}, pa ih saberi.`,
       signature,
-      sufiks: 'cm',
+      sufiks: par.u,
       maxDistraktor: 10000,
     })
   },
