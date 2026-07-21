@@ -1,0 +1,55 @@
+/* Generator pitanja — izbor oblasti kao čipovi/kartice + segmentirani izbori,
+   umesto gole liste checkbox-ova. */
+
+.gen-sekcija { margin-bottom: 1.6rem; }
+.gen-sekcija:last-child { margin-bottom: 0; }
+.gen-naslov { font-size: 0.85rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.03em; color: var(--boja-tekst-blagi); }
+
+/* ---------- Oblasti: čipovi sa ikonom ---------- */
+.gen-oblasti { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 0.6rem; }
+.gen-oblast {
+  position: relative;
+  display: flex; align-items: center; gap: 0.6rem;
+  padding: 0.7rem 0.85rem; min-height: 54px;
+  background: var(--boja-kartica); border: 2px solid var(--boja-ivica); border-radius: var(--radius);
+  cursor: pointer; font-weight: 700; font-size: 0.96rem; color: var(--boja-tekst);
+  transition: border-color 0.12s ease, background 0.12s ease, transform 0.08s ease;
+  user-select: none;
+}
+.gen-oblast:hover { border-color: var(--boja-primarna); }
+.gen-oblast:active { transform: scale(0.98); }
+.gen-oblast:has(input:focus-visible) { outline: 3px solid var(--boja-akcenat); outline-offset: 2px; }
+.gen-oblast input { position: absolute; opacity: 0; width: 0; height: 0; }
+.gen-oblast--izabrana { border-color: var(--boja-primarna); background: var(--boja-primarna-svetla); color: var(--boja-primarna-tamna); }
+.gen-oblast-ikona { font-size: 1.35rem; line-height: 1; flex-shrink: 0; }
+.gen-oblast-kvaka {
+  margin-left: auto; width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0;
+  border: 2px solid var(--boja-ivica); background: var(--boja-kartica);
+  display: flex; align-items: center; justify-content: center; font-size: 0.7rem; color: var(--boja-na-boji);
+}
+.gen-oblast--izabrana .gen-oblast-kvaka { background: var(--boja-primarna); border-color: var(--boja-primarna); }
+
+/* ---------- Segmentirani izbor (težina, tip pitanja) ---------- */
+.segment { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.segment-dugme {
+  flex: 1; min-width: 88px;
+  padding: 0.6rem 0.7rem; border-radius: var(--radius-mali); border: 2px solid var(--boja-ivica);
+  background: var(--boja-kartica); color: var(--boja-tekst); font-family: inherit;
+  font-weight: 700; font-size: 0.9rem; cursor: pointer; text-align: center;
+  transition: border-color 0.12s ease, background 0.12s ease, color 0.12s ease;
+}
+.segment-dugme:hover { border-color: var(--boja-primarna); }
+.segment-dugme:focus-visible { outline: 3px solid var(--boja-akcenat); outline-offset: 2px; }
+.segment-dugme--izabran { border-color: var(--boja-primarna); background: var(--boja-primarna); color: var(--boja-na-boji); }
+
+/* ---------- Rezime konfiguracije ---------- */
+.gen-rezime {
+  display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+  padding: 0.75rem 1rem; border-radius: var(--radius);
+  background: var(--boja-primarna-svetla); color: var(--boja-primarna-tamna); font-weight: 700;
+}
+
+@media (max-width: 640px) {
+  .gen-oblasti { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
+  .segment-dugme { min-width: 76px; font-size: 0.85rem; }
+}

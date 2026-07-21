@@ -63,6 +63,44 @@ export const PRIMERI_UVOZA: (string | number)[][] = [
   ['Rečnik', 'tekst', 'Napiši jedan sinonim za reč „radostan".', 'srećan|veseo', 2, 3, 'Sinonimi su reči sličnog značenja.', 'Razmisli kako se još može reći da je neko srećan.'],
 ]
 
+// ---------- automatsko kreiranje nepostojećih tema ----------
+
+// Napravi DB-bezbedan slug iz naziva teme, prefiksovan "srpski-" (ista konvencija
+// kao postojeće teme srpskog jezika) — koristi se pri automatskom kreiranju.
+export function napraviSlugTeme(naziv: string): string {
+  const osnova = normalizuj(naziv).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+  return `srpski-${osnova || 'tema'}`
+}
+
+// Nazivi tema iz CSV-a koji ne postoje medju oblastiSrpski (redosled prvog
+// pojavljivanja, bez duplikata) — kandidati za automatsko kreiranje pre uvoza.
+export function izdvojNepoznateTeme(redovi: string[][], oblastiSrpski: Oblast[]): string[] {
+  if (redovi.length === 0) return []
+  const zaglavlje = redovi[0].map(normalizuj)
+  const iTema = zaglavlje.indexOf('tema')
+  if (iTema === -1) return []
+
+  const poznate = new Set<string>()
+  for (const o of oblastiSrpski) {
+    poznate.add(normalizuj(o.slug))
+    poznate.add(normalizuj(o.name))
+  }
+
+  const vidjene = new Set<string>()
+  const nepoznate: string[] = []
+  for (let r = 1; r < redovi.length; r++) {
+    const red = redovi[r]
+    if (red.every((c) => c.trim() === '')) continue
+    const tema = (red[iTema] ?? '').trim()
+    if (!tema) continue
+    const norm = normalizuj(tema)
+    if (poznate.has(norm) || vidjene.has(norm)) continue
+    vidjene.add(norm)
+    nepoznate.push(tema)
+  }
+  return nepoznate
+}
+
 // ---------- mapiranje u pitanja ----------
 
 export interface GreskaUvoza {

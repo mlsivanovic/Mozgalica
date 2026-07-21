@@ -1,6 +1,6 @@
 // Testovi CSV uvoza pitanja za srpski jezik: parser + mapiranje redova
 import { describe, expect, it } from 'vitest'
-import { mapirajRedove, parsirajCsv } from './csvUvoz'
+import { izdvojNepoznateTeme, mapirajRedove, napraviSlugTeme, parsirajCsv } from './csvUvoz'
 import type { Oblast } from '../types/db'
 
 const OBLASTI: Oblast[] = [
@@ -147,5 +147,36 @@ describe('mapirajRedove', () => {
     const r = mapirajRedove([], OBLASTI)
     expect(r.validni).toHaveLength(0)
     expect(r.greske[0].poruka).toMatch(/prazan/)
+  })
+})
+
+describe('napraviSlugTeme', () => {
+  it('foldira dijakritike, malaslovi i spaja razmake crticom, uz srpski- prefiks', () => {
+    expect(napraviSlugTeme('Čitanje i razumevanje')).toBe('srpski-citanje-i-razumevanje')
+    expect(napraviSlugTeme('Šala & Žargon')).toBe('srpski-sala-zargon')
+  })
+
+  it('pada nazad na "tema" kad naziv ne ostavi nijedan alfanumerički karakter', () => {
+    expect(napraviSlugTeme('!!!')).toBe('srpski-tema')
+  })
+})
+
+describe('izdvojNepoznateTeme', () => {
+  it('vraća nepoznate teme jednom, redosledom prvog pojavljivanja', () => {
+    const csv = [
+      ZAGLAVLJE,
+      'Istorija;tekst;Pitanje 1?;;;;;',
+      'Gramatika;tacno-netacno;Pitanje 2?;tacno;;;;',
+      'Geografija;tekst;Pitanje 3?;;;;;',
+      'ISTORIJA;tekst;Pitanje 4?;;;;;', // isto kao red 1, samo drugo veliko/malo slovo
+    ].join('\n')
+    expect(izdvojNepoznateTeme(parsirajCsv(csv), OBLASTI)).toEqual(['Istorija', 'Geografija'])
+  })
+
+  it('vraća praznu listu kad su sve teme poznate ili fajl nema kolonu tema', () => {
+    const csv = [ZAGLAVLJE, 'Gramatika;tekst;Pitanje?;;;;;'].join('\n')
+    expect(izdvojNepoznateTeme(parsirajCsv(csv), OBLASTI)).toEqual([])
+    expect(izdvojNepoznateTeme(parsirajCsv('pitanje\nBez teme?'), OBLASTI)).toEqual([])
+    expect(izdvojNepoznateTeme([], OBLASTI)).toEqual([])
   })
 })

@@ -1,7 +1,7 @@
 // Tipizirani pozivi ka Supabase-u: tabele za admina, RPC funkcije za dete
 import type {
   AdminPodesavanja, Kviz, KvizLink, KvizPitanje, Oblast, OdgovorDeteta, Pitanje, Pokusaj,
-  PokusajOdgovor,
+  PokusajOdgovor, Predmet,
 } from '../types/db'
 import type { KvizMeta, PokusajPayload, RezultatPayload, SavePotvrda, SavetPayload } from '../types/kviz'
 import { SEED_PITANJA } from '../data/seedPitanja'
@@ -21,9 +21,11 @@ export async function listajOblasti(): Promise<Oblast[]> {
   return data as Oblast[]
 }
 
-export async function dodajOblast(name: string, slug: string): Promise<void> {
-  const { error } = await supabase().from('topics').insert({ name, slug, sort_order: 100 })
+export async function dodajOblast(name: string, slug: string, subject: Predmet = 'matematika'): Promise<Oblast> {
+  const { data, error } = await supabase()
+    .from('topics').insert({ name, slug, sort_order: 100, subject }).select('*').single()
   if (error) throw new Error(opisiGresku(error)!)
+  return data as Oblast
 }
 
 // Umeće početnih 30 primera pitanja (po dva za svaku oblast), vlasnik = trenutni admin.

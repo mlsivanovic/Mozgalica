@@ -1,8 +1,15 @@
 // Sadržaj modala za CSV uvoz pitanja srpskog jezika u banku pitanja.
-import { useState, type ChangeEvent } from 'react'
-import { upisiPitanjaUvoz } from '../../lib/api'
+// Teme iz CSV-a koje još ne postoje se automatski kreiraju pri uvozu (subject
+// 'srpski') — pregled ih unapred prikazuje preko privremenih placeholder ID-jeva
+// ('novo:...') koji se NIKAD ne šalju bazi; stvarni uvoz uvek ponovo mapira
+// redove sa pravim ID-jevima dobijenim iz dodajOblast.
+import { useMemo, useState, type ChangeEvent } from 'react'
+import { dodajOblast, upisiPitanjaUvoz } from '../../lib/api'
 import { napraviCsv, preuzmiCsv } from '../../lib/csv'
-import { mapirajRedove, parsirajCsv, PRIMERI_UVOZA, ZAGLAVLJA_UVOZA, type RezultatMapiranja } from '../../lib/csvUvoz'
+import {
+  izdvojNepoznateTeme, mapirajRedove, napraviSlugTeme, parsirajCsv, PRIMERI_UVOZA,
+  ZAGLAVLJA_UVOZA,
+} from '../../lib/csvUvoz'
 import type { Oblast } from '../../types/db'
 
 interface Props {
@@ -12,10 +19,25 @@ interface Props {
 }
 
 export function UvozCsv({ oblastiSrpski, onZatvori, onUvezeno }: Props) {
-  const [rezultat, setRezultat] = useState<RezultatMapiranja | null>(null)
+  const [redovi, setRedovi] = useState<string[][] | null>(null)
   const [imeFajla, setImeFajla] = useState<string | null>(null)
   const [greska, setGreska] = useState<string | null>(null)
   const [uvozi, setUvozi] = useState(false)
+
+  const nepoznateTeme = useMemo(
+    () => redovi ? izdvojNepoznateTeme(redovi, oblastiSrpski) : [],
+    [redovi, oblastiSrpski],
+  )
+
+  // Placeholder oblasti SAMO za pregled, da redovi sa novim temama ne ispadnu
+  // kao greška pre nego što teme zaista postoje u bazi.
+  const rezultat = useMemo(() => {
+    if (!redovi) return null
+    const placeholderi: Oblast[] = nepoznateTeme.map((naziv) => ({
+      id: `novo:${naziv}`, slug: napraviSlugTeme(naziv), name: naziv, sort_order: 100, subject: 'srpski',
+    }))
+    return mapirajRedove(redovi, [...oblastiSrpski, ...placeholderi])
+  }, [redovi, oblastiSrpski, nepoznateTeme])
 
   function preuzmiSablon() {
     preuzmiCsv('mozgalica-sablon-uvoz-srpski.csv', napraviCsv(ZAGLAVLJA_UVOZA, PRIMERI_UVOZA))
@@ -26,23 +48,36 @@ export function UvozCsv({ oblastiSrpski, onZatvori, onUvezeno }: Props) {
     e.target.value = '' // dozvoljava ponovni izbor istog fajla posle ispravke
     if (!fajl) return
     setGreska(null)
-    setRezultat(null)
+    setRedovi(null)
     setImeFajla(fajl.name)
     try {
       const tekst = await fajl.text()
-      setRezultat(mapirajRedove(parsirajCsv(tekst), oblastiSrpski))
+      setRedovi(parsirajCsv(tekst))
     } catch (err) {
       setGreska(`Nije uspelo čitanje fajla: ${String((err as Error).message ?? err)}`)
     }
   }
 
   async function uvezi() {
-    if (!rezultat || rezultat.validni.length === 0) return
+    if (!redovi || !rezultat || rezultat.validni.length === 0) return
     setUvozi(true)
     setGreska(null)
     try {
-      const broj = await upisiPitanjaUvoz(rezultat.validni)
-      alert(`Uvezeno je ${broj} pitanja.`)
+      let sveOblasti = oblastiSrpski
+      if (nepoznateTeme.length > 0) {
+        const novoKreirane: Oblast[] = []
+        for (const naziv of nepoznateTeme) {
+          novoKreirane.push(await dodajOblast(naziv, napraviSlugTeme(naziv), 'srpski'))
+        }
+        sveOblasti = [...oblastiSrpski, ...novoKreirane]
+      }
+      // Ponovo mapiraj sa STVARNIM ID-jevima (nikad sa placeholder pregledom).
+      const finalno = mapirajRedove(redovi, sveOblasti)
+      const broj = await upisiPitanjaUvoz(finalno.validni)
+      alert(
+        `Uvezeno je ${broj} pitanja`
+        + (nepoznateTeme.length > 0 ? ` i kreirano ${nepoznateTeme.length} novih tema (${nepoznateTeme.join(', ')}).` : '.'),
+      )
       onUvezeno()
     } catch (e) {
       setGreska(String((e as Error).message ?? e))
@@ -56,12 +91,13 @@ export function UvozCsv({ oblastiSrpski, onZatvori, onUvezeno }: Props) {
       <p className="blago razmak-dole">
         Uvezi pitanja srpskog jezika iz CSV fajla. Podržana su samo dva tipa: <strong>tekst</strong> (otvoren
         odgovor koji ručno ocenjuje administrator) i <strong>tacno-netacno</strong> (ocenjuje se automatski).
-        Obavezne kolone: <code>tema</code> (naziv ili slug postojeće teme srpskog jezika), <code>tip</code>{' '}
-        (<code>tekst</code> ili <code>tacno-netacno</code>), <code>pitanje</code>, <code>odgovor</code>. Opcione:{' '}
-        <code>poeni</code> (podrazumevano 1), <code>tezina</code> (1–5, podrazumevano 3), <code>objasnjenje</code>,{' '}
-        <code>hint</code>. Za tip <code>tekst</code> je <code>odgovor</code> opcioni referentni odgovor koji admin
-        vidi pri ocenjivanju (više varijanti razdvoj znakom „|"). Za <code>tacno-netacno</code>, odgovor mora biti
-        tačno „tacno" ili „netacno".
+        Obavezne kolone: <code>tema</code> (naziv ili slug teme srpskog jezika — <strong>ako tema ne postoji,
+        biće automatski kreirana</strong>), <code>tip</code> (<code>tekst</code> ili <code>tacno-netacno</code>),
+        {' '}<code>pitanje</code>, <code>odgovor</code>. Opcione: <code>poeni</code> (podrazumevano 1),
+        {' '}<code>tezina</code> (1–5, podrazumevano 3), <code>objasnjenje</code>, <code>hint</code>. Za tip{' '}
+        <code>tekst</code> je <code>odgovor</code> opcioni referentni odgovor koji admin vidi pri ocenjivanju
+        (više varijanti razdvoj znakom „|"). Za <code>tacno-netacno</code>, odgovor mora biti tačno „tacno" ili
+        {' '}„netacno".
       </p>
 
       <button type="button" className="dugme dugme--senka razmak-dole" onClick={preuzmiSablon}>
@@ -81,6 +117,14 @@ export function UvozCsv({ oblastiSrpski, onZatvori, onUvezeno }: Props) {
             <strong>{imeFajla}</strong> — {rezultat.validni.length} spremno za uvoz
             {rezultat.greske.length > 0 && `, ${rezultat.greske.length} sa greškom`}.
           </p>
+
+          {nepoznateTeme.length > 0 && (
+            <p className="poruka poruka--upozorenje razmak-dole">
+              🆕 {nepoznateTeme.length === 1 ? 'Nova tema' : 'Nove teme'} koje ne postoje u aplikaciji —{' '}
+              {nepoznateTeme.length === 1 ? 'biće kreirana' : 'biće kreirane'} automatski pri uvozu:{' '}
+              <strong>{nepoznateTeme.join(', ')}</strong>.
+            </p>
+          )}
 
           {rezultat.pregled.length > 0 && (
             <div className="tabela-omot" style={{ maxHeight: 300 }}>
