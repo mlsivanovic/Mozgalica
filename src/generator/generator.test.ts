@@ -149,6 +149,8 @@ describe('matematička pravila po oblastima', () => {
 describe('single-choice opcije i distraktori', () => {
   it('svaka single opcija je jedinstvena i tačan odgovor postoji među opcijama', () => {
     for (const oblast of podrzaneOblasti()) {
+      // Rimski brojevi su uvek otvoren unos (numeric/text) — 'single' se namerno ignoriše
+      if (oblast === 'rimski-brojevi') continue
       for (const tezina of TEZINE) {
         for (let seed = 0; seed < 15; seed++) {
           const r = generisi(cfg({ topicSlug: oblast, difficulty: tezina, seed, count: 4, type: 'single' }))
@@ -331,6 +333,53 @@ describe('nivoi 4 i 5 (Vrlo teško / Ekspert)', () => {
         expect(tacnaVrednost(p)).toBe(ocekivano)
         expect(p.text).toContain(uRimski(x))
         expect(p.text).toContain(uRimski(y))
+      }
+    }
+  })
+
+  it('poređenje brojeva: leva i desna strana se razlikuju za najviše 3', () => {
+    function izracunajStranu(prikaz: string): number {
+      const delovi = prikaz.split(' ')
+      if (delovi.length === 1) return Number(delovi[0])
+      if (delovi.length === 3) {
+        const [a, op, b] = delovi
+        const x = Number(a); const y = Number(b)
+        if (op === '+') return x + y
+        if (op === '−') return x - y
+        return x * y
+      }
+      const [a, op1, b, op2, c] = delovi
+      const baza = op1 === '·' ? Number(a) * Number(b) : Number(a) + Number(b)
+      return op2 === '+' ? baza + Number(c) : baza - Number(c)
+    }
+    for (const tezina of TEZINE) {
+      for (let seed = 0; seed < 20; seed++) {
+        const r = generisi(cfg({ topicSlug: 'poredjenje-brojeva', difficulty: tezina, seed, count: 6, type: 'single' }))
+        for (const p of r.questions) {
+          const m = p.signature.match(/^poredjenje:(.+)\?(.+)$/)
+          expect(m, p.signature).toBeTruthy()
+          const [, levoStr, desnoStr] = m!
+          const razlika = Math.abs(izracunajStranu(levoStr) - izracunajStranu(desnoStr))
+          expect(razlika, p.signature).toBeLessThanOrEqual(3)
+        }
+      }
+    }
+  })
+
+  it('rimski: nikad ponuđeni odgovori, uvek otvoren unos (numeric ili text)', () => {
+    for (const tezina of TEZINE) {
+      for (let seed = 0; seed < 15; seed++) {
+        // Tražimo 'single' eksplicitno — mora biti ignorisano za ovu oblast
+        const r = generisi(cfg({ topicSlug: 'rimski-brojevi', difficulty: tezina, seed, count: 6, type: 'single' }))
+        for (const p of r.questions) {
+          expect(['numeric', 'text']).toContain(p.type)
+          expect(p.options).toBeNull()
+          if (p.type === 'text') {
+            const prihvaceni = (p.correct as { accept: string[] }).accept
+            expect(prihvaceni.length).toBeGreaterThan(0)
+            expect(/^[IVXLCDM]+$/.test(prihvaceni[0])).toBe(true)
+          }
+        }
       }
     }
   })

@@ -1,7 +1,7 @@
 // Rešavanje kviza: autosave, offline red, tajmer, upozorenje pre predaje.
 // Predaja se otključava tek kada server potvrdi da su svi odgovori sačuvani.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Tajmer } from '../../components/Tajmer'
 import { Loader, ProgresTraka, TemaDugme } from '../../components/Zajednicke'
 import { PitanjeRenderer, odgovorJePrazan } from '../../components/pitanja/PitanjeRenderer'
@@ -194,7 +194,10 @@ export function KvizResavanje() {
   return (
     <div className="sadrzaj sadrzaj--usko" style={{ paddingBottom: '5rem' }}>
       <div className="red red--razmak razmak-dole">
-        <h1 style={{ fontSize: '1.2rem' }}>{stanje.childName || 'Rešavanje kviza'}</h1>
+        <div className="red">
+          <Link to={`/kviz/${token}`} className="dugme dugme--senka dugme--malo">🏠 Početna</Link>
+          <h1 style={{ fontSize: '1.2rem' }}>{stanje.childName || 'Rešavanje kviza'}</h1>
+        </div>
         <div className="red">
           {deadlineAt && (
             <Tajmer deadlineAt={deadlineAt} serverOffsetMs={serverOffsetMs} onIstek={predajOdmah} />

@@ -1,6 +1,6 @@
 // Generator: konvertovanje arapskih brojeva u rimske i obrnuto
-import type { Opcija, Tezina } from '../../types/db'
-import { ceoBroj, izaberi, promesaj, type Rng } from '../random'
+import type { Tezina } from '../../types/db'
+import { ceoBroj, izaberi, type Rng } from '../random'
 import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types'
 import { poeniZaTezinu, upakujRacun } from './zajednicko'
 
@@ -8,11 +8,6 @@ const VREDNOSTI: [number, string][] = [
   [1000, 'M'], [900, 'CM'], [500, 'D'], [400, 'CD'],
   [100, 'C'], [90, 'XC'], [50, 'L'], [40, 'XL'],
   [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I'],
-]
-
-// Isključivo aditivne vrednosti (bez pravila oduzimanja) — za pravljenje "naivnog" pogrešnog zapisa
-const VREDNOSTI_ADITIVNO: [number, string][] = [
-  [1000, 'M'], [500, 'D'], [100, 'C'], [50, 'L'], [10, 'X'], [5, 'V'], [1, 'I'],
 ]
 
 const VREDNOST_ZNAKA: Record<string, number> = { I: 1, V: 5, X: 10, L: 50, C: 100, D: 500, M: 1000 }
@@ -46,18 +41,6 @@ function naivnoIzRimskog(s: string): number {
   return zbir
 }
 
-function naivnoURimski(n: number): string {
-  let ostatak = n
-  let rezultat = ''
-  for (const [vrednost, simbol] of VREDNOSTI_ADITIVNO) {
-    while (ostatak >= vrednost) {
-      rezultat += simbol
-      ostatak -= vrednost
-    }
-  }
-  return rezultat
-}
-
 function opsegZaTezinu(t: Tezina): [number, number] {
   if (t === 1) return [1, 20]
   if (t === 2) return [1, 100]
@@ -76,7 +59,9 @@ function brojSaSuptraktivnim(rng: Rng): number {
 
 export const rimski: TopicGenerator = {
   slug: 'rimski-brojevi',
-  supportedTypes: ['numeric', 'single'],
+  // Uvek otvoren unos (numeric/text) — ponuđeni odgovori nikad se ne koriste,
+  // jer bi izgled rimskog zapisa bio lako "pogoditi" bez pravog računanja.
+  supportedTypes: ['numeric', 'text'],
   supportsWordProblems: false,
 
   generateOne(cfg: GeneratorConfig, rng: Rng, taken: Set<string>): GenerisanoPitanje | null {
@@ -94,7 +79,7 @@ export const rimski: TopicGenerator = {
       if (taken.has(signature)) return null
       const rimskiX = uRimski(x)
       const rimskiY = uRimski(y)
-      return upakujRacun(cfg, rng, {
+      return upakujRacun({ ...cfg, type: 'numeric' }, rng, {
         text: `Izračunaj i upiši rezultat kao običan broj: ${rimskiX} ${minus ? '−' : '+'} ${rimskiY} = ?`,
         tacan,
         kandidati: [naivnoIzRimskog(rimskiX) + (minus ? -y : y), tacan + 1, tacan - 1, tacan + 10],
@@ -113,7 +98,7 @@ export const rimski: TopicGenerator = {
     const rimskiOblik = uRimski(n)
 
     if (rimskiUArapski) {
-      return upakujRacun(cfg, rng, {
+      return upakujRacun({ ...cfg, type: 'numeric' }, rng, {
         text: `Koji je arapski broj zapisan rimskim brojem ${rimskiOblik}?`,
         tacan: n,
         kandidati: [naivnoIzRimskog(rimskiOblik), n + 1, n - 1],
@@ -123,30 +108,13 @@ export const rimski: TopicGenerator = {
       })
     }
 
-    // Arapski → rimski: odgovor je STRING, ne broj — ručno single-choice (kao poredjenje.ts),
-    // jer upakujRacun/napraviDistraktore rade samo sa brojevima
-    const kandidatiRimski = new Set<string>()
-    const dodaj = (s: string) => { if (s !== rimskiOblik) kandidatiRimski.add(s) }
-    dodaj(naivnoURimski(n))
-    for (const delta of [1, -1, 2, -2, 10, -10]) {
-      if (kandidatiRimski.size >= 5) break
-      const kandidatN = n + delta
-      if (kandidatN >= min && kandidatN <= max) dodaj(uRimski(kandidatN))
-    }
-    if (rimskiOblik.length >= 2) {
-      dodaj(rimskiOblik.slice(0, -2) + rimskiOblik.slice(-1) + rimskiOblik.slice(-2, -1))
-    }
-
-    const distraktoriRimski = [...kandidatiRimski].slice(0, 3)
-    const opcijeVrednosti = promesaj(rng, [rimskiOblik, ...distraktoriRimski])
-    const options: Opcija[] = opcijeVrednosti.map((v, i) => ({ id: `o${i + 1}`, text: v }))
-    const correctId = options[opcijeVrednosti.indexOf(rimskiOblik)].id
-
+    // Arapski → rimski: odgovor je STRING (rimski zapis) — uvek otvoren tekstualni unos,
+    // nikad ponuđeni odgovori (lako bi bilo "pogoditi" izgled rimskog zapisa bez računanja).
     return {
-      type: 'single',
+      type: 'text',
       text: `Kako se broj ${n} zapisuje rimskim brojevima?`,
-      options,
-      correct: { optionId: correctId },
+      options: null,
+      correct: { accept: [rimskiOblik] },
       explanation: `${n} = ${rimskiOblik}`,
       hint: 'Veći znakovi idu prvi; manji znak ispred većeg se oduzima.',
       points: poeniZaTezinu(cfg.difficulty),

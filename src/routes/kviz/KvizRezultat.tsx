@@ -116,7 +116,7 @@ export function KvizRezultat() {
       )}
 
       <p className="centar razmak-gore">
-        <Link to="/">Nazad na početnu</Link>
+        <Link to={`/kviz/${token}`}>🏠 Nazad na početnu</Link>
       </p>
     </div>
   )
