@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   nesinhronizovani, obrisiStanje, oznaciSinhronizovane, sveSinhronizovano,
-  ucitajStanje, upisiOdgovor, zapocniStanje, type Skladiste,
+  ucitajStanje, upisiHint, upisiOdgovor, zapocniStanje, type Skladiste,
 } from './offlineQueue'
 
 function memorijskoSkladiste(): Skladiste {
@@ -75,5 +75,35 @@ describe('offline red', () => {
     zapocniStanje(s, 'kviz1', 't', 'Vuk')
     obrisiStanje(s, 'kviz1')
     expect(ucitajStanje(s, 'kviz1')).toBeNull()
+  })
+
+  it('otključan savet se čuva lokalno i preživljava ponovno učitavanje', () => {
+    const s = memorijskoSkladiste()
+    let stanje = zapocniStanje(s, 'kvizH', 't', 'Nina')
+    stanje = upisiHint(s, 'kvizH', stanje, 'q1', 'Seti se tablice množenja.', 1)
+    expect(stanje.hintsUsed).toBe(1)
+    expect(stanje.hintovi?.q1).toBe('Seti se tablice množenja.')
+
+    const posleRefresha = ucitajStanje(s, 'kvizH')
+    expect(posleRefresha?.hintsUsed).toBe(1)
+    expect(posleRefresha?.hintovi?.q1).toBe('Seti se tablice množenja.')
+  })
+
+  it('drugi otključan savet se dodaje uz prvi, ne zamenjuje ga', () => {
+    const s = memorijskoSkladiste()
+    let stanje = zapocniStanje(s, 'kvizH2', 't', 'Filip')
+    stanje = upisiHint(s, 'kvizH2', stanje, 'q1', 'Savet 1', 1)
+    stanje = upisiHint(s, 'kvizH2', stanje, 'q2', 'Savet 2', 2)
+    expect(stanje.hintsUsed).toBe(2)
+    expect(stanje.hintovi).toEqual({ q1: 'Savet 1', q2: 'Savet 2' })
+  })
+
+  it('staro sačuvano stanje bez polja za savete se i dalje ispravno učitava', () => {
+    const s = memorijskoSkladiste()
+    s.setItem('mozgalica:pokusaj:star', JSON.stringify({ attemptToken: 't', childName: 'A', answers: {} }))
+    const ucitano = ucitajStanje(s, 'star')
+    expect(ucitano?.attemptToken).toBe('t')
+    expect(ucitano?.hintsUsed).toBeUndefined()
+    expect(ucitano?.hintovi).toBeUndefined()
   })
 })

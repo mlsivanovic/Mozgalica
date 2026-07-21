@@ -1,0 +1,114 @@
+/* Dečji doživljaj kviza: maskota, čipovi, animacije. Sve animacije poštuju
+   prefers-reduced-motion — deca sa osetljivošću na pokret dobijaju statičan prikaz. */
+
+/* ---------- Ulazna strana ---------- */
+.kviz-maskota {
+  font-size: 3.2rem; text-align: center;
+  animation: kviz-skoci 2.2s ease-in-out infinite;
+}
+.kviz-kartica-uvod {
+  position: relative; overflow: hidden;
+}
+.kviz-kartica-uvod::before {
+  content: ''; position: absolute; inset: 0 0 auto 0; height: 6px;
+  background: linear-gradient(90deg, var(--boja-primarna), var(--boja-akcenat), var(--boja-uspeh));
+}
+.kviz-cipovi {
+  display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;
+  margin: 0.9rem 0;
+}
+.kviz-cip {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  background: var(--boja-primarna-svetla); color: var(--boja-primarna-tamna);
+  font-weight: 700; font-size: 0.9rem; padding: 0.35rem 0.8rem; border-radius: 999px;
+}
+
+/* ---------- Rešavanje ---------- */
+.kviz-broj {
+  width: 44px; height: 44px; padding: 0; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-weight: 700; border: 2px solid var(--boja-ivica);
+  background: var(--boja-kartica); color: var(--boja-tekst);
+  transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+.kviz-broj:hover { transform: scale(1.08); }
+.kviz-broj--trenutno { background: var(--boja-primarna); color: var(--boja-na-boji); border-color: transparent; }
+.kviz-broj--odgovoreno { background: var(--boja-uspeh); color: var(--boja-na-boji); border-color: transparent; }
+
+.kviz-pitanje-kartica {
+  animation: kviz-uklizi 0.35s ease;
+}
+.kviz-pitanje-tekst { font-size: 1.35rem; line-height: 1.35; }
+
+.kviz-savet-dugme {
+  border-radius: 999px !important;
+  background: var(--boja-upozorenje-svetla) !important; color: var(--boja-upozorenje) !important;
+  border: 2px solid transparent !important;
+}
+.kviz-savet-dugme:hover:not(:disabled) { border-color: var(--boja-upozorenje) !important; }
+.kviz-savet-tekst {
+  background: var(--boja-upozorenje-svetla); color: var(--boja-upozorenje);
+  padding: 0.7rem 0.9rem; border-radius: var(--radius); font-weight: 600;
+}
+.kviz-saveti-bedz { background: var(--boja-upozorenje-svetla); color: var(--boja-upozorenje); }
+
+/* ---------- Rezultat ---------- */
+.kviz-zvezde { font-size: 2.6rem; }
+.kviz-zvezde span {
+  display: inline-block; opacity: 0; transform: scale(0.3) rotate(-15deg);
+  animation: kviz-zvezda-uleti 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+.kviz-zvezde span:nth-child(1) { animation-delay: 0.05s; }
+.kviz-zvezde span:nth-child(2) { animation-delay: 0.2s; }
+.kviz-zvezde span:nth-child(3) { animation-delay: 0.35s; }
+
+.kviz-krug-rezultat {
+  width: 132px; height: 132px; margin: 0.6rem auto; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; flex-direction: column;
+  background: conic-gradient(var(--boja-uspeh) calc(var(--procenat, 0) * 1%), var(--boja-neutral) 0);
+}
+.kviz-krug-rezultat-unutra {
+  width: 108px; height: 108px; border-radius: 50%; background: var(--boja-kartica);
+  display: flex; align-items: center; justify-content: center; flex-direction: column;
+}
+.kviz-krug-rezultat-broj { font-size: 1.6rem; font-weight: 800; line-height: 1.1; }
+
+.kviz-tacnost-cipovi { display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; }
+
+.kviz-konfete {
+  position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 5;
+}
+.kviz-konfete span {
+  position: absolute; top: -5vh; left: var(--x, 50%);
+  width: 9px; height: 14px; background: var(--boja, var(--boja-akcenat));
+  animation: kviz-pada 2.4s var(--kasnjenje, 0s) ease-in forwards;
+  border-radius: 2px;
+}
+
+@keyframes kviz-skoci {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+@keyframes kviz-uklizi {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes kviz-zvezda-uleti {
+  to { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+@keyframes kviz-pada {
+  from { transform: translateY(0) rotate(0deg); opacity: 1; }
+  to { transform: translateY(105vh) rotate(360deg); opacity: 0.9; }
+}
+
+@media (max-width: 640px) {
+  .kviz-navigacija { flex-wrap: nowrap; }
+  .kviz-navigacija .dugme { flex: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kviz-maskota, .kviz-pitanje-kartica, .kviz-zvezde span, .kviz-konfete span {
+    animation: none !important;
+  }
+  .kviz-zvezde span { opacity: 1; transform: none; }
+}

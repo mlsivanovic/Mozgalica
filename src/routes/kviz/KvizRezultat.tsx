@@ -1,14 +1,15 @@
 // Prikaz rezultata detetu — poziva submit_attempt ponovo (idempotentno) preko
 // sačuvanog attemptToken-a, pa je stranica bezbedna i posle osvežavanja (F5)
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type CSSProperties } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { PitanjeRenderer } from '../../components/pitanja/PitanjeRenderer'
-import { Loader } from '../../components/Zajednicke'
+import { Konfete, Loader } from '../../components/Zajednicke'
 import { predajKviz } from '../../lib/api'
 import { obrisiStanje, ucitajStanje } from '../../lib/offlineQueue'
 import { brojZvezdica, porukaOhrabrenja } from '../../lib/ocena'
 import { formatProcenat } from '../../lib/format'
 import type { RezultatPayload } from '../../types/kviz'
+import './kviz.css'
 
 export function KvizRezultat() {
   const { token = '' } = useParams<{ token: string }>()
@@ -52,17 +53,30 @@ export function KvizRezultat() {
     navigate(`/kviz/${token}`)
   }
 
+  const polozio = rezultat.passed ?? false
+  const procenat = Math.round(rezultat.scorePct ?? 0)
+
   return (
     <div className="sadrzaj sadrzaj--usko" style={{ paddingBottom: '3rem' }}>
+      {polozio && <Konfete />}
       <div className="kartica centar">
-        <div style={{ fontSize: '2.4rem' }}>
-          {'⭐'.repeat(zvezdice)}{'☆'.repeat(3 - zvezdice)}
+        <div className="kviz-zvezde" aria-label={`${zvezdice} od 3 zvezdice`}>
+          {Array.from({ length: 3 }, (_, i) => (
+            <span key={i}>{i < zvezdice ? '⭐' : '☆'}</span>
+          ))}
         </div>
-        <h1>{formatProcenat(rezultat.scorePct)}</h1>
+
+        <div className="kviz-krug-rezultat" style={{ '--procenat': procenat } as CSSProperties}>
+          <div className="kviz-krug-rezultat-unutra">
+            <span className="kviz-krug-rezultat-broj">{formatProcenat(rezultat.scorePct)}</span>
+          </div>
+        </div>
+
         <p className="blago">{rezultat.totalPoints} / {rezultat.maxPoints} poena</p>
-        <p className="malo blago">
-          {rezultat.correctCount} tačnih · {rezultat.incorrectCount} netačnih
-        </p>
+        <div className="kviz-tacnost-cipovi razmak-gore">
+          <span className="bedz bedz--uspeh">✓ {rezultat.correctCount} tačnih</span>
+          <span className="bedz bedz--greska">✗ {rezultat.incorrectCount} netačnih</span>
+        </div>
         <p className="razmak-gore" style={{ fontSize: '1.1rem', fontWeight: 700 }}>
           {porukaOhrabrenja(rezultat.scorePct ?? 0, rezultat.passThresholdPct ?? 50)}
         </p>
@@ -83,7 +97,9 @@ export function KvizRezultat() {
                 key={q.id} className="kartica"
                 style={{ borderLeft: `5px solid ${q.isCorrect ? 'var(--boja-uspeh)' : 'var(--boja-greska)'}` }}
               >
-                <p className="malo blago">Pitanje {i + 1} · {q.awardedPoints} / {q.points} poena</p>
+                <p className="malo blago">
+                  {q.isCorrect ? '✓' : '✗'} Pitanje {i + 1} · {q.awardedPoints} / {q.points} poena
+                </p>
                 <p style={{ fontWeight: 700 }}>{q.text}</p>
                 <div className="razmak-gore">
                   <PitanjeRenderer pitanje={q} value={q.answer} onChange={() => {}} disabled />

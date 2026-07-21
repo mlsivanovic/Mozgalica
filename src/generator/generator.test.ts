@@ -7,7 +7,7 @@ import type { GeneratorConfig, GenerisanoPitanje } from './types'
 import { bezPozajmice, bezPrenosa, napraviDistraktore, zamenaCifara } from './distraktori'
 import { izRimskog, uRimski } from './moduli/rimski'
 
-const TEZINE = [1, 2, 3] as const
+const TEZINE = [1, 2, 3, 4, 5] as const
 
 function cfg(delimicno: Partial<GeneratorConfig>): GeneratorConfig {
   return {
@@ -58,9 +58,10 @@ describe('matematička pravila po oblastima', () => {
     }
   })
 
-  it('sabiranje težine 2 i 3 ima više sabiraka i rezultat do 1000', () => {
-    for (const tezina of [2, 3] as const) {
-      const ocekivanoSabiraka = tezina === 2 ? 3 : 4
+  it('sabiranje težine 2–5 ima sve više sabiraka i rezultat do 1000', () => {
+    const ocekivanoPoTezini: Record<number, number> = { 2: 3, 3: 4, 4: 5, 5: 6 }
+    for (const tezina of [2, 3, 4, 5] as const) {
+      const ocekivanoSabiraka = ocekivanoPoTezini[tezina]
       for (let seed = 0; seed < 30; seed++) {
         const r = generisi(cfg({ seed, difficulty: tezina, count: 5, type: 'numeric' }))
         for (const p of r.questions) {
@@ -85,14 +86,15 @@ describe('matematička pravila po oblastima', () => {
     }
   })
 
-  it('oduzimanje težine 1 nema pozajmicu; težine 2 i 3 su lanac koji nikad ne postane negativan', () => {
+  it('oduzimanje težine 1 nema pozajmicu; težine 2–5 su lanac koji nikad ne postane negativan', () => {
+    const ocekivanoPoTezini: Record<number, number> = { 2: 3, 3: 4, 4: 5, 5: 6 }
     for (let seed = 0; seed < 30; seed++) {
       for (const p of generisi(cfg({ topicSlug: 'oduzimanje', seed, count: 5, type: 'numeric' })).questions) {
         const [a, b] = p.signature.replace('oduzimanje:', '').split('-').map(Number)
         expect(bezPozajmice(a, b)).toBe(a - b)
       }
-      for (const tezina of [2, 3] as const) {
-        const ocekivanoOperanada = tezina === 2 ? 3 : 4
+      for (const tezina of [2, 3, 4, 5] as const) {
+        const ocekivanoOperanada = ocekivanoPoTezini[tezina]
         const r = generisi(cfg({ topicSlug: 'oduzimanje', difficulty: tezina, seed, count: 5, type: 'numeric' }))
         for (const p of r.questions) {
           const operandi = p.signature.replace('oduzimanje:', '').split('-').map(Number)
@@ -279,5 +281,94 @@ describe('nove oblasti — čista matematika', () => {
         expect(v).toBeLessThanOrEqual(1000)
       }
     }
+  })
+})
+
+describe('nivoi 4 i 5 (Vrlo teško / Ekspert)', () => {
+  it('mnozenje t4 koristi dva dvocifrena činioca; t5 tri činioca sa dva dvocifrena', () => {
+    for (let seed = 0; seed < 20; seed++) {
+      for (const p of generisi(cfg({ topicSlug: 'mnozenje', difficulty: 4, seed, count: 5, type: 'numeric' })).questions) {
+        const cinioci = p.signature.replace('mnozenje:', '').split('x').map(Number)
+        expect(cinioci).toHaveLength(2)
+        expect(cinioci.every((c) => c >= 11)).toBe(true)
+      }
+      for (const p of generisi(cfg({ topicSlug: 'mnozenje', difficulty: 5, seed, count: 5, type: 'numeric' })).questions) {
+        const cinioci = p.signature.replace('mnozenje:', '').split('x').map(Number)
+        expect(cinioci).toHaveLength(3)
+        expect(cinioci.filter((c) => c >= 11).length).toBeGreaterThanOrEqual(2)
+      }
+    }
+  })
+
+  it('deljenje t4/t5 nikad nema ostatak i koristi dvocifreni delilac', () => {
+    for (let seed = 0; seed < 20; seed++) {
+      for (const tezina of [4, 5] as const) {
+        const r = generisi(cfg({ topicSlug: 'deljenje', difficulty: tezina, seed, count: 5, type: 'numeric' }))
+        for (const p of r.questions) {
+          const brojevi = p.signature.replace('deljenje:', '').split(':').map(Number)
+          const [deljenik, ...delioci] = brojevi
+          expect(delioci[0]).toBeGreaterThanOrEqual(11)
+          let medjurezultat = deljenik
+          for (const d of delioci) {
+            expect(medjurezultat % d).toBe(0)
+            medjurezultat /= d
+          }
+        }
+      }
+    }
+  })
+
+  it('rimski t5 (aritmetika): tekst sadrži rimske brojeve, rezultat je tačan zbir/razlika', () => {
+    for (let seed = 0; seed < 20; seed++) {
+      const r = generisi(cfg({ topicSlug: 'rimski-brojevi', difficulty: 5, seed, count: 5, type: 'numeric' }))
+      for (const p of r.questions) {
+        const m = p.signature.match(/^rimski:aritmetika:([+-]):(\d+),(\d+)$/)
+        expect(m, p.signature).toBeTruthy()
+        const [, znak, xs, ys] = m!
+        const x = Number(xs)
+        const y = Number(ys)
+        const ocekivano = znak === '-' ? x - y : x + y
+        expect(tacnaVrednost(p)).toBe(ocekivano)
+        expect(p.text).toContain(uRimski(x))
+        expect(p.text).toContain(uRimski(y))
+      }
+    }
+  })
+
+  it('jednačine t5 (dvostepeno): x tačno rešava a·x ± b = c', () => {
+    for (let seed = 0; seed < 20; seed++) {
+      const r = generisi(cfg({ topicSlug: 'jednacine', difficulty: 5, seed, count: 5, type: 'numeric' }))
+      for (const p of r.questions) {
+        const m = p.signature.match(/^jednacine:dvokorak:([+-]):(\d+),(\d+),(\d+)$/)
+        expect(m, p.signature).toBeTruthy()
+        const [, znak, as, xs, bs] = m!
+        const a = Number(as)
+        const x = Number(xs)
+        const b = Number(bs)
+        expect(tacnaVrednost(p)).toBe(x)
+        const c = znak === '+' ? a * x + b : a * x - b
+        expect(c).toBeGreaterThanOrEqual(0)
+      }
+    }
+  })
+
+  it('nejednačine t4/t5: granica je tačno za jedan pomerena i unutar 0–1000', () => {
+    for (const tezina of [4, 5] as const) {
+      for (let seed = 0; seed < 20; seed++) {
+        const r = generisi(cfg({ topicSlug: 'nejednacine', difficulty: tezina, seed, count: 5, type: 'numeric' }))
+        for (const p of r.questions) {
+          const v = tacnaVrednost(p)
+          expect(v, `t${tezina} seed${seed}: ${p.text}`).toBeGreaterThanOrEqual(0)
+          expect(v, `t${tezina} seed${seed}: ${p.text}`).toBeLessThanOrEqual(1000)
+        }
+      }
+    }
+  })
+
+  it('podrazumevani NAZIVI_TEZINA pokrivaju svih 5 nivoa', async () => {
+    const { NAZIVI_TEZINA } = await import('../types/db')
+    expect(Object.keys(NAZIVI_TEZINA)).toHaveLength(5)
+    expect(NAZIVI_TEZINA[4]).toBeTruthy()
+    expect(NAZIVI_TEZINA[5]).toBeTruthy()
   })
 })

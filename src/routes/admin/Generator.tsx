@@ -7,7 +7,7 @@ import { podrzaneOblasti } from '../../generator'
 import { generisi } from '../../generator'
 import type { GeneratorConfig, GenerisanoPitanje } from '../../generator/types'
 import { listajOblasti } from '../../lib/api'
-import { NAZIVI_TEZINA, type Oblast, type TipPitanja } from '../../types/db'
+import { NAZIVI_TEZINA, type Oblast, type Tezina, type TipPitanja } from '../../types/db'
 import { GeneratorPregled } from './GeneratorPregled'
 
 const NAZIVI_OBLASTI: Record<string, string> = {
@@ -22,7 +22,7 @@ export function Generator() {
   const navigate = useNavigate()
   const [oblasti, setOblasti] = useState<Oblast[]>([])
   const [topicSlugovi, setTopicSlugovi] = useState<string[]>(['sabiranje'])
-  const [difficulty, setDifficulty] = useState<1 | 2 | 3>(1)
+  const [difficulty, setDifficulty] = useState<Tezina>(3)
   const [count, setCount] = useState(10)
   const [type, setType] = useState<TipPitanja | 'auto'>('auto')
   const [wordProblems, setWordProblems] = useState(false)
@@ -38,6 +38,11 @@ export function Generator() {
     setTopicSlugovi(
       topicSlugovi.includes(slug) ? topicSlugovi.filter((s) => s !== slug) : [...topicSlugovi, slug],
     )
+  }
+
+  const sveIzabrano = podrzane.length > 0 && podrzane.every((s) => topicSlugovi.includes(s))
+  function preklopiSveOblasti() {
+    setTopicSlugovi(sveIzabrano ? [] : podrzane)
   }
 
   function pokreni() {
@@ -82,7 +87,13 @@ export function Generator() {
 
       <div className="kartica">
         <div className="polje">
-          <label>Oblasti</label>
+          <div className="red red--razmak">
+            <label>Oblasti</label>
+            <label className="stiklir">
+              <input type="checkbox" checked={sveIzabrano} onChange={preklopiSveOblasti} />
+              Sve teme
+            </label>
+          </div>
           <div className="red" style={{ flexWrap: 'wrap' }}>
             {podrzane.map((s) => (
               <label key={s} className="stiklir" style={{ minWidth: 180 }}>
@@ -99,7 +110,7 @@ export function Generator() {
         <div className="red-polja">
           <div className="polje">
             <label htmlFor="g-tezina">Nivo težine</label>
-            <select id="g-tezina" value={difficulty} onChange={(e) => setDifficulty(Number(e.target.value) as 1 | 2 | 3)}>
+            <select id="g-tezina" value={difficulty} onChange={(e) => setDifficulty(Number(e.target.value) as Tezina)}>
               {Object.entries(NAZIVI_TEZINA).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
             </select>
           </div>

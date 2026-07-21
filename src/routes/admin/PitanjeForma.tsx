@@ -1,7 +1,7 @@
 // Forma za ručno kreiranje/izmenu pitanja — polja zavise od izabranog tipa
 import { useState } from 'react'
 import { sacuvajPitanje, type NovoPitanje } from '../../lib/api'
-import type { MatchingOpcije, Oblast, Opcija, Pitanje, TipPitanja } from '../../types/db'
+import type { MatchingOpcije, Oblast, Opcija, Pitanje, Tezina, TipPitanja } from '../../types/db'
 import { NAZIVI_TEZINA, NAZIVI_TIPOVA } from '../../types/db'
 
 interface Props {
@@ -17,7 +17,7 @@ function noviId() { return `o${++brojac}_${Date.now()}` }
 export function PitanjeForma({ oblasti, pitanje, onSacuvano, onOtkazano }: Props) {
   const [type, setType] = useState<TipPitanja>(pitanje?.type ?? 'single')
   const [topicId, setTopicId] = useState(pitanje?.topic_id ?? oblasti[0]?.id ?? '')
-  const [difficulty, setDifficulty] = useState(pitanje?.difficulty ?? 1)
+  const [difficulty, setDifficulty] = useState<Tezina>(pitanje?.difficulty ?? 3)
   const [text, setText] = useState(pitanje?.text ?? '')
   const [explanation, setExplanation] = useState(pitanje?.explanation ?? '')
   const [hint, setHint] = useState(pitanje?.hint ?? '')
@@ -139,7 +139,7 @@ export function PitanjeForma({ oblasti, pitanje, onSacuvano, onOtkazano }: Props
         </div>
         <div className="polje">
           <label htmlFor="pf-tezina">Težina</label>
-          <select id="pf-tezina" value={difficulty} onChange={(e) => setDifficulty(Number(e.target.value) as 1 | 2 | 3)}>
+          <select id="pf-tezina" value={difficulty} onChange={(e) => setDifficulty(Number(e.target.value) as Tezina)}>
             {Object.entries(NAZIVI_TEZINA).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
           </select>
         </div>

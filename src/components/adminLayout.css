@@ -16,9 +16,18 @@
   font-weight: 700; color: var(--boja-tekst-blagi); font-size: 0.95rem;
 }
 .admin-nav a:hover { background: var(--boja-primarna-svetla); text-decoration: none; }
-.admin-nav a.active { background: var(--boja-primarna); color: #fff; }
+.admin-nav a.active { background: var(--boja-primarna); color: var(--boja-na-boji); }
 
 @media (max-width: 640px) {
-  .admin-zaglavlje-unutra { padding: 0.5rem 0.8rem; }
-  .admin-nav { order: 3; width: 100%; }
+  .admin-zaglavlje-unutra { padding: 0.5rem 0.8rem; gap: 0.6rem; }
+  .admin-nav {
+    /* flex-basis (ne width) mora da se postavi na 100% — .admin-nav nasleđuje
+       flex: 1 (flex-basis: 0%) iz osnovnog pravila, pa bi obično "width: 100%"
+       ovde bio ignorisan i nav bi ostao zbijen u istom redu sa logom/Odjavom. */
+    order: 3; flex: 1 1 100%;
+    flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; padding-bottom: 0.15rem;
+  }
+  .admin-nav::-webkit-scrollbar { display: none; }
+  .admin-nav a { flex: 0 0 auto; padding: 0.5rem 0.9rem; }
 }

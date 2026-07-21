@@ -1,6 +1,6 @@
 // Zajednički pomoćnici za module generatora: pakovanje pitanja,
 // srpski oblici imenica uz brojeve i imena za tekstualne zadatke.
-import type { TipPitanja } from '../../types/db'
+import type { TipPitanja, Tezina } from '../../types/db'
 import { napraviDistraktore, napraviOpcije } from '../distraktori'
 import { izaberi, type Rng } from '../random'
 import type { GeneratorConfig, GenerisanoPitanje } from '../types'
@@ -63,8 +63,8 @@ export function jeSu(n: number): string {
   return oblikBroja(n) === 1 ? 'su' : 'je'
 }
 
-// Poeni prate težinu: lako 1, srednje 2, teško 3
-export function poeniZaTezinu(tezina: 1 | 2 | 3): number {
+// Poeni prate težinu: lako 1, srednje 2, teško 3, vrlo teško 4, ekspert 5
+export function poeniZaTezinu(tezina: Tezina): number {
   return tezina
 }
 

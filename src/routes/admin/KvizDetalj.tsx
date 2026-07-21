@@ -3,8 +3,8 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import {
   izmeniLink, kvizImaPokusaje, listajLinkove, listajOblasti, listajPitanja,
-  listajPitanjaKviza, napraviLink, postaviPitanjaKviza, sacuvajKviz, statusLinkovaKviza,
-  ucitajKviz, type StatusLinka,
+  listajPitanjaKviza, napraviLink, obrisiPitanjeKviza, postaviPitanjaKviza, sacuvajKviz,
+  statusLinkovaKviza, ucitajKviz, type StatusLinka,
 } from '../../lib/api'
 import { formatDatum } from '../../lib/format'
 import { Loader } from '../../components/Zajednicke'
@@ -156,17 +156,44 @@ function PitanjaKviza({
   const [izabrana, setIzabrana] = useState<string[]>(snapshot.map((s) => s.source_question_id).filter((x): x is string => !!x))
   const [cuva, setCuva] = useState(false)
   const [greska, setGreska] = useState<string | null>(null)
+  const [brise, setBrise] = useState<string | null>(null)
   const mapaOblasti = new Map(oblasti.map((o) => [o.id, o.name]))
 
   if (zakljucano) {
+    async function obrisiJedno(qqId: string) {
+      if (!confirm('Obrisati ovo pitanje iz kviza? Odgovori dece na njega se brišu, a rezultati predatih pokušaja se preračunavaju.')) return
+      setBrise(qqId); setGreska(null)
+      try {
+        await obrisiPitanjeKviza(qqId)
+        onSacuvano()
+      } catch (e) {
+        setGreska(String((e as Error).message ?? e))
+      } finally {
+        setBrise(null)
+      }
+    }
+
     return (
       <div className="kartica razmak-dole">
         <h2>Pitanja u kvizu ({snapshot.length})</h2>
         <p className="poruka poruka--info">
-          Ovaj kviz već ima pokušaje, pa je sastav pitanja zamrznut (snapshot). Za drugačiji izbor napravi novi kviz.
+          Ovaj kviz već ima pokušaje, pa se sastav ne može menjati niti se mogu dodavati nova pitanja (za drugačiji
+          izbor napravi novi kviz). Pojedinačna pitanja i dalje mogu da se obrišu — rezultati predatih pokušaja se
+          tada automatski preračunavaju.
         </p>
+        {greska && <p className="poruka poruka--greska">{greska}</p>}
         <ol>
-          {snapshot.map((s) => <li key={s.id}>{s.text}</li>)}
+          {snapshot.map((s) => (
+            <li key={s.id} className="red red--razmak">
+              <span>{s.text}</span>
+              <button
+                type="button" className="dugme dugme--opasno dugme--malo"
+                disabled={brise === s.id} onClick={() => obrisiJedno(s.id)}
+              >
+                {brise === s.id ? 'Brišem…' : 'Obriši'}
+              </button>
+            </li>
+          ))}
         </ol>
       </div>
     )

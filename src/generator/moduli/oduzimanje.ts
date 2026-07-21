@@ -1,6 +1,7 @@
 // Generator: oduzimanje. Nivo 1: dva broja uz kontrolisanu pozajmicu.
-// Nivoi 2/3: LANAC oduzimanja (a − b − c...) — konstruisan iznutra-napolje
+// Nivoi 2–5: LANAC oduzimanja (a − b − c...) — konstruisan iznutra-napolje
 // (od konačnog rezultata unazad) tako da nijedan međurezultat nikad ne postane negativan.
+import type { Tezina } from '../../types/db'
 import { bezPozajmice, zamenaCifara } from '../distraktori'
 import { ceoBroj, izaberi, type Rng } from '../random'
 import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types'
@@ -25,10 +26,12 @@ function lanacOduzimanja(rng: Rng, brojKoraka: number, minRez: number, maxRez: n
   return [a, ...koraci]
 }
 
-function napraviBrojeve(rng: Rng, tezina: 1 | 2 | 3): number[] {
+function napraviBrojeve(rng: Rng, tezina: Tezina): number[] {
   if (tezina === 1) return dvaBrojaNivo1(rng)
   if (tezina === 2) return lanacOduzimanja(rng, 2, 0, 300, 10, 200)
-  return lanacOduzimanja(rng, 3, 0, 200, 10, 150)
+  if (tezina === 3) return lanacOduzimanja(rng, 3, 0, 200, 10, 150)
+  if (tezina === 4) return lanacOduzimanja(rng, 4, 0, 150, 10, 150)
+  return lanacOduzimanja(rng, 5, 0, 100, 10, 120)
 }
 
 export const oduzimanje: TopicGenerator = {

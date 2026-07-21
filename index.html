@@ -2,6 +2,19 @@
 <html lang="sr">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      // Postavlja temu PRE prvog crtanja stranice (sprečava bljesak pogrešne teme).
+      // Držano u sinhronizaciji sa src/lib/tema.ts (isti ključ, ista pravila).
+      (function () {
+        try {
+          var t = localStorage.getItem('mozgalica:tema');
+          if (t !== 'svetla' && t !== 'tamna') {
+            t = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'tamna' : 'svetla';
+          }
+          document.documentElement.setAttribute('data-theme', t);
+        } catch (e) {}
+      })();
+    </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/icon-192.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />

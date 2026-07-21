@@ -1,7 +1,7 @@
 // Okvir administratorskog dela: navigacija + zaštita prijavom (RequireAuth)
 import { NavLink, Navigate, Outlet } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
-import { Loader } from './Zajednicke'
+import { Loader, TemaDugme } from './Zajednicke'
 import './adminLayout.css'
 
 export function AdminLayout() {
@@ -22,9 +22,12 @@ export function AdminLayout() {
             <NavLink to="/admin/rezultati">Rezultati</NavLink>
             <NavLink to="/admin/podesavanja">Podešavanja</NavLink>
           </nav>
-          <button type="button" className="dugme dugme--senka dugme--malo" onClick={odjavi}>
-            Odjava
-          </button>
+          <div className="red">
+            <TemaDugme />
+            <button type="button" className="dugme dugme--senka dugme--malo" onClick={odjavi}>
+              Odjava
+            </button>
+          </div>
         </div>
       </header>
       <main className="sadrzaj">

@@ -1,5 +1,6 @@
-// Male zajedničke komponente: loader, modal, progres traka
-import type { ReactNode } from 'react'
+// Male zajedničke komponente: loader, modal, progres traka, dugme za temu
+import { useEffect, useState, type CSSProperties, type ReactNode } from 'react'
+import { pratiSistemskuTemu, preklopiTemu, trenutnaTema } from '../lib/tema'
 
 export function Loader({ tekst = 'Učitavanje…' }: { tekst?: string }) {
   return (
@@ -28,20 +29,73 @@ export function Modal({
   )
 }
 
+// Dugme za preklapanje svetle/tamne teme. Prati sistemsku temu dok korisnik
+// ne izabere svoju (izbor se pamti u localStorage preko src/lib/tema.ts).
+export function TemaDugme() {
+  const [tema, setTema] = useState(trenutnaTema)
+
+  useEffect(() => pratiSistemskuTemu(setTema), [])
+
+  function preklopi() {
+    setTema(preklopiTemu())
+  }
+
+  return (
+    <button
+      type="button" className="dugme dugme--senka dugme--malo" onClick={preklopi}
+      aria-label={tema === 'tamna' ? 'Uključi svetlu temu' : 'Uključi tamnu temu'}
+      title={tema === 'tamna' ? 'Svetla tema' : 'Tamna tema'}
+    >
+      {tema === 'tamna' ? '☀️' : '🌙'}
+    </button>
+  )
+}
+
 export function ProgresTraka({ vrednost, ukupno }: { vrednost: number; ukupno: number }) {
   const procenat = ukupno > 0 ? Math.round((vrednost / ukupno) * 100) : 0
+  const gotovo = procenat === 100 && ukupno > 0
   return (
-    <div
-      style={{ background: 'var(--boja-primarna-svetla)', borderRadius: 999, height: 14, overflow: 'hidden' }}
-      role="progressbar" aria-valuenow={vrednost} aria-valuemin={0} aria-valuemax={ukupno}
-      aria-label={`Odgovoreno ${vrednost} od ${ukupno} pitanja`}
-    >
+    <div className="red" style={{ gap: '0.4rem' }}>
       <div
-        style={{
-          width: `${procenat}%`, height: '100%', background: 'var(--boja-uspeh)',
-          borderRadius: 999, transition: 'width 0.3s ease',
-        }}
-      />
+        style={{ flex: 1, background: 'var(--boja-primarna-svetla)', borderRadius: 999, height: 14, overflow: 'hidden' }}
+        role="progressbar" aria-valuenow={vrednost} aria-valuemin={0} aria-valuemax={ukupno}
+        aria-label={`Odgovoreno ${vrednost} od ${ukupno} pitanja`}
+      >
+        <div
+          style={{
+            width: `${procenat}%`, height: '100%',
+            background: 'linear-gradient(90deg, var(--boja-primarna), var(--boja-uspeh))',
+            borderRadius: 999, transition: 'width 0.3s ease',
+          }}
+        />
+      </div>
+      {gotovo && <span aria-hidden="true" style={{ fontSize: '1.1rem' }}>⭐</span>}
+    </div>
+  )
+}
+
+interface Konfeta { id: number; x: number; kasnjenje: string; boja: string }
+
+// Kratkotrajna CSS konfeta animacija — koristi se na strani rezultata kad dete
+// položi kviz. Poštuje prefers-reduced-motion (vidi kviz.css).
+export function Konfete({ broj = 18 }: { broj?: number }) {
+  const boje = ['var(--boja-akcenat)', 'var(--boja-primarna)', 'var(--boja-uspeh)', 'var(--boja-zvezda)']
+  const [komadi] = useState<Konfeta[]>(() =>
+    Array.from({ length: broj }, (_, i) => ({
+      id: i,
+      x: Math.round(Math.random() * 100),
+      kasnjenje: (Math.random() * 0.6).toFixed(2),
+      boja: boje[i % boje.length],
+    })),
+  )
+  return (
+    <div className="kviz-konfete" aria-hidden="true">
+      {komadi.map((k) => (
+        <span
+          key={k.id}
+          style={{ '--x': `${k.x}%`, '--kasnjenje': `${k.kasnjenje}s`, '--boja': k.boja } as CSSProperties}
+        />
+      ))}
     </div>
   )
 }

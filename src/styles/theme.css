@@ -1,5 +1,8 @@
-/* Mozgalica — tema: vedra dečja paleta, krupni elementi, dobar kontrast */
+/* Mozgalica — tema: vedra dečja paleta, krupni elementi, dobar kontrast.
+   Tamna tema se uključuje atributom data-theme="tamna" na <html> (vidi src/lib/tema.ts). */
 :root {
+  color-scheme: light;
+
   /* Boje */
   --boja-primarna: #5b6ee1;
   --boja-primarna-tamna: #4557c9;
@@ -7,17 +10,27 @@
   --boja-akcenat: #ff8a3d;
   --boja-akcenat-tamna: #e6752b;
   --boja-uspeh: #2eb872;
+  --boja-uspeh-tamna: #279c61;
   --boja-uspeh-svetla: #e5f8ee;
+  --boja-uspeh-tekst: #1d7a4b;
   --boja-greska: #e5484d;
+  --boja-greska-tamna: #c93a3f;
   --boja-greska-svetla: #fdeeee;
   --boja-upozorenje: #b97d10;
   --boja-upozorenje-svetla: #fdf4e0;
   --boja-pozadina: #f4f7ff;
   --boja-kartica: #ffffff;
+  --boja-polje: #ffffff;
   --boja-tekst: #1f2545;
   --boja-tekst-blagi: #5d6483;
   --boja-ivica: #dde3f2;
   --boja-zvezda: #ffb700;
+  --boja-neutral: #eef0f6;
+  --boja-hover-red: #f8faff;
+  --boja-na-boji: #ffffff;
+  /* Toast je namerno FIKSNO tamna traka u obe teme (dosledan kontrast, ne prati pozadinu) */
+  --boja-toast: #232847;
+  --boja-toast-tekst: #ffffff;
 
   /* Oblik i senke */
   --radius: 14px;
@@ -31,4 +44,38 @@
 
   /* Dimenzije dodira (deca + telefoni) */
   --visina-dugmeta: 48px;
+}
+
+/* Tamna tema — isti tokeni, prilagođene vrednosti. Aktivira se preko [data-theme="tamna"]
+   na <html>; kad nema eksplicitnog izbora, src/lib/tema.ts prati prefers-color-scheme. */
+:root[data-theme='tamna'] {
+  color-scheme: dark;
+
+  --boja-primarna: #7c8cf0;
+  --boja-primarna-tamna: #94a2f5;
+  --boja-primarna-svetla: #262e55;
+  --boja-akcenat: #ff9a57;
+  --boja-akcenat-tamna: #ffab74;
+  --boja-uspeh: #3ecf8e;
+  --boja-uspeh-tamna: #34b87c;
+  --boja-uspeh-svetla: #17372a;
+  --boja-uspeh-tekst: #6fe0ac;
+  --boja-greska: #f0696d;
+  --boja-greska-tamna: #f58589;
+  --boja-greska-svetla: #442328;
+  --boja-upozorenje: #e0ac4f;
+  --boja-upozorenje-svetla: #3d3316;
+  --boja-pozadina: #14182c;
+  --boja-kartica: #1e2440;
+  --boja-polje: #262c4d;
+  --boja-tekst: #e8ebff;
+  --boja-tekst-blagi: #9aa3c7;
+  --boja-ivica: #343c62;
+  --boja-zvezda: #ffc94d;
+  --boja-neutral: #2a3155;
+  --boja-hover-red: #232a4d;
+  --boja-na-boji: #14182c;
+
+  --senka: 0 2px 10px rgba(0, 0, 0, 0.35);
+  --senka-jaka: 0 6px 24px rgba(0, 0, 0, 0.5);
 }

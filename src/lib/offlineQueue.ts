@@ -13,6 +13,10 @@ export interface StanjePokusaja {
   attemptToken: string
   childName: string
   answers: Record<string, LokalniOdgovor>
+  // Saveti: opciona polja radi kompatibilnosti sa starijim sačuvanim stanjem
+  // (ucitajStanje ih ne zahteva) — tekst otključanih saveta ostaje vidljiv i offline.
+  hintsUsed?: number
+  hintovi?: Record<string, string>
 }
 
 // Apstrakcija skladišta radi testiranja (u testovima Map umesto localStorage)
@@ -74,6 +78,24 @@ export function upisiOdgovor(
       ...stanje.answers,
       [questionId]: { answer, changedAt: Date.now(), synced: false },
     },
+  }
+  sacuvajStanje(skladiste, kvizToken, novo)
+  return novo
+}
+
+// Upiši otključan savet lokalno (preživljava refresh i ostaje vidljiv offline)
+export function upisiHint(
+  skladiste: Skladiste,
+  kvizToken: string,
+  stanje: StanjePokusaja,
+  questionId: string,
+  hint: string,
+  hintsUsed: number,
+): StanjePokusaja {
+  const novo: StanjePokusaja = {
+    ...stanje,
+    hintsUsed,
+    hintovi: { ...(stanje.hintovi ?? {}), [questionId]: hint },
   }
   sacuvajStanje(skladiste, kvizToken, novo)
   return novo

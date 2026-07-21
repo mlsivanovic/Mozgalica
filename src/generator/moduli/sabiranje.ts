@@ -1,5 +1,6 @@
 // Generator: sabiranje (do 1000). Nivo 1: dva sabirka uz kontrolisan prenos.
-// Nivoi 2/3: VIŠE sabiraka (3, pa 4) — obuhvatnost umesto samo većih brojeva.
+// Nivoi 2–5: VIŠE sabiraka (3, 4, 5, pa 6) — obuhvatnost umesto samo većih brojeva.
+import type { Tezina } from '../../types/db'
 import { bezPrenosa, zamenaCifara } from '../distraktori'
 import { ceoBroj, izaberi, type Rng } from '../random'
 import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types'
@@ -26,10 +27,12 @@ function viseSabiraka(rng: Rng, brojSabiraka: number, minSuma: number, maxSuma: 
   return delovi
 }
 
-function napraviSabirke(rng: Rng, tezina: 1 | 2 | 3): number[] {
+function napraviSabirke(rng: Rng, tezina: Tezina): number[] {
   if (tezina === 1) return dvaSabirkaNivo1(rng)
   if (tezina === 2) return viseSabiraka(rng, 3, 100, 1000)
-  return viseSabiraka(rng, 4, 300, 1000)
+  if (tezina === 3) return viseSabiraka(rng, 4, 300, 1000)
+  if (tezina === 4) return viseSabiraka(rng, 5, 500, 1000)
+  return viseSabiraka(rng, 6, 700, 1000)
 }
 
 export const sabiranje: TopicGenerator = {

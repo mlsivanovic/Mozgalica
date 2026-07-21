@@ -3,7 +3,7 @@ import type {
   AdminPodesavanja, Kviz, KvizLink, KvizPitanje, Oblast, OdgovorDeteta, Pitanje, Pokusaj,
   PokusajOdgovor,
 } from '../types/db'
-import type { KvizMeta, PokusajPayload, RezultatPayload, SavePotvrda } from '../types/kviz'
+import type { KvizMeta, PokusajPayload, RezultatPayload, SavePotvrda, SavetPayload } from '../types/kviz'
 import { SEED_PITANJA } from '../data/seedPitanja'
 import { supabase } from './supabase'
 
@@ -104,6 +104,13 @@ export async function obrisiPitanje(id: string): Promise<void> {
   if (error) throw new Error(opisiGresku(error)!)
 }
 
+// Grupno brisanje pitanja iz banke. Bezbedno i za pitanja koja su već korišćena
+// u kvizovima — quiz_questions.source_question_id je „on delete set null".
+export async function obrisiPitanja(ids: string[]): Promise<void> {
+  const { error } = await supabase().from('questions').delete().in('id', ids)
+  if (error) throw new Error(opisiGresku(error)!)
+}
+
 // ---------- Kvizovi ----------
 export type NoviKviz = Omit<Kviz, 'id' | 'owner_id' | 'created_at' | 'updated_at'>
 
@@ -145,12 +152,27 @@ export async function listajPitanjaKviza(quizId: string): Promise<KvizPitanje[]>
 
 export type SnapshotUnos = Omit<KvizPitanje, 'id'>
 
-// Zameni kompletan sastav kviza novim snapshot-om (guard trigger brani ako ima pokušaja)
+// Zameni kompletan sastav kviza novim snapshot-om.
+// VAŽNO: proverava PRE brisanja da li kviz već ima pokušaje — guard trigger sad
+// dozvoljava DELETE (za pojedinačno brisanje pitanja iz zaključanog kviza), pa bi
+// bez ove provere delete-pa-insert obrisao ceo sastav, a INSERT bi potom pao na
+// guardu i ostavio kviz BEZ pitanja. Provera mora biti pre brisanja, ne posle.
 export async function postaviPitanjaKviza(quizId: string, unosi: SnapshotUnos[]): Promise<void> {
+  const imaPokusaje = await kvizImaPokusaje(quizId)
+  if (imaPokusaje) {
+    throw new Error('Kviz već ima pokušaje — sastav se ne može menjati ni dodavati. Pojedinačna pitanja i dalje mogu da se obrišu iz kviza.')
+  }
   const { error: erBrisanje } = await supabase().from('quiz_questions').delete().eq('quiz_id', quizId)
   if (erBrisanje) throw new Error(opisiGresku(erBrisanje)!)
   if (unosi.length === 0) return
   const { error } = await supabase().from('quiz_questions').insert(unosi)
+  if (error) throw new Error(opisiGresku(error)!)
+}
+
+// Obriši JEDNO pitanje iz kviza (dozvoljeno i kad kviz već ima pokušaje —
+// preračun predatih pokušaja se dešava automatski preko DB trigera).
+export async function obrisiPitanjeKviza(quizQuestionId: string): Promise<void> {
+  const { error } = await supabase().from('quiz_questions').delete().eq('id', quizQuestionId)
   if (error) throw new Error(opisiGresku(error)!)
 }
 
@@ -348,4 +370,14 @@ export async function predajKviz(attemptToken: string, answers: Record<string, O
   })
   if (error) return { ok: false, error: opisiGresku(error)! }
   return data as RezultatPayload
+}
+
+// Otključaj savet za jedno pitanje (max 3 po pokušaju, proverava se na serveru).
+// Ponovni poziv za već otključano pitanje je besplatan.
+export async function iskoristiSavet(attemptToken: string, quizQuestionId: string): Promise<SavetPayload> {
+  const { data, error } = await supabase().rpc('use_hint', {
+    p_attempt_token: attemptToken, p_quiz_question_id: quizQuestionId,
+  })
+  if (error) return { ok: false, error: opisiGresku(error)! }
+  return data as SavetPayload
 }

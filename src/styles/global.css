@@ -40,7 +40,7 @@ a:hover { text-decoration: underline; }
   cursor: pointer;
   transition: transform 0.08s ease, box-shadow 0.12s ease, background 0.12s ease;
   background: var(--boja-primarna);
-  color: #fff;
+  color: var(--boja-na-boji);
   text-decoration: none;
 }
 .dugme:hover { background: var(--boja-primarna-tamna); text-decoration: none; }
@@ -51,9 +51,9 @@ a:hover { text-decoration: underline; }
 .dugme--akcenat { background: var(--boja-akcenat); }
 .dugme--akcenat:hover { background: var(--boja-akcenat-tamna); }
 .dugme--uspeh { background: var(--boja-uspeh); }
-.dugme--uspeh:hover { background: #279c61; }
+.dugme--uspeh:hover { background: var(--boja-uspeh-tamna); }
 .dugme--opasno { background: var(--boja-greska); }
-.dugme--opasno:hover { background: #c93a3f; }
+.dugme--opasno:hover { background: var(--boja-greska-tamna); }
 .dugme--senka {
   background: var(--boja-kartica);
   color: var(--boja-primarna);
@@ -82,7 +82,7 @@ input[type='date'], input[type='datetime-local'], textarea, select {
   padding: 0.6rem 0.8rem;
   border: 2px solid var(--boja-ivica);
   border-radius: var(--radius-mali);
-  background: #fff;
+  background: var(--boja-polje);
   color: var(--boja-tekst);
   min-height: 46px;
 }
@@ -103,7 +103,7 @@ input[aria-invalid='true'], textarea[aria-invalid='true'] { border-color: var(--
 /* ---------- Poruke ---------- */
 .poruka { padding: 0.8rem 1rem; border-radius: var(--radius-mali); font-weight: 600; margin: 0.6rem 0; }
 .poruka--greska { background: var(--boja-greska-svetla); color: var(--boja-greska); }
-.poruka--uspeh { background: var(--boja-uspeh-svetla); color: #1d7a4b; }
+.poruka--uspeh { background: var(--boja-uspeh-svetla); color: var(--boja-uspeh-tekst); }
 .poruka--info { background: var(--boja-primarna-svetla); color: var(--boja-primarna-tamna); }
 .poruka--upozorenje { background: var(--boja-upozorenje-svetla); color: var(--boja-upozorenje); }
 
@@ -112,15 +112,15 @@ input[aria-invalid='true'], textarea[aria-invalid='true'] { border-color: var(--
 table.tabela { width: 100%; border-collapse: collapse; background: var(--boja-kartica); border-radius: var(--radius); overflow: hidden; box-shadow: var(--senka); }
 .tabela th, .tabela td { padding: 0.65rem 0.8rem; text-align: left; border-bottom: 1px solid var(--boja-ivica); font-size: 0.95rem; }
 .tabela th { background: var(--boja-primarna-svetla); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--boja-primarna-tamna); }
-.tabela tbody tr:hover { background: #f8faff; }
+.tabela tbody tr:hover { background: var(--boja-hover-red); }
 .tabela tbody tr:last-child td { border-bottom: none; }
 
 /* ---------- Bedževi ---------- */
 .bedz { display: inline-block; padding: 0.12rem 0.6rem; border-radius: 999px; font-size: 0.8rem; font-weight: 700; background: var(--boja-primarna-svetla); color: var(--boja-primarna-tamna); }
-.bedz--uspeh { background: var(--boja-uspeh-svetla); color: #1d7a4b; }
+.bedz--uspeh { background: var(--boja-uspeh-svetla); color: var(--boja-uspeh-tekst); }
 .bedz--greska { background: var(--boja-greska-svetla); color: var(--boja-greska); }
 .bedz--upozorenje { background: var(--boja-upozorenje-svetla); color: var(--boja-upozorenje); }
-.bedz--neutral { background: #eef0f6; color: var(--boja-tekst-blagi); }
+.bedz--neutral { background: var(--boja-neutral); color: var(--boja-tekst-blagi); }
 
 /* ---------- Pomoćne ---------- */
 .sadrzaj { width: 100%; max-width: 1080px; margin: 0 auto; padding: 1.2rem; flex: 1; }
@@ -149,7 +149,7 @@ table.tabela { width: 100%; border-collapse: collapse; background: var(--boja-ka
 
 /* Toast obaveštenja */
 .toast-omot { position: fixed; bottom: 1rem; left: 50%; transform: translateX(-50%); z-index: 200; display: flex; flex-direction: column; gap: 0.5rem; width: min(94vw, 480px); }
-.toast { background: var(--boja-tekst); color: #fff; padding: 0.8rem 1rem; border-radius: var(--radius); box-shadow: var(--senka-jaka); display: flex; align-items: center; justify-content: space-between; gap: 0.8rem; font-weight: 600; }
+.toast { background: var(--boja-toast); color: var(--boja-toast-tekst); padding: 0.8rem 1rem; border-radius: var(--radius); box-shadow: var(--senka-jaka); display: flex; align-items: center; justify-content: space-between; gap: 0.8rem; font-weight: 600; }
 .toast .dugme { min-height: 38px; }
 
 /* Modal */
@@ -161,4 +161,40 @@ table.tabela { width: 100%; border-collapse: collapse; background: var(--boja-ka
   html { font-size: 16px; }
   .sadrzaj { padding: 0.8rem; }
   .kartica { padding: 1rem; }
+
+  /* Filter redovi i zaglavlja strana se slažu u kolonu, dugmad puna širina */
+  .red-polja > .polje { min-width: 100%; }
+  .zaglavlje-strane { flex-direction: column; align-items: stretch; }
+  .zaglavlje-strane > .red { flex-direction: column; align-items: stretch; }
+  .zaglavlje-strane .dugme { width: 100%; }
+
+  /* Veći dodirni ciljevi za mala dugmad */
+  .dugme--malo { min-height: 44px; }
+
+  /* Modal preko celog ekrana — lakše za kucanje na telefonu */
+  .modal-pozadina { padding: 0; align-items: flex-end; }
+  .modal { width: 100vw; max-width: 100vw; height: 100dvh; max-height: 100dvh; border-radius: 0; }
+
+  /* Bulk traka ostaje dohvatljiva kao plutajuća traka dok se skroluje duga lista
+     (position: sticky + bottom ovde ne bi radio — taj kombo lepi element za dno
+     tek pri skrolu NAGORE, ne dok se lista ispod njega skroluje nadole) */
+  .bulk-traka { position: fixed; left: 0.7rem; right: 0.7rem; bottom: 0.7rem; z-index: 40; margin: 0; }
+
+  /* Tabele → kartice (klasa .tabela--kartice, redovi imaju data-naslov na <td>) */
+  .tabela--kartice thead { display: none; }
+  .tabela--kartice, .tabela--kartice tbody, .tabela--kartice tr, .tabela--kartice td { display: block; width: 100%; }
+  .tabela--kartice { box-shadow: none; background: transparent; }
+  .tabela--kartice tr {
+    background: var(--boja-kartica); border-radius: var(--radius); box-shadow: var(--senka);
+    padding: 0.3rem 0.9rem; margin-bottom: 0.8rem;
+  }
+  .tabela--kartice td {
+    display: flex; justify-content: space-between; align-items: center; gap: 0.75rem;
+    border-bottom: 1px solid var(--boja-ivica); padding: 0.55rem 0; text-align: right;
+  }
+  .tabela--kartice td:last-child { border-bottom: none; }
+  .tabela--kartice td[data-naslov]::before {
+    content: attr(data-naslov); font-weight: 700; color: var(--boja-tekst-blagi);
+    text-align: left; margin-right: auto; font-size: 0.85rem;
+  }
 }

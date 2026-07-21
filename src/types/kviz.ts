@@ -1,12 +1,15 @@
 // Tipovi payload-a koje vraćaju SECURITY DEFINER RPC funkcije za dete
 import type { OdgovorDeteta, OpcijeJson, TacanOdgovor, TipPitanja } from './db'
 
-// Pitanje kako ga vidi dete — BEZ tačnog odgovora i objašnjenja
+// Pitanje kako ga vidi dete — BEZ tačnog odgovora i objašnjenja.
+// hint je popunjen SAMO ako je savet za ovo pitanje već otključan (use_hint) —
+// hasHint govori da savet postoji, bez otkrivanja teksta pre otključavanja.
 export interface PitanjeZaDete {
   id: string // id reda u quiz_questions
   type: TipPitanja
   text: string
   options: OpcijeJson // opcije već izmešane na serveru ako je uključeno mešanje
+  hasHint: boolean
   hint: string | null
   points: number
 }
@@ -39,6 +42,8 @@ export interface PokusajPayload {
   serverNow?: string
   questions?: PitanjeZaDete[]
   savedAnswers?: Record<string, OdgovorDeteta> // samo kod resume
+  hintsUsed?: number
+  hintsUnlocked?: string[] // id-jevi quiz_questions čiji je savet već otključan
 }
 
 // save_answers
@@ -47,6 +52,15 @@ export interface SavePotvrda {
   error?: string
   saved?: number
   serverNow?: string
+}
+
+// use_hint
+export interface SavetPayload {
+  ok: boolean
+  error?: string // 'not_found' | 'not_in_progress' | 'wrong_question' | 'no_hint' | 'limit_reached'
+  hint?: string
+  hintsUsed?: number
+  remaining?: number
 }
 
 // Pregled jednog pitanja u rezultatu (posle predaje)

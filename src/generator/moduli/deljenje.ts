@@ -1,5 +1,7 @@
 // Generator: deljenje — UVEK konstruisano iz proizvoda, pa nema ostatka.
 // Nivo 1/2: jedno deljenje. Nivo 3: LANAC dva uzastopna deljenja (deljenik : d1 : d2).
+// Nivo 4: deljenje dvocifrenim deliocem. Nivo 5: lanac sa dvocifrenim prvim deliocem.
+import type { Tezina } from '../../types/db'
 import { ceoBroj, izaberi, type Rng } from '../random'
 import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types'
 import { genMn, izaberiPredmet, kolicina, upakujRacun, dvaImena } from './zajednicko'
@@ -8,7 +10,7 @@ const DRUG: [string, string, string, string] = ['drug', 'druga', 'drugova', 'dru
 const KUTIJA: [string, string, string, string] = ['kutija', 'kutije', 'kutija', 'kutiju']
 
 // Vraća [deljenik, delilac1, delilac2, ...] (bez konačnog količnika)
-function napraviDeljenje(rng: Rng, tezina: 1 | 2 | 3): number[] {
+function napraviDeljenje(rng: Rng, tezina: Tezina): number[] {
   if (tezina === 1) {
     const delilac = ceoBroj(rng, 2, 5)
     const kolicnik = ceoBroj(rng, 2, 10)
@@ -19,10 +21,24 @@ function napraviDeljenje(rng: Rng, tezina: 1 | 2 | 3): number[] {
     const kolicnik = ceoBroj(rng, 2, 10)
     return [delilac * kolicnik, delilac]
   }
-  // Teško: lanac dva deljenja, konstruisan iznutra-napolje (nema ostatka nikad)
-  const kolicnik = ceoBroj(rng, 2, 10)
-  const delilac1 = ceoBroj(rng, 2, 9)
-  const delilac2 = ceoBroj(rng, 2, 9)
+  if (tezina === 3) {
+    // Lanac dva deljenja, konstruisan iznutra-napolje (nema ostatka nikad)
+    const kolicnik = ceoBroj(rng, 2, 10)
+    const delilac1 = ceoBroj(rng, 2, 9)
+    const delilac2 = ceoBroj(rng, 2, 9)
+    return [kolicnik * delilac1 * delilac2, delilac1, delilac2]
+  }
+  if (tezina === 4) {
+    // Dvocifreni delilac
+    const delilac = ceoBroj(rng, 11, 25)
+    const kolicnik = ceoBroj(rng, 2, 40)
+    return [delilac * kolicnik, delilac]
+  }
+  // Ekspert: lanac, prvi delilac dvocifren (količnik budžetiran da deljenik ostane ≤ 1000)
+  const delilac1 = ceoBroj(rng, 11, 19)
+  const delilac2 = ceoBroj(rng, 2, 6)
+  const budzetK = Math.max(2, Math.floor(1000 / (delilac1 * delilac2)))
+  const kolicnik = ceoBroj(rng, 2, budzetK)
   return [kolicnik * delilac1 * delilac2, delilac1, delilac2]
 }
 

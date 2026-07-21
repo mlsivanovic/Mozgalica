@@ -68,7 +68,12 @@ export function RezultatDetalj() {
               key={q.id} className="kartica"
               style={{ borderLeft: `5px solid ${odg?.is_correct ? 'var(--boja-uspeh)' : 'var(--boja-greska)'}` }}
             >
-              <p className="malo blago">Pitanje {i + 1} · {odg?.awarded_points ?? 0} / {q.points} poena {odg?.graded_by === 'manual' ? '(ručno ocenjeno)' : ''}</p>
+              <p className="malo blago">
+                <span style={{ fontWeight: 700, color: odg?.is_correct ? 'var(--boja-uspeh)' : 'var(--boja-greska)' }}>
+                  {odg?.is_correct ? '✓ Tačno' : '✗ Netačno'}
+                </span>
+                {' · '}Pitanje {i + 1} · {odg?.awarded_points ?? 0} / {q.points} poena {odg?.graded_by === 'manual' ? '(ručno ocenjeno)' : '(automatski ocenjeno)'}
+              </p>
               <p style={{ fontWeight: 700 }}>{q.text}</p>
               <div className="razmak-gore">
                 <PitanjeRenderer pitanje={q} value={odg?.answer ?? null} onChange={() => {}} disabled />

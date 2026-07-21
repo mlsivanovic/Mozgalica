@@ -1,6 +1,6 @@
 // Generator: konvertovanje arapskih brojeva u rimske i obrnuto
-import type { Opcija } from '../../types/db'
-import { ceoBroj, promesaj, type Rng } from '../random'
+import type { Opcija, Tezina } from '../../types/db'
+import { ceoBroj, izaberi, promesaj, type Rng } from '../random'
 import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types'
 import { poeniZaTezinu, upakujRacun } from './zajednicko'
 
@@ -58,10 +58,20 @@ function naivnoURimski(n: number): string {
   return rezultat
 }
 
-function opsegZaTezinu(t: 1 | 2 | 3): [number, number] {
+function opsegZaTezinu(t: Tezina): [number, number] {
   if (t === 1) return [1, 20]
   if (t === 2) return [1, 100]
+  if (t === 4) return [100, 999]
   return [1, 1000]
+}
+
+// Nivo 4: broj čije cifre desetica/jedinica su pretežno oduzimajuće (4 ili 9) — više pravila odjednom
+function brojSaSuptraktivnim(rng: Rng): number {
+  const opcijeCifre = [4, 9, 4, 9, 3, 8] as const
+  const s = ceoBroj(rng, 1, 9)
+  const d = izaberi(rng, opcijeCifre)
+  const j = izaberi(rng, opcijeCifre)
+  return s * 100 + d * 10 + j
 }
 
 export const rimski: TopicGenerator = {
@@ -70,8 +80,32 @@ export const rimski: TopicGenerator = {
   supportsWordProblems: false,
 
   generateOne(cfg: GeneratorConfig, rng: Rng, taken: Set<string>): GenerisanoPitanje | null {
+    if (cfg.difficulty === 5) {
+      // Ekspert: rimska aritmetika — izračunaj zbir/razliku dva rimska broja
+      const a = ceoBroj(rng, 1, 300)
+      const b = ceoBroj(rng, 1, 300)
+      const minus = rng() < 0.5 && a !== b
+      const x = minus ? Math.max(a, b) : a
+      const y = minus ? Math.min(a, b) : b
+      if (minus && x === y) return null
+      const tacan = minus ? x - y : x + y
+      if (tacan < 1 || tacan > 1000) return null
+      const signature = `rimski:aritmetika:${minus ? '-' : '+'}:${x},${y}`
+      if (taken.has(signature)) return null
+      const rimskiX = uRimski(x)
+      const rimskiY = uRimski(y)
+      return upakujRacun(cfg, rng, {
+        text: `Izračunaj i upiši rezultat kao običan broj: ${rimskiX} ${minus ? '−' : '+'} ${rimskiY} = ?`,
+        tacan,
+        kandidati: [naivnoIzRimskog(rimskiX) + (minus ? -y : y), tacan + 1, tacan - 1, tacan + 10],
+        explanation: `${rimskiX} = ${x}, ${rimskiY} = ${y}. ${x} ${minus ? '−' : '+'} ${y} = ${tacan}.`,
+        hint: 'Prvo svaki rimski broj pretvori u običan, pa ih saberi ili oduzmi.',
+        signature,
+      })
+    }
+
     const [min, max] = opsegZaTezinu(cfg.difficulty)
-    const n = ceoBroj(rng, min, max)
+    const n = cfg.difficulty === 4 ? brojSaSuptraktivnim(rng) : ceoBroj(rng, min, max)
     const rimskiUArapski = rng() < 0.5
     const signature = `rimski:${rimskiUArapski ? 'r2a' : 'a2r'}:${n}`
     if (taken.has(signature)) return null

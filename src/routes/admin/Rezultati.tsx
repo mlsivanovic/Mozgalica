@@ -98,23 +98,23 @@ export function Rezultati() {
       </div>
 
       <div className="tabela-omot">
-        <table className="tabela">
+        <table className="tabela tabela--kartice">
           <thead>
             <tr><th>Dete</th><th>Kviz</th><th>Status</th><th>Rezultat</th><th>Pokušaj</th><th>Kraj</th><th></th></tr>
           </thead>
           <tbody>
             {filtrirano.map((p) => (
               <tr key={p.id}>
-                <td>{p.child_name}{p.child_label ? ` (${p.child_label})` : ''}</td>
-                <td>{mapaKvizova.get(p.quiz_id) ?? '—'}</td>
-                <td>
+                <td data-naslov="Dete">{p.child_name}{p.child_label ? ` (${p.child_label})` : ''}</td>
+                <td data-naslov="Kviz">{mapaKvizova.get(p.quiz_id) ?? '—'}</td>
+                <td data-naslov="Status">
                   <span className={`bedz ${p.status === 'submitted' ? (p.passed ? 'bedz--uspeh' : 'bedz--upozorenje') : p.status === 'expired' ? 'bedz--greska' : 'bedz--neutral'}`}>
                     {NAZIVI_STATUSA[p.status]}
                   </span>
                 </td>
-                <td>{formatProcenat(p.score_pct)}</td>
-                <td>#{p.attempt_no}</td>
-                <td>{formatDatum(p.submitted_at)}</td>
+                <td data-naslov="Rezultat">{formatProcenat(p.score_pct)}</td>
+                <td data-naslov="Pokušaj">#{p.attempt_no}</td>
+                <td data-naslov="Kraj">{formatDatum(p.submitted_at)}</td>
                 <td><Link to={`/admin/rezultati/${p.id}`}>Detalji</Link></td>
               </tr>
             ))}

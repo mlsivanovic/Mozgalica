@@ -3,8 +3,9 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { kvizMeta, zapocniPokusaj } from '../../lib/api'
 import { zapocniStanje } from '../../lib/offlineQueue'
-import { Loader } from '../../components/Zajednicke'
+import { Loader, TemaDugme } from '../../components/Zajednicke'
 import type { KvizMeta } from '../../types/kviz'
+import './kviz.css'
 
 const PORUKE_GRESAKA: Record<string, string> = {
   not_found: 'Ovaj link ne postoji. Proveri da li si ga ispravno otkucao/la ili zalepio/la.',
@@ -66,15 +67,22 @@ export function KvizUlaz() {
   }
 
   return (
-    <div className="sadrzaj sadrzaj--usko" style={{ paddingTop: '8vh' }}>
-      <div className="kartica">
-        <h1 className="centar">🧠 {meta.title}</h1>
+    <div className="sadrzaj sadrzaj--usko" style={{ paddingTop: '6vh' }}>
+      <div className="red red--kraj">
+        <TemaDugme />
+      </div>
+      <div className="kartica kviz-kartica-uvod">
+        <div className="kviz-maskota" aria-hidden="true">🧠</div>
+        <h1 className="centar razmak-gore">{meta.title}</h1>
         {meta.description && <p className="centar blago razmak-dole">{meta.description}</p>}
 
-        <p className="malo blago centar razmak-dole">
-          {meta.questionCount} pitanja · {meta.totalPoints} poena
-          {meta.timeLimitSeconds ? ` · ⏱ ${Math.round(meta.timeLimitSeconds / 60)} min` : ''}
-        </p>
+        <div className="kviz-cipovi">
+          <span className="kviz-cip">📝 {meta.questionCount} pitanja</span>
+          <span className="kviz-cip">⭐ {meta.totalPoints} poena</span>
+          {meta.timeLimitSeconds && (
+            <span className="kviz-cip">⏱ {Math.round(meta.timeLimitSeconds / 60)} min</span>
+          )}
+        </div>
 
         {meta.requireName && (
           <div className="polje">

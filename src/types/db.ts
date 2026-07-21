@@ -1,7 +1,7 @@
 // Tipovi redova iz baze i jsonb oblika — ogledalo šeme u supabase/migrations
 
 export type TipPitanja = 'single' | 'multi' | 'numeric' | 'text' | 'truefalse' | 'matching'
-export type Tezina = 1 | 2 | 3
+export type Tezina = 1 | 2 | 3 | 4 | 5
 export type IzvorPitanja = 'manual' | 'generated'
 export type StatusPokusaja = 'in_progress' | 'submitted' | 'expired'
 
@@ -161,4 +161,6 @@ export const NAZIVI_TEZINA: Record<Tezina, string> = {
   1: 'Lako',
   2: 'Srednje',
   3: 'Teško',
+  4: 'Vrlo teško',
+  5: 'Ekspert',
 }

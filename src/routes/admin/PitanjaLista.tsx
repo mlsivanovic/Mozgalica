@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  dodajPitanjaUKviz, listajKvizove, listajOblasti, listajPitanja, obrisiPitanje,
+  dodajPitanjaUKviz, listajKvizove, listajOblasti, listajPitanja, obrisiPitanja, obrisiPitanje,
   postaviPitanjaKviza, sacuvajKviz, ucitajPocetnaPitanja,
 } from '../../lib/api'
 import { Loader, Modal } from '../../components/Zajednicke'
@@ -110,6 +110,20 @@ export function PitanjaLista() {
     }
   }
 
+  async function obrisiIzabrana() {
+    if (!confirm(`Obrisati ${izabrana.length} izabranih pitanja? Ova radnja se ne može poništiti.`)) return
+    setGreska(null)
+    setRadiBulk(true)
+    try {
+      await obrisiPitanja(izabrana)
+      await ucitaj()
+    } catch (e) {
+      setGreska(String((e as Error).message ?? e))
+    } finally {
+      setRadiBulk(false)
+    }
+  }
+
   async function napraviNoviKvizOdIzabranih() {
     const naziv = prompt('Naziv novog kviza?', '')
     if (!naziv || naziv.trim().length < 2) return
@@ -193,7 +207,7 @@ export function PitanjaLista() {
       </div>
 
       {izabrana.length > 0 && (
-        <div className="kartica razmak-dole" style={{ background: 'var(--boja-primarna-svetla)' }}>
+        <div className="kartica razmak-dole bulk-traka" style={{ background: 'var(--boja-primarna-svetla)' }}>
           <div className="red red--razmak" style={{ flexWrap: 'wrap' }}>
             <p style={{ fontWeight: 700 }}>{izabrana.length} pitanja izabrano</p>
             <div className="red">
@@ -207,6 +221,9 @@ export function PitanjaLista() {
               <button type="button" className="dugme dugme--akcenat dugme--malo" disabled={radiBulk} onClick={napraviNoviKvizOdIzabranih}>
                 Napravi novi kviz od izabranih
               </button>
+              <button type="button" className="dugme dugme--opasno dugme--malo" disabled={radiBulk} onClick={obrisiIzabrana}>
+                Obriši izabrana
+              </button>
             </div>
           </div>
         </div>
@@ -214,7 +231,7 @@ export function PitanjaLista() {
 
       {ucitava ? <Loader /> : (
         <div className="tabela-omot">
-          <table className="tabela">
+          <table className="tabela tabela--kartice">
             <thead>
               <tr>
                 <th>
@@ -231,13 +248,13 @@ export function PitanjaLista() {
             <tbody>
               {pitanja.map((p) => (
                 <tr key={p.id}>
-                  <td><input type="checkbox" checked={izabrana.includes(p.id)} onChange={() => preklopi(p.id)} /></td>
-                  <td style={{ maxWidth: 340 }}>{p.text}</td>
-                  <td>{mapaOblasti.get(p.topic_id) ?? '—'}</td>
-                  <td>{NAZIVI_TIPOVA[p.type]}</td>
-                  <td>{NAZIVI_TEZINA[p.difficulty]}</td>
-                  <td>{p.points}</td>
-                  <td>
+                  <td data-naslov="Izaberi"><input type="checkbox" checked={izabrana.includes(p.id)} onChange={() => preklopi(p.id)} /></td>
+                  <td data-naslov="Pitanje" style={{ maxWidth: 340 }}>{p.text}</td>
+                  <td data-naslov="Oblast">{mapaOblasti.get(p.topic_id) ?? '—'}</td>
+                  <td data-naslov="Tip">{NAZIVI_TIPOVA[p.type]}</td>
+                  <td data-naslov="Težina">{NAZIVI_TEZINA[p.difficulty]}</td>
+                  <td data-naslov="Poeni">{p.points}</td>
+                  <td data-naslov="Izvor">
                     <span className={`bedz ${p.source === 'generated' ? 'bedz--upozorenje' : 'bedz--neutral'}`}>
                       {p.source === 'generated' ? 'Generisano' : 'Ručno'}
                     </span>
