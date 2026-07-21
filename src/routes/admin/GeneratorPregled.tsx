@@ -166,14 +166,14 @@ export function GeneratorPregled({ pocetnaPitanja, upozorenje, cfg, oblasti, onN
           <div
             key={s.kljuc}
             className="kartica"
-            style={{ borderLeft: `5px solid ${s.status === 'prihvaceno' ? 'var(--boja-uspeh)' : s.status === 'odbaceno' ? 'var(--boja-greska)' : 'var(--boja-ivica)'}`, opacity: s.status === 'odbaceno' ? 0.55 : 1 }}
+            style={{ borderLeft: `5px solid ${s.status === 'prihvaceno' ? 'var(--boja-uspeh)' : s.status === 'odbaceno' ? 'var(--boja-greska)' : 'var(--boja-ivica)'}`, opacity: s.status === 'odbaceno' ? 0.55 : 1, minWidth: 0 }}
           >
             <p className="malo blago">
               {mapaOblasti.get(s.pitanje.topicSlug)?.name ?? s.pitanje.topicSlug} · {NAZIVI_TIPOVA[s.pitanje.type]} · {s.pitanje.points} {s.pitanje.points === 1 ? 'poen' : 'poena'}
             </p>
             <textarea
               value={s.pitanje.text} onChange={(e) => izmeniTekst(s.kljuc, e.target.value)}
-              style={{ minHeight: 60 }}
+              style={{ minHeight: 60, width: '100%' }}
             />
             <p className="malo blago razmak-gore">💡 {s.pitanje.explanation}</p>
             <div className="red razmak-gore">

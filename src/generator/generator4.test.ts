@@ -297,8 +297,18 @@ describe('4. razred — matematička pravila po oblastima', () => {
           } else if (oblik === 'kvadar-3strane') {
             const [p1, p2, p3] = brojevi
             expect(tacnaVrednost(p)).toBe(2 * (p1 + p2 + p3))
+          } else if (oblik === 'slozena-zbir') {
+            const [a1, b1, a2, b2] = brojevi
+            expect(tacnaVrednost(p)).toBe(a1 * b1 + a2 * b2)
+          } else if (oblik === 'slozena-razlika') {
+            const [a, b, c, d] = brojevi
+            expect(tacnaVrednost(p)).toBe(a * b - c * d)
+            expect(tacnaVrednost(p)).toBeGreaterThanOrEqual(0)
+          } else if (oblik === 'mesovito3') {
+            const [a, b, c] = brojevi
+            expect(tacnaVrednost(p)).toBe(a * 10_000 + b * 100 + c)
           } else {
-            // jedinica/mesovito: params su "iz-u:n" ili mešoviti zapis
+            // jedinica/mesovito(2): params su "iz-u:n" ili mešoviti zapis
             expect(tacnaVrednost(p)).toBeGreaterThan(0)
           }
         }
@@ -314,7 +324,7 @@ describe('4. razred — matematička pravila po oblastima', () => {
           const sig = p.signature.replace('zapremina4:', '')
           const [oblik, params] = sig.split(/:(.+)/)
           const brojevi = params.split(',').map(Number)
-          if (oblik === 'kvadar' || oblik === 'kvadar-veci' || oblik === 'litar') {
+          if (oblik === 'kvadar' || oblik === 'kvadar-veci' || oblik === 'litar' || oblik === 'kockice') {
             const [a, b, c] = brojevi
             expect(tacnaVrednost(p)).toBe(a * b * c)
           } else if (oblik === 'kocka' || oblik === 't3kocka' || oblik === 'litar-kocka') {
@@ -327,6 +337,15 @@ describe('4. razred — matematička pravila po oblastima', () => {
             const [a, b, c] = brojevi
             expect(tacnaVrednost(p)).toBe(c)
             expect(a * b * c).toBeGreaterThan(0)
+          } else if (oblik === 'slozeno-zbir' || oblik === 'slozeno-zbir-veliko') {
+            const [a1, b1, c1, a2, b2, c2] = brojevi
+            expect(tacnaVrednost(p)).toBe(a1 * b1 * c1 + a2 * b2 * c2)
+          } else if (oblik === 'mesovito2') {
+            const [a, b] = brojevi
+            expect(tacnaVrednost(p)).toBe(a * 1000 + b)
+          } else if (oblik === 'mesovito3') {
+            const [a, b, c] = brojevi
+            expect(tacnaVrednost(p)).toBe(a * 1_000_000 + b * 1000 + c)
           } else {
             expect(tacnaVrednost(p)).toBeGreaterThan(0)
           }
@@ -354,24 +373,47 @@ describe('4. razred — matematička pravila po oblastima', () => {
         expect(opcije.find((o) => o.id === correctId)?.text).toBe(znak)
       }
 
-      // t3: sabiranje/oduzimanje istog imenioca — brojilac tačan, rezultat SME preći imenilac
+      // t3: sabiranje/oduzimanje istog imenioca (brojilac tačan, rezultat SME preći
+      // imenilac) ILI različitih imenilaca (nejednaki-sab/odu — svedeno na zajednički db)
       const r3 = generisi(cfg4({ topicSlug: 'razlomci-4', difficulty: 3, seed, count: 5, type: 'numeric' }))
       for (const p of r3.questions) {
-        const oblik = p.signature.includes(':sabiranje:') ? 'sabiranje' : 'oduzimanje'
-        const [n1, n2] = p.signature.replace(`razlomci4:${oblik}:`, '').split(',').map(Number)
-        expect(tacnaVrednost(p)).toBe(oblik === 'sabiranje' ? n1 + n2 : n1 - n2)
+        const sig = p.signature
+        if (sig.startsWith('razlomci4:sabiranje:') || sig.startsWith('razlomci4:oduzimanje:')) {
+          const oblik = sig.startsWith('razlomci4:sabiranje:') ? 'sabiranje' : 'oduzimanje'
+          const [n1, n2] = sig.replace(`razlomci4:${oblik}:`, '').split(',').map(Number)
+          expect(tacnaVrednost(p)).toBe(oblik === 'sabiranje' ? n1 + n2 : n1 - n2)
+        } else {
+          const saberi = sig.startsWith('razlomci4:nejednaki-sab:')
+          const prefix = saberi ? 'razlomci4:nejednaki-sab:' : 'razlomci4:nejednaki-odu:'
+          const [n1, ds, n2, db] = sig.replace(prefix, '').split(',').map(Number)
+          expect(db % ds).toBe(0)
+          const n1Svedeno = n1 * (db / ds)
+          expect(tacnaVrednost(p)).toBe(saberi ? n1Svedeno + n2 : n1Svedeno - n2)
+        }
         expect(tacnaVrednost(p)).toBeGreaterThanOrEqual(0)
       }
 
-      // t4: razlomak broja
+      // t4: razlomak broja ILI teže sabiranje/oduzimanje različitih imenilaca (veći brojevi)
       const r4 = generisi(cfg4({ topicSlug: 'razlomci-4', difficulty: 4, seed, count: 5, type: 'numeric' }))
       for (const p of r4.questions) {
-        const [n, d, q] = p.signature.replace('razlomci4:deo:', '').split(',').map(Number)
-        expect(tacnaVrednost(p)).toBe(n * q)
-        expect((q * d) % d).toBe(0)
+        const sig = p.signature
+        if (sig.startsWith('razlomci4:deo:')) {
+          const [n, d, q] = sig.replace('razlomci4:deo:', '').split(',').map(Number)
+          expect(tacnaVrednost(p)).toBe(n * q)
+          expect((q * d) % d).toBe(0)
+        } else {
+          const saberi = sig.startsWith('razlomci4:nejednaki-veci-sab:')
+          const prefix = saberi ? 'razlomci4:nejednaki-veci-sab:' : 'razlomci4:nejednaki-veci-odu:'
+          const [n1, ds, n2, db] = sig.replace(prefix, '').split(',').map(Number)
+          expect(db % ds).toBe(0)
+          const n1Svedeno = n1 * (db / ds)
+          expect(tacnaVrednost(p)).toBe(saberi ? n1Svedeno + n2 : n1Svedeno - n2)
+        }
+        expect(tacnaVrednost(p)).toBeGreaterThanOrEqual(0)
       }
 
-      // t5: višekoračni — razlika dva "dela", "do celog", zbir tri razlomka
+      // t5: višekoračni — razlika dva "dela", "do celog", zbir tri razlomka, ILI
+      // oduzimanje dva razlomka različitih imenilaca (nejednaki-ekspert, najveći brojevi)
       const r5 = generisi(cfg4({ topicSlug: 'razlomci-4', difficulty: 5, seed, count: 8, type: 'numeric' }))
       for (const p of r5.questions) {
         const sig = p.signature
@@ -386,6 +428,11 @@ describe('4. razred — matematička pravila po oblastima', () => {
         } else if (sig.startsWith('razlomci4:zbirtri:')) {
           const [n1, n2, n3] = sig.replace('razlomci4:zbirtri:', '').split(',').map(Number)
           expect(tacnaVrednost(p)).toBe(n1 + n2 + n3)
+        } else if (sig.startsWith('razlomci4:nejednaki-ekspert:')) {
+          const [n1, ds, n2, db] = sig.replace('razlomci4:nejednaki-ekspert:', '').split(',').map(Number)
+          expect(db % ds).toBe(0)
+          const n1Svedeno = n1 * (db / ds)
+          expect(tacnaVrednost(p)).toBe(n1Svedeno - n2)
         } else {
           throw new Error(`Nepoznat oblik potpisa: ${sig}`)
         }

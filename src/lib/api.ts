@@ -264,6 +264,13 @@ export async function listajPokusaje(): Promise<Pokusaj[]> {
   return data as Pokusaj[]
 }
 
+export async function listajPokusajeKviza(quizId: string): Promise<Pokusaj[]> {
+  const { data, error } = await supabase()
+    .from('attempts').select('*').eq('quiz_id', quizId).order('started_at', { ascending: false })
+  if (error) throw new Error(opisiGresku(error)!)
+  return data as Pokusaj[]
+}
+
 export async function ucitajPokusaj(id: string): Promise<Pokusaj> {
   const { data, error } = await supabase().from('attempts').select('*').eq('id', id).single()
   if (error) throw new Error(opisiGresku(error)!)

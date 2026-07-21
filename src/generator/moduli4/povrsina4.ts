@@ -83,29 +83,95 @@ export const povrsina4: TopicGenerator = {
           maxDistraktor: 2_000_000,
         })
       }
-      // Mešoviti zapis
-      const par = izaberi(rng, MESOVITO)
-      const v1 = ceoBroj(rng, 1, 9)
-      const maks2 = Math.min(par.faktor - 1, 9_999)
-      const v2 = ceoBroj(rng, 1, maks2)
-      const tacan = v1 * par.faktor + v2
-      const signature = `povrsina4:mesovito:${v1}${par.iz1}${v2}${par.iz2}`
+      if (rng() < 0.5) {
+        // Mešoviti zapis (dvočlano)
+        const par = izaberi(rng, MESOVITO)
+        const v1 = ceoBroj(rng, 1, 9)
+        const maks2 = Math.min(par.faktor - 1, 9_999)
+        const v2 = ceoBroj(rng, 1, maks2)
+        const tacan = v1 * par.faktor + v2
+        const signature = `povrsina4:mesovito:${v1}${par.iz1}${v2}${par.iz2}`
+        if (taken.has(signature)) return null
+        return upakujRacun(cfg, rng, {
+          text: `Koliko je ${v1} ${par.iz1} ${v2} ${par.iz2} izraženo u jedinici ${par.u}?`,
+          tacan,
+          kandidati: [v1 + v2, v1 * 10 + v2, v1 * par.faktor * 10 + v2, tacan + par.faktor],
+          explanation: `${v1} ${par.iz1} = ${v1 * par.faktor} ${par.u}, pa je ${v1} ${par.iz1} ${v2} ${par.iz2} = ${v1 * par.faktor} + ${v2} = ${tacan} ${par.u}.`,
+          hint: `Prvo ${par.iz1} pretvori u ${par.u} (1 ${par.iz1} = ${par.faktor} ${par.u}), pa dodaj ostatak.`,
+          signature,
+          sufiks: par.u,
+          maxDistraktor: 10_000_000,
+        })
+      }
+      // Mešoviti zapis (tročlano): "a m² b dm² c cm² = ? cm²" — svaki manji član
+      // ostaje ispod praga sledeće veće jedinice (b, c < 100), faktori m²=10 000, dm²=100.
+      const a = ceoBroj(rng, 1, 20)
+      const b = ceoBroj(rng, 1, 99)
+      const c = ceoBroj(rng, 1, 99)
+      const tacan = a * 10_000 + b * 100 + c
+      const signature = `povrsina4:mesovito3:${a},${b},${c}`
       if (taken.has(signature)) return null
       return upakujRacun(cfg, rng, {
-        text: `Koliko je ${v1} ${par.iz1} ${v2} ${par.iz2} izraženo u jedinici ${par.u}?`,
+        text: `Koliko je ${a} m² ${b} dm² ${c} cm² izraženo u jedinici cm²?`,
         tacan,
-        kandidati: [v1 + v2, v1 * 10 + v2, v1 * par.faktor * 10 + v2, tacan + par.faktor],
-        explanation: `${v1} ${par.iz1} = ${v1 * par.faktor} ${par.u}, pa je ${v1} ${par.iz1} ${v2} ${par.iz2} = ${v1 * par.faktor} + ${v2} = ${tacan} ${par.u}.`,
-        hint: `Prvo ${par.iz1} pretvori u ${par.u} (1 ${par.iz1} = ${par.faktor} ${par.u}), pa dodaj ostatak.`,
+        kandidati: [a * 100 + b * 10 + c, a * 1000 + b * 100 + c, tacan + 100, tacan - 100],
+        explanation: `${a} m² = ${a * 10_000} cm², ${b} dm² = ${b * 100} cm², a ${c} cm² ostaje isto — ukupno ${a * 10_000} + ${b * 100} + ${c} = ${tacan} cm².`,
+        hint: 'Svaku jedinicu posebno pretvori u cm² (1 m² = 10 000 cm², 1 dm² = 100 cm²), pa sve saberi.',
         signature,
-        sufiks: par.u,
-        maxDistraktor: 10_000_000,
+        sufiks: 'cm²',
+        maxDistraktor: 250_000,
       })
     }
 
     if (cfg.difficulty === 3) {
+      // 0=direktan izračun, 1=inverzno, 2=SLOŽENA figura (dva pravougaonika)
+      const grana = ceoBroj(rng, 0, 2)
+      if (grana === 2) {
+        if (rng() < 0.5) {
+          // Zbir dva pravougaonika (npr. figura oblika slova „L")
+          const a1 = ceoBroj(rng, 2, 30)
+          const b1 = ceoBroj(rng, 2, 30)
+          const a2 = ceoBroj(rng, 2, 30)
+          const b2 = ceoBroj(rng, 2, 30)
+          const P1 = a1 * b1
+          const P2 = a2 * b2
+          const tacan = P1 + P2
+          const signature = `povrsina4:slozena-zbir:${a1},${b1},${a2},${b2}`
+          if (taken.has(signature)) return null
+          return upakujRacun(cfg, rng, {
+            text: `Figura se sastoji od dva pravougaonika: prvi ima stranice ${a1} cm i ${b1} cm, a drugi ${a2} cm i ${b2} cm. Kolika je ukupna površina figure?`,
+            tacan,
+            kandidati: [P1, P2, Math.abs(P1 - P2), tacan + 10, tacan - 10],
+            explanation: `Površina prvog pravougaonika je ${a1} · ${b1} = ${P1} cm², a drugog ${a2} · ${b2} = ${P2} cm². Ukupna površina figure je zbir: ${P1} + ${P2} = ${tacan} cm².`,
+            hint: 'Izračunaj površinu svakog pravougaonika posebno, pa ih saberi.',
+            signature,
+            sufiks: 'cm²',
+            maxDistraktor: 4_000,
+          })
+        }
+        // Pravougaonik minus isečak (manji pravougaonik "isečen" iz većeg)
+        const a = ceoBroj(rng, 10, 40)
+        const b = ceoBroj(rng, 10, 40)
+        const c = ceoBroj(rng, 2, a - 1)
+        const d = ceoBroj(rng, 2, b - 1)
+        const P = a * b
+        const isecak = c * d
+        const tacan = P - isecak
+        const signature = `povrsina4:slozena-razlika:${a},${b},${c},${d}`
+        if (taken.has(signature)) return null
+        return upakujRacun(cfg, rng, {
+          text: `Iz pravougaonika dimenzija ${a} cm × ${b} cm isečen je manji pravougaonik dimenzija ${c} cm × ${d} cm. Kolika je površina preostale figure?`,
+          tacan,
+          kandidati: [P, isecak, P + isecak, tacan + 10, tacan - 10],
+          explanation: `Površina celog pravougaonika je ${a} · ${b} = ${P} cm², a isečka ${c} · ${d} = ${isecak} cm². Preostala površina je razlika: ${P} − ${isecak} = ${tacan} cm².`,
+          hint: 'Izračunaj površinu celog pravougaonika i površinu isečka posebno, pa oduzmi manju od veće.',
+          signature,
+          sufiks: 'cm²',
+          maxDistraktor: 4_000,
+        })
+      }
       const kvadrat = rng() < 0.5
-      if (rng() < 0.5) {
+      if (grana === 0) {
         // Direktan izračun, veće strane
         const a = ceoBroj(rng, 2, 200)
         const b = kvadrat ? a : ceoBroj(rng, 2, 200)

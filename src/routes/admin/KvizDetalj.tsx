@@ -1,15 +1,22 @@
 // Detalji kviza: podešavanja, izbor pitanja (snapshot), linkovi za decu
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import {
   dodajPitanjaUKviz, izmeniLink, kvizImaPokusaje, listajLinkove, listajOblasti, listajPitanja,
-  listajPitanjaKviza, napraviLink, obrisiPitanjeKviza, sacuvajKviz,
+  listajPitanjaKviza, listajPokusajeKviza, napraviLink, obrisiPitanjeKviza, sacuvajKviz,
   statusLinkovaKviza, ucitajKviz, type StatusLinka,
 } from '../../lib/api'
-import { formatDatum } from '../../lib/format'
+import { formatDatum, formatProcenat } from '../../lib/format'
 import { mapaPredmetaPoTemi } from '../../lib/predmet'
 import { Loader } from '../../components/Zajednicke'
-import { NAZIVI_PREDMETA, NAZIVI_TIPOVA, type Kviz, type KvizLink, type KvizPitanje, type Oblast, type Pitanje, type Predmet } from '../../types/db'
+import {
+  NAZIVI_PREDMETA, NAZIVI_TIPOVA, type Kviz, type KvizLink, type KvizPitanje, type Oblast,
+  type Pitanje, type Pokusaj, type Predmet, type StatusPokusaja,
+} from '../../types/db'
+
+const NAZIVI_STATUSA: Record<StatusPokusaja, string> = {
+  in_progress: 'U toku', submitted: 'Završen', expired: 'Istekao',
+}
 
 const BAZA_URL = `${window.location.origin}${import.meta.env.BASE_URL}`
 
@@ -24,17 +31,20 @@ export function KvizDetalj() {
   const [oblasti, setOblasti] = useState<Oblast[]>([])
   const [linkovi, setLinkovi] = useState<KvizLink[]>([])
   const [statusi, setStatusi] = useState<StatusLinka[]>([])
+  const [pokusaji, setPokusaji] = useState<Pokusaj[]>([])
 
   async function ucitajSve() {
     if (!id) return
     setUcitava(true)
     try {
-      const [k, zakljuc, snap, banka, obl, lnk, stat] = await Promise.all([
+      const [k, zakljuc, snap, banka, obl, lnk, stat, pok] = await Promise.all([
         ucitajKviz(id), kvizImaPokusaje(id), listajPitanjaKviza(id),
         listajPitanja({}), listajOblasti(), listajLinkove(id), statusLinkovaKviza(id),
+        listajPokusajeKviza(id),
       ])
       setKviz(k); setZakljucano(zakljuc); setSnapshotPitanja(snap)
       setBankaPitanja(banka); setOblasti(obl); setLinkovi(lnk); setStatusi(stat)
+      setPokusaji(pok)
     } catch (e) {
       setGreska(String((e as Error).message ?? e))
     } finally {
@@ -58,6 +68,8 @@ export function KvizDetalj() {
         quizId={kviz.id} zakljucano={zakljucano} snapshot={snapshotPitanja} banka={bankaPitanja}
         oblasti={oblasti} onSacuvano={ucitajSve}
       />
+
+      <RezultatiKviza pokusaji={pokusaji} />
 
       <LinkoviKviza quizId={kviz.id} linkovi={linkovi} statusi={statusi} onPromena={ucitajSve} />
     </div>
@@ -287,6 +299,59 @@ function PitanjaKviza({
             {dodaje ? 'Dodajem…' : `Dodaj izabrana pitanja u kviz (${izabrana.length})`}
           </button>
         </>
+      )}
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+function RezultatiKviza({ pokusaji }: { pokusaji: Pokusaj[] }) {
+  const [otvoreno, setOtvoreno] = useState(false)
+  const zavrseno = pokusaji.filter((p) => p.status === 'submitted').length
+
+  return (
+    <div className="kartica razmak-dole">
+      <div className="red red--razmak">
+        <h2>Rezultati ({pokusaji.length})</h2>
+        <button type="button" className="dugme dugme--senka dugme--malo" onClick={() => setOtvoreno(!otvoreno)}>
+          {otvoreno ? 'Sakrij' : 'Prikaži'}
+        </button>
+      </div>
+
+      {!otvoreno ? (
+        <p className="malo blago">
+          {pokusaji.length === 0 ? 'Još nema pokušaja.' : `${pokusaji.length} ${pokusaji.length === 1 ? 'pokušaj' : 'pokušaja'} · ${zavrseno} završeno`}
+        </p>
+      ) : pokusaji.length === 0 ? (
+        <p className="blago">Još nema rezultata za ovaj kviz.</p>
+      ) : (
+        <div className="tabela-omot">
+          <table className="tabela tabela--kartice">
+            <thead>
+              <tr><th>Dete</th><th>Status</th><th>Rezultat</th><th>Pokušaj</th><th>Kraj</th><th></th></tr>
+            </thead>
+            <tbody>
+              {pokusaji.map((p) => (
+                <tr key={p.id}>
+                  <td data-naslov="Dete">{p.child_name}{p.child_label ? ` (${p.child_label})` : ''}</td>
+                  <td data-naslov="Status">
+                    <span className={`bedz ${
+                      p.status === 'submitted' && p.review_pending ? 'bedz--neutral'
+                      : p.status === 'submitted' ? (p.passed ? 'bedz--uspeh' : 'bedz--upozorenje')
+                      : p.status === 'expired' ? 'bedz--greska' : 'bedz--neutral'
+                    }`}>
+                      {p.status === 'submitted' && p.review_pending ? 'Čeka pregled' : NAZIVI_STATUSA[p.status]}
+                    </span>
+                  </td>
+                  <td data-naslov="Rezultat">{formatProcenat(p.score_pct)}</td>
+                  <td data-naslov="Pokušaj">#{p.attempt_no}</td>
+                  <td data-naslov="Kraj">{formatDatum(p.submitted_at)}</td>
+                  <td><Link to={`/admin/rezultati/${p.id}`}>Detalji</Link></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   )

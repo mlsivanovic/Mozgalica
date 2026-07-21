@@ -25,7 +25,7 @@ export const nejednacine4: TopicGenerator = {
       if (taken.has(signature)) return null
       if (smer === 'lt') {
         return upakujRacun(cfg, rng, {
-          text: `Važi: ${a} · x < ${b}. Koji je najveći mogući ceo broj x?`,
+          text: `Data je nejednačina ${a} · x < ${b}. Koji je najveći mogući ceo broj x?`,
           tacan: k - 1,
           kandidati: [k, k + 1, k - 2],
           explanation: `${a} · x < ${b} znači x < ${k} (jer ${a} · ${k} = ${b}). Najveći ceo broj manji od ${k} je ${k - 1}.`,
@@ -35,7 +35,7 @@ export const nejednacine4: TopicGenerator = {
         })
       }
       return upakujRacun(cfg, rng, {
-        text: `Važi: ${a} · x > ${b}. Koji je najmanji mogući ceo broj x?`,
+        text: `Data je nejednačina ${a} · x > ${b}. Koji je najmanji mogući ceo broj x?`,
         tacan: k + 1,
         kandidati: [k, k - 1, k + 2],
         explanation: `${a} · x > ${b} znači x > ${k} (jer ${a} · ${k} = ${b}). Najmanji ceo broj veći od ${k} je ${k + 1}.`,
@@ -57,7 +57,7 @@ export const nejednacine4: TopicGenerator = {
         if (taken.has(signature)) return null
         if (smer === 'lt') {
           return upakujRacun(cfg, rng, {
-            text: `Važi: ${a} · x < ${b}. Koji je najveći mogući ceo broj x?`,
+            text: `Data je nejednačina ${a} · x < ${b}. Koji je najveći mogući ceo broj x?`,
             tacan: k - 1,
             kandidati: [k, k + 1, k - 2],
             explanation: `${a} · x < ${b} znači x < ${k} (jer ${a} · ${k} = ${b}). Najveći ceo broj manji od ${k} je ${k - 1}.`,
@@ -67,7 +67,7 @@ export const nejednacine4: TopicGenerator = {
           })
         }
         return upakujRacun(cfg, rng, {
-          text: `Važi: ${a} · x > ${b}. Koji je najmanji mogući ceo broj x?`,
+          text: `Data je nejednačina ${a} · x > ${b}. Koji je najmanji mogući ceo broj x?`,
           tacan: k + 1,
           kandidati: [k, k - 1, k + 2],
           explanation: `${a} · x > ${b} znači x > ${k} (jer ${a} · ${k} = ${b}). Najmanji ceo broj veći od ${k} je ${k + 1}.`,
@@ -86,7 +86,7 @@ export const nejednacine4: TopicGenerator = {
         if (taken.has(signature)) return null
         if (smer === 'lt') {
           return upakujRacun(cfg, rng, {
-            text: `Važi: x : ${a} < ${b}. Koji je najveći mogući ceo broj x?`,
+            text: `Data je nejednačina x : ${a} < ${b}. Koji je najveći mogući ceo broj x?`,
             tacan: k - 1,
             kandidati: [k, k + 1, k - 2],
             explanation: `x : ${a} < ${b} znači x < ${k} (jer ${k} : ${a} = ${b}). Najveći ceo broj manji od ${k} je ${k - 1}.`,
@@ -96,7 +96,7 @@ export const nejednacine4: TopicGenerator = {
           })
         }
         return upakujRacun(cfg, rng, {
-          text: `Važi: x : ${a} > ${b}. Koji je najmanji mogući ceo broj x?`,
+          text: `Data je nejednačina x : ${a} > ${b}. Koji je najmanji mogući ceo broj x?`,
           tacan: k + 1,
           kandidati: [k, k - 1, k + 2],
           explanation: `x : ${a} > ${b} znači x > ${k} (jer ${k} : ${a} = ${b}). Najmanji ceo broj veći od ${k} je ${k + 1}.`,
@@ -115,7 +115,7 @@ export const nejednacine4: TopicGenerator = {
       if (smer === 'gt') {
         // a:x > b ⟺ x < x0 (manji delilac daje veći količnik)
         return upakujRacun(cfg, rng, {
-          text: `Važi: ${a} : x > ${b}. Koji je najveći mogući ceo broj x?`,
+          text: `Data je nejednačina ${a} : x > ${b}. Koji je najveći mogući ceo broj x?`,
           tacan: x0 - 1,
           kandidati: [x0, x0 + 1, x0 - 2],
           explanation: `${a} : x > ${b} znači x < ${x0} (jer ${a} : ${x0} = ${b} — manji delilac daje veći količnik). Najveći ceo broj manji od ${x0} je ${x0 - 1}.`,
@@ -126,7 +126,7 @@ export const nejednacine4: TopicGenerator = {
       }
       // a:x < b ⟺ x > x0
       return upakujRacun(cfg, rng, {
-        text: `Važi: ${a} : x < ${b}. Koji je najmanji mogući ceo broj x?`,
+        text: `Data je nejednačina ${a} : x < ${b}. Koji je najmanji mogući ceo broj x?`,
         tacan: x0 + 1,
         kandidati: [x0, x0 - 1, x0 + 2],
         explanation: `${a} : x < ${b} znači x > ${x0} (jer ${a} : ${x0} = ${b} — veći delilac daje manji količnik). Najmanji ceo broj veći od ${x0} je ${x0 + 1}.`,
@@ -146,7 +146,7 @@ export const nejednacine4: TopicGenerator = {
 
       if (trazi === 'max') {
         return upakujRacun(cfg, rng, {
-          text: `Važi: x > ${L} i x < ${U}. Koji je najveći mogući ceo broj x?`,
+          text: `Data je nejednačina ${L} < x < ${U}. Koji je najveći mogući ceo broj x?`,
           tacan: U - 1,
           kandidati: [U, L, L + 1],
           explanation: `Najveći ceo broj manji od ${U} (a veći od ${L}) je ${U - 1}.`,
@@ -157,7 +157,7 @@ export const nejednacine4: TopicGenerator = {
       }
       if (trazi === 'min') {
         return upakujRacun(cfg, rng, {
-          text: `Važi: x > ${L} i x < ${U}. Koji je najmanji mogući ceo broj x?`,
+          text: `Data je nejednačina ${L} < x < ${U}. Koji je najmanji mogući ceo broj x?`,
           tacan: L + 1,
           kandidati: [L, U, U - 1],
           explanation: `Najmanji ceo broj veći od ${L} (a manji od ${U}) je ${L + 1}.`,
@@ -168,7 +168,7 @@ export const nejednacine4: TopicGenerator = {
       }
       const brojResenja = U - L - 1
       return upakujRacun(cfg, rng, {
-        text: `Važi: x > ${L} i x < ${U}. Koliko celih brojeva x zadovoljava ovu nejednačinu?`,
+        text: `Data je nejednačina ${L} < x < ${U}. Koliko celih brojeva x zadovoljava ovu nejednačinu?`,
         tacan: brojResenja,
         kandidati: [U - L, U - L + 1, brojResenja + 1, brojResenja - 1],
         explanation: `Celi brojevi između ${L} i ${U} (bez njih samih) su ${L + 1}, ${L + 2}, ..., ${U - 1} — ima ih ${U - 1} − ${L + 1} + 1 = ${brojResenja}.`,
@@ -194,7 +194,7 @@ export const nejednacine4: TopicGenerator = {
       const izraz = `${a} · (x ${oblik === '+' ? '+' : '−'} ${b})`
       if (smer === 'lt') {
         return upakujRacun(cfg, rng, {
-          text: `Važi: ${izraz} < ${c}. Koji je najveći mogući ceo broj x?`,
+          text: `Data je nejednačina ${izraz} < ${c}. Koji je najveći mogući ceo broj x?`,
           tacan: k - 1,
           kandidati: [k, k + 1, k - 2],
           explanation: `${izraz} < ${c} znači x ${oblik === '+' ? '+' : '−'} ${b} < ${unutarnjaGranica}, pa x < ${k}. Najveći ceo broj manji od ${k} je ${k - 1}.`,
@@ -204,7 +204,7 @@ export const nejednacine4: TopicGenerator = {
         })
       }
       return upakujRacun(cfg, rng, {
-        text: `Važi: ${izraz} > ${c}. Koji je najmanji mogući ceo broj x?`,
+        text: `Data je nejednačina ${izraz} > ${c}. Koji je najmanji mogući ceo broj x?`,
         tacan: k + 1,
         kandidati: [k, k - 1, k + 2],
         explanation: `${izraz} > ${c} znači x ${oblik === '+' ? '+' : '−'} ${b} > ${unutarnjaGranica}, pa x > ${k}. Najmanji ceo broj veći od ${k} je ${k + 1}.`,
@@ -231,7 +231,7 @@ export const nejednacine4: TopicGenerator = {
       const izraz = `${a} · (x ${oblik === '+' ? '+' : '−'} ${b}) + ${d}`
       if (smer === 'lt') {
         return upakujRacun(cfg, rng, {
-          text: `Važi: ${izraz} < ${c}. Koji je najveći mogući ceo broj x?`,
+          text: `Data je nejednačina ${izraz} < ${c}. Koji je najveći mogući ceo broj x?`,
           tacan: k - 1,
           kandidati: [k, k + 1, k - 2],
           explanation: `${izraz} < ${c} znači ${a} · (x ${oblik === '+' ? '+' : '−'} ${b}) < ${c - d}, pa x ${oblik === '+' ? '+' : '−'} ${b} < ${unutarnjaGranica}, pa x < ${k}. Najveći ceo broj manji od ${k} je ${k - 1}.`,
@@ -241,7 +241,7 @@ export const nejednacine4: TopicGenerator = {
         })
       }
       return upakujRacun(cfg, rng, {
-        text: `Važi: ${izraz} > ${c}. Koji je najmanji mogući ceo broj x?`,
+        text: `Data je nejednačina ${izraz} > ${c}. Koji je najmanji mogući ceo broj x?`,
         tacan: k + 1,
         kandidati: [k, k - 1, k + 2],
         explanation: `${izraz} > ${c} znači ${a} · (x ${oblik === '+' ? '+' : '−'} ${b}) > ${c - d}, pa x ${oblik === '+' ? '+' : '−'} ${b} > ${unutarnjaGranica}, pa x > ${k}. Najmanji ceo broj veći od ${k} je ${k + 1}.`,
@@ -266,7 +266,7 @@ export const nejednacine4: TopicGenerator = {
     if (smer === 'gt') {
       // N:(x±b) > c ⟺ (x±b) < granica ⟺ x < k
       return upakujRacun(cfg, rng, {
-        text: `Važi: ${izraz} > ${c}. Koji je najveći mogući ceo broj x?`,
+        text: `Data je nejednačina ${izraz} > ${c}. Koji je najveći mogući ceo broj x?`,
         tacan: k - 1,
         kandidati: [k, k + 1, k - 2],
         explanation: `${izraz} > ${c} znači x ${oblik === '+' ? '+' : '−'} ${b} < ${unutarnjaGranica} (manji delilac daje veći količnik), pa x < ${k}. Najveći ceo broj manji od ${k} je ${k - 1}.`,
@@ -277,7 +277,7 @@ export const nejednacine4: TopicGenerator = {
     }
     // N:(x±b) < c ⟺ x > k
     return upakujRacun(cfg, rng, {
-      text: `Važi: ${izraz} < ${c}. Koji je najmanji mogući ceo broj x?`,
+      text: `Data je nejednačina ${izraz} < ${c}. Koji je najmanji mogući ceo broj x?`,
       tacan: k + 1,
       kandidati: [k, k - 1, k + 2],
       explanation: `${izraz} < ${c} znači x ${oblik === '+' ? '+' : '−'} ${b} > ${unutarnjaGranica} (veći delilac daje manji količnik), pa x > ${k}. Najmanji ceo broj veći od ${k} je ${k + 1}.`,

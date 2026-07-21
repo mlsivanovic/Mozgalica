@@ -123,60 +123,148 @@ export const razlomci4: TopicGenerator = {
     }
 
     if (cfg.difficulty === 3) {
-      // Sabiranje/oduzimanje razlomaka istog imenioca — odgovor je BROJILAC.
-      // Zbir SME preći imenilac (rezultat > 1 ceo) — to je namerno, ne izuzetak.
-      const d = ceoBroj(rng, 4, 15)
-      const saberi = rng() < 0.5
-      let n1: number, n2: number, tacan: number
-      if (saberi) {
-        n1 = ceoBroj(rng, 1, d - 1)
-        n2 = ceoBroj(rng, 1, d - 1)
-        tacan = n1 + n2
-      } else {
-        n1 = ceoBroj(rng, 2, d - 1)
-        n2 = ceoBroj(rng, 1, n1)
-        tacan = n1 - n2
+      // 50/50: isti imenilac (kao ranije) ILI različiti imenioci (jedan imenilac
+      // deljiv drugim) — pravi skok u težini, traži svođenje na zajednički imenilac.
+      const razliciti = rng() < 0.5
+      if (!razliciti) {
+        // Sabiranje/oduzimanje razlomaka istog imenioca — odgovor je BROJILAC.
+        // Zbir SME preći imenilac (rezultat > 1 ceo) — to je namerno, ne izuzetak.
+        const d = ceoBroj(rng, 4, 15)
+        const saberi = rng() < 0.5
+        let n1: number, n2: number, tacan: number
+        if (saberi) {
+          n1 = ceoBroj(rng, 1, d - 1)
+          n2 = ceoBroj(rng, 1, d - 1)
+          tacan = n1 + n2
+        } else {
+          n1 = ceoBroj(rng, 2, d - 1)
+          n2 = ceoBroj(rng, 1, n1)
+          tacan = n1 - n2
+        }
+        const signature = `razlomci4:${saberi ? 'sabiranje' : 'oduzimanje'}:${n1},${n2},${d}`
+        if (taken.has(signature)) return null
+        const napomenaPreko1 = saberi && tacan > d
+          ? ` Pošto je ${tacan} veće od imenioca ${d}, rezultat je veći od 1 celog (to je normalno i tačno).`
+          : ''
+        return upakujRacun(cfg, rng, {
+          text: `Izračunaj brojilac rezultata: ${n1}/${d} ${saberi ? '+' : '−'} ${n2}/${d} = ?/${d}`,
+          tacan,
+          kandidati: [n1, n2, saberi ? Math.abs(n1 - n2) : n1 + n2, tacan + 1, tacan - 1],
+          explanation: (saberi
+            ? `Imenilac ostaje isti, brojioce sabiramo: ${n1} + ${n2} = ${tacan}, pa je zbir ${tacan}/${d}.`
+            : `Imenilac ostaje isti, brojioce oduzimamo: ${n1} − ${n2} = ${tacan}, pa je razlika ${tacan}/${d}.`) + napomenaPreko1,
+          hint: 'Razlomke istog imenioca sabiraš/oduzimaš tako što sabereš/oduzmeš samo brojioce — imenilac se ne dira.',
+          signature,
+          maxDistraktor: 40,
+        })
       }
-      const signature = `razlomci4:${saberi ? 'sabiranje' : 'oduzimanje'}:${n1},${n2},${d}`
-      if (taken.has(signature)) return null
-      const napomenaPreko1 = saberi && tacan > d
-        ? ` Pošto je ${tacan} veće od imenioca ${d}, rezultat je veći od 1 celog (to je normalno i tačno).`
-        : ''
+      // Različiti imenioci — imenilac db je umnožak imenioca ds (ds · k = db), pa se
+      // n1/ds prvo svodi na db (množenjem brojioca i imenioca sa k), pa se tek onda
+      // sabira/oduzima sa n2/db. Odgovor je i dalje BROJILAC nad zajedničkim imeniocem db.
+      const ds = ceoBroj(rng, 2, 8)
+      const k = ceoBroj(rng, 2, 5)
+      const db = ds * k
+      const n1 = ceoBroj(rng, 1, ds - 1)
+      const n1Svedeno = n1 * k
+      const saberiN = rng() < 0.5
+      let n2: number, tacanN: number
+      if (saberiN) {
+        n2 = ceoBroj(rng, 1, db - 1)
+        tacanN = n1Svedeno + n2
+      } else {
+        // n1Svedeno = n1·k ≥ 2 (jer je k ≥ 2), pa opseg [1, n1Svedeno-1] nikad nije prazan.
+        n2 = ceoBroj(rng, 1, n1Svedeno - 1)
+        tacanN = n1Svedeno - n2
+      }
+      const signatureN = `razlomci4:${saberiN ? 'nejednaki-sab' : 'nejednaki-odu'}:${n1},${ds},${n2},${db}`
+      if (taken.has(signatureN)) return null
       return upakujRacun(cfg, rng, {
-        text: `Izračunaj brojilac rezultata: ${n1}/${d} ${saberi ? '+' : '−'} ${n2}/${d} = ?/${d}`,
-        tacan,
-        kandidati: [n1, n2, saberi ? Math.abs(n1 - n2) : n1 + n2, tacan + 1, tacan - 1],
-        explanation: (saberi
-          ? `Imenilac ostaje isti, brojioce sabiramo: ${n1} + ${n2} = ${tacan}, pa je zbir ${tacan}/${d}.`
-          : `Imenilac ostaje isti, brojioce oduzimamo: ${n1} − ${n2} = ${tacan}, pa je razlika ${tacan}/${d}.`) + napomenaPreko1,
-        hint: 'Razlomke istog imenioca sabiraš/oduzimaš tako što sabereš/oduzmeš samo brojioce — imenilac se ne dira.',
-        signature,
-        maxDistraktor: 40,
+        text: `Izračunaj brojilac rezultata: ${n1}/${ds} ${saberiN ? '+' : '−'} ${n2}/${db} = ?/${db}`,
+        tacan: tacanN,
+        kandidati: [n1 + n2, n1Svedeno, n2, tacanN + 1, tacanN - 1],
+        explanation: `${n1}/${ds} = ${n1Svedeno}/${db} (brojilac i imenilac smo pomnožili sa ${k}, jer je ${db} : ${ds} = ${k}). Sad ${saberiN ? 'sabiramo' : 'oduzimamo'} brojioce: ${n1Svedeno} ${saberiN ? '+' : '−'} ${n2} = ${tacanN}, pa je rezultat ${tacanN}/${db}.`,
+        hint: `Razlomci imaju različite imenioce — prvo svedi ${n1}/${ds} na imenilac ${db} (umnožak ${ds}-a), pa tek onda sabiraj/oduzimaj brojioce.`,
+        signature: signatureN,
+        maxDistraktor: 150,
       })
     }
 
     if (cfg.difficulty === 4) {
-      // Razlomak broja, konstruisan unazad (uvek se tačno deli)
-      const d = ceoBroj(rng, 2, 15)
-      const n = ceoBroj(rng, 1, d - 1)
-      const q = ceoBroj(rng, 2, 80)
-      const celina = q * d
-      const tacan = n * q
-      const signature = `razlomci4:deo:${n},${d},${q}`
-      if (taken.has(signature)) return null
+      // 50/50: razlomak broja (kao ranije) ILI teže sabiranje/oduzimanje različitih
+      // imenilaca (veći brojevi nego na nivou 3 — dodatno otežanje).
+      if (rng() < 0.5) {
+        // Razlomak broja, konstruisan unazad (uvek se tačno deli)
+        const d = ceoBroj(rng, 2, 15)
+        const n = ceoBroj(rng, 1, d - 1)
+        const q = ceoBroj(rng, 2, 80)
+        const celina = q * d
+        const tacan = n * q
+        const signature = `razlomci4:deo:${n},${d},${q}`
+        if (taken.has(signature)) return null
+        return upakujRacun(cfg, rng, {
+          text: `Koliko je ${n}/${d} broja ${celina}?`,
+          tacan,
+          kandidati: [celina, q, tacan + d, tacan - d],
+          explanation: `${celina} : ${d} = ${q}, pa je ${n}/${d} od ${celina} jednako ${q} · ${n} = ${tacan}.`,
+          hint: 'Prvo podeli broj imeniocem, pa rezultat pomnoži brojiocem.',
+          signature,
+          maxDistraktor: 5_000,
+        })
+      }
+      // Isti princip kao na nivou 3 (imenilac db je umnožak imenioca ds), ali sa
+      // većim brojevima — pravi teže svođenje na zajednički imenilac.
+      const ds = ceoBroj(rng, 2, 12)
+      const k = ceoBroj(rng, 2, 8)
+      const db = ds * k
+      const n1 = ceoBroj(rng, 1, ds - 1)
+      const n1Svedeno = n1 * k
+      const saberiN = rng() < 0.5
+      let n2: number, tacanN: number
+      if (saberiN) {
+        n2 = ceoBroj(rng, 1, db - 1)
+        tacanN = n1Svedeno + n2
+      } else {
+        n2 = ceoBroj(rng, 1, n1Svedeno - 1)
+        tacanN = n1Svedeno - n2
+      }
+      const signatureN = `razlomci4:${saberiN ? 'nejednaki-veci-sab' : 'nejednaki-veci-odu'}:${n1},${ds},${n2},${db}`
+      if (taken.has(signatureN)) return null
       return upakujRacun(cfg, rng, {
-        text: `Koliko je ${n}/${d} broja ${celina}?`,
-        tacan,
-        kandidati: [celina, q, tacan + d, tacan - d],
-        explanation: `${celina} : ${d} = ${q}, pa je ${n}/${d} od ${celina} jednako ${q} · ${n} = ${tacan}.`,
-        hint: 'Prvo podeli broj imeniocem, pa rezultat pomnoži brojiocem.',
-        signature,
-        maxDistraktor: 5_000,
+        text: `Izračunaj brojilac rezultata: ${n1}/${ds} ${saberiN ? '+' : '−'} ${n2}/${db} = ?/${db}`,
+        tacan: tacanN,
+        kandidati: [n1 + n2, n1Svedeno, n2, tacanN + 1, tacanN - 1],
+        explanation: `${n1}/${ds} = ${n1Svedeno}/${db} (brojilac i imenilac smo pomnožili sa ${k}, jer je ${db} : ${ds} = ${k}). Sad ${saberiN ? 'sabiramo' : 'oduzimamo'} brojioce: ${n1Svedeno} ${saberiN ? '+' : '−'} ${n2} = ${tacanN}, pa je rezultat ${tacanN}/${db}.`,
+        hint: `Razlomci imaju različite imenioce — prvo svedi ${n1}/${ds} na imenilac ${db} (umnožak ${ds}-a), pa tek onda sabiraj/oduzimaj brojioce.`,
+        signature: signatureN,
+        maxDistraktor: 400,
       })
     }
 
-    // Ekspert: višekoračni zadaci — razlika dva "dela", "koliko do celog", ili zbir tri razlomka
-    const grana = ceoBroj(rng, 0, 2)
+    // Ekspert: višekoračni zadaci — razlika dva "dela", "koliko do celog", zbir tri
+    // razlomka, ili oduzimanje DVA razlomka različitih imenilaca (najveći brojevi u
+    // celoj oblasti — najteži oblik svođenja na zajednički imenilac).
+    const grana = ceoBroj(rng, 0, 3)
+    if (grana === 3) {
+      const ds = ceoBroj(rng, 2, 20)
+      const k = ceoBroj(rng, 2, 10)
+      const db = ds * k
+      const n1 = ceoBroj(rng, 1, ds - 1)
+      const n1Svedeno = n1 * k
+      // n1Svedeno = n1·k ≥ 2 (jer je k ≥ 2), pa opseg [1, n1Svedeno-1] nikad nije prazan.
+      const n2 = ceoBroj(rng, 1, n1Svedeno - 1)
+      const tacan = n1Svedeno - n2
+      const signature = `razlomci4:nejednaki-ekspert:${n1},${ds},${n2},${db}`
+      if (taken.has(signature)) return null
+      return upakujRacun(cfg, rng, {
+        text: `Izračunaj brojilac rezultata: ${n1}/${ds} − ${n2}/${db} = ?/${db}`,
+        tacan,
+        kandidati: [n1 - n2, n1Svedeno, n2, tacan + 1, tacan - 1],
+        explanation: `${n1}/${ds} = ${n1Svedeno}/${db} (brojilac i imenilac smo pomnožili sa ${k}, jer je ${db} : ${ds} = ${k}). Sad oduzimamo brojioce: ${n1Svedeno} − ${n2} = ${tacan}, pa je razlika ${tacan}/${db}.`,
+        hint: `Razlomci imaju različite imenioce — prvo svedi ${n1}/${ds} na imenilac ${db} (umnožak ${ds}-a), pa tek onda oduzmi brojioce.`,
+        signature,
+        maxDistraktor: 400,
+      })
+    }
     if (grana === 0) {
       const d1 = ceoBroj(rng, 2, 12)
       const q1 = ceoBroj(rng, 5, 50)

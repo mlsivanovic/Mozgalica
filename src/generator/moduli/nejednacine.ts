@@ -47,7 +47,7 @@ export const nejednacine: TopicGenerator = {
 
       if (trazi === 'max') {
         return upakujRacun(cfg, rng, {
-          text: `Važi: x > ${L} i x < ${U}. Koji je najveći mogući ceo broj x?`,
+          text: `Data je nejednačina ${L} < x < ${U}. Koji je najveći mogući ceo broj x?`,
           tacan: U - 1,
           kandidati: [U, L, L + 1],
           explanation: `Najveći ceo broj manji od ${U} (a veći od ${L}) je ${U - 1}.`,
@@ -56,7 +56,7 @@ export const nejednacine: TopicGenerator = {
         })
       }
       return upakujRacun(cfg, rng, {
-        text: `Važi: x > ${L} i x < ${U}. Koji je najmanji mogući ceo broj x?`,
+        text: `Data je nejednačina ${L} < x < ${U}. Koji je najmanji mogući ceo broj x?`,
         tacan: L + 1,
         kandidati: [L, U, U - 1],
         explanation: `Najmanji ceo broj veći od ${L} (a manji od ${U}) je ${L + 1}.`,
@@ -120,7 +120,7 @@ export const nejednacine: TopicGenerator = {
     if (taken.has(signature)) return null
     if (smer === 'lt') {
       return upakujRacun(cfg, rng, {
-        text: `Važi: ${a} · x ${plus ? '+' : '−'} ${c} < ${b}. Koji je najveći mogući ceo broj x?`,
+        text: `Data je nejednačina ${a} · x ${plus ? '+' : '−'} ${c} < ${b}. Koji je najveći mogući ceo broj x?`,
         tacan: k - 1,
         kandidati: [k, k + 1, k - 2],
         explanation: `${a} · x ${plus ? '+' : '−'} ${c} < ${b} znači ${a} · x < ${ax}, pa x < ${k} (jer ${a} · ${k} = ${ax}). Najveći ceo broj manji od ${k} je ${k - 1}.`,
@@ -129,7 +129,7 @@ export const nejednacine: TopicGenerator = {
       })
     }
     return upakujRacun(cfg, rng, {
-      text: `Važi: ${a} · x ${plus ? '+' : '−'} ${c} > ${b}. Koji je najmanji mogući ceo broj x?`,
+      text: `Data je nejednačina ${a} · x ${plus ? '+' : '−'} ${c} > ${b}. Koji je najmanji mogući ceo broj x?`,
       tacan: k + 1,
       kandidati: [k, k - 1, k + 2],
       explanation: `${a} · x ${plus ? '+' : '−'} ${c} > ${b} znači ${a} · x > ${ax}, pa x > ${k} (jer ${a} · ${k} = ${ax}). Najmanji ceo broj veći od ${k} je ${k + 1}.`,
