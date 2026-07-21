@@ -34,7 +34,7 @@ export function UvozCsv({ oblastiSrpski, onZatvori, onUvezeno }: Props) {
   const rezultat = useMemo(() => {
     if (!redovi) return null
     const placeholderi: Oblast[] = nepoznateTeme.map((naziv) => ({
-      id: `novo:${naziv}`, slug: napraviSlugTeme(naziv), name: naziv, sort_order: 100, subject: 'srpski',
+      id: `novo:${naziv}`, slug: napraviSlugTeme(naziv), name: naziv, sort_order: 100, subject: 'srpski', grade: 3,
     }))
     return mapirajRedove(redovi, [...oblastiSrpski, ...placeholderi])
   }, [redovi, oblastiSrpski, nepoznateTeme])

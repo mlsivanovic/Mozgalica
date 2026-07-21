@@ -14,11 +14,27 @@ import { oduzimanje } from './moduli/oduzimanje'
 import { poredjenje } from './moduli/poredjenje'
 import { rimski } from './moduli/rimski'
 import { sabiranje } from './moduli/sabiranje'
+import { sabiranje4 } from './moduli4/sabiranje4'
+import { oduzimanje4 } from './moduli4/oduzimanje4'
+import { mnozenje4 } from './moduli4/mnozenje4'
+import { deljenje4 } from './moduli4/deljenje4'
+import { veliki4 } from './moduli4/veliki4'
+import { kombinovane4 } from './moduli4/kombinovane4'
+import { jednacine4 } from './moduli4/jednacine4'
+import { nejednacine4 } from './moduli4/nejednacine4'
+import { povrsina4 } from './moduli4/povrsina4'
+import { zapremina4 } from './moduli4/zapremina4'
+import { razlomci4 } from './moduli4/razlomci4'
+import { tela4 } from './moduli4/tela4'
+import { decimal4 } from './moduli4/decimal4'
 
 const MODULI: TopicGenerator[] = [
   sabiranje, oduzimanje, mnozenje, deljenje, kombinovane,
   poredjenje, nizovi, obim, jedinice, novac,
   rimski, jednacine, nejednacine,
+  // 4. razred
+  sabiranje4, oduzimanje4, mnozenje4, deljenje4, veliki4, kombinovane4,
+  jednacine4, nejednacine4, povrsina4, zapremina4, razlomci4, tela4, decimal4,
 ]
 
 export const REGISTAR = new Map<string, TopicGenerator>(MODULI.map((m) => [m.slug, m]))

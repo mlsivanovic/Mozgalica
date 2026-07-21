@@ -7,7 +7,7 @@ import { podrzaneOblasti } from '../../generator'
 import { generisi } from '../../generator'
 import type { GeneratorConfig, GenerisanoPitanje } from '../../generator/types'
 import { listajOblasti } from '../../lib/api'
-import { NAZIVI_TEZINA, type Oblast, type Tezina, type TipPitanja } from '../../types/db'
+import { NAZIVI_RAZREDA, NAZIVI_TEZINA, type Oblast, type Razred, type Tezina, type TipPitanja } from '../../types/db'
 import { GeneratorPregled } from './GeneratorPregled'
 import './generator.css'
 
@@ -17,6 +17,12 @@ const NAZIVI_OBLASTI: Record<string, string> = {
   'nizovi-i-obrasci': 'Nizovi i obrasci', 'obim-i-merenje': 'Obim i merenje dužine',
   'merne-jedinice': 'Merne jedinice', 'novac': 'Novac',
   'rimski-brojevi': 'Rimski brojevi', 'jednacine': 'Jednačine', 'nejednacine': 'Nejednačine',
+  // 4. razred
+  'veliki-brojevi-4': 'Veliki brojevi', 'sabiranje-4': 'Sabiranje', 'oduzimanje-4': 'Oduzimanje',
+  'mnozenje-4': 'Množenje', 'deljenje-4': 'Deljenje',
+  'kombinovane-operacije-4': 'Kombinovane računske operacije', 'jednacine-4': 'Jednačine',
+  'nejednacine-4': 'Nejednačine', 'povrsina-4': 'Površina', 'zapremina-4': 'Zapremina',
+  'geometrijska-tela-4': 'Geometrijska tela', 'razlomci-4': 'Razlomci', 'decimalni-brojevi-4': 'Decimalni brojevi',
 }
 
 const IKONE_OBLASTI: Record<string, string> = {
@@ -25,7 +31,15 @@ const IKONE_OBLASTI: Record<string, string> = {
   'nizovi-i-obrasci': '🔁', 'obim-i-merenje': '📐',
   'merne-jedinice': '📏', 'novac': '💰',
   'rimski-brojevi': '🏛️', 'jednacine': '🟰', 'nejednacine': '≠',
+  // 4. razred
+  'veliki-brojevi-4': '🔢', 'sabiranje-4': '➕', 'oduzimanje-4': '➖',
+  'mnozenje-4': '✖️', 'deljenje-4': '➗',
+  'kombinovane-operacije-4': '🧮', 'jednacine-4': '🟰', 'nejednacine-4': '≠',
+  'povrsina-4': '▦', 'zapremina-4': '📦', 'geometrijska-tela-4': '🧊',
+  'razlomci-4': '🍕', 'decimalni-brojevi-4': '🔟',
 }
+
+const RAZREDI: Razred[] = [3, 4]
 
 const TIPOVI: { vrednost: TipPitanja | 'auto'; naziv: string }[] = [
   { vrednost: 'auto', naziv: 'Automatski izbor' },
@@ -36,6 +50,7 @@ const TIPOVI: { vrednost: TipPitanja | 'auto'; naziv: string }[] = [
 export function Generator() {
   const navigate = useNavigate()
   const [oblasti, setOblasti] = useState<Oblast[]>([])
+  const [razred, setRazred] = useState<Razred>(3)
   const [topicSlugovi, setTopicSlugovi] = useState<string[]>(['sabiranje'])
   const [difficulty, setDifficulty] = useState<Tezina>(3)
   const [count, setCount] = useState(10)
@@ -48,6 +63,14 @@ export function Generator() {
   useEffect(() => { listajOblasti().then(setOblasti).catch(() => {}) }, [])
 
   const podrzane = podrzaneOblasti()
+  // Samo oblasti aktivnog razreda — sprečava da se 3. i 4. razred pomešaju u istom kvizu.
+  const podrzaneRazreda = podrzane.filter((s) => oblasti.some((o) => o.slug === s && o.grade === razred))
+
+  function promeniRazred(r: Razred) {
+    setRazred(r)
+    // Teme iz drugog razreda više ne bi bile validne za generisanje.
+    setTopicSlugovi((prev) => prev.filter((s) => oblasti.some((o) => o.slug === s && o.grade === r)))
+  }
 
   function preklopiOblast(slug: string) {
     setTopicSlugovi(
@@ -55,9 +78,9 @@ export function Generator() {
     )
   }
 
-  const sveIzabrano = podrzane.length > 0 && podrzane.every((s) => topicSlugovi.includes(s))
+  const sveIzabrano = podrzaneRazreda.length > 0 && podrzaneRazreda.every((s) => topicSlugovi.includes(s))
   function preklopiSveOblasti() {
-    setTopicSlugovi(sveIzabrano ? [] : podrzane)
+    setTopicSlugovi(sveIzabrano ? [] : podrzaneRazreda)
   }
 
   function pokreni() {
@@ -102,6 +125,21 @@ export function Generator() {
 
       <div className="kartica razmak-dole">
         <div className="gen-sekcija">
+          <p className="gen-naslov razmak-dole">Razred</p>
+          <div className="segment" role="radiogroup" aria-label="Razred">
+            {RAZREDI.map((r) => (
+              <button
+                key={r} type="button" role="radio" aria-checked={razred === r}
+                className={`segment-dugme ${razred === r ? 'segment-dugme--izabran' : ''}`}
+                onClick={() => promeniRazred(r)}
+              >
+                {NAZIVI_RAZREDA[r]}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="gen-sekcija">
           <div className="red red--razmak razmak-dole" style={{ alignItems: 'center' }}>
             <span className="gen-naslov">Oblasti {topicSlugovi.length > 0 && `· ${topicSlugovi.length} izabrano`}</span>
             <button
@@ -114,7 +152,7 @@ export function Generator() {
             </button>
           </div>
           <div className="gen-oblasti">
-            {podrzane.map((s) => {
+            {podrzaneRazreda.map((s) => {
               const izabrano = topicSlugovi.includes(s)
               return (
                 <label key={s} className={`gen-oblast ${izabrano ? 'gen-oblast--izabrana' : ''}`}>

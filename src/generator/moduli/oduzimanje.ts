@@ -18,7 +18,8 @@ function dvaBrojaNivo1(rng: Rng): number[] {
 
 // Lanac a − b1 − b2 − ... = rezultat, konstruisan od rezultata unazad:
 // a = rezultat + zbir svih koraka, pa je svaki međurezultat ≥ rezultat ≥ 0.
-function lanacOduzimanja(rng: Rng, brojKoraka: number, minRez: number, maxRez: number, minKorak: number, maxKorak: number): number[] {
+// Magnitude-agnostic — reuse-uje se i za 4. razred (moduli4/oduzimanje4.ts).
+export function lanacOduzimanja(rng: Rng, brojKoraka: number, minRez: number, maxRez: number, minKorak: number, maxKorak: number): number[] {
   const rezultat = ceoBroj(rng, minRez, maxRez)
   const koraci: number[] = []
   for (let i = 0; i < brojKoraka; i++) koraci.push(ceoBroj(rng, minKorak, maxKorak))

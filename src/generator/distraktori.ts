@@ -46,14 +46,20 @@ interface DistraktorCfg {
   kandidati: number[] // predlozi zasnovani na tipičnim greškama, redom prioriteta
   min?: number // podrazumevano 0
   max?: number // podrazumevano 1000
+  // Broj decimala (npr. 1 za korak 0,1) — podrazumevano 0 (celi brojevi).
+  // Interno se sve skalira na cele brojeve (10^decimals) da ostane kompatibilno
+  // sa postojećom celobrojnom logikom, pa se rezultat skalira nazad.
+  decimals?: number
 }
 
 // Vrati tačno 3 različita distraktora: ≥ min, ≤ max, ≠ tačan, međusobno različiti.
 // Ako kandidati ne popune kvotu, dopunjava sa tačan ± 1, ± 10, ± 2, ± 20...
 export function napraviDistraktore(rng: Rng, cfg: DistraktorCfg): number[] {
-  const { tacan } = cfg
-  const min = cfg.min ?? 0
-  const max = cfg.max ?? 1000
+  const decimals = cfg.decimals ?? 0
+  const skala = 10 ** decimals
+  const tacan = Math.round(cfg.tacan * skala)
+  const min = Math.round((cfg.min ?? 0) * skala)
+  const max = Math.round((cfg.max ?? 1000) * skala)
   const rezultat: number[] = []
   const zauzeto = new Set<number>([tacan])
 
@@ -64,9 +70,9 @@ export function napraviDistraktore(rng: Rng, cfg: DistraktorCfg): number[] {
     rezultat.push(n)
   }
 
-  for (const k of cfg.kandidati) dodaj(k)
+  for (const k of cfg.kandidati) dodaj(Math.round(k * skala))
 
-  // Dopuna standardnim odstupanjima
+  // Dopuna standardnim odstupanjima (u skaliranom celobrojnom prostoru)
   const dopune = [1, -1, 10, -10, 2, -2, 20, -20, 100, -100, 5, -5]
   for (const d of dopune) dodaj(tacan + d)
 
@@ -76,7 +82,11 @@ export function napraviDistraktore(rng: Rng, cfg: DistraktorCfg): number[] {
     dodaj(ceoBroj(rng, Math.max(min, tacan - 30), Math.min(max, tacan + 30)))
   }
 
-  return rezultat
+  return rezultat.map((n) => n / skala)
+}
+
+function formatirajBroj(v: number, decimals: number): string {
+  return decimals > 0 ? v.toFixed(decimals).replace('.', ',') : String(v)
 }
 
 // Upakuj tačan odgovor + distraktore u izmešane opcije za single-choice pitanje
@@ -85,11 +95,12 @@ export function napraviOpcije(
   tacan: number,
   distraktori: number[],
   sufiks = '',
+  decimals = 0,
 ): { options: Opcija[]; correctId: string } {
   const vrednosti = promesaj(rng, [tacan, ...distraktori])
   const options = vrednosti.map((v, i) => ({
     id: `o${i + 1}`,
-    text: sufiks ? `${v} ${sufiks}` : String(v),
+    text: sufiks ? `${formatirajBroj(v, decimals)} ${sufiks}` : formatirajBroj(v, decimals),
   }))
   const correctId = options[vrednosti.indexOf(tacan)].id
   return { options, correctId }

@@ -79,6 +79,9 @@ interface RacunUlaz {
   // Sufiks jedinice u ponuđenim odgovorima (npr. 'cm', 'dinara')
   sufiks?: string
   maxDistraktor?: number
+  // Broj decimala tačnog odgovora (npr. 2 za decimalne brojeve sa dve decimale).
+  // Podrazumevano 0 — ponašanje ostaje identično postojećim (celobrojnim) modulima.
+  decimals?: number
 }
 
 // Upakuj račun u numeric ili single pitanje po traženom tipu.
@@ -100,12 +103,14 @@ export function upakujRacun(
   }
 
   if (zeljeni === 'single') {
+    const decimals = ulaz.decimals ?? 0
     const distraktori = napraviDistraktore(rng, {
       tacan: ulaz.tacan,
       kandidati: ulaz.kandidati,
       max: ulaz.maxDistraktor ?? 1000,
+      decimals,
     })
-    const { options, correctId } = napraviOpcije(rng, ulaz.tacan, distraktori, ulaz.sufiks ?? '')
+    const { options, correctId } = napraviOpcije(rng, ulaz.tacan, distraktori, ulaz.sufiks ?? '', decimals)
     return { ...osnova, type: 'single', options, correct: { optionId: correctId } }
   }
 

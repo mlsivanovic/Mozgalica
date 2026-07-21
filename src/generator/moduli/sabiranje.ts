@@ -17,7 +17,8 @@ function dvaSabirkaNivo1(rng: Rng): number[] {
 
 // Nivo 2/3: N sabiraka — izaberi ciljnu sumu pa je razbij na N pozitivnih delova
 // preko N-1 različitih tačaka preseka (composition), pa je zbir uvek tačno suma.
-function viseSabiraka(rng: Rng, brojSabiraka: number, minSuma: number, maxSuma: number): number[] {
+// Magnitude-agnostic — reuse-uje se i za 4. razred (moduli4/sabiranje4.ts).
+export function viseSabiraka(rng: Rng, brojSabiraka: number, minSuma: number, maxSuma: number): number[] {
   const suma = ceoBroj(rng, minSuma, maxSuma)
   const preseci = new Set<number>()
   while (preseci.size < brojSabiraka - 1) preseci.add(ceoBroj(rng, 1, suma - 1))

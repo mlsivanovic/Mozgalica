@@ -6,7 +6,10 @@ import {
   postaviPitanjaKviza, sacuvajKviz, ucitajPocetnaPitanja,
 } from '../../lib/api'
 import { Loader, Modal } from '../../components/Zajednicke'
-import { NAZIVI_PREDMETA, NAZIVI_TEZINA, NAZIVI_TIPOVA, type Kviz, type Oblast, type Pitanje, type Predmet } from '../../types/db'
+import {
+  NAZIVI_PREDMETA, NAZIVI_RAZREDA, NAZIVI_TEZINA, NAZIVI_TIPOVA,
+  type Kviz, type Oblast, type Pitanje, type Predmet, type Razred,
+} from '../../types/db'
 import { PitanjeForma } from './PitanjeForma'
 import { UvozCsv } from './UvozCsv'
 
@@ -20,6 +23,8 @@ export function PitanjaLista() {
   // Predmet je uvek aktivan tab — matematika i srpski se nikad ne prikazuju zajedno,
   // ni u filterima ni u listi ni u formi, da se pitanja iz dva predmeta ne bi mešala.
   const [predmet, setPredmet] = useState<Predmet>('matematika')
+  // Razred je isti princip, jedan nivo dublje — samo unutar matematike (srpski ga nema).
+  const [razred, setRazred] = useState<Razred>(3)
   const [filterOblast, setFilterOblast] = useState('')
   const [filterTip, setFilterTip] = useState('')
   const [filterTezina, setFilterTezina] = useState('')
@@ -36,7 +41,7 @@ export function PitanjaLista() {
     setUcitava(true)
     try {
       const o = await listajOblasti()
-      const oblastiPredmeta = o.filter((t) => t.subject === predmet)
+      const oblastiPredmeta = o.filter((t) => t.subject === predmet && (predmet !== 'matematika' || t.grade === razred))
       const [p, k] = await Promise.all([
         listajPitanja({
           topicId: filterOblast || undefined,
@@ -59,15 +64,23 @@ export function PitanjaLista() {
     }
   }
 
-  useEffect(() => { ucitaj() }, [predmet, filterOblast, filterTip, filterTezina, filterIzvor])
+  useEffect(() => { ucitaj() }, [predmet, razred, filterOblast, filterTip, filterTezina, filterIzvor])
 
   function promeniPredmet(p: Predmet) {
     setPredmet(p)
     setFilterOblast('') // tema iz drugog predmeta više ne bi bila validna
   }
 
+  function promeniRazred(r: Razred) {
+    setRazred(r)
+    setFilterOblast('') // tema iz drugog razreda više ne bi bila validna
+  }
+
   const mapaOblasti = useMemo(() => new Map(oblasti.map((o) => [o.id, o.name])), [oblasti])
-  const oblastiPredmeta = useMemo(() => oblasti.filter((o) => o.subject === predmet), [oblasti, predmet])
+  const oblastiPredmeta = useMemo(
+    () => oblasti.filter((o) => o.subject === predmet && (predmet !== 'matematika' || o.grade === razred)),
+    [oblasti, predmet, razred],
+  )
 
   async function obrisi(id: string) {
     if (!confirm('Obrisati ovo pitanje? Ova radnja se ne može poništiti.')) return
@@ -209,6 +222,21 @@ export function PitanjaLista() {
           </button>
         ))}
       </div>
+
+      {predmet === 'matematika' && (
+        <div className="red razred-tabovi razmak-dole">
+          {([3, 4] as const).map((r) => (
+            <button
+              key={r} type="button"
+              className={`dugme dugme--malo ${razred === r ? '' : 'dugme--senka'}`}
+              aria-current={razred === r}
+              onClick={() => promeniRazred(r)}
+            >
+              {NAZIVI_RAZREDA[r]}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="zaglavlje-strane">
         <h1>Banka pitanja — {NAZIVI_PREDMETA[predmet]}</h1>

@@ -4,8 +4,8 @@ import { izdvojNepoznateTeme, mapirajRedove, napraviSlugTeme, parsirajCsv } from
 import type { Oblast } from '../types/db'
 
 const OBLASTI: Oblast[] = [
-  { id: 'g1', slug: 'srpski-gramatika', name: 'Gramatika', sort_order: 200, subject: 'srpski' },
-  { id: 'r1', slug: 'srpski-recnik', name: 'Rečnik', sort_order: 230, subject: 'srpski' },
+  { id: 'g1', slug: 'srpski-gramatika', name: 'Gramatika', sort_order: 200, subject: 'srpski', grade: 3 },
+  { id: 'r1', slug: 'srpski-recnik', name: 'Rečnik', sort_order: 230, subject: 'srpski', grade: 3 },
 ]
 
 const ZAGLAVLJE = 'tema;tip;pitanje;odgovor;poeni;tezina;objasnjenje;hint'

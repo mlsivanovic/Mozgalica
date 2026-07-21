@@ -128,8 +128,10 @@ describe('matematička pravila po oblastima', () => {
     }
   })
 
-  it('svi rezultati su u opsegu 0–1000 (osim mernih jedinica do 10000)', () => {
-    for (const oblast of podrzaneOblasti()) {
+  it('svi rezultati su u opsegu 0–1000 (osim mernih jedinica do 10000) — samo 3. razred', () => {
+    // 4. razred (slugovi sa sufiksom "-4") ima mnogo veće brojeve po dizajnu —
+    // svaki modul dobija svoju granicu u generator4.test.ts.
+    for (const oblast of podrzaneOblasti().filter((s) => !s.endsWith('-4'))) {
       if (oblast === 'poredjenje-brojeva' || oblast === 'rimski-brojevi') continue // odgovor može biti znak/rimski string, ne broj
       const maks = oblast === 'merne-jedinice' ? 10000 : 1000
       for (const tezina of TEZINE) {
@@ -239,8 +241,8 @@ describe('tekstualni zadaci', () => {
 })
 
 describe('registar', () => {
-  it('svih 13 oblasti ima generator', () => {
-    expect(REGISTAR.size).toBe(13)
+  it('svih 26 oblasti ima generator', () => {
+    expect(REGISTAR.size).toBe(26)
     expect(podrzaneOblasti()).toContain('sabiranje')
     expect(podrzaneOblasti()).toContain('novac')
     expect(podrzaneOblasti()).toContain('rimski-brojevi')

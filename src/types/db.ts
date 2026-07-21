@@ -5,6 +5,7 @@ export type Tezina = 1 | 2 | 3 | 4 | 5
 export type IzvorPitanja = 'manual' | 'generated'
 export type StatusPokusaja = 'in_progress' | 'submitted' | 'expired'
 export type Predmet = 'matematika' | 'srpski'
+export type Razred = 3 | 4
 
 // ---------- jsonb oblici opcija ----------
 export interface Opcija {
@@ -46,6 +47,7 @@ export interface Oblast {
   name: string
   sort_order: number
   subject: Predmet
+  grade: Razred
 }
 
 export interface Pitanje {
@@ -173,4 +175,9 @@ export const NAZIVI_TEZINA: Record<Tezina, string> = {
 export const NAZIVI_PREDMETA: Record<Predmet, string> = {
   matematika: 'Matematika',
   srpski: 'Srpski jezik',
+}
+
+export const NAZIVI_RAZREDA: Record<Razred, string> = {
+  3: '3. razred',
+  4: '4. razred',
 }
