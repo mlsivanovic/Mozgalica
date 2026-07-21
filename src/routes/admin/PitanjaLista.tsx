@@ -30,6 +30,7 @@ export function PitanjaLista() {
   const [izabrana, setIzabrana] = useState<string[]>([])
   const [izabraniKviz, setIzabraniKviz] = useState('')
   const [radiBulk, setRadiBulk] = useState(false)
+  const [brojNasumicnih, setBrojNasumicnih] = useState(10)
 
   async function ucitaj() {
     setUcitava(true)
@@ -99,12 +100,25 @@ export function PitanjaLista() {
     setIzabrana(svePrisutne ? [] : sviVidljivi)
   }
 
-  function snapshotIzabranih() {
-    return pitanja.filter((p) => izabrana.includes(p.id)).map((p) => ({
+  function pretvoriUSnapshot(lista: Pitanje[]) {
+    return lista.map((p) => ({
       source_question_id: p.id, topic_id: p.topic_id, topic_name: mapaOblasti.get(p.topic_id) ?? '—',
       type: p.type, text: p.text, options: p.options, correct: p.correct,
       explanation: p.explanation, hint: p.hint, points: p.points, manual_review: p.manual_review,
     }))
+  }
+
+  function snapshotIzabranih() {
+    return pretvoriUSnapshot(pitanja.filter((p) => izabrana.includes(p.id)))
+  }
+
+  function nasumicniUzorak<T>(niz: T[], n: number): T[] {
+    const kopija = [...niz]
+    for (let i = kopija.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1))
+      ;[kopija[i], kopija[j]] = [kopija[j], kopija[i]]
+    }
+    return kopija.slice(0, n)
   }
 
   async function dodajUKviz() {
@@ -133,6 +147,29 @@ export function PitanjaLista() {
     } catch (e) {
       setGreska(String((e as Error).message ?? e))
     } finally {
+      setRadiBulk(false)
+    }
+  }
+
+  async function napraviNasumicanKviz() {
+    if (pitanja.length === 0) return
+    const naziv = prompt('Naziv novog kviza?', `Nasumičan kviz — ${NAZIVI_PREDMETA[predmet]}`)
+    if (!naziv || naziv.trim().length < 2) return
+    const n = Math.min(Math.max(1, brojNasumicnih), pitanja.length)
+    setGreska(null)
+    setRadiBulk(true)
+    try {
+      const kvizId = await sacuvajKviz({
+        title: naziv.trim(), description: null, time_limit_seconds: null,
+        default_max_attempts: 1, shuffle_questions: true, shuffle_answers: true,
+        show_result: true, show_correct: true, pass_threshold_pct: 90,
+        require_name: true, require_label: false, label_name: 'Odeljenje',
+      })
+      const unosi = pretvoriUSnapshot(nasumicniUzorak(pitanja, n)).map((u, i) => ({ ...u, quiz_id: kvizId, position: i }))
+      await postaviPitanjaKviza(kvizId, unosi)
+      navigate(`/admin/kvizovi/${kvizId}`)
+    } catch (e) {
+      setGreska(String((e as Error).message ?? e))
       setRadiBulk(false)
     }
   }
@@ -236,6 +273,26 @@ export function PitanjaLista() {
           </div>
         </div>
       </div>
+
+      {pitanja.length > 0 && (
+        <div className="kartica razmak-dole">
+          <div className="red red--razmak" style={{ flexWrap: 'wrap', alignItems: 'flex-end' }}>
+            <div className="polje" style={{ maxWidth: 160, marginBottom: 0 }}>
+              <label htmlFor="nasumicno-broj">Broj pitanja</label>
+              <input
+                id="nasumicno-broj" type="number" min={1} max={pitanja.length}
+                value={brojNasumicnih} onChange={(e) => setBrojNasumicnih(Number(e.target.value))}
+              />
+            </div>
+            <button type="button" className="dugme dugme--senka" disabled={radiBulk} onClick={napraviNasumicanKviz}>
+              Napravi nasumičan kviz
+            </button>
+          </div>
+          <p className="malo blago razmak-gore">
+            Nasumično bira pitanja iz trenutno filtrirane liste ({pitanja.length} dostupno) i odmah pravi novi kviz od njih.
+          </p>
+        </div>
+      )}
 
       {izabrana.length > 0 && (
         <div className="kartica razmak-dole bulk-traka" style={{ background: 'var(--boja-primarna-svetla)' }}>

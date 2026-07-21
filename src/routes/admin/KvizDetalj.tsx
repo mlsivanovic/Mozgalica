@@ -2,8 +2,8 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import {
-  izmeniLink, kvizImaPokusaje, listajLinkove, listajOblasti, listajPitanja,
-  listajPitanjaKviza, napraviLink, obrisiPitanjeKviza, postaviPitanjaKviza, sacuvajKviz,
+  dodajPitanjaUKviz, izmeniLink, kvizImaPokusaje, listajLinkove, listajOblasti, listajPitanja,
+  listajPitanjaKviza, napraviLink, obrisiPitanjeKviza, sacuvajKviz,
   statusLinkovaKviza, ucitajKviz, type StatusLinka,
 } from '../../lib/api'
 import { formatDatum } from '../../lib/format'
@@ -148,45 +148,82 @@ function PodesavanjaKviza({ kviz, onSacuvano }: { kviz: Kviz; onSacuvano: () => 
 }
 
 // ---------------------------------------------------------------------------
+// VAŽNO: pitanja se u kviz DODAJU preko dodajPitanjaUKviz (nadovezuje na kraj),
+// nikad ne prepravljaju ceo sastav sa postaviPitanjaKviza — inače bi pitanja
+// koja su u kviz stigla direktno iz generatora (source_question_id je null jer
+// nikad nisu sačuvana u banku) tiho ispala iz kviza čim se sastav "sačuva" iz
+// ove liste, pošto se ona ne mogu prikazati kao štiklirana u tabeli banke.
 function PitanjaKviza({
   quizId, zakljucano, snapshot, banka, oblasti, onSacuvano,
 }: {
   quizId: string; zakljucano: boolean; snapshot: KvizPitanje[]; banka: Pitanje[]
   oblasti: Oblast[]; onSacuvano: () => void
 }) {
-  const [izabrana, setIzabrana] = useState<string[]>(snapshot.map((s) => s.source_question_id).filter((x): x is string => !!x))
-  const [cuva, setCuva] = useState(false)
+  const [izabrana, setIzabrana] = useState<string[]>([])
+  const [dodaje, setDodaje] = useState(false)
   const [greska, setGreska] = useState<string | null>(null)
   const [brise, setBrise] = useState<string | null>(null)
   const [filterPredmet, setFilterPredmet] = useState<'' | Predmet>('')
   const mapaOblasti = new Map(oblasti.map((o) => [o.id, o.name]))
   const mapaPredmeta = mapaPredmetaPoTemi(oblasti)
-  const bankaFiltrirana = filterPredmet ? banka.filter((p) => mapaPredmeta.get(p.topic_id) === filterPredmet) : banka
 
-  if (zakljucano) {
-    async function obrisiJedno(qqId: string) {
-      if (!confirm('Obrisati ovo pitanje iz kviza? Odgovori dece na njega se brišu, a rezultati predatih pokušaja se preračunavaju.')) return
-      setBrise(qqId); setGreska(null)
-      try {
-        await obrisiPitanjeKviza(qqId)
-        onSacuvano()
-      } catch (e) {
-        setGreska(String((e as Error).message ?? e))
-      } finally {
-        setBrise(null)
-      }
+  const vecUKvizu = new Set(snapshot.map((s) => s.source_question_id).filter((x): x is string => !!x))
+  const dostupnaBanka = banka.filter((p) => !vecUKvizu.has(p.id))
+  const bankaFiltrirana = filterPredmet ? dostupnaBanka.filter((p) => mapaPredmeta.get(p.topic_id) === filterPredmet) : dostupnaBanka
+
+  async function obrisiJedno(qqId: string) {
+    if (!confirm('Obrisati ovo pitanje iz kviza?' + (zakljucano ? ' Odgovori dece na njega se brišu, a rezultati predatih pokušaja se preračunavaju.' : ''))) return
+    setBrise(qqId); setGreska(null)
+    try {
+      await obrisiPitanjeKviza(qqId)
+      onSacuvano()
+    } catch (e) {
+      setGreska(String((e as Error).message ?? e))
+    } finally {
+      setBrise(null)
     }
+  }
 
-    return (
-      <div className="kartica razmak-dole">
-        <h2>Pitanja u kvizu ({snapshot.length})</h2>
-        <p className="poruka poruka--info">
-          Ovaj kviz već ima pokušaje, pa se sastav ne može menjati niti se mogu dodavati nova pitanja (za drugačiji
-          izbor napravi novi kviz). Pojedinačna pitanja i dalje mogu da se obrišu — rezultati predatih pokušaja se
-          tada automatski preračunavaju.
-        </p>
-        {greska && <p className="poruka poruka--greska">{greska}</p>}
-        <ol>
+  function preklopi(qId: string) {
+    setIzabrana(izabrana.includes(qId) ? izabrana.filter((x) => x !== qId) : [...izabrana, qId])
+  }
+
+  function preklopiSve() {
+    const sviVidljivi = bankaFiltrirana.map((p) => p.id)
+    const svePrisutne = sviVidljivi.length > 0 && sviVidljivi.every((id) => izabrana.includes(id))
+    setIzabrana(svePrisutne ? [] : sviVidljivi)
+  }
+
+  async function dodaj() {
+    setDodaje(true); setGreska(null)
+    try {
+      const noviUnosi = izabrana.map((qid) => {
+        const p = banka.find((b) => b.id === qid)!
+        return {
+          source_question_id: p.id, topic_id: p.topic_id, topic_name: mapaOblasti.get(p.topic_id) ?? '—',
+          type: p.type, text: p.text, options: p.options, correct: p.correct,
+          explanation: p.explanation, hint: p.hint, points: p.points, manual_review: p.manual_review,
+        }
+      })
+      await dodajPitanjaUKviz(quizId, noviUnosi)
+      setIzabrana([])
+      onSacuvano()
+    } catch (e) {
+      setGreska(String((e as Error).message ?? e))
+    } finally {
+      setDodaje(false)
+    }
+  }
+
+  return (
+    <div className="kartica razmak-dole">
+      <h2>Pitanja u kvizu ({snapshot.length})</h2>
+      {greska && <p className="poruka poruka--greska">{greska}</p>}
+
+      {snapshot.length === 0 ? (
+        <p className="blago">Kviz još nema pitanja.</p>
+      ) : (
+        <ol className="razmak-dole">
           {snapshot.map((s) => (
             <li key={s.id} className="red red--razmak">
               <span>{s.text}</span>
@@ -199,67 +236,58 @@ function PitanjaKviza({
             </li>
           ))}
         </ol>
-      </div>
-    )
-  }
+      )}
 
-  function preklopi(qId: string) {
-    setIzabrana(izabrana.includes(qId) ? izabrana.filter((x) => x !== qId) : [...izabrana, qId])
-  }
-
-  async function sacuvaj() {
-    setCuva(true); setGreska(null)
-    try {
-      const unosi = izabrana.map((qid, i) => {
-        const p = banka.find((b) => b.id === qid)!
-        return {
-          quiz_id: quizId, source_question_id: p.id, position: i, topic_id: p.topic_id,
-          topic_name: mapaOblasti.get(p.topic_id) ?? '—', type: p.type, text: p.text,
-          options: p.options, correct: p.correct, explanation: p.explanation, hint: p.hint, points: p.points,
-          manual_review: p.manual_review,
-        }
-      })
-      await postaviPitanjaKviza(quizId, unosi)
-      onSacuvano()
-    } catch (e) {
-      setGreska(String((e as Error).message ?? e))
-    } finally {
-      setCuva(false)
-    }
-  }
-
-  return (
-    <div className="kartica razmak-dole">
-      <div className="red red--razmak">
-        <h2>Pitanja u kvizu</h2>
-        <span className="bedz">{izabrana.length} izabrano</span>
-      </div>
-      <div className="polje" style={{ maxWidth: 220 }}>
-        <label htmlFor="pk-predmet">Predmet</label>
-        <select id="pk-predmet" value={filterPredmet} onChange={(e) => setFilterPredmet(e.target.value as '' | Predmet)}>
-          <option value="">Svi predmeti</option>
-          {Object.entries(NAZIVI_PREDMETA).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-        </select>
-      </div>
-      {greska && <p className="poruka poruka--greska">{greska}</p>}
-      <div className="tabela-omot" style={{ maxHeight: 360 }}>
-        <table className="tabela">
-          <thead><tr><th></th><th>Pitanje</th><th>Oblast</th><th>Tip</th></tr></thead>
-          <tbody>
-            {bankaFiltrirana.map((p) => (
-              <tr key={p.id}>
-                <td><input type="checkbox" checked={izabrana.includes(p.id)} onChange={() => preklopi(p.id)} /></td>
-                <td>{p.text}</td>
-                <td>{mapaOblasti.get(p.topic_id) ?? '—'}</td>
-                <td>{NAZIVI_TIPOVA[p.type]}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <button type="button" className="dugme dugme--akcenat razmak-gore" disabled={cuva || izabrana.length === 0} onClick={sacuvaj}>
-        {cuva ? 'Čuvam…' : `Sačuvaj sastav kviza (${izabrana.length} pitanja)`}
-      </button>
+      {zakljucano ? (
+        <p className="poruka poruka--info">
+          Ovaj kviz već ima pokušaje, pa se nova pitanja ne mogu dodavati (za drugačiji izbor napravi novi kviz).
+          Pojedinačna pitanja i dalje mogu da se obrišu — rezultati predatih pokušaja se tada automatski preračunavaju.
+        </p>
+      ) : (
+        <>
+          <h3>Dodaj pitanja iz banke</h3>
+          <div className="polje" style={{ maxWidth: 220 }}>
+            <label htmlFor="pk-predmet">Predmet</label>
+            <select id="pk-predmet" value={filterPredmet} onChange={(e) => setFilterPredmet(e.target.value as '' | Predmet)}>
+              <option value="">Svi predmeti</option>
+              {Object.entries(NAZIVI_PREDMETA).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+            </select>
+          </div>
+          <div className="tabela-omot" style={{ maxHeight: 360 }}>
+            <table className="tabela">
+              <thead>
+                <tr>
+                  <th>
+                    <input
+                      type="checkbox"
+                      checked={bankaFiltrirana.length > 0 && bankaFiltrirana.every((p) => izabrana.includes(p.id))}
+                      onChange={preklopiSve}
+                      aria-label="Izaberi sva prikazana pitanja"
+                    />
+                  </th>
+                  <th>Pitanje</th><th>Oblast</th><th>Tip</th>
+                </tr>
+              </thead>
+              <tbody>
+                {bankaFiltrirana.map((p) => (
+                  <tr key={p.id}>
+                    <td><input type="checkbox" checked={izabrana.includes(p.id)} onChange={() => preklopi(p.id)} /></td>
+                    <td>{p.text}</td>
+                    <td>{mapaOblasti.get(p.topic_id) ?? '—'}</td>
+                    <td>{NAZIVI_TIPOVA[p.type]}</td>
+                  </tr>
+                ))}
+                {bankaFiltrirana.length === 0 && (
+                  <tr><td colSpan={4} className="centar blago" style={{ padding: '1rem' }}>Nema dostupnih pitanja za dodavanje.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          <button type="button" className="dugme dugme--akcenat razmak-gore" disabled={dodaje || izabrana.length === 0} onClick={dodaj}>
+            {dodaje ? 'Dodajem…' : `Dodaj izabrana pitanja u kviz (${izabrana.length})`}
+          </button>
+        </>
+      )}
     </div>
   )
 }
