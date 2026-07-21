@@ -60,24 +60,33 @@ export function RezultatDetalj() {
       </div>
       <p className="blago razmak-dole">Predato: {formatDatum(pokusaj.submitted_at)}</p>
 
+      {pokusaj.review_pending && (
+        <p className="poruka poruka--upozorenje razmak-dole">
+          ⏳ Ovaj pokušaj ima odgovore koji čekaju tvoju ocenu — prikazani rezultat je zato privremeno umanjen.
+        </p>
+      )}
+
       <div className="mreza-kartica">
         {pitanja.map((q, i) => {
           const odg = mapaOdgovora.get(q.id)
+          const cekaOcenu = odg?.graded_by === 'pending'
+          const boja = cekaOcenu ? 'var(--boja-ivica)' : odg?.is_correct ? 'var(--boja-uspeh)' : 'var(--boja-greska)'
+          const labela = cekaOcenu ? '⏳ Čeka ocenu' : odg?.is_correct ? '✓ Tačno' : '✗ Netačno'
+          const referentniOdgovor = q.type === 'text' ? (q.correct as { accept: string[] }).accept : []
           return (
-            <div
-              key={q.id} className="kartica"
-              style={{ borderLeft: `5px solid ${odg?.is_correct ? 'var(--boja-uspeh)' : 'var(--boja-greska)'}` }}
-            >
+            <div key={q.id} className="kartica" style={{ borderLeft: `5px solid ${boja}` }}>
               <p className="malo blago">
-                <span style={{ fontWeight: 700, color: odg?.is_correct ? 'var(--boja-uspeh)' : 'var(--boja-greska)' }}>
-                  {odg?.is_correct ? '✓ Tačno' : '✗ Netačno'}
-                </span>
-                {' · '}Pitanje {i + 1} · {odg?.awarded_points ?? 0} / {q.points} poena {odg?.graded_by === 'manual' ? '(ručno ocenjeno)' : '(automatski ocenjeno)'}
+                <span style={{ fontWeight: 700, color: boja }}>{labela}</span>
+                {' · '}Pitanje {i + 1} · {odg?.awarded_points ?? 0} / {q.points} poena{' '}
+                {cekaOcenu ? '(čeka ručnu ocenu)' : odg?.graded_by === 'manual' ? '(ručno ocenjeno)' : '(automatski ocenjeno)'}
               </p>
               <p style={{ fontWeight: 700 }}>{q.text}</p>
               <div className="razmak-gore">
                 <PitanjeRenderer pitanje={q} value={odg?.answer ?? null} onChange={() => {}} disabled />
               </div>
+              {cekaOcenu && referentniOdgovor.length > 0 && (
+                <p className="malo razmak-gore blago">Referentni odgovor: {referentniOdgovor.join(', ')}</p>
+              )}
               {q.explanation && <p className="malo razmak-gore blago">💡 {q.explanation}</p>}
 
               {odg && (

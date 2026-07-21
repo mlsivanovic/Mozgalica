@@ -93,5 +93,7 @@ export interface RezultatPayload {
   passed?: boolean
   passThresholdPct?: number
   attemptsLeft?: number
+  // true dok bar jedno pitanje (ručno ocenjivanje) čeka administratora — nema ocene do tada
+  pendingReview?: boolean
   questions?: RezultatPitanja[]
 }

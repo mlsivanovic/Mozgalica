@@ -4,6 +4,7 @@ export type TipPitanja = 'single' | 'multi' | 'numeric' | 'text' | 'truefalse' |
 export type Tezina = 1 | 2 | 3 | 4 | 5
 export type IzvorPitanja = 'manual' | 'generated'
 export type StatusPokusaja = 'in_progress' | 'submitted' | 'expired'
+export type Predmet = 'matematika' | 'srpski'
 
 // ---------- jsonb oblici opcija ----------
 export interface Opcija {
@@ -44,6 +45,7 @@ export interface Oblast {
   slug: string
   name: string
   sort_order: number
+  subject: Predmet
 }
 
 export interface Pitanje {
@@ -60,6 +62,7 @@ export interface Pitanje {
   points: number
   source: IzvorPitanja
   gen_signature: string | null
+  manual_review: boolean
   created_at: string
   updated_at: string
 }
@@ -98,6 +101,7 @@ export interface KvizPitanje {
   explanation: string | null
   hint: string | null
   points: number
+  manual_review: boolean
 }
 
 export interface KvizLink {
@@ -129,6 +133,7 @@ export interface Pokusaj {
   correct_count: number | null
   incorrect_count: number | null
   passed: boolean | null
+  review_pending: boolean
 }
 
 export interface PokusajOdgovor {
@@ -139,7 +144,7 @@ export interface PokusajOdgovor {
   answered_at: string | null
   is_correct: boolean | null
   awarded_points: number | null
-  graded_by: 'auto' | 'manual'
+  graded_by: 'auto' | 'manual' | 'pending'
 }
 
 export interface AdminPodesavanja {
@@ -163,4 +168,9 @@ export const NAZIVI_TEZINA: Record<Tezina, string> = {
   3: 'Teško',
   4: 'Vrlo teško',
   5: 'Ekspert',
+}
+
+export const NAZIVI_PREDMETA: Record<Predmet, string> = {
+  matematika: 'Matematika',
+  srpski: 'Srpski jezik',
 }

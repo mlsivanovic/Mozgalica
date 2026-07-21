@@ -6,8 +6,9 @@ import {
   postaviPitanjaKviza, sacuvajKviz, ucitajPocetnaPitanja,
 } from '../../lib/api'
 import { Loader, Modal } from '../../components/Zajednicke'
-import { NAZIVI_TEZINA, NAZIVI_TIPOVA, type Kviz, type Oblast, type Pitanje } from '../../types/db'
+import { NAZIVI_PREDMETA, NAZIVI_TEZINA, NAZIVI_TIPOVA, type Kviz, type Oblast, type Pitanje, type Predmet } from '../../types/db'
 import { PitanjeForma } from './PitanjeForma'
+import { UvozCsv } from './UvozCsv'
 
 export function PitanjaLista() {
   const navigate = useNavigate()
@@ -16,12 +17,16 @@ export function PitanjaLista() {
   const [oblasti, setOblasti] = useState<Oblast[]>([])
   const [pitanja, setPitanja] = useState<Pitanje[]>([])
   const [kvizovi, setKvizovi] = useState<Kviz[]>([])
+  // Predmet je uvek aktivan tab — matematika i srpski se nikad ne prikazuju zajedno,
+  // ni u filterima ni u listi ni u formi, da se pitanja iz dva predmeta ne bi mešala.
+  const [predmet, setPredmet] = useState<Predmet>('matematika')
   const [filterOblast, setFilterOblast] = useState('')
   const [filterTip, setFilterTip] = useState('')
   const [filterTezina, setFilterTezina] = useState('')
   const [filterIzvor, setFilterIzvor] = useState('')
   const [pretraga, setPretraga] = useState('')
   const [uredjivanje, setUredjivanje] = useState<Pitanje | 'novo' | null>(null)
+  const [uvozOtvoren, setUvozOtvoren] = useState(false)
   const [izabrana, setIzabrana] = useState<string[]>([])
   const [izabraniKviz, setIzabraniKviz] = useState('')
   const [radiBulk, setRadiBulk] = useState(false)
@@ -29,10 +34,12 @@ export function PitanjaLista() {
   async function ucitaj() {
     setUcitava(true)
     try {
-      const [o, p, k] = await Promise.all([
-        listajOblasti(),
+      const o = await listajOblasti()
+      const oblastiPredmeta = o.filter((t) => t.subject === predmet)
+      const [p, k] = await Promise.all([
         listajPitanja({
           topicId: filterOblast || undefined,
+          topicIds: filterOblast ? undefined : oblastiPredmeta.map((t) => t.id),
           type: filterTip || undefined,
           difficulty: filterTezina ? Number(filterTezina) : undefined,
           source: filterIzvor || undefined,
@@ -51,9 +58,15 @@ export function PitanjaLista() {
     }
   }
 
-  useEffect(() => { ucitaj() }, [filterOblast, filterTip, filterTezina, filterIzvor])
+  useEffect(() => { ucitaj() }, [predmet, filterOblast, filterTip, filterTezina, filterIzvor])
+
+  function promeniPredmet(p: Predmet) {
+    setPredmet(p)
+    setFilterOblast('') // tema iz drugog predmeta više ne bi bila validna
+  }
 
   const mapaOblasti = useMemo(() => new Map(oblasti.map((o) => [o.id, o.name])), [oblasti])
+  const oblastiPredmeta = useMemo(() => oblasti.filter((o) => o.subject === predmet), [oblasti, predmet])
 
   async function obrisi(id: string) {
     if (!confirm('Obrisati ovo pitanje? Ova radnja se ne može poništiti.')) return
@@ -90,7 +103,7 @@ export function PitanjaLista() {
     return pitanja.filter((p) => izabrana.includes(p.id)).map((p) => ({
       source_question_id: p.id, topic_id: p.topic_id, topic_name: mapaOblasti.get(p.topic_id) ?? '—',
       type: p.type, text: p.text, options: p.options, correct: p.correct,
-      explanation: p.explanation, hint: p.hint, points: p.points,
+      explanation: p.explanation, hint: p.hint, points: p.points, manual_review: p.manual_review,
     }))
   }
 
@@ -147,12 +160,30 @@ export function PitanjaLista() {
 
   return (
     <div>
+      <div className="red predmet-tabovi razmak-dole">
+        {(['matematika', 'srpski'] as const).map((p) => (
+          <button
+            key={p} type="button"
+            className={`dugme ${predmet === p ? '' : 'dugme--senka'}`}
+            aria-current={predmet === p}
+            onClick={() => promeniPredmet(p)}
+          >
+            {NAZIVI_PREDMETA[p]}
+          </button>
+        ))}
+      </div>
+
       <div className="zaglavlje-strane">
-        <h1>Banka pitanja</h1>
+        <h1>Banka pitanja — {NAZIVI_PREDMETA[predmet]}</h1>
         <div className="red">
-          {pitanja.length === 0 && (
+          {predmet === 'matematika' && pitanja.length === 0 && (
             <button type="button" className="dugme dugme--senka" onClick={ucitajPocetna}>
               Učitaj početna pitanja
+            </button>
+          )}
+          {predmet === 'srpski' && (
+            <button type="button" className="dugme dugme--senka" onClick={() => setUvozOtvoren(true)}>
+              Uvoz iz CSV-a
             </button>
           )}
           <button type="button" className="dugme dugme--akcenat" onClick={() => setUredjivanje('novo')}>
@@ -169,7 +200,7 @@ export function PitanjaLista() {
             <label htmlFor="f-oblast">Oblast</label>
             <select id="f-oblast" value={filterOblast} onChange={(e) => setFilterOblast(e.target.value)}>
               <option value="">Sve oblasti</option>
-              {oblasti.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
+              {oblastiPredmeta.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
             </select>
           </div>
           <div className="polje">
@@ -281,9 +312,20 @@ export function PitanjaLista() {
         <Modal naslov={uredjivanje === 'novo' ? 'Novo pitanje' : 'Izmena pitanja'} onZatvori={() => setUredjivanje(null)}>
           <PitanjeForma
             oblasti={oblasti}
+            predmet={predmet}
             pitanje={uredjivanje === 'novo' ? null : uredjivanje}
             onSacuvano={() => { setUredjivanje(null); ucitaj() }}
             onOtkazano={() => setUredjivanje(null)}
+          />
+        </Modal>
+      )}
+
+      {uvozOtvoren && (
+        <Modal naslov="Uvoz pitanja iz CSV-a" onZatvori={() => setUvozOtvoren(false)}>
+          <UvozCsv
+            oblastiSrpski={oblastiPredmeta}
+            onZatvori={() => setUvozOtvoren(false)}
+            onUvezeno={() => { setUvozOtvoren(false); ucitaj() }}
           />
         </Modal>
       )}

@@ -35,7 +35,11 @@ export function Rezultati() {
   const filtrirano = useMemo(() => pokusaji.filter((p) => {
     if (filterDete && !p.child_name.toLowerCase().includes(filterDete.toLowerCase())) return false
     if (filterKviz && p.quiz_id !== filterKviz) return false
-    if (filterStatus && p.status !== filterStatus) return false
+    if (filterStatus === 'review_pending') {
+      if (!(p.status === 'submitted' && p.review_pending)) return false
+    } else if (filterStatus && p.status !== filterStatus) {
+      return false
+    }
     if (filterOd && new Date(p.started_at) < new Date(filterOd)) return false
     if (filterDo && new Date(p.started_at) > new Date(filterDo + 'T23:59:59')) return false
     return true
@@ -84,6 +88,7 @@ export function Rezultati() {
             <select id="rf-status" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
               <option value="">Svi</option>
               {Object.entries(NAZIVI_STATUSA).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+              <option value="review_pending">Čeka pregled</option>
             </select>
           </div>
           <div className="polje">
@@ -108,8 +113,12 @@ export function Rezultati() {
                 <td data-naslov="Dete">{p.child_name}{p.child_label ? ` (${p.child_label})` : ''}</td>
                 <td data-naslov="Kviz">{mapaKvizova.get(p.quiz_id) ?? '—'}</td>
                 <td data-naslov="Status">
-                  <span className={`bedz ${p.status === 'submitted' ? (p.passed ? 'bedz--uspeh' : 'bedz--upozorenje') : p.status === 'expired' ? 'bedz--greska' : 'bedz--neutral'}`}>
-                    {NAZIVI_STATUSA[p.status]}
+                  <span className={`bedz ${
+                    p.status === 'submitted' && p.review_pending ? 'bedz--neutral'
+                    : p.status === 'submitted' ? (p.passed ? 'bedz--uspeh' : 'bedz--upozorenje')
+                    : p.status === 'expired' ? 'bedz--greska' : 'bedz--neutral'
+                  }`}>
+                    {p.status === 'submitted' && p.review_pending ? 'Čeka pregled' : NAZIVI_STATUSA[p.status]}
                   </span>
                 </td>
                 <td data-naslov="Rezultat">{formatProcenat(p.score_pct)}</td>

@@ -7,8 +7,9 @@ import {
   statusLinkovaKviza, ucitajKviz, type StatusLinka,
 } from '../../lib/api'
 import { formatDatum } from '../../lib/format'
+import { mapaPredmetaPoTemi } from '../../lib/predmet'
 import { Loader } from '../../components/Zajednicke'
-import { NAZIVI_TIPOVA, type Kviz, type KvizLink, type KvizPitanje, type Oblast, type Pitanje } from '../../types/db'
+import { NAZIVI_PREDMETA, NAZIVI_TIPOVA, type Kviz, type KvizLink, type KvizPitanje, type Oblast, type Pitanje, type Predmet } from '../../types/db'
 
 const BAZA_URL = `${window.location.origin}${import.meta.env.BASE_URL}`
 
@@ -157,7 +158,10 @@ function PitanjaKviza({
   const [cuva, setCuva] = useState(false)
   const [greska, setGreska] = useState<string | null>(null)
   const [brise, setBrise] = useState<string | null>(null)
+  const [filterPredmet, setFilterPredmet] = useState<'' | Predmet>('')
   const mapaOblasti = new Map(oblasti.map((o) => [o.id, o.name]))
+  const mapaPredmeta = mapaPredmetaPoTemi(oblasti)
+  const bankaFiltrirana = filterPredmet ? banka.filter((p) => mapaPredmeta.get(p.topic_id) === filterPredmet) : banka
 
   if (zakljucano) {
     async function obrisiJedno(qqId: string) {
@@ -212,6 +216,7 @@ function PitanjaKviza({
           quiz_id: quizId, source_question_id: p.id, position: i, topic_id: p.topic_id,
           topic_name: mapaOblasti.get(p.topic_id) ?? '—', type: p.type, text: p.text,
           options: p.options, correct: p.correct, explanation: p.explanation, hint: p.hint, points: p.points,
+          manual_review: p.manual_review,
         }
       })
       await postaviPitanjaKviza(quizId, unosi)
@@ -229,12 +234,19 @@ function PitanjaKviza({
         <h2>Pitanja u kvizu</h2>
         <span className="bedz">{izabrana.length} izabrano</span>
       </div>
+      <div className="polje" style={{ maxWidth: 220 }}>
+        <label htmlFor="pk-predmet">Predmet</label>
+        <select id="pk-predmet" value={filterPredmet} onChange={(e) => setFilterPredmet(e.target.value as '' | Predmet)}>
+          <option value="">Svi predmeti</option>
+          {Object.entries(NAZIVI_PREDMETA).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+        </select>
+      </div>
       {greska && <p className="poruka poruka--greska">{greska}</p>}
       <div className="tabela-omot" style={{ maxHeight: 360 }}>
         <table className="tabela">
           <thead><tr><th></th><th>Pitanje</th><th>Oblast</th><th>Tip</th></tr></thead>
           <tbody>
-            {banka.map((p) => (
+            {bankaFiltrirana.map((p) => (
               <tr key={p.id}>
                 <td><input type="checkbox" checked={izabrana.includes(p.id)} onChange={() => preklopi(p.id)} /></td>
                 <td>{p.text}</td>

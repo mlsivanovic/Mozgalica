@@ -73,7 +73,7 @@ export function GeneratorPregled({ pocetnaPitanja, upozorenje, cfg, oblasti, onN
         topic_id: oblast.id, type: s.pitanje.type, difficulty: s.pitanje.difficulty,
         text: s.pitanje.text, options: s.pitanje.options, correct: s.pitanje.correct,
         explanation: s.pitanje.explanation, hint: s.pitanje.hint, points: s.pitanje.points,
-        source: 'generated', gen_signature: s.pitanje.signature,
+        source: 'generated', gen_signature: s.pitanje.signature, manual_review: false,
       }
     })
   }
@@ -93,7 +93,7 @@ export function GeneratorPregled({ pocetnaPitanja, upozorenje, cfg, oblasti, onN
         source_question_id: null, topic_id: oblast.id, topic_name: oblast.name,
         type: s.pitanje.type, text: s.pitanje.text, options: s.pitanje.options,
         correct: s.pitanje.correct, explanation: s.pitanje.explanation,
-        hint: s.pitanje.hint, points: s.pitanje.points,
+        hint: s.pitanje.hint, points: s.pitanje.points, manual_review: false,
       }
     })
   }

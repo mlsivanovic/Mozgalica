@@ -45,6 +45,16 @@ export function KvizRezultat() {
     )
   }
 
+  // Neka pitanja čekaju ručnu ocenu administratora — bez zvezdica/procenta dok se ne oceni.
+  if (rezultat.pendingReview) {
+    return (
+      <div className="sadrzaj sadrzaj--usko centar" style={{ paddingTop: '15vh' }}>
+        <h1>Odgovori su poslati na pregled ✅</h1>
+        <p className="blago razmak-gore">Rezultat stiže kada ih pregleda odrasla osoba.</p>
+      </div>
+    )
+  }
+
   const zvezdice = brojZvezdica(rezultat.scorePct ?? 0, rezultat.passThresholdPct ?? 50)
   const novPokusajMoguc = (rezultat.attemptsLeft ?? 0) > 0
 

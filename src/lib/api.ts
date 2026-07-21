@@ -36,7 +36,7 @@ export async function ucitajPocetnaPitanja(oblasti: Oblast[]): Promise<number> {
     return [{
       topic_id: topicId, type: p.type, difficulty: p.difficulty, text: p.text,
       options: p.options, correct: p.correct, explanation: p.explanation, hint: p.hint,
-      points: p.points, source: 'manual' as const, gen_signature: null,
+      points: p.points, source: 'manual' as const, gen_signature: null, manual_review: false,
     }]
   })
   const { data, error } = await supabase().from('questions').insert(redovi).select('id')
@@ -47,6 +47,8 @@ export async function ucitajPocetnaPitanja(oblasti: Oblast[]): Promise<number> {
 // ---------- Pitanja ----------
 export interface FilterPitanja {
   topicId?: string
+  // Skup tema (npr. sve teme jednog predmeta) — ignoriše se ako je topicId postavljen
+  topicIds?: string[]
   type?: string
   difficulty?: number
   source?: string
@@ -56,6 +58,7 @@ export interface FilterPitanja {
 export async function listajPitanja(filter: FilterPitanja): Promise<Pitanje[]> {
   let upit = supabase().from('questions').select('*').order('created_at', { ascending: false })
   if (filter.topicId) upit = upit.eq('topic_id', filter.topicId)
+  else if (filter.topicIds) upit = upit.in('topic_id', filter.topicIds)
   if (filter.type) upit = upit.eq('type', filter.type)
   if (filter.difficulty) upit = upit.eq('difficulty', filter.difficulty)
   if (filter.source) upit = upit.eq('source', filter.source)
@@ -95,6 +98,14 @@ export async function upisiGenerisana(pitanja: NovoPitanje[]): Promise<number> {
   if (nova.length === 0) return 0
 
   const { data, error } = await supabase().from('questions').insert(nova).select('id')
+  if (error) throw new Error(opisiGresku(error)!)
+  return data?.length ?? 0
+}
+
+// Grupni upis pitanja uvezenih iz CSV-a (uvozUvoz.ts već je validirao redove).
+export async function upisiPitanjaUvoz(rows: NovoPitanje[]): Promise<number> {
+  if (rows.length === 0) return 0
+  const { data, error } = await supabase().from('questions').insert(rows).select('id')
   if (error) throw new Error(opisiGresku(error)!)
   return data?.length ?? 0
 }

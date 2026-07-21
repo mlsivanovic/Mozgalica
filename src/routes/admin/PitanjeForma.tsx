@@ -1,11 +1,13 @@
 // Forma za ručno kreiranje/izmenu pitanja — polja zavise od izabranog tipa
 import { useState } from 'react'
 import { sacuvajPitanje, type NovoPitanje } from '../../lib/api'
-import type { MatchingOpcije, Oblast, Opcija, Pitanje, Tezina, TipPitanja } from '../../types/db'
-import { NAZIVI_TEZINA, NAZIVI_TIPOVA } from '../../types/db'
+import { grupisiOblastiPoPredmetu } from '../../lib/predmet'
+import type { MatchingOpcije, Oblast, Opcija, Pitanje, Predmet, Tezina, TipPitanja } from '../../types/db'
+import { NAZIVI_PREDMETA, NAZIVI_TEZINA, NAZIVI_TIPOVA } from '../../types/db'
 
 interface Props {
   oblasti: Oblast[]
+  predmet?: Predmet
   pitanje: Pitanje | null
   onSacuvano: () => void
   onOtkazano: () => void
@@ -14,14 +16,19 @@ interface Props {
 let brojac = 0
 function noviId() { return `o${++brojac}_${Date.now()}` }
 
-export function PitanjeForma({ oblasti, pitanje, onSacuvano, onOtkazano }: Props) {
+export function PitanjeForma({ oblasti, predmet, pitanje, onSacuvano, onOtkazano }: Props) {
+  // Kad je predmet poznat (aktivan tab u banci), prikazuju se samo njegove teme —
+  // matematika i srpski se nikad ne mešaju u istoj formi. Bez predmeta (npr. buduća
+  // upotreba forme van tabova) padaju sve teme grupisane po predmetu.
+  const vidljiveOblasti = predmet ? oblasti.filter((o) => o.subject === predmet) : oblasti
   const [type, setType] = useState<TipPitanja>(pitanje?.type ?? 'single')
-  const [topicId, setTopicId] = useState(pitanje?.topic_id ?? oblasti[0]?.id ?? '')
+  const [topicId, setTopicId] = useState(pitanje?.topic_id ?? vidljiveOblasti[0]?.id ?? '')
   const [difficulty, setDifficulty] = useState<Tezina>(pitanje?.difficulty ?? 3)
   const [text, setText] = useState(pitanje?.text ?? '')
   const [explanation, setExplanation] = useState(pitanje?.explanation ?? '')
   const [hint, setHint] = useState(pitanje?.hint ?? '')
   const [points, setPoints] = useState(pitanje?.points ?? 1)
+  const [rucnoOcenjivanje, setRucnoOcenjivanje] = useState(pitanje?.manual_review ?? false)
 
   // single/multi
   const [opcije, setOpcije] = useState<Opcija[]>(
@@ -71,7 +78,8 @@ export function PitanjeForma({ oblasti, pitanje, onSacuvano, onOtkazano }: Props
       if (tacneId.length === 0) return 'Označi tačan odgovor.'
     }
     if (type === 'numeric' && brojVrednost.trim() === '') return 'Unesi tačan brojčani odgovor.'
-    if (type === 'text' && prihvaceni.every((p) => p.trim() === '')) return 'Unesi bar jedan prihvaćen odgovor.'
+    // Kod ručnog ocenjivanja je prihvaćen odgovor samo opcioni orijentir za administratora
+    if (type === 'text' && !rucnoOcenjivanje && prihvaceni.every((p) => p.trim() === '')) return 'Unesi bar jedan prihvaćen odgovor.'
     if (type === 'matching') {
       const validLevo = levo.filter((o) => o.text.trim() !== '')
       const validDesno = desno.filter((o) => o.text.trim() !== '')
@@ -112,6 +120,8 @@ export function PitanjeForma({ oblasti, pitanje, onSacuvano, onOtkazano }: Props
         topic_id: topicId, type, difficulty, text: text.trim(), options, correct,
         explanation: explanation.trim() || null, hint: hint.trim() || null, points,
         source: pitanje?.source ?? 'manual', gen_signature: pitanje?.gen_signature ?? null,
+        // Tačno/netačno se uvek ocenjuje automatski, bez obzira na stanje čekboksa
+        manual_review: type === 'truefalse' ? false : rucnoOcenjivanje,
       }
       await sacuvajPitanje(novo, pitanje?.id)
       onSacuvano()
@@ -134,7 +144,13 @@ export function PitanjeForma({ oblasti, pitanje, onSacuvano, onOtkazano }: Props
         <div className="polje">
           <label htmlFor="pf-oblast">Oblast</label>
           <select id="pf-oblast" value={topicId} onChange={(e) => setTopicId(e.target.value)}>
-            {oblasti.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
+            {predmet
+              ? vidljiveOblasti.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)
+              : grupisiOblastiPoPredmetu(oblasti).map((g) => (
+                <optgroup key={g.predmet} label={NAZIVI_PREDMETA[g.predmet]}>
+                  {g.oblasti.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
+                </optgroup>
+              ))}
           </select>
         </div>
         <div className="polje">
@@ -149,6 +165,16 @@ export function PitanjeForma({ oblasti, pitanje, onSacuvano, onOtkazano }: Props
         <label htmlFor="pf-tekst">Tekst pitanja</label>
         <textarea id="pf-tekst" value={text} onChange={(e) => setText(e.target.value)} />
       </div>
+
+      <label className="stiklir razmak-dole">
+        <input
+          type="checkbox" checked={type === 'truefalse' ? false : rucnoOcenjivanje}
+          disabled={type === 'truefalse'}
+          onChange={(e) => setRucnoOcenjivanje(e.target.checked)}
+        />
+        Ručno ocenjivanje (pregleda administrator)
+        {type === 'truefalse' && <span className="malo blago"> — tačno/netačno se uvek ocenjuje automatski</span>}
+      </label>
 
       {(type === 'single' || type === 'multi') && (
         <div className="polje">
@@ -184,7 +210,11 @@ export function PitanjeForma({ oblasti, pitanje, onSacuvano, onOtkazano }: Props
 
       {type === 'text' && (
         <div className="polje">
-          <label>Prihvaćeni odgovori (svi se smatraju tačnim)</label>
+          <label>
+            {rucnoOcenjivanje
+              ? 'Referentni/model odgovor (opciono — vidi ga administrator pri ocenjivanju)'
+              : 'Prihvaćeni odgovori (svi se smatraju tačnim)'}
+          </label>
           {prihvaceni.map((p, i) => (
             <div key={i} className="red razmak-dole">
               <input
