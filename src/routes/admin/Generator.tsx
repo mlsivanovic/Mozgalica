@@ -116,15 +116,15 @@ export function Generator() {
   }
 
   return (
-    <div className="sadrzaj--usko">
+    <div className="generator-strana">
       <h1>Automatski generator pitanja</h1>
       <p className="blago razmak-dole">
         Generisana pitanja NIKAD se ne objavljuju direktno — prvo prolaze tvoj pregled na sledećem koraku.
         Izaberi jednu ili više oblasti da napraviš mešoviti kviz.
       </p>
 
-      <div className="kartica razmak-dole">
-        <div className="gen-sekcija">
+      <div className="kartica razmak-dole gen-forma">
+        <div className="gen-sekcija gen-sekcija--razred">
           <p className="gen-naslov razmak-dole">Razred</p>
           <div className="segment" role="radiogroup" aria-label="Razred">
             {RAZREDI.map((r) => (
@@ -139,7 +139,7 @@ export function Generator() {
           </div>
         </div>
 
-        <div className="gen-sekcija">
+        <div className="gen-sekcija gen-sekcija--oblasti">
           <div className="red red--razmak razmak-dole" style={{ alignItems: 'center' }}>
             <span className="gen-naslov">Oblasti {topicSlugovi.length > 0 && `· ${topicSlugovi.length} izabrano`}</span>
             <button
@@ -166,7 +166,7 @@ export function Generator() {
           </div>
         </div>
 
-        <div className="gen-sekcija">
+        <div className="gen-sekcija gen-sekcija--tezina">
           <p className="gen-naslov razmak-dole">Nivo težine</p>
           <div className="segment" role="radiogroup" aria-label="Nivo težine">
             {(Object.entries(NAZIVI_TEZINA) as [string, string][]).map(([k, naziv]) => (
@@ -181,7 +181,7 @@ export function Generator() {
           </div>
         </div>
 
-        <div className="gen-sekcija">
+        <div className="gen-sekcija gen-sekcija--podesavanje">
           <div className="red-polja">
             <div className="polje">
               <label htmlFor="g-broj">Broj pitanja (ukupno)</label>
@@ -204,7 +204,7 @@ export function Generator() {
           </div>
         </div>
 
-        <div className="gen-sekcija">
+        <div className="gen-sekcija gen-sekcija--opcije">
           <label className="stiklir">
             <input type="checkbox" checked={wordProblems} onChange={(e) => setWordProblems(e.target.checked)} />
             Tekstualni zadaci (priča umesto golog izraza)
@@ -216,12 +216,12 @@ export function Generator() {
         </div>
 
         {topicSlugovi.length > 0 && (
-          <p className="gen-rezime gen-sekcija">
+          <p className="gen-rezime gen-sekcija gen-sekcija--rezime">
             📋 {count} pitanja · {NAZIVI_TEZINA[difficulty]} · {topicSlugovi.length} {topicSlugovi.length === 1 ? 'oblast izabrana' : 'oblasti izabrano'}
           </p>
         )}
 
-        <button type="button" className="dugme dugme--akcenat" disabled={topicSlugovi.length === 0} onClick={pokreni}>
+        <button type="button" className="dugme dugme--akcenat gen-dugme" disabled={topicSlugovi.length === 0} onClick={pokreni}>
           Generiši pitanja za pregled
         </button>
       </div>

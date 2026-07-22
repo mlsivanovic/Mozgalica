@@ -7,6 +7,14 @@ export function formatDatum(iso: string | null | undefined): string {
   }) + ' ' + d.toLocaleTimeString('sr-Latn-RS', { hour: '2-digit', minute: '2-digit' })
 }
 
+// Vrednost za <input type="date"> mora da koristi lokalni datum, ne UTC datum.
+export function formatDatumZaInput(datum: Date = new Date()): string {
+  const godina = datum.getFullYear()
+  const mesec = String(datum.getMonth() + 1).padStart(2, '0')
+  const dan = String(datum.getDate()).padStart(2, '0')
+  return `${godina}-${mesec}-${dan}`
+}
+
 export function formatTrajanje(sekunde: number | null | undefined): string {
   if (sekunde == null) return '—'
   const min = Math.floor(sekunde / 60)

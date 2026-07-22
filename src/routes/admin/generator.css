@@ -1,6 +1,7 @@
 /* Generator pitanja — izbor oblasti kao čipovi/kartice + segmentirani izbori,
    umesto gole liste checkbox-ova. */
 
+.generator-strana { width: 100%; }
 .gen-sekcija { margin-bottom: 1.6rem; }
 .gen-sekcija:last-child { margin-bottom: 0; }
 .gen-naslov { font-size: 0.85rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.03em; color: var(--boja-tekst-blagi); }
@@ -47,6 +48,35 @@
   display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
   padding: 0.75rem 1rem; border-radius: var(--radius);
   background: var(--boja-primarna-svetla); color: var(--boja-primarna-tamna); font-weight: 700;
+}
+
+.gen-dugme { width: 100%; }
+
+@media (min-width: 900px) {
+  .gen-forma {
+    display: grid;
+    grid-template-columns: minmax(0, 1.7fr) minmax(300px, 1fr);
+    column-gap: 1.5rem;
+    align-items: start;
+  }
+
+  .gen-sekcija--oblasti {
+    grid-column: 1;
+    grid-row: 1 / span 4;
+    min-width: 0;
+    margin-bottom: 0;
+    padding-right: 1.5rem;
+    border-right: 1px solid var(--boja-ivica);
+  }
+  .gen-sekcija--razred { grid-column: 2; grid-row: 1; }
+  .gen-sekcija--tezina { grid-column: 2; grid-row: 2; }
+  .gen-sekcija--podesavanje { grid-column: 2; grid-row: 3; }
+  .gen-sekcija--opcije { grid-column: 2; grid-row: 4; }
+  .gen-sekcija--rezime { grid-column: 1 / -1; grid-row: 5; margin-top: 1.5rem; }
+  .gen-dugme { grid-column: 1 / -1; grid-row: 6; }
+
+  .gen-sekcija--podesavanje .red-polja > .polje { min-width: 100%; }
+  .gen-oblasti { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
 }
 
 @media (max-width: 640px) {

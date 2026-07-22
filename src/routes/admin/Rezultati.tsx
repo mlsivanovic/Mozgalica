@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { listajKvizove, listajPokusaje, ucitajStatuseTitula, type StatusTituleDeteta } from '../../lib/api'
 import { napraviCsv, preuzmiCsv } from '../../lib/csv'
-import { formatDatum, formatProcenat, formatTrajanje } from '../../lib/format'
+import { formatDatum, formatDatumZaInput, formatProcenat, formatTrajanje } from '../../lib/format'
 import { Loader } from '../../components/Zajednicke'
 import type { Kviz, Pokusaj, StatusPokusaja } from '../../types/db'
 
@@ -21,8 +21,8 @@ export function Rezultati() {
   const [filterDete, setFilterDete] = useState('')
   const [filterKviz, setFilterKviz] = useState('')
   const [filterStatus, setFilterStatus] = useState('')
-  const [filterOd, setFilterOd] = useState('')
-  const [filterDo, setFilterDo] = useState('')
+  const [filterOd, setFilterOd] = useState(() => formatDatumZaInput())
+  const [filterDo, setFilterDo] = useState(() => formatDatumZaInput())
 
   useEffect(() => {
     Promise.all([listajPokusaje(), listajKvizove(), ucitajStatuseTitula()])
@@ -42,8 +42,8 @@ export function Rezultati() {
     } else if (filterStatus && p.status !== filterStatus) {
       return false
     }
-    if (filterOd && new Date(p.started_at) < new Date(filterOd)) return false
-    if (filterDo && new Date(p.started_at) > new Date(filterDo + 'T23:59:59')) return false
+    if (filterOd && new Date(p.started_at) < new Date(`${filterOd}T00:00:00`)) return false
+    if (filterDo && new Date(p.started_at) > new Date(`${filterDo}T23:59:59.999`)) return false
     return true
   }), [pokusaji, filterDete, filterKviz, filterStatus, filterOd, filterDo])
 
