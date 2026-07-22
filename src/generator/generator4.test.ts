@@ -33,8 +33,31 @@ describe('4. razred — matematička pravila po oblastima', () => {
     const ocekivanoOperanda: Record<number, number> = { 1: 2, 2: 3, 3: 3, 4: 4, 5: 4 }
     for (const tezina of [1, 2, 3, 4, 5] as const) {
       for (let seed = 0; seed < 15; seed++) {
-        const r = generisi(cfg4({ difficulty: tezina, seed, count: 5, type: 'numeric' }))
+        const r = generisi(cfg4({ difficulty: tezina, seed, count: 5, type: 'auto' }))
         for (const p of r.questions) {
+          if (p.signature.startsWith('sabiranje4:sv:')) {
+            const delovi = p.signature.split(':')
+            const vrsta = delovi[2]
+            if (vrsta === 'nula') {
+              expect(tacnaVrednost(p)).toBe(Number(delovi[4]))
+            } else if (vrsta === 'zav') {
+              const [S, k, smer] = delovi[3].split(',')
+              expect(tacnaVrednost(p)).toBe(smer === 'pov' ? Number(S) + Number(k) : Number(S) - Number(k))
+            } else if (vrsta === 'kom') {
+              const [, q] = delovi[3].split(',').map(Number)
+              expect(tacnaVrednost(p)).toBe(q)
+            } else if (vrsta === 'stal') {
+              const [, , d] = delovi[3].split(',').map(Number)
+              expect(tacnaVrednost(p)).toBe(d)
+            } else if (vrsta === 'ident') {
+              const [S, c, d] = delovi[3].split(',').map(Number)
+              expect(tacnaVrednost(p)).toBe(S + c + d)
+            } else {
+              throw new Error(`Nepoznat sv oblik: ${p.signature}`)
+            }
+            expect(tacnaVrednost(p)).toBeGreaterThanOrEqual(0)
+            continue
+          }
           const operandi = p.signature.replace('sabiranje4:', '').split('+').map(Number)
           expect(operandi).toHaveLength(ocekivanoOperanda[tezina])
           const suma = operandi.reduce((s, x) => s + x, 0)
@@ -48,8 +71,34 @@ describe('4. razred — matematička pravila po oblastima', () => {
   it('oduzimanje-4: rezultat nikad negativan, uklj. međurezultate u lancu', () => {
     for (const tezina of [1, 2, 3, 4, 5] as const) {
       for (let seed = 0; seed < 15; seed++) {
-        const r = generisi(cfg4({ topicSlug: 'oduzimanje-4', difficulty: tezina, seed, count: 5, type: 'numeric' }))
+        const r = generisi(cfg4({ topicSlug: 'oduzimanje-4', difficulty: tezina, seed, count: 5, type: 'auto' }))
         for (const p of r.questions) {
+          if (p.signature.startsWith('oduzimanje4:sv:')) {
+            const delovi = p.signature.split(':')
+            const vrsta = delovi[2]
+            if (vrsta === 'nula') {
+              const oblik = delovi[3]
+              expect(tacnaVrednost(p)).toBe(oblik === 'nn' ? 0 : Number(delovi[4]))
+            } else if (vrsta === 'zav') {
+              const [R, k, koji, smer] = delovi[3].split(',')
+              const Rn = Number(R), kn = Number(k)
+              const tacan = koji === 'umanjenik'
+                ? (smer === 'pov' ? Rn + kn : Rn - kn)
+                : (smer === 'pov' ? Rn - kn : Rn + kn)
+              expect(tacnaVrednost(p)).toBe(tacan)
+            } else if (vrsta === 'stal') {
+              const [, , d] = delovi[3].split(',').map(Number)
+              expect(tacnaVrednost(p)).toBe(d)
+            } else if (vrsta === 'ident') {
+              const [D, c, smer] = delovi[3].split(',')
+              const Dn = Number(D), cn = Number(c)
+              expect(tacnaVrednost(p)).toBe(smer === 'plus' ? Dn - cn : Dn + cn)
+            } else {
+              throw new Error(`Nepoznat sv oblik: ${p.signature}`)
+            }
+            expect(tacnaVrednost(p)).toBeGreaterThanOrEqual(0)
+            continue
+          }
           const [a, ...koraci] = p.signature.replace('oduzimanje4:', '').split('-').map(Number)
           let medjurezultat = a
           for (const k of koraci) {
@@ -66,8 +115,42 @@ describe('4. razred — matematička pravila po oblastima', () => {
   it('mnozenje-4: proizvod tačan i ostaje ≤ 10 000 000', () => {
     for (const tezina of [1, 2, 3, 4, 5] as const) {
       for (let seed = 0; seed < 15; seed++) {
-        const r = generisi(cfg4({ topicSlug: 'mnozenje-4', difficulty: tezina, seed, count: 5, type: 'numeric' }))
+        const r = generisi(cfg4({ topicSlug: 'mnozenje-4', difficulty: tezina, seed, count: 5, type: 'auto' }))
         for (const p of r.questions) {
+          if (p.signature.startsWith('mnozenje4:dek:') || p.signature.startsWith('mnozenje4:sv:')) {
+            const delovi = p.signature.split(':')
+            const grupa = delovi[1]
+            const vrsta = delovi[2]
+            if (grupa === 'dek' && vrsta === 'rastavi') {
+              const [n, a] = delovi[3].split(',').map(Number)
+              expect(tacnaVrednost(p)).toBe(n / a)
+            } else if (grupa === 'dek' && vrsta === 'cinilac') {
+              const [, d] = delovi[3].split(',').map(Number)
+              expect(tacnaVrednost(p)).toBe(d)
+            } else if (vrsta === 'zav') {
+              const [P, k, smer] = delovi[3].split(',')
+              const Pn = Number(P), kn = Number(k)
+              expect(tacnaVrednost(p)).toBe(smer === 'pov' ? Pn * kn : Pn / kn)
+            } else if (vrsta === 'distrib') {
+              const [a, b, k, oblik] = delovi[3].split(',')
+              const an = Number(a), bn = Number(b), kn = Number(k)
+              const unutra = oblik === 'zbir' ? an + bn : Math.abs(an - bn)
+              expect(tacnaVrednost(p)).toBe(unutra * kn)
+            } else if (vrsta === 'kom') {
+              const [a] = delovi[3].split(',').map(Number)
+              expect(tacnaVrednost(p)).toBe(a)
+            } else if (vrsta === 'stal') {
+              const [, , k] = delovi[3].split(',').map(Number)
+              expect(tacnaVrednost(p)).toBe(k)
+            } else if (vrsta === 'ident') {
+              const [P, k, m] = delovi[3].split(',').map(Number)
+              expect(tacnaVrednost(p)).toBe(P * k * m)
+            } else {
+              throw new Error(`Nepoznat oblik potpisa: ${p.signature}`)
+            }
+            expect(tacnaVrednost(p)).toBeGreaterThanOrEqual(0)
+            continue
+          }
           const cinioci = p.signature.replace('mnozenje4:', '').split('x').map(Number)
           const proizvod = cinioci.reduce((pr, x) => pr * x, 1)
           expect(proizvod).toBeLessThanOrEqual(10_000_000)
@@ -80,8 +163,39 @@ describe('4. razred — matematička pravila po oblastima', () => {
   it('deljenje-4: egzaktne grane nemaju ostatak, "ost" grane imaju tačan količnik/ostatak', () => {
     for (const tezina of [1, 2, 3, 4, 5] as const) {
       for (let seed = 0; seed < 15; seed++) {
-        const r = generisi(cfg4({ topicSlug: 'deljenje-4', difficulty: tezina, seed, count: 5, type: 'numeric' }))
+        const r = generisi(cfg4({ topicSlug: 'deljenje-4', difficulty: tezina, seed, count: 5, type: 'auto' }))
         for (const p of r.questions) {
+          if (p.signature.startsWith('deljenje4:dek:') || p.signature.startsWith('deljenje4:sv:')) {
+            const delovi = p.signature.split(':')
+            const grupa = delovi[1]
+            const vrsta = delovi[2]
+            if (grupa === 'dek') {
+              const [n, d] = delovi[3].split(',').map(Number)
+              expect(tacnaVrednost(p)).toBe(n / d)
+            } else if (vrsta === 'zav') {
+              const [Q, k, koji, smer] = delovi[3].split(',')
+              const Qn = Number(Q), kn = Number(k)
+              const tacan = koji === 'deljenik'
+                ? (smer === 'pov' ? Qn * kn : Qn / kn)
+                : (smer === 'pov' ? Qn / kn : Qn * kn)
+              expect(tacnaVrednost(p)).toBe(tacan)
+            } else if (vrsta === 'distrib') {
+              const [a, b, c, oblik] = delovi[3].split(',')
+              const qa = Number(a) / Number(c)
+              const qb = Number(b) / Number(c)
+              expect(tacnaVrednost(p)).toBe(oblik === 'zbir' ? qa + qb : Math.abs(qa - qb))
+            } else if (vrsta === 'stal') {
+              const [, , k] = delovi[3].split(',').map(Number)
+              expect(tacnaVrednost(p)).toBe(k)
+            } else if (vrsta === 'ident') {
+              const [Q] = delovi[3].split(',').map(Number)
+              expect(tacnaVrednost(p)).toBe(Q)
+            } else {
+              throw new Error(`Nepoznat oblik potpisa: ${p.signature}`)
+            }
+            expect(tacnaVrednost(p)).toBeGreaterThanOrEqual(0)
+            continue
+          }
           if (p.signature.startsWith('deljenje4:ost:')) {
             const [deljenik, delilac, ostatak, trazi] = p.signature.replace('deljenje4:ost:', '').split(':')
             const d = Number(deljenik), dl = Number(delilac), o = Number(ostatak)
@@ -145,6 +259,19 @@ describe('4. razred — matematička pravila po oblastima', () => {
             const brojevi = brojeviStr.split(',').map(Number)
             const ocekivano = trazi === 'max' ? Math.max(...brojevi) : Math.min(...brojevi)
             expect(tacnaVrednost(p)).toBe(ocekivano)
+          } else if (sig.startsWith('veliki4:skup:')) {
+            const oblik = sig.replace('veliki4:skup:', '')
+            if (oblik === 'nula-u-n') {
+              const opcije = p.options as Opcija[]
+              const correctId = (p.correct as { optionId: string }).optionId
+              expect(opcije.find((o) => o.id === correctId)?.text).toBe('0')
+            } else if (oblik === 'najmanji-n') {
+              expect(tacnaVrednost(p)).toBe(1)
+            } else if (oblik === 'najmanji-n0') {
+              expect(tacnaVrednost(p)).toBe(0)
+            } else {
+              throw new Error(`Nepoznat skup oblik: ${sig}`)
+            }
           } else {
             throw new Error(`Nepoznat oblik potpisa: ${sig}`)
           }
@@ -159,6 +286,21 @@ describe('4. razred — matematička pravila po oblastima', () => {
         const r = generisi(cfg4({ topicSlug: 'kombinovane-operacije-4', difficulty: tezina, seed, count: 5, type: 'numeric' }))
         for (const p of r.questions) {
           expect(tacnaVrednost(p)).toBeGreaterThanOrEqual(0)
+        }
+      }
+    }
+  })
+
+  it('kombinovane-operacije-4: struktura izraza (redosled/prost-složen) je dosledna kao single-choice', () => {
+    for (const tezina of [1, 2, 3, 4, 5] as const) {
+      for (let seed = 0; seed < 15; seed++) {
+        const r = generisi(cfg4({ topicSlug: 'kombinovane-operacije-4', difficulty: tezina, seed, count: 8, type: 'single' }))
+        for (const p of r.questions) {
+          expect(p.type).toBe('single')
+          const opcije = p.options as Opcija[]
+          const correctId = (p.correct as { optionId: string }).optionId
+          expect(opcije.some((o) => o.id === correctId)).toBe(true)
+          expect(new Set(opcije.map((o) => o.text)).size).toBe(opcije.length)
         }
       }
     }

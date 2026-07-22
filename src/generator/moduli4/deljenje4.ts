@@ -45,12 +45,147 @@ function napraviDeljenje(rng: Rng, tezina: 1 | 2 | 4): number[] {
   return [delilac * kolicnik, delilac]
 }
 
+// ---------------------------------------------------------------------------
+// Svojstva deljenja + dekadne jedinice (uklopljeno u istu oblast, iz radne
+// sveske: deljenje dekadnom jedinicom, zavisnost/stalnost količnika,
+// deljenje zbira/razlike brojem).
+
+// Deljenje dekadnom jedinicom (10/100/1000) — n konstruisan kao umnožak
+function dekadnoDeljenje(rng: Rng, cfg: GeneratorConfig, taken: Set<string>): GenerisanoPitanje | null {
+  const d = izaberi(rng, [10, 100, 1_000] as const)
+  const kolicnik = ceoBroj(rng, 12, 9_999)
+  const n = kolicnik * d
+  const signature = `deljenje4:dek:del:${n},${d}`
+  if (taken.has(signature)) return null
+  return upakujRacun(cfg, rng, {
+    text: `Izračunaj: ${n} : ${d} = ?`,
+    tacan: kolicnik,
+    kandidati: [n, kolicnik * 10, Math.max(1, Math.floor(kolicnik / 10)), kolicnik + 1],
+    explanation: `Broj se deli dekadnom jedinicom tako što mu se sa desne strane „skine" onoliko nula koliko ima ta dekadna jedinica: ${n} : ${d} = ${kolicnik}.`,
+    hint: `Podeli sa ${d} tako što ćeš skinuti odgovarajući broj nula sa kraja broja.`,
+    signature,
+    maxDistraktor: 10_000_000,
+  })
+}
+
+// Zavisnost količnika od promene deljenika (isti smer) ili delioca (suprotan smer)
+function zavisnostKolicnika(rng: Rng, cfg: GeneratorConfig, taken: Set<string>): GenerisanoPitanje | null {
+  const Q = ceoBroj(rng, 10, 9_999)
+  const k = ceoBroj(rng, 2, 12)
+  const deljenikMenja = rng() < 0.5
+  const pov = rng() < 0.5
+  let tacan: number
+  if (deljenikMenja) {
+    if (pov) tacan = Q * k
+    else { if (Q % k !== 0) return null; tacan = Q / k }
+  } else {
+    if (pov) { if (Q % k !== 0) return null; tacan = Q / k }
+    else tacan = Q * k
+  }
+  const signature = `deljenje4:sv:zav:${Q},${k},${deljenikMenja ? 'deljenik' : 'delilac'},${pov ? 'pov' : 'sman'}`
+  if (taken.has(signature)) return null
+  const opis = deljenikMenja
+    ? `Kad se deljenik ${pov ? 'poveća' : 'smanji'} ${k} puta, količnik se menja u ISTOM smeru.`
+    : `Kad se delilac ${pov ? 'poveća' : 'smanji'} ${k} puta, količnik se menja u SUPROTNOM smeru.`
+  return upakujRacun(cfg, rng, {
+    text: `Količnik dva broja je ${Q}. Koliki će biti količnik ako se ${deljenikMenja ? 'deljenik' : 'delilac'} ${pov ? 'poveća' : 'smanji'} ${k} puta?`,
+    tacan,
+    kandidati: [Q, Q * k, Q % k === 0 ? Q / k : Q + 1, tacan + 10],
+    explanation: `${opis} Novi količnik je ${tacan}.`,
+    hint: deljenikMenja
+      ? 'Ako se promeni deljenik, količnik se menja u istom smeru.'
+      : 'Pažljivo: ako se promeni delilac, količnik se menja u SUPROTNOM smeru.',
+    signature,
+    maxDistraktor: 500_000,
+  })
+}
+
+// Deljenje zbira/razlike brojem: (a ± b) : c = a:c ± b:c
+function deljenjeZbiraRazlike(rng: Rng, cfg: GeneratorConfig, taken: Set<string>): GenerisanoPitanje | null {
+  const c = ceoBroj(rng, 2, 20)
+  const qa = ceoBroj(rng, 10, 999)
+  const qb = ceoBroj(rng, 10, 999)
+  const a = qa * c
+  const b = qb * c
+  const zbir = rng() < 0.5
+  if (!zbir && qa === qb) return null
+  const tacan = zbir ? qa + qb : Math.abs(qa - qb)
+  const signature = `deljenje4:sv:distrib:${a},${b},${c},${zbir ? 'zbir' : 'razlika'}`
+  if (taken.has(signature)) return null
+  return upakujRacun(cfg, rng, {
+    text: `Izračunaj: (${a} ${zbir ? '+' : '−'} ${b}) : ${c} = ?`,
+    tacan,
+    kandidati: [a + b, qa, qb, tacan + 10],
+    explanation: `${zbir ? 'Zbir' : 'Razliku'} možemo podeliti tako što svaki broj podelimo pojedinačno, pa rezultate saberemo/oduzmemo: ${a} : ${c} = ${qa}, ${b} : ${c} = ${qb}, pa je rezultat ${qa} ${zbir ? '+' : '−'} ${qb} = ${tacan}.`,
+    hint: 'Podeli svaki broj u zagradi pojedinačno istim deliocem, pa rezultate saberi/oduzmi.',
+    signature,
+    maxDistraktor: 2_000,
+  })
+}
+
+// Stalnost količnika (dopuna): (deljenik · k) : (delilac · __) = Q
+function stalnostKolicnika(rng: Rng, cfg: GeneratorConfig, taken: Set<string>): GenerisanoPitanje | null {
+  const k = izaberi(rng, [2, 3, 4, 5] as const)
+  const Q = ceoBroj(rng, 10, 9_999)
+  const delilac = ceoBroj(rng, 2, 99)
+  const deljenik = Q * delilac
+  const signature = `deljenje4:sv:stal:${deljenik},${delilac},${k}`
+  if (taken.has(signature)) return null
+  return upakujRacun(cfg, rng, {
+    text: `Bez računanja, upiši broj: (${deljenik} · ${k}) : (${delilac} · __) = ${Q}`,
+    tacan: k,
+    kandidati: [deljenik, delilac, Q, k + 1],
+    explanation: `Količnik ostaje isti ako deljenik i delilac pomnožimo istim brojem: pošto je deljenik pomnožen sa ${k}, i delilac mora biti pomnožen sa ${k} da količnik ostane ${Q}.`,
+    hint: 'Količnik se ne menja ako deljenik i delilac pomnožiš (ili podeliš) ISTIM brojem.',
+    signature,
+    maxDistraktor: 200_000,
+  })
+}
+
+// Ekspert identitet: ako je a : b = Q, koliko je (a · k) : (b · k)
+function identitetDeljenje(rng: Rng, cfg: GeneratorConfig, taken: Set<string>): GenerisanoPitanje | null {
+  const Q = ceoBroj(rng, 10, 9_999)
+  const k = ceoBroj(rng, 2, 12)
+  const signature = `deljenje4:sv:ident:${Q},${k}`
+  if (taken.has(signature)) return null
+  return upakujRacun(cfg, rng, {
+    text: `Ako je a : b = ${Q}, koliko je (a · ${k}) : (b · ${k})?`,
+    tacan: Q,
+    kandidati: [Q * k, Math.max(1, Math.floor(Q / k)), Q + k, Math.max(0, Q - 1)],
+    explanation: `Ako deljenik i delilac pomnožimo istim brojem, količnik ostaje isti: (a · ${k}) : (b · ${k}) = a : b = ${Q}.`,
+    hint: 'Množenje deljenika i delioca istim brojem ne menja količnik.',
+    signature,
+    maxDistraktor: 200_000,
+  })
+}
+
 export const deljenje4: TopicGenerator = {
   slug: 'deljenje-4',
   supportedTypes: ['numeric', 'single'],
   supportsWordProblems: true,
 
   generateOne(cfg: GeneratorConfig, rng: Rng, taken: Set<string>): GenerisanoPitanje | null {
+    if (cfg.difficulty === 1 && rng() < 0.3) {
+      const r = dekadnoDeljenje(rng, cfg, taken)
+      if (r) return r
+    }
+    if (cfg.difficulty === 2 && rng() < 0.3) {
+      const r = zavisnostKolicnika(rng, cfg, taken)
+      if (r) return r
+    }
+    if (cfg.difficulty === 3 && rng() < 0.25) {
+      const r = deljenjeZbiraRazlike(rng, cfg, taken)
+      if (r) return r
+    }
+    if (cfg.difficulty === 4 && rng() < 0.3) {
+      const r = stalnostKolicnika(rng, cfg, taken)
+      if (r) return r
+    }
+    if (cfg.difficulty === 5 && rng() < 0.25) {
+      const r = identitetDeljenje(rng, cfg, taken)
+      if (r) return r
+    }
+
     if (cfg.difficulty === 3 || cfg.difficulty === 5) {
       // t3: dvocifreni delilac sa ostatkom. t5: 50/50 trocifreni delilac sa
       // ostatkom, ili lanac dva egzaktna deljenja sa dvocifrenim prvim deliocem.

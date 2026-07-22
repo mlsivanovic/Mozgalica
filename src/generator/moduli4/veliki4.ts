@@ -3,7 +3,7 @@
 // izbor najvećeg/najmanjeg — u opsegu do milijarde (udžbenik ide do klase
 // milijardi/biliona). Više tipova pitanja po nivou da fond ne bude tanak.
 import type { Opcija } from '../../types/db'
-import { ceoBroj, izaberi, type Rng } from '../random'
+import { ceoBroj, izaberi, promesaj, type Rng } from '../random'
 import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types'
 import { poeniZaTezinu, upakujRacun } from '../moduli/zajednicko'
 
@@ -187,12 +187,58 @@ function prethodnikSledbenik(rng: Rng, minN: number, maxN: number, cfg: Generato
   })
 }
 
+// ---------------------------------------------------------------------------
+// Skup N i N₀ (uklopljeno u istu oblast, iz radne sveske: str. 21).
+function skupNPitanje(rng: Rng, cfg: GeneratorConfig, taken: Set<string>): GenerisanoPitanje | null {
+  const oblici = cfg.type === 'numeric'
+    ? (['najmanji-n', 'najmanji-n0'] as const)
+    : (['nula-u-n', 'najmanji-n', 'najmanji-n0'] as const)
+  const oblik = izaberi(rng, oblici)
+  const signature = `veliki4:skup:${oblik}`
+  if (taken.has(signature)) return null
+
+  if (oblik === 'nula-u-n') {
+    const opcije = promesaj(rng, ['0', '1', '2', '3'] as const)
+    const options: Opcija[] = opcije.map((t, i) => ({ id: `o${i + 1}`, text: t }))
+    const correctId = options[opcije.indexOf('0')].id
+    return {
+      type: 'single',
+      text: 'Koji od navedenih brojeva NE pripada skupu prirodnih brojeva N?',
+      options,
+      correct: { optionId: correctId },
+      explanation: 'Broj 0 ne pripada skupu N (prirodni brojevi) — N počinje od 1. Skup N₀ (prirodni brojevi sa nulom) počinje od 0 i njemu 0 pripada.',
+      hint: 'N je skup {1, 2, 3, ...}, a N₀ je skup {0, 1, 2, 3, ...}.',
+      points: poeniZaTezinu(cfg.difficulty),
+      topicSlug: cfg.topicSlug,
+      difficulty: cfg.difficulty,
+      signature,
+    }
+  }
+
+  const trazimoN = oblik === 'najmanji-n'
+  return upakujRacun(cfg, rng, {
+    text: `Koji je najmanji broj skupa ${trazimoN ? 'N (prirodni brojevi)' : 'N₀ (prirodni brojevi sa nulom)'}?`,
+    tacan: trazimoN ? 1 : 0,
+    kandidati: [trazimoN ? 0 : 1, 2, 3],
+    explanation: trazimoN
+      ? 'Skup N (prirodni brojevi) počinje od 1 — to je njegov najmanji broj.'
+      : 'Skup N₀ (prirodni brojevi sa nulom) počinje od 0 — to je njegov najmanji broj.',
+    hint: 'N = {1, 2, 3, ...}, N₀ = {0, 1, 2, 3, ...}.',
+    signature,
+    maxDistraktor: 10,
+  })
+}
+
 export const veliki4: TopicGenerator = {
   slug: 'veliki-brojevi-4',
   supportedTypes: ['numeric', 'single'],
   supportsWordProblems: false,
 
   generateOne(cfg: GeneratorConfig, rng: Rng, taken: Set<string>): GenerisanoPitanje | null {
+    if (cfg.difficulty === 1 && rng() < 0.25) {
+      const r = skupNPitanje(rng, cfg, taken)
+      if (r) return r
+    }
     if (cfg.difficulty === 1) {
       return rng() < 0.5
         ? kojaCifra(rng, 1_000, 99_999, 4, cfg, taken)

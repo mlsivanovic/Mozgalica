@@ -1,9 +1,9 @@
 // Generator: kombinovane računske operacije (4. razred) — veći brojevi, dublje
 // ugnježdene zagrade, deljenje unutar izraza, i izrazi sa promenljivom
 // (dat je x, izračunaj vrednost izraza).
-import { ceoBroj, type Rng } from '../random'
+import { ceoBroj, izaberi, promesaj, type Rng } from '../random'
 import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types'
-import { upakujRacun } from '../moduli/zajednicko'
+import { poeniZaTezinu, upakujRacun } from '../moduli/zajednicko'
 
 const MAX_DISTRAKTOR = 2_000_000
 
@@ -183,12 +183,141 @@ function napraviIzraz(rng: Rng, tezina: 1 | 2 | 3 | 4 | 5): Izraz {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Struktura izraza (uklopljeno u istu oblast, iz radne sveske: koja se
+// operacija prva računa, prost/složen izraz). Uvek single-choice — odgovor
+// nije broj, pa se ne javlja kod tipa 'numeric'.
+
+type Operacija = 'sabiranje' | 'oduzimanje' | 'mnozenje' | 'deljenje'
+const NAZIVI_OPERACIJA: Record<Operacija, string> = {
+  sabiranje: 'Sabiranje', oduzimanje: 'Oduzimanje', mnozenje: 'Množenje', deljenje: 'Deljenje',
+}
+
+interface SablonRedosled {
+  naziv: string
+  izraz: (a: number, b: number, c: number, d: number) => string
+  prva: Operacija
+}
+
+// Šabloni konstruisani tako da je operacija koja se PRVA računa jednoznačna
+// (zagrada, ili jedino prisutno množenje/deljenje) — nezavisno od konkretnih brojeva.
+const SABLONI_REDOSLED: SablonRedosled[] = [
+  { naziv: 'p1', izraz: (a, b, c, d) => `${a} + ${b} : ${c} − ${d}`, prva: 'deljenje' },
+  { naziv: 'p2', izraz: (a, b, c, d) => `${a} · ${b} + ${c} − ${d}`, prva: 'mnozenje' },
+  { naziv: 'p3', izraz: (a, b, c, d) => `(${a} + ${b}) · ${c} − ${d}`, prva: 'sabiranje' },
+  { naziv: 'p4', izraz: (a, b, c, d) => `${a} − ${b} · ${c} + ${d}`, prva: 'mnozenje' },
+  { naziv: 'p5', izraz: (a, b, c, d) => `(${a} − ${b}) : ${c} + ${d}`, prva: 'oduzimanje' },
+]
+
+function redosledPitanje(rng: Rng, cfg: GeneratorConfig, taken: Set<string>): GenerisanoPitanje | null {
+  const sablon = izaberi(rng, SABLONI_REDOSLED)
+  const a = ceoBroj(rng, 10, 999)
+  const b = ceoBroj(rng, 10, 999)
+  const c = ceoBroj(rng, 2, 20)
+  const d = ceoBroj(rng, 10, 999)
+  const izraz = sablon.izraz(a, b, c, d)
+  const signature = `kombinovane4:struktura:redosled:${sablon.naziv}:${a},${b},${c},${d}`
+  if (taken.has(signature)) return null
+  const sve: Operacija[] = ['sabiranje', 'oduzimanje', 'mnozenje', 'deljenje']
+  const promesano = promesaj(rng, sve)
+  const options = promesano.map((op, i) => ({ id: `o${i + 1}`, text: NAZIVI_OPERACIJA[op] }))
+  const correctId = options[promesano.indexOf(sablon.prva)].id
+  return {
+    type: 'single',
+    text: `Koja se računska operacija PRVA izračunava u izrazu: ${izraz}?`,
+    options,
+    correct: { optionId: correctId },
+    explanation: `Prvo se računa: ${NAZIVI_OPERACIJA[sablon.prva]} — zagrade imaju prednost, a od preostalih operacija prvo idu množenje i deljenje.`,
+    hint: 'Redosled: prvo zagrade, zatim množenje i deljenje, na kraju sabiranje i oduzimanje.',
+    points: poeniZaTezinu(cfg.difficulty),
+    topicSlug: cfg.topicSlug,
+    difficulty: cfg.difficulty,
+    signature,
+  }
+}
+
+interface Kandidat { izraz: string; id: string }
+
+function napraviProstIzraz(rng: Rng): Kandidat {
+  const op = izaberi(rng, ['+', '−', '·', ':'] as const)
+  if (op === ':') {
+    const delilac = ceoBroj(rng, 2, 20)
+    const kolicnik = ceoBroj(rng, 10, 999)
+    const deljenik = delilac * kolicnik
+    return { izraz: `${deljenik} : ${delilac}`, id: `del:${deljenik},${delilac}` }
+  }
+  if (op === '−') {
+    const a = ceoBroj(rng, 100, 9999)
+    const b = ceoBroj(rng, 1, a)
+    return { izraz: `${a} − ${b}`, id: `odu:${a},${b}` }
+  }
+  if (op === '·') {
+    const a = ceoBroj(rng, 10, 9999)
+    const b = ceoBroj(rng, 2, 20)
+    return { izraz: `${a} · ${b}`, id: `mno:${a},${b}` }
+  }
+  const a = ceoBroj(rng, 10, 9999)
+  const b = ceoBroj(rng, 10, 9999)
+  return { izraz: `${a} + ${b}`, id: `sab:${a},${b}` }
+}
+
+function napraviSlozenIzraz(rng: Rng): Kandidat {
+  const ponovljena = rng() < 0.5
+  const a = ceoBroj(rng, 10, 999)
+  const b = ceoBroj(rng, 10, 999)
+  if (ponovljena) {
+    const d = ceoBroj(rng, 10, 999)
+    return { izraz: `${a} + ${b} + ${d}`, id: `ponovljena:${a},${b},${d}` }
+  }
+  const c = ceoBroj(rng, 2, 20)
+  return { izraz: `${a} · ${c} + ${b}`, id: `razlicite:${a},${c},${b}` }
+}
+
+// Ponudi 4 izraza (1 tražene vrste + 3 suprotne) — izbegava binarni izbor
+// (za koji je potreban ≥3 opcija u single-choice po celoj bazi generatora).
+function prostSlozenPitanje(rng: Rng, cfg: GeneratorConfig, taken: Set<string>): GenerisanoPitanje | null {
+  const trazimoProst = rng() < 0.5
+  const tacanKandidat = trazimoProst ? napraviProstIzraz(rng) : napraviSlozenIzraz(rng)
+  const svi: Kandidat[] = [
+    tacanKandidat,
+    trazimoProst ? napraviSlozenIzraz(rng) : napraviProstIzraz(rng),
+    trazimoProst ? napraviSlozenIzraz(rng) : napraviProstIzraz(rng),
+    trazimoProst ? napraviSlozenIzraz(rng) : napraviProstIzraz(rng),
+  ]
+  const tekstovi = svi.map((s) => s.izraz)
+  if (new Set(tekstovi).size !== tekstovi.length) return null // retka slučajna podudarnost brojeva
+  const signature = `kombinovane4:struktura:prostslozen:${trazimoProst ? 'prost' : 'slozen'}:${svi.map((s) => s.id).join('|')}`
+  if (taken.has(signature)) return null
+  const promesano = promesaj(rng, svi)
+  const options = promesano.map((s, i) => ({ id: `o${i + 1}`, text: s.izraz }))
+  const correctId = options[promesano.indexOf(tacanKandidat)].id
+  return {
+    type: 'single',
+    text: `Koji od navedenih izraza je ${trazimoProst ? 'PROST' : 'SLOŽEN'} izraz?`,
+    options,
+    correct: { optionId: correctId },
+    explanation: trazimoProst
+      ? `${tacanKandidat.izraz} je PROST izraz — sadrži samo jednu računsku operaciju koja se ne ponavlja. Ostali izrazi su složeni.`
+      : `${tacanKandidat.izraz} je SLOŽEN izraz — sadrži više različitih operacija, ili istu operaciju koja se ponavlja. Ostali izrazi su prosti.`,
+    hint: 'Prost izraz ima tačno jednu operaciju bez ponavljanja. Složen ima dve ili više (ili istu koja se ponavlja).',
+    points: poeniZaTezinu(cfg.difficulty),
+    topicSlug: cfg.topicSlug,
+    difficulty: cfg.difficulty,
+    signature,
+  }
+}
+
 export const kombinovane4: TopicGenerator = {
   slug: 'kombinovane-operacije-4',
   supportedTypes: ['numeric', 'single'],
   supportsWordProblems: false,
 
   generateOne(cfg: GeneratorConfig, rng: Rng, taken: Set<string>): GenerisanoPitanje | null {
+    if (cfg.type !== 'numeric' && rng() < 0.25) {
+      const r = rng() < 0.5 ? redosledPitanje(rng, cfg, taken) : prostSlozenPitanje(rng, cfg, taken)
+      if (r) return r
+    }
+
     const izraz = napraviIzraz(rng, cfg.difficulty)
     if (taken.has(izraz.signature)) return null
 
