@@ -16,6 +16,8 @@ obnove gradivo iz matematike.
   tek kad server potvrdi da su sačuvani.
 - Za dodeljene kvizove server čuva osvojene zvezdice i odvojeno sabira Andrejev i
   Filipov najbolji rezultat na svakom kvizu.
+- Zvezdice otključavaju sezonske titule, od `StarScout` do `LegendPrime`; roditelj
+  za svako dete može da započne novu sezonu bez brisanja ukupnog zbira.
 - Kada dete završi kviz, administrator dobija mejl sa rezultatom.
 
 ## Tehnologije

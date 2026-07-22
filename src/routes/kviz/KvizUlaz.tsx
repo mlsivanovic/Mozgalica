@@ -94,6 +94,28 @@ export function KvizUlaz() {
             <p className="blago">
               Do sada si osvojio <strong>{meta.totalStars ?? 0} ⭐</strong>
             </p>
+            {meta.titleProgress && (
+              <div className="kviz-titula-uvod">
+                {meta.titleProgress.currentTitle ? (
+                  <p className="kviz-titula-ime">
+                    {meta.fixedChildName} <strong>{meta.titleProgress.currentTitle}</strong>
+                  </p>
+                ) : (
+                  <p className="kviz-titula-ime">Tvoja prva titula te čeka! ✨</p>
+                )}
+                <p className="malo blago">
+                  U ovoj sezoni: <strong>{meta.titleProgress.seasonStars} ⭐</strong>
+                </p>
+                {meta.titleProgress.nextTitle && meta.titleProgress.starsToNextTitle !== null ? (
+                  <p className="kviz-titula-cilj">
+                    Još <strong>{meta.titleProgress.starsToNextTitle} ⭐</strong> do{' '}
+                    <strong>{meta.titleProgress.nextTitle}</strong>.
+                  </p>
+                ) : (
+                  <p className="kviz-titula-cilj">Dostigao si LegendPrime! Nastavi da skupljaš zvezdice. 🌟</p>
+                )}
+              </div>
+            )}
           </div>
         ) : (
           <div className="polje">

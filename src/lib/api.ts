@@ -3,7 +3,7 @@ import type {
   AdminPodesavanja, FiksnoImeDeteta, Kviz, KvizLink, KvizPitanje, Oblast, OdgovorDeteta,
   Pitanje, Pokusaj, PokusajOdgovor, Predmet,
 } from '../types/db'
-import type { KvizMeta, PokusajPayload, RezultatPayload, SavePotvrda, SavetPayload } from '../types/kviz'
+import type { KvizMeta, NapredakTitule, PokusajPayload, RezultatPayload, SavePotvrda, SavetPayload } from '../types/kviz'
 import { SEED_PITANJA } from '../data/seedPitanja'
 import { supabase } from './supabase'
 
@@ -307,6 +307,35 @@ export async function listajZbiroveZvezdica(): Promise<ZbirZvezdica[]> {
   const { data, error } = await supabase().from('v_child_star_totals').select('*')
   if (error) throw new Error(opisiGresku(error)!)
   return data as ZbirZvezdica[]
+}
+
+export interface StatusTituleDeteta {
+  childName: FiksnoImeDeteta
+  totalStars: number
+  seasonStartedAt: string
+  titleProgress: NapredakTitule
+}
+
+interface StatusiTitulaPayload {
+  ok: boolean
+  error?: string
+  children?: StatusTituleDeteta[]
+}
+
+export async function ucitajStatuseTitula(): Promise<StatusTituleDeteta[]> {
+  const { data, error } = await supabase().rpc('admin_get_child_title_statuses')
+  if (error) throw new Error(opisiGresku(error)!)
+  const rezultat = data as StatusiTitulaPayload
+  if (!rezultat.ok || !rezultat.children) throw new Error(rezultat.error ?? 'Status titula nije dostupan.')
+  return rezultat.children
+}
+
+export async function zapocniNovuSezonuTitula(dete: FiksnoImeDeteta): Promise<StatusTituleDeteta> {
+  const { data, error } = await supabase().rpc('admin_start_new_title_season', { p_child_name: dete })
+  if (error) throw new Error(opisiGresku(error)!)
+  const rezultat = data as StatusTituleDeteta & { ok?: boolean; error?: string }
+  if (!rezultat.ok || !rezultat.titleProgress) throw new Error(rezultat.error ?? 'Nova sezona nije pokrenuta.')
+  return rezultat
 }
 
 // ---------- Statistika (view-ovi) ----------

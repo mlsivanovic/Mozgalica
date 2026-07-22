@@ -26,10 +26,19 @@ export interface KvizMeta {
   requireName?: boolean
   fixedChildName?: FiksnoImeDeteta | null
   totalStars?: number | null
+  titleProgress?: NapredakTitule | null
   requireLabel?: boolean
   labelName?: string
   attemptsLeft?: number
   maxAttempts?: number
+}
+
+// Sezonski napredak titula vraća server samo za dodeljene kvizove.
+export interface NapredakTitule {
+  seasonStars: number
+  currentTitle: string | null
+  nextTitle: string | null
+  starsToNextTitle: number | null
 }
 
 // start_attempt / resume_attempt
@@ -90,6 +99,8 @@ export interface RezultatPayload {
   childName?: string
   starsEarned?: number | null
   totalStars?: number | null
+  titleProgress?: NapredakTitule | null
+  newlyUnlockedTitle?: string | null
   totalPoints?: number
   maxPoints?: number
   scorePct?: number

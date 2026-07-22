@@ -1,7 +1,7 @@
 // Tabela rezultata sa filterima + CSV izvoz
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { listajKvizove, listajPokusaje, listajZbiroveZvezdica, type ZbirZvezdica } from '../../lib/api'
+import { listajKvizove, listajPokusaje, ucitajStatuseTitula, type StatusTituleDeteta } from '../../lib/api'
 import { napraviCsv, preuzmiCsv } from '../../lib/csv'
 import { formatDatum, formatProcenat, formatTrajanje } from '../../lib/format'
 import { Loader } from '../../components/Zajednicke'
@@ -16,7 +16,7 @@ export function Rezultati() {
   const [greska, setGreska] = useState<string | null>(null)
   const [pokusaji, setPokusaji] = useState<Pokusaj[]>([])
   const [kvizovi, setKvizovi] = useState<Kviz[]>([])
-  const [zbirovi, setZbirovi] = useState<ZbirZvezdica[]>([])
+  const [titule, setTitule] = useState<StatusTituleDeteta[]>([])
 
   const [filterDete, setFilterDete] = useState('')
   const [filterKviz, setFilterKviz] = useState('')
@@ -25,14 +25,14 @@ export function Rezultati() {
   const [filterDo, setFilterDo] = useState('')
 
   useEffect(() => {
-    Promise.all([listajPokusaje(), listajKvizove(), listajZbiroveZvezdica()])
-      .then(([p, k, z]) => { setPokusaji(p); setKvizovi(k); setZbirovi(z) })
+    Promise.all([listajPokusaje(), listajKvizove(), ucitajStatuseTitula()])
+      .then(([p, k, t]) => { setPokusaji(p); setKvizovi(k); setTitule(t) })
       .catch((e) => setGreska(String(e.message ?? e)))
       .finally(() => setUcitava(false))
   }, [])
 
   const mapaKvizova = useMemo(() => new Map(kvizovi.map((k) => [k.id, k.title])), [kvizovi])
-  const mapaZbirova = useMemo(() => new Map(zbirovi.map((z) => [z.child_name, z.total_stars])), [zbirovi])
+  const mapaTitula = useMemo(() => new Map(titule.map((t) => [t.childName, t])), [titule])
 
   const filtrirano = useMemo(() => pokusaji.filter((p) => {
     if (filterDete && !p.child_name.toLowerCase().includes(filterDete.toLowerCase())) return false
@@ -76,7 +76,13 @@ export function Rezultati() {
         {(['Andrej', 'Filip'] as const).map((ime) => (
           <div className="kartica centar" key={ime}>
             <p className="blago malo">{ime} — ukupno zvezdica</p>
-            <h2>⭐ {mapaZbirova.get(ime) ?? 0}</h2>
+            <h2>⭐ {mapaTitula.get(ime)?.totalStars ?? 0}</h2>
+            <p className="razmak-gore" style={{ fontWeight: 800 }}>
+              {mapaTitula.get(ime)?.titleProgress.currentTitle ?? 'Još bez titule'}
+            </p>
+            <p className="blago malo">
+              Ova sezona: {mapaTitula.get(ime)?.titleProgress.seasonStars ?? 0} ⭐
+            </p>
           </div>
         ))}
       </div>

@@ -59,6 +59,8 @@ export function KvizRezultat() {
 
   const zvezdice = rezultat.starsEarned
   const imaTrajniZbir = typeof rezultat.totalStars === 'number'
+  const imaNapredakTitule = imaTrajniZbir && Boolean(rezultat.titleProgress)
+  const novaTitula = imaNapredakTitule ? rezultat.newlyUnlockedTitle : null
   const prikaziDetalje = rezultat.showResult !== false
   const novPokusajMoguc = (rezultat.attemptsLeft ?? 0) > 0
 
@@ -71,7 +73,7 @@ export function KvizRezultat() {
 
   return (
     <div className="sadrzaj sadrzaj--usko" style={{ paddingBottom: '3rem' }}>
-      {zvezdice > 0 && <Konfete />}
+      {(zvezdice > 0 || novaTitula) && <Konfete />}
       <div className="kartica centar">
         <h1>{rezultat.childName ? `Bravo, ${rezultat.childName}!` : 'Kviz je završen!'}</h1>
         <div className="kviz-zvezde" aria-label={`${zvezdice} od 3 zvezdice`}>
@@ -124,6 +126,20 @@ export function KvizRezultat() {
           </button>
         )}
       </div>
+
+      {novaTitula && (
+        <section className="kartica kviz-nova-titula centar razmak-gore" role="status">
+          <p className="kviz-nova-titula-natpis">✨ Nova titula otključana! ✨</p>
+          <p className="kviz-nova-titula-ime">
+            {rezultat.childName ? `${rezultat.childName} ${novaTitula}` : novaTitula}
+          </p>
+          {rezultat.titleProgress && (
+            <p className="malo">
+              U ovoj sezoni: {rezultat.titleProgress.seasonStars} ⭐
+            </p>
+          )}
+        </section>
+      )}
 
       {prikaziDetalje && rezultat.questions && (
         <div className="razmak-gore">

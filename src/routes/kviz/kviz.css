@@ -27,6 +27,15 @@
   background: var(--boja-primarna-svetla); border-radius: var(--radius);
 }
 .kviz-dete-ime { font-size: 1.15rem; font-weight: 800; }
+.kviz-titula-uvod {
+  margin-top: 0.8rem; padding-top: 0.8rem;
+  border-top: 1px solid var(--boja-ivica);
+}
+.kviz-titula-ime {
+  margin: 0; color: var(--boja-primarna-tamna);
+  font-size: 1.2rem; font-weight: 800;
+}
+.kviz-titula-cilj { margin: 0.5rem 0 0; font-weight: 700; }
 
 /* ---------- Rešavanje ---------- */
 .kviz-broj {
@@ -79,6 +88,25 @@
 .kviz-krug-rezultat-broj { font-size: 1.6rem; font-weight: 800; line-height: 1.1; }
 
 .kviz-tacnost-cipovi { display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; }
+.kviz-nova-titula {
+  position: relative; overflow: hidden;
+  border: 2px solid var(--boja-zvezda);
+  background: linear-gradient(135deg, var(--boja-primarna-svetla), var(--boja-upozorenje-svetla));
+}
+.kviz-nova-titula::before,
+.kviz-nova-titula::after {
+  content: '⭐'; position: absolute; color: var(--boja-zvezda); opacity: 0.65;
+  font-size: 1.7rem;
+}
+.kviz-nova-titula::before { top: 0.3rem; left: 0.7rem; }
+.kviz-nova-titula::after { right: 0.7rem; bottom: 0.3rem; }
+.kviz-nova-titula-natpis {
+  margin: 0; color: var(--boja-upozorenje); font-size: 1.05rem; font-weight: 800;
+}
+.kviz-nova-titula-ime {
+  margin: 0.3rem 0; color: var(--boja-primarna-tamna);
+  font-size: 1.5rem; font-weight: 900;
+}
 
 .kviz-konfete {
   position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 5;
