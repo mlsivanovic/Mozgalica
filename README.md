@@ -1,7 +1,7 @@
 # 🧠 Mozgalica
 
 PWA aplikacija za kreiranje i rešavanje matematičkih kvizova, namenjena deci koja su
-završila 3. razred osnovne škole. Cilj je da tokom letnjeg raspusta na zabavan način
+završila 3. ili 4. razred osnovne škole. Cilj je da tokom letnjeg raspusta na zabavan način
 obnove gradivo iz matematike.
 
 Živa verzija: **https://mlsivanovic.github.io/Mozgalica/**
@@ -17,7 +17,7 @@ obnove gradivo iz matematike.
 
 ## Tehnologije
 
-- **Frontend:** React 18 + TypeScript + Vite (SPA), `react-router-dom` sa `HashRouter`
+- **Frontend:** React 19 + TypeScript + Vite (SPA), `react-router-dom` sa `HashRouter`
   (radi na GitHub Pages podputanji bez servera).
 - **Backend:** [Supabase](https://supabase.com) — Postgres baza, autentifikacija
   (lozinka + magic link), Edge Functions, Row Level Security. Besplatan paket, bez kartice.
