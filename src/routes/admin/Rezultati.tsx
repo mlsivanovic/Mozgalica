@@ -1,7 +1,7 @@
 // Tabela rezultata sa filterima + CSV izvoz
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { listajKvizove, listajPokusaje } from '../../lib/api'
+import { listajKvizove, listajPokusaje, listajZbiroveZvezdica, type ZbirZvezdica } from '../../lib/api'
 import { napraviCsv, preuzmiCsv } from '../../lib/csv'
 import { formatDatum, formatProcenat, formatTrajanje } from '../../lib/format'
 import { Loader } from '../../components/Zajednicke'
@@ -16,6 +16,7 @@ export function Rezultati() {
   const [greska, setGreska] = useState<string | null>(null)
   const [pokusaji, setPokusaji] = useState<Pokusaj[]>([])
   const [kvizovi, setKvizovi] = useState<Kviz[]>([])
+  const [zbirovi, setZbirovi] = useState<ZbirZvezdica[]>([])
 
   const [filterDete, setFilterDete] = useState('')
   const [filterKviz, setFilterKviz] = useState('')
@@ -24,13 +25,14 @@ export function Rezultati() {
   const [filterDo, setFilterDo] = useState('')
 
   useEffect(() => {
-    Promise.all([listajPokusaje(), listajKvizove()])
-      .then(([p, k]) => { setPokusaji(p); setKvizovi(k) })
+    Promise.all([listajPokusaje(), listajKvizove(), listajZbiroveZvezdica()])
+      .then(([p, k, z]) => { setPokusaji(p); setKvizovi(k); setZbirovi(z) })
       .catch((e) => setGreska(String(e.message ?? e)))
       .finally(() => setUcitava(false))
   }, [])
 
   const mapaKvizova = useMemo(() => new Map(kvizovi.map((k) => [k.id, k.title])), [kvizovi])
+  const mapaZbirova = useMemo(() => new Map(zbirovi.map((z) => [z.child_name, z.total_stars])), [zbirovi])
 
   const filtrirano = useMemo(() => pokusaji.filter((p) => {
     if (filterDete && !p.child_name.toLowerCase().includes(filterDete.toLowerCase())) return false
@@ -47,10 +49,10 @@ export function Rezultati() {
 
   function izvezi() {
     const csv = napraviCsv(
-      ['Dete', 'Oznaka', 'Kviz', 'Status', 'Poeni', 'Procenat', 'Pokušaj br.', 'Početak', 'Kraj', 'Trajanje'],
+      ['Dete', 'Oznaka', 'Kviz', 'Status', 'Poeni', 'Procenat', 'Zvezdice', 'Pokušaj br.', 'Početak', 'Kraj', 'Trajanje'],
       filtrirano.map((p) => [
         p.child_name, p.child_label ?? '', mapaKvizova.get(p.quiz_id) ?? '', NAZIVI_STATUSA[p.status],
-        p.total_points ?? '', p.score_pct ?? '', p.attempt_no, formatDatum(p.started_at),
+        p.total_points ?? '', p.score_pct ?? '', p.stars_earned ?? '', p.attempt_no, formatDatum(p.started_at),
         formatDatum(p.submitted_at), formatTrajanje(p.duration_sec),
       ]),
     )
@@ -69,6 +71,15 @@ export function Rezultati() {
       </div>
 
       {greska && <p className="poruka poruka--greska">{greska}</p>}
+
+      <div className="mreza-kartica razmak-dole">
+        {(['Andrej', 'Filip'] as const).map((ime) => (
+          <div className="kartica centar" key={ime}>
+            <p className="blago malo">{ime} — ukupno zvezdica</p>
+            <h2>⭐ {mapaZbirova.get(ime) ?? 0}</h2>
+          </div>
+        ))}
+      </div>
 
       <div className="kartica razmak-dole">
         <div className="red-polja">
@@ -105,7 +116,7 @@ export function Rezultati() {
       <div className="tabela-omot">
         <table className="tabela tabela--kartice">
           <thead>
-            <tr><th>Dete</th><th>Kviz</th><th>Status</th><th>Rezultat</th><th>Pokušaj</th><th>Kraj</th><th></th></tr>
+            <tr><th>Dete</th><th>Kviz</th><th>Status</th><th>Rezultat</th><th>Zvezdice</th><th>Pokušaj</th><th>Kraj</th><th></th></tr>
           </thead>
           <tbody>
             {filtrirano.map((p) => (
@@ -122,13 +133,14 @@ export function Rezultati() {
                   </span>
                 </td>
                 <td data-naslov="Rezultat">{formatProcenat(p.score_pct)}</td>
+                <td data-naslov="Zvezdice">{p.stars_earned == null ? '—' : `${p.stars_earned} / 3 ⭐`}</td>
                 <td data-naslov="Pokušaj">#{p.attempt_no}</td>
                 <td data-naslov="Kraj">{formatDatum(p.submitted_at)}</td>
                 <td><Link to={`/admin/rezultati/${p.id}`}>Detalji</Link></td>
               </tr>
             ))}
             {filtrirano.length === 0 && (
-              <tr><td colSpan={7} className="centar blago" style={{ padding: '2rem' }}>Nema rezultata za izabrane filtere.</td></tr>
+              <tr><td colSpan={8} className="centar blago" style={{ padding: '2rem' }}>Nema rezultata za izabrane filtere.</td></tr>
             )}
           </tbody>
         </table>

@@ -7,7 +7,7 @@ import { Loader, ProgresTraka, TemaDugme } from '../../components/Zajednicke'
 import { PitanjeRenderer, odgovorJePrazan } from '../../components/pitanja/PitanjeRenderer'
 import { iskoristiSavet, nastaviPokusaj, posaljiOdgovore, predajKviz } from '../../lib/api'
 import {
-  nesinhronizovani, oznaciSinhronizovane, sveSinhronizovano, ucitajStanje,
+  nesinhronizovani, oznaciSinhronizovane, sacuvajStanje, sveSinhronizovano, ucitajStanje,
   upisiHint, upisiOdgovor, type StanjePokusaja,
 } from '../../lib/offlineQueue'
 import type { OdgovorDeteta } from '../../types/db'
@@ -54,6 +54,7 @@ export function KvizResavanje() {
       // Server je izvor istine za već sinhronizovane odgovore; lokalne nesinhronizovane čuvamo
       const spojeno: StanjePokusaja = {
         ...lokalno,
+        childName: r.childName ?? lokalno.childName,
         answers: { ...lokalno.answers },
         hintsUsed: r.hintsUsed ?? lokalno.hintsUsed ?? 0,
         hintovi: { ...(lokalno.hintovi ?? {}) },
@@ -68,6 +69,7 @@ export function KvizResavanje() {
       for (const q of r.questions) {
         if (q.hint) spojeno.hintovi![q.id] = q.hint
       }
+      sacuvajStanje(localStorage, token, spojeno)
       setStanje(spojeno)
       setUcitava(false)
     }).catch((e) => {

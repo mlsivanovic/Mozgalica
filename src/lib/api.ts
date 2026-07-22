@@ -1,7 +1,7 @@
 // Tipizirani pozivi ka Supabase-u: tabele za admina, RPC funkcije za dete
 import type {
-  AdminPodesavanja, Kviz, KvizLink, KvizPitanje, Oblast, OdgovorDeteta, Pitanje, Pokusaj,
-  PokusajOdgovor, Predmet,
+  AdminPodesavanja, FiksnoImeDeteta, Kviz, KvizLink, KvizPitanje, Oblast, OdgovorDeteta,
+  Pitanje, Pokusaj, PokusajOdgovor, Predmet,
 } from '../types/db'
 import type { KvizMeta, PokusajPayload, RezultatPayload, SavePotvrda, SavetPayload } from '../types/kviz'
 import { SEED_PITANJA } from '../data/seedPitanja'
@@ -296,6 +296,17 @@ export async function overrideOcene(answerId: string, isCorrect: boolean, awarde
 export async function obrisiPokusaj(id: string): Promise<void> {
   const { error } = await supabase().from('attempts').delete().eq('id', id)
   if (error) throw new Error(opisiGresku(error)!)
+}
+
+export interface ZbirZvezdica {
+  child_name: FiksnoImeDeteta
+  total_stars: number
+}
+
+export async function listajZbiroveZvezdica(): Promise<ZbirZvezdica[]> {
+  const { data, error } = await supabase().from('v_child_star_totals').select('*')
+  if (error) throw new Error(opisiGresku(error)!)
+  return data as ZbirZvezdica[]
 }
 
 // ---------- Statistika (view-ovi) ----------

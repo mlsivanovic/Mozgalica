@@ -12,6 +12,12 @@ import {
 } from '../../types/db'
 import { PitanjeForma } from './PitanjeForma'
 import { UvozCsv } from './UvozCsv'
+import { NoviKvizModal, type NoviKvizPodaci } from './NoviKvizModal'
+
+interface NoviKvizStanje {
+  vrsta: 'nasumicni' | 'izabrani'
+  pocetniNaziv: string
+}
 
 export function PitanjaLista() {
   const navigate = useNavigate()
@@ -36,6 +42,7 @@ export function PitanjaLista() {
   const [izabraniKviz, setIzabraniKviz] = useState('')
   const [radiBulk, setRadiBulk] = useState(false)
   const [brojNasumicnih, setBrojNasumicnih] = useState(10)
+  const [noviKviz, setNoviKviz] = useState<NoviKvizStanje | null>(null)
 
   async function ucitaj() {
     setUcitava(true)
@@ -164,46 +171,25 @@ export function PitanjaLista() {
     }
   }
 
-  async function napraviNasumicanKviz() {
-    if (pitanja.length === 0) return
-    const naziv = prompt('Naziv novog kviza?', `Nasumičan kviz — ${NAZIVI_PREDMETA[predmet]}`)
-    if (!naziv || naziv.trim().length < 2) return
-    const n = Math.min(Math.max(1, brojNasumicnih), pitanja.length)
+  async function potvrdiNoviKviz({ naziv, fixedChildName }: NoviKvizPodaci) {
+    if (!noviKviz) return
     setGreska(null)
     setRadiBulk(true)
     try {
       const kvizId = await sacuvajKviz({
-        title: naziv.trim(), description: null, time_limit_seconds: null,
+        title: naziv, description: null, time_limit_seconds: null,
         default_max_attempts: 1, shuffle_questions: true, shuffle_answers: true,
         show_result: true, show_correct: true, pass_threshold_pct: 90,
-        require_name: true, require_label: false, label_name: 'Odeljenje',
+        require_name: true, fixed_child_name: fixedChildName,
+        require_label: false, label_name: 'Odeljenje',
       })
-      const unosi = pretvoriUSnapshot(nasumicniUzorak(pitanja, n)).map((u, i) => ({ ...u, quiz_id: kvizId, position: i }))
+      const pitanjaZaKviz = noviKviz.vrsta === 'nasumicni'
+        ? pretvoriUSnapshot(nasumicniUzorak(pitanja, Math.min(Math.max(1, brojNasumicnih), pitanja.length)))
+        : snapshotIzabranih()
+      const unosi = pitanjaZaKviz.map((u, i) => ({ ...u, quiz_id: kvizId, position: i }))
       await postaviPitanjaKviza(kvizId, unosi)
       navigate(`/admin/kvizovi/${kvizId}`)
-    } catch (e) {
-      setGreska(String((e as Error).message ?? e))
-      setRadiBulk(false)
-    }
-  }
-
-  async function napraviNoviKvizOdIzabranih() {
-    const naziv = prompt('Naziv novog kviza?', '')
-    if (!naziv || naziv.trim().length < 2) return
-    setGreska(null)
-    setRadiBulk(true)
-    try {
-      const kvizId = await sacuvajKviz({
-        title: naziv.trim(), description: null, time_limit_seconds: null,
-        default_max_attempts: 1, shuffle_questions: true, shuffle_answers: true,
-        show_result: true, show_correct: true, pass_threshold_pct: 90,
-        require_name: true, require_label: false, label_name: 'Odeljenje',
-      })
-      const unosi = snapshotIzabranih().map((u, i) => ({ ...u, quiz_id: kvizId, position: i }))
-      await postaviPitanjaKviza(kvizId, unosi)
-      navigate(`/admin/kvizovi/${kvizId}`)
-    } catch (e) {
-      setGreska(String((e as Error).message ?? e))
+    } finally {
       setRadiBulk(false)
     }
   }
@@ -312,7 +298,12 @@ export function PitanjaLista() {
                 value={brojNasumicnih} onChange={(e) => setBrojNasumicnih(Number(e.target.value))}
               />
             </div>
-            <button type="button" className="dugme dugme--senka" disabled={radiBulk} onClick={napraviNasumicanKviz}>
+            <button
+              type="button" className="dugme dugme--senka" disabled={radiBulk}
+              onClick={() => setNoviKviz({
+                vrsta: 'nasumicni', pocetniNaziv: `Nasumičan kviz — ${NAZIVI_PREDMETA[predmet]}`,
+              })}
+            >
               Napravi nasumičan kviz
             </button>
           </div>
@@ -334,7 +325,10 @@ export function PitanjaLista() {
               <button type="button" className="dugme dugme--senka dugme--malo" disabled={radiBulk || !izabraniKviz} onClick={dodajUKviz}>
                 Dodaj u postojeći kviz
               </button>
-              <button type="button" className="dugme dugme--akcenat dugme--malo" disabled={radiBulk} onClick={napraviNoviKvizOdIzabranih}>
+              <button
+                type="button" className="dugme dugme--akcenat dugme--malo" disabled={radiBulk}
+                onClick={() => setNoviKviz({ vrsta: 'izabrani', pocetniNaziv: '' })}
+              >
                 Napravi novi kviz od izabranih
               </button>
               <button type="button" className="dugme dugme--opasno dugme--malo" disabled={radiBulk} onClick={obrisiIzabrana}>
@@ -413,6 +407,15 @@ export function PitanjaLista() {
             onUvezeno={() => { setUvozOtvoren(false); ucitaj() }}
           />
         </Modal>
+      )}
+
+      {noviKviz && (
+        <NoviKvizModal
+          naslov={noviKviz.vrsta === 'nasumicni' ? 'Novi nasumičan kviz' : 'Novi kviz od izabranih pitanja'}
+          pocetniNaziv={noviKviz.pocetniNaziv}
+          onPotvrdi={potvrdiNoviKviz}
+          onZatvori={() => setNoviKviz(null)}
+        />
       )}
     </div>
   )

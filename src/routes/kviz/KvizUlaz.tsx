@@ -48,16 +48,20 @@ export function KvizUlaz() {
   }
 
   async function pokreni() {
-    if (meta!.requireName && ime.trim() === '') { setGreska('Unesi svoje ime pre početka.'); return }
+    if (!meta!.fixedChildName && ime.trim() === '') { setGreska('Unesi svoje ime pre početka.'); return }
     setGreska(null)
     setPokrece(true)
     try {
-      const r = await zapocniPokusaj(token, ime.trim(), oznaka.trim() || null)
+      const r = await zapocniPokusaj(token, meta!.fixedChildName ?? ime.trim(), oznaka.trim() || null)
       if (!r.ok || !r.attemptToken) {
         setGreska(PORUKE_GRESAKA[r.error ?? ''] ?? 'Nije uspelo pokretanje kviza. Pokušaj ponovo.')
         return
       }
-      zapocniStanje(localStorage, token, r.attemptToken, ime.trim())
+      if (!r.childName) {
+        setGreska('Server nije vratio ime za ovaj pokušaj. Pokušaj ponovo.')
+        return
+      }
+      zapocniStanje(localStorage, token, r.attemptToken, r.childName)
       navigate(`/kviz/${token}/resi`)
     } catch (e) {
       setGreska(String((e as Error).message ?? e))
@@ -84,16 +88,17 @@ export function KvizUlaz() {
           )}
         </div>
 
-        {meta.requireName && (
+        {meta.fixedChildName ? (
+          <div className="kviz-dete-uvod centar" role="status">
+            <p className="kviz-dete-ime">Zdravo, {meta.fixedChildName}! 👋</p>
+            <p className="blago">
+              Do sada si osvojio <strong>{meta.totalStars ?? 0} ⭐</strong>
+            </p>
+          </div>
+        ) : (
           <div className="polje">
             <label htmlFor="ku-ime">Kako se zoveš?</label>
             <input id="ku-ime" type="text" value={ime} onChange={(e) => setIme(e.target.value)} autoFocus maxLength={60} />
-          </div>
-        )}
-        {!meta.requireName && (
-          <div className="polje">
-            <label htmlFor="ku-ime">Nadimak (opciono)</label>
-            <input id="ku-ime" type="text" value={ime} onChange={(e) => setIme(e.target.value)} maxLength={60} />
           </div>
         )}
         {meta.requireLabel && (

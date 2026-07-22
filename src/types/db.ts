@@ -6,6 +6,7 @@ export type IzvorPitanja = 'manual' | 'generated'
 export type StatusPokusaja = 'in_progress' | 'submitted' | 'expired'
 export type Predmet = 'matematika' | 'srpski'
 export type Razred = 3 | 4
+export type FiksnoImeDeteta = 'Andrej' | 'Filip'
 
 // ---------- jsonb oblici opcija ----------
 export interface Opcija {
@@ -82,6 +83,7 @@ export interface Kviz {
   show_correct: boolean
   pass_threshold_pct: number
   require_name: boolean
+  fixed_child_name: FiksnoImeDeteta | null
   require_label: boolean
   label_name: string
   created_at: string
@@ -136,6 +138,7 @@ export interface Pokusaj {
   incorrect_count: number | null
   passed: boolean | null
   review_pending: boolean
+  stars_earned: number | null
 }
 
 export interface PokusajOdgovor {

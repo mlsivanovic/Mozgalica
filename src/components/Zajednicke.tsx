@@ -76,8 +76,8 @@ export function ProgresTraka({ vrednost, ukupno }: { vrednost: number; ukupno: n
 
 interface Konfeta { id: number; x: number; kasnjenje: string; boja: string }
 
-// Kratkotrajna CSS konfeta animacija — koristi se na strani rezultata kad dete
-// položi kviz. Poštuje prefers-reduced-motion (vidi kviz.css).
+// Kratkotrajna CSS konfeta animacija — koristi se kada dete osvoji zvezdice.
+// Poštuje prefers-reduced-motion (vidi kviz.css).
 export function Konfete({ broj = 18 }: { broj?: number }) {
   const boje = ['var(--boja-akcenat)', 'var(--boja-primarna)', 'var(--boja-uspeh)', 'var(--boja-zvezda)']
   const [komadi] = useState<Konfeta[]>(() =>

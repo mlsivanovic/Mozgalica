@@ -22,6 +22,11 @@
   background: var(--boja-primarna-svetla); color: var(--boja-primarna-tamna);
   font-weight: 700; font-size: 0.9rem; padding: 0.35rem 0.8rem; border-radius: 999px;
 }
+.kviz-dete-uvod {
+  margin: 1rem 0; padding: 0.9rem;
+  background: var(--boja-primarna-svetla); border-radius: var(--radius);
+}
+.kviz-dete-ime { font-size: 1.15rem; font-weight: 800; }
 
 /* ---------- Rešavanje ---------- */
 .kviz-broj {

@@ -6,7 +6,7 @@ import { PitanjeRenderer } from '../../components/pitanja/PitanjeRenderer'
 import { Konfete, Loader } from '../../components/Zajednicke'
 import { predajKviz } from '../../lib/api'
 import { obrisiStanje, ucitajStanje } from '../../lib/offlineQueue'
-import { brojZvezdica, porukaOhrabrenja } from '../../lib/ocena'
+import { porukaOhrabrenja } from '../../lib/ocena'
 import { formatProcenat } from '../../lib/format'
 import type { RezultatPayload } from '../../types/kviz'
 import './kviz.css'
@@ -36,26 +36,30 @@ export function KvizRezultat() {
     )
   }
 
-  if (rezultat.showResult === false) {
-    return (
-      <div className="sadrzaj sadrzaj--usko centar" style={{ paddingTop: '15vh' }}>
-        <h1>✔ Kviz je predat!</h1>
-        <p className="blago razmak-gore">Tvoj rezultat će videti osoba koja ti je poslala link.</p>
-      </div>
-    )
-  }
-
   // Neka pitanja čekaju ručnu ocenu administratora — bez zvezdica/procenta dok se ne oceni.
   if (rezultat.pendingReview) {
     return (
       <div className="sadrzaj sadrzaj--usko centar" style={{ paddingTop: '15vh' }}>
         <h1>Odgovori su poslati na pregled ✅</h1>
         <p className="blago razmak-gore">Rezultat stiže kada ih pregleda odrasla osoba.</p>
+        <button type="button" className="dugme dugme--akcenat razmak-gore" onClick={() => window.location.reload()}>
+          Proveri ponovo
+        </button>
       </div>
     )
   }
 
-  const zvezdice = brojZvezdica(rezultat.scorePct ?? 0, rezultat.passThresholdPct ?? 50)
+  if (typeof rezultat.starsEarned !== 'number') {
+    return (
+      <div className="sadrzaj sadrzaj--usko centar" style={{ paddingTop: '15vh' }}>
+        <p className="poruka poruka--greska">Zvezdice trenutno nisu dostupne. Pokušaj ponovo malo kasnije.</p>
+      </div>
+    )
+  }
+
+  const zvezdice = rezultat.starsEarned
+  const imaTrajniZbir = typeof rezultat.totalStars === 'number'
+  const prikaziDetalje = rezultat.showResult !== false
   const novPokusajMoguc = (rezultat.attemptsLeft ?? 0) > 0
 
   function noviPokusaj() {
@@ -63,33 +67,56 @@ export function KvizRezultat() {
     navigate(`/kviz/${token}`)
   }
 
-  const polozio = rezultat.passed ?? false
   const procenat = Math.round(rezultat.scorePct ?? 0)
 
   return (
     <div className="sadrzaj sadrzaj--usko" style={{ paddingBottom: '3rem' }}>
-      {polozio && <Konfete />}
+      {zvezdice > 0 && <Konfete />}
       <div className="kartica centar">
+        <h1>{rezultat.childName ? `Bravo, ${rezultat.childName}!` : 'Kviz je završen!'}</h1>
         <div className="kviz-zvezde" aria-label={`${zvezdice} od 3 zvezdice`}>
           {Array.from({ length: 3 }, (_, i) => (
-            <span key={i}>{i < zvezdice ? '⭐' : '☆'}</span>
+            <span key={i} aria-hidden="true">{i < zvezdice ? '⭐' : '☆'}</span>
           ))}
         </div>
-
-        <div className="kviz-krug-rezultat" style={{ '--procenat': procenat } as CSSProperties}>
-          <div className="kviz-krug-rezultat-unutra">
-            <span className="kviz-krug-rezultat-broj">{formatProcenat(rezultat.scorePct)}</span>
-          </div>
-        </div>
-
-        <p className="blago">{rezultat.totalPoints} / {rezultat.maxPoints} poena</p>
-        <div className="kviz-tacnost-cipovi razmak-gore">
-          <span className="bedz bedz--uspeh">✓ {rezultat.correctCount} tačnih</span>
-          <span className="bedz bedz--greska">✗ {rezultat.incorrectCount} netačnih</span>
-        </div>
-        <p className="razmak-gore" style={{ fontSize: '1.1rem', fontWeight: 700 }}>
-          {porukaOhrabrenja(rezultat.scorePct ?? 0, rezultat.passThresholdPct ?? 50)}
+        <p style={{ fontSize: '1.1rem', fontWeight: 700 }}>
+          Na ovom pokušaju: {zvezdice} / 3 ⭐
         </p>
+        {imaTrajniZbir && (
+          <p className="razmak-gore" style={{ fontSize: '1.2rem', fontWeight: 800 }}>
+            Ukupno: {rezultat.totalStars} ⭐
+          </p>
+        )}
+
+        <p className="razmak-gore" style={{ fontSize: '1.1rem', fontWeight: 700 }}>
+          {porukaOhrabrenja(zvezdice)}
+        </p>
+
+        {imaTrajniZbir && (
+          <p className="malo blago razmak-gore">
+            Za svaki kviz u zbir ulazi tvoj najbolji pokušaj, pa slabiji pokušaj ne umanjuje ukupan broj zvezdica.
+          </p>
+        )}
+
+        {!prikaziDetalje && (
+          <p className="blago razmak-gore">Detaljan rezultat će videti osoba koja ti je poslala link.</p>
+        )}
+
+        {prikaziDetalje && (
+          <>
+            <div className="kviz-krug-rezultat" style={{ '--procenat': procenat } as CSSProperties}>
+              <div className="kviz-krug-rezultat-unutra">
+                <span className="kviz-krug-rezultat-broj">{formatProcenat(rezultat.scorePct)}</span>
+              </div>
+            </div>
+
+            <p className="blago">{rezultat.totalPoints} / {rezultat.maxPoints} poena</p>
+            <div className="kviz-tacnost-cipovi razmak-gore">
+              <span className="bedz bedz--uspeh">✓ {rezultat.correctCount} tačnih</span>
+              <span className="bedz bedz--greska">✗ {rezultat.incorrectCount} netačnih</span>
+            </div>
+          </>
+        )}
 
         {novPokusajMoguc && (
           <button type="button" className="dugme dugme--akcenat razmak-gore" onClick={noviPokusaj}>
@@ -98,7 +125,7 @@ export function KvizRezultat() {
         )}
       </div>
 
-      {rezultat.questions && (
+      {prikaziDetalje && rezultat.questions && (
         <div className="razmak-gore">
           <h2>Pregled odgovora</h2>
           <div className="mreza-kartica razmak-gore">

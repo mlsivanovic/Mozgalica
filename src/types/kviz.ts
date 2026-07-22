@@ -1,5 +1,5 @@
 // Tipovi payload-a koje vraćaju SECURITY DEFINER RPC funkcije za dete
-import type { OdgovorDeteta, OpcijeJson, TacanOdgovor, TipPitanja } from './db'
+import type { FiksnoImeDeteta, OdgovorDeteta, OpcijeJson, TacanOdgovor, TipPitanja } from './db'
 
 // Pitanje kako ga vidi dete — BEZ tačnog odgovora i objašnjenja.
 // hint je popunjen SAMO ako je savet za ovo pitanje već otključan (use_hint) —
@@ -24,6 +24,8 @@ export interface KvizMeta {
   totalPoints?: number
   timeLimitSeconds?: number | null
   requireName?: boolean
+  fixedChildName?: FiksnoImeDeteta | null
+  totalStars?: number | null
   requireLabel?: boolean
   labelName?: string
   attemptsLeft?: number
@@ -85,6 +87,9 @@ export interface RezultatPayload {
   alreadySubmitted?: boolean
   showResult?: boolean
   showCorrect?: boolean
+  childName?: string
+  starsEarned?: number | null
+  totalStars?: number | null
   totalPoints?: number
   maxPoints?: number
   scorePct?: number

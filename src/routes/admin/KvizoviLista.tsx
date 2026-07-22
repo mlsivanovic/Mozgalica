@@ -5,6 +5,7 @@ import { listajKvizove, obrisiKviz } from '../../lib/api'
 import { formatDatum } from '../../lib/format'
 import { Loader } from '../../components/Zajednicke'
 import type { Kviz } from '../../types/db'
+import { BedzDodeleKviza } from './FiksnoDete'
 
 export function KvizoviLista() {
   const navigate = useNavigate()
@@ -55,6 +56,9 @@ export function KvizoviLista() {
           {kvizovi.map((k) => (
             <div key={k.id} className="kartica">
               <h2>{k.title}</h2>
+              <div className="razmak-gore">
+                <BedzDodeleKviza fixedChildName={k.fixed_child_name} />
+              </div>
               {k.description && <p className="blago malo">{k.description}</p>}
               <p className="malo blago razmak-gore">Napravljen: {formatDatum(k.created_at)}</p>
               <div className="red razmak-gore">

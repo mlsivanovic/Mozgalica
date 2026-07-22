@@ -10,15 +10,22 @@ import { formatDatum, formatProcenat } from '../../lib/format'
 import { mapaPredmetaPoTemi } from '../../lib/predmet'
 import { Loader } from '../../components/Zajednicke'
 import {
-  NAZIVI_PREDMETA, NAZIVI_TIPOVA, type Kviz, type KvizLink, type KvizPitanje, type Oblast,
-  type Pitanje, type Pokusaj, type Predmet, type StatusPokusaja,
+  NAZIVI_PREDMETA, NAZIVI_TIPOVA, type FiksnoImeDeteta, type Kviz, type KvizLink,
+  type KvizPitanje, type Oblast, type Pitanje, type Pokusaj, type Predmet, type StatusPokusaja,
 } from '../../types/db'
+import { BedzDodeleKviza, IzborFiksnogDeteta } from './FiksnoDete'
 
 const NAZIVI_STATUSA: Record<StatusPokusaja, string> = {
   in_progress: 'U toku', submitted: 'Završen', expired: 'Istekao',
 }
 
 const BAZA_URL = `${window.location.origin}${import.meta.env.BASE_URL}`
+
+function nazivDodeleKviza(fixedChildName: FiksnoImeDeteta | null): string {
+  return fixedChildName
+    ? `Za ${fixedChildName === 'Andrej' ? 'Andreja' : 'Filipa'}`
+    : 'Slobodan unos imena'
+}
 
 export function KvizDetalj() {
   const { id } = useParams<{ id: string }>()
@@ -62,7 +69,7 @@ export function KvizDetalj() {
       <h1>{kviz.title}</h1>
       {greska && <p className="poruka poruka--greska">{greska}</p>}
 
-      <PodesavanjaKviza kviz={kviz} onSacuvano={ucitajSve} />
+      <PodesavanjaKviza kviz={kviz} zakljucano={zakljucano} onSacuvano={ucitajSve} />
 
       <PitanjaKviza
         quizId={kviz.id} zakljucano={zakljucano} snapshot={snapshotPitanja} banka={bankaPitanja}
@@ -71,13 +78,18 @@ export function KvizDetalj() {
 
       <RezultatiKviza pokusaji={pokusaji} />
 
-      <LinkoviKviza quizId={kviz.id} linkovi={linkovi} statusi={statusi} onPromena={ucitajSve} />
+      <LinkoviKviza
+        quizId={kviz.id} fixedChildName={kviz.fixed_child_name}
+        linkovi={linkovi} statusi={statusi} onPromena={ucitajSve}
+      />
     </div>
   )
 }
 
 // ---------------------------------------------------------------------------
-function PodesavanjaKviza({ kviz, onSacuvano }: { kviz: Kviz; onSacuvano: () => void }) {
+function PodesavanjaKviza({
+  kviz, zakljucano, onSacuvano,
+}: { kviz: Kviz; zakljucano: boolean; onSacuvano: () => void }) {
   const [otvoreno, setOtvoreno] = useState(false)
   const [f, setF] = useState(kviz)
   const [cuva, setCuva] = useState(false)
@@ -90,7 +102,8 @@ function PodesavanjaKviza({ kviz, onSacuvano }: { kviz: Kviz; onSacuvano: () => 
         title: f.title, description: f.description, time_limit_seconds: f.time_limit_seconds,
         default_max_attempts: f.default_max_attempts, shuffle_questions: f.shuffle_questions,
         shuffle_answers: f.shuffle_answers, show_result: f.show_result, show_correct: f.show_correct,
-        pass_threshold_pct: f.pass_threshold_pct, require_name: f.require_name,
+        pass_threshold_pct: f.pass_threshold_pct, require_name: true,
+        fixed_child_name: f.fixed_child_name,
         require_label: f.require_label, label_name: f.label_name,
       }, kviz.id)
       setOtvoreno(false)
@@ -114,7 +127,7 @@ function PodesavanjaKviza({ kviz, onSacuvano }: { kviz: Kviz; onSacuvano: () => 
       {!otvoreno ? (
         <p className="malo blago">
           {f.time_limit_seconds ? `${Math.round(f.time_limit_seconds / 60)} min` : 'Bez vremenskog ograničenja'} ·
-          {' '}Prag {f.pass_threshold_pct}% · Max {f.default_max_attempts} pokušaja · {f.require_name ? 'Ime obavezno' : 'Ime opciono'}
+          {' '}Prag {f.pass_threshold_pct}% · Max {f.default_max_attempts} pokušaja · {nazivDodeleKviza(f.fixed_child_name)}
         </p>
       ) : (
         <>
@@ -126,6 +139,16 @@ function PodesavanjaKviza({ kviz, onSacuvano }: { kviz: Kviz; onSacuvano: () => 
             <label htmlFor="kd-opis">Poruka detetu</label>
             <textarea id="kd-opis" value={f.description ?? ''} onChange={(e) => setF({ ...f, description: e.target.value })} />
           </div>
+          <IzborFiksnogDeteta
+            value={f.fixed_child_name}
+            onChange={(fixedChildName) => setF({ ...f, fixed_child_name: fixedChildName })}
+            disabled={zakljucano}
+          />
+          {zakljucano && (
+            <p className="poruka poruka--info malo">
+              Dodela deteta je zaključana jer kviz već ima pokušaj.
+            </p>
+          )}
           <div className="red-polja">
             <div className="polje">
               <label htmlFor="kd-vreme">Vremensko ograničenje (min, prazno = bez)</label>
@@ -146,9 +169,8 @@ function PodesavanjaKviza({ kviz, onSacuvano }: { kviz: Kviz; onSacuvano: () => 
           </div>
           <label className="stiklir"><input type="checkbox" checked={f.shuffle_questions} onChange={(e) => setF({ ...f, shuffle_questions: e.target.checked })} /> Nasumičan redosled pitanja</label>
           <label className="stiklir"><input type="checkbox" checked={f.shuffle_answers} onChange={(e) => setF({ ...f, shuffle_answers: e.target.checked })} /> Nasumičan redosled ponuđenih odgovora</label>
-          <label className="stiklir"><input type="checkbox" checked={f.show_result} onChange={(e) => setF({ ...f, show_result: e.target.checked })} /> Dete odmah vidi rezultat</label>
+          <label className="stiklir"><input type="checkbox" checked={f.show_result} onChange={(e) => setF({ ...f, show_result: e.target.checked })} /> Dete vidi procenat i poene (zvezdice vidi uvek)</label>
           <label className="stiklir"><input type="checkbox" checked={f.show_correct} onChange={(e) => setF({ ...f, show_correct: e.target.checked })} /> Dete vidi tačne odgovore i objašnjenja</label>
-          <label className="stiklir"><input type="checkbox" checked={f.require_name} onChange={(e) => setF({ ...f, require_name: e.target.checked })} /> Ime deteta je obavezno</label>
           <label className="stiklir razmak-dole"><input type="checkbox" checked={f.require_label} onChange={(e) => setF({ ...f, require_label: e.target.checked })} /> Traži dodatnu oznaku ({f.label_name})</label>
 
           {greska && <p className="poruka poruka--greska">{greska}</p>}
@@ -328,7 +350,7 @@ function RezultatiKviza({ pokusaji }: { pokusaji: Pokusaj[] }) {
         <div className="tabela-omot">
           <table className="tabela tabela--kartice">
             <thead>
-              <tr><th>Dete</th><th>Status</th><th>Rezultat</th><th>Pokušaj</th><th>Kraj</th><th></th></tr>
+              <tr><th>Dete</th><th>Status</th><th>Rezultat</th><th>Zvezdice</th><th>Pokušaj</th><th>Kraj</th><th></th></tr>
             </thead>
             <tbody>
               {pokusaji.map((p) => (
@@ -344,6 +366,7 @@ function RezultatiKviza({ pokusaji }: { pokusaji: Pokusaj[] }) {
                     </span>
                   </td>
                   <td data-naslov="Rezultat">{formatProcenat(p.score_pct)}</td>
+                  <td data-naslov="Zvezdice">{p.stars_earned == null ? '—' : `${p.stars_earned} / 3 ⭐`}</td>
                   <td data-naslov="Pokušaj">#{p.attempt_no}</td>
                   <td data-naslov="Kraj">{formatDatum(p.submitted_at)}</td>
                   <td><Link to={`/admin/rezultati/${p.id}`}>Detalji</Link></td>
@@ -359,8 +382,11 @@ function RezultatiKviza({ pokusaji }: { pokusaji: Pokusaj[] }) {
 
 // ---------------------------------------------------------------------------
 function LinkoviKviza({
-  quizId, linkovi, statusi, onPromena,
-}: { quizId: string; linkovi: KvizLink[]; statusi: StatusLinka[]; onPromena: () => void }) {
+  quizId, fixedChildName, linkovi, statusi, onPromena,
+}: {
+  quizId: string; fixedChildName: FiksnoImeDeteta | null; linkovi: KvizLink[]
+  statusi: StatusLinka[]; onPromena: () => void
+}) {
   const [label, setLabel] = useState('')
   const [maxAttempts, setMaxAttempts] = useState(1)
   const [greska, setGreska] = useState<string | null>(null)
@@ -407,11 +433,19 @@ function LinkoviKviza({
 
   return (
     <div className="kartica">
-      <h2>Linkovi za decu</h2>
+      <div className="red red--razmak razmak-dole">
+        <h2>Linkovi za decu</h2>
+        <BedzDodeleKviza fixedChildName={fixedChildName} />
+      </div>
+      <p className="malo blago razmak-dole">
+        {fixedChildName
+          ? `Svi linkovi ovog kviza automatski koriste ime ${fixedChildName}.`
+          : 'Na svim linkovima ovog kviza dete samo unosi svoje ime.'}
+      </p>
 
       <div className="red-polja razmak-dole">
         <div className="polje">
-          <label htmlFor="lk-label">Oznaka (opciono, npr. ime deteta)</label>
+          <label htmlFor="lk-label">Oznaka linka (opciono, npr. domaći za vikend)</label>
           <input id="lk-label" type="text" value={label} onChange={(e) => setLabel(e.target.value)} />
         </div>
         <div className="polje">

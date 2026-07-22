@@ -8,6 +8,7 @@ import {
   type NovoPitanje, type SnapshotUnos,
 } from '../../lib/api'
 import { NAZIVI_TIPOVA, type Kviz, type Oblast } from '../../types/db'
+import { NoviKvizModal, type NoviKvizPodaci } from './NoviKvizModal'
 
 type Status = 'na_cekanju' | 'prihvaceno' | 'odbaceno'
 
@@ -36,6 +37,7 @@ export function GeneratorPregled({ pocetnaPitanja, upozorenje, cfg, oblasti, onN
   const [radi, setRadi] = useState(false)
   const [kvizovi, setKvizovi] = useState<Kviz[]>([])
   const [izabraniKviz, setIzabraniKviz] = useState('')
+  const [noviKvizOtvoren, setNoviKvizOtvoren] = useState(false)
 
   useEffect(() => { listajKvizove().then(setKvizovi).catch(() => {}) }, [])
 
@@ -112,21 +114,20 @@ export function GeneratorPregled({ pocetnaPitanja, upozorenje, cfg, oblasti, onN
     }
   }
 
-  async function napraviKviz() {
+  async function napraviKviz({ naziv, fixedChildName }: NoviKvizPodaci) {
     setGreska(null)
     setRadi(true)
     try {
       const kvizId = await sacuvajKviz({
-        title: nazivKviza(), description: '', time_limit_seconds: null,
+        title: naziv, description: '', time_limit_seconds: null,
         default_max_attempts: 1, shuffle_questions: true, shuffle_answers: true,
         show_result: true, show_correct: true, pass_threshold_pct: 90,
-        require_name: true, require_label: false, label_name: 'Odeljenje',
+        require_name: true, fixed_child_name: fixedChildName,
+        require_label: false, label_name: 'Odeljenje',
       })
       const snapshot: SnapshotUnos[] = pripremiSnapshotUnose().map((u, i) => ({ ...u, quiz_id: kvizId, position: i }))
       await postaviPitanjaKviza(kvizId, snapshot)
       onZavrseno(kvizId)
-    } catch (e) {
-      setGreska(String((e as Error).message ?? e))
     } finally {
       setRadi(false)
     }
@@ -197,7 +198,10 @@ export function GeneratorPregled({ pocetnaPitanja, upozorenje, cfg, oblasti, onN
           <button type="button" className="dugme dugme--senka" disabled={radi || prihvacena.length === 0} onClick={sacuvajUBanku}>
             Sačuvaj samo u banku pitanja
           </button>
-          <button type="button" className="dugme dugme--akcenat" disabled={radi || prihvacena.length === 0} onClick={napraviKviz}>
+          <button
+            type="button" className="dugme dugme--akcenat" disabled={radi || prihvacena.length === 0}
+            onClick={() => setNoviKvizOtvoren(true)}
+          >
             Napravi novi kviz od ovih pitanja
           </button>
         </div>
@@ -212,6 +216,16 @@ export function GeneratorPregled({ pocetnaPitanja, upozorenje, cfg, oblasti, onN
           </button>
         </div>
       </div>
+
+      {noviKvizOtvoren && (
+        <NoviKvizModal
+          naslov="Novi kviz od generisanih pitanja"
+          pocetniNaziv={nazivKviza()}
+          potvrdaTekst="Napravi kviz"
+          onPotvrdi={napraviKviz}
+          onZatvori={() => setNoviKvizOtvoren(false)}
+        />
+      )}
     </div>
   )
 }

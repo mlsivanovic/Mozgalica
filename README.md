@@ -10,9 +10,12 @@ obnove gradivo iz matematike.
 
 - **Administrator** (roditelj/nastavnik) se prijavljuje lozinkom ili magic linkom, kreira
   pitanja ručno ili ih automatski generiše (uz obavezan pregled pre objave), pravi
-  kvizove i šalje jedinstven link detetu.
-- **Dete** ne otvara nalog — pristupa kvizu preko dobijenog linka, unosi ime i rešava.
-  Odgovori se čuvaju i offline, a predaja je moguća tek kad server potvrdi da su sačuvani.
+  kvizove, po želji ih dodeljuje Andreju ili Filipu i šalje jedinstven link detetu.
+- **Dete** ne otvara nalog — pristupa kvizu preko dobijenog linka i unosi ime samo
+  kada kviz nije unapred dodeljen. Odgovori se čuvaju i offline, a predaja je moguća
+  tek kad server potvrdi da su sačuvani.
+- Za dodeljene kvizove server čuva osvojene zvezdice i odvojeno sabira Andrejev i
+  Filipov najbolji rezultat na svakom kvizu.
 - Kada dete završi kviz, administrator dobija mejl sa rezultatom.
 
 ## Tehnologije

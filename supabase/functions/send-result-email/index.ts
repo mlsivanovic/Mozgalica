@@ -22,7 +22,7 @@ Deno.serve(async (req: Request) => {
 
     const { data: attempt, error: attemptErr } = await supabase
       .from('attempts')
-      .select('id, child_name, child_label, quiz_id, submitted_at, total_points, max_points, score_pct, correct_count, incorrect_count')
+      .select('id, child_name, child_label, quiz_id, submitted_at, total_points, max_points, score_pct, correct_count, incorrect_count, stars_earned')
       .eq('id', attemptId)
       .single()
     if (attemptErr || !attempt) throw new Error(`Pokušaj nije pronađen: ${attemptErr?.message}`)
@@ -51,6 +51,7 @@ Deno.serve(async (req: Request) => {
           <li>Datum završetka: ${datumZavrsetka}</li>
           <li>Poeni: ${attempt.total_points} / ${attempt.max_points}</li>
           <li>Procenat uspešnosti: ${attempt.score_pct}%</li>
+          <li>Osvojene zvezdice: ${attempt.stars_earned ?? 0} / 3</li>
           <li>Tačni odgovori: ${attempt.correct_count}</li>
           <li>Netačni odgovori: ${attempt.incorrect_count}</li>
         </ul>
