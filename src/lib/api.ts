@@ -1,9 +1,13 @@
 // Tipizirani pozivi ka Supabase-u: tabele za admina, RPC funkcije za dete
 import type {
-  AdminPodesavanja, FiksnoImeDeteta, Kviz, KvizLink, KvizPitanje, Oblast, OdgovorDeteta,
-  Pitanje, Pokusaj, PokusajOdgovor, Predmet,
+  AdminPodesavanja, AvatarDeteta, FiksnoImeDeteta, Kviz, KvizLink, KvizPitanje,
+  NivoTitule, Oblast, OdgovorDeteta, Pitanje, Pokusaj, PokusajOdgovor, Predmet,
+  ProfilDeteta,
 } from '../types/db'
-import type { KvizMeta, NapredakTitule, PokusajPayload, RezultatPayload, SavePotvrda, SavetPayload } from '../types/kviz'
+import type {
+  JavniProfilPayload, KvizMeta, NapredakTitule, PokusajPayload, PotvrdaTajmera,
+  RezultatPayload, SavePotvrda, SavetPayload,
+} from '../types/kviz'
 import { SEED_PITANJA } from '../data/seedPitanja'
 import { supabase } from './supabase'
 
@@ -199,7 +203,7 @@ export async function dodajPitanjaUKviz(
   const postojeci = await listajPitanjaKviza(quizId)
   const pocetnaPozicija = postojeci.length ? Math.max(...postojeci.map((p) => p.position)) + 1 : 0
   const kombinovano: SnapshotUnos[] = [
-    ...postojeci.map(({ id, ...rest }) => rest),
+    ...postojeci.map(({ id: _id, ...rest }) => rest),
     ...noviUnosi.map((u, i) => ({ ...u, quiz_id: quizId, position: pocetnaPozicija + i })),
   ]
   await postaviPitanjaKviza(quizId, kombinovano)
@@ -217,6 +221,22 @@ export async function napraviLink(quizId: string, label: string | null, maxAttem
   const { data, error } = await supabase()
     .from('quiz_links')
     .insert({ quiz_id: quizId, label, max_attempts: maxAttempts, expires_at: expiresAt })
+    .select('*')
+    .single()
+  if (error) throw new Error(opisiGresku(error)!)
+  return data as KvizLink
+}
+
+export async function dodeliKvizProfilu(quizId: string, childProfileId: string): Promise<KvizLink> {
+  const { data, error } = await supabase()
+    .from('quiz_links')
+    .insert({
+      quiz_id: quizId,
+      child_profile_id: childProfileId,
+      max_attempts: 1,
+      label: null,
+      expires_at: null,
+    })
     .select('*')
     .single()
   if (error) throw new Error(opisiGresku(error)!)
@@ -395,6 +415,50 @@ export async function postaviEmailObavestenja(userId: string, ukljucena: boolean
   if (error) throw new Error(opisiGresku(error)!)
 }
 
+// ---------- Profili dece i titule ----------
+export async function listajProfileDeteta(): Promise<ProfilDeteta[]> {
+  const { data, error } = await supabase()
+    .from('child_profiles').select('*').order('created_at')
+  if (error) throw new Error(opisiGresku(error)!)
+  return data as ProfilDeteta[]
+}
+
+export interface NoviProfilDeteta {
+  owner_id: string
+  name: string
+  birth_date: string | null
+  avatar: AvatarDeteta
+}
+
+export async function sacuvajProfilDeteta(profil: NoviProfilDeteta, id?: string): Promise<void> {
+  if (id) {
+    const izmene = {
+      name: profil.name,
+      birth_date: profil.birth_date,
+      avatar: profil.avatar,
+    }
+    const { error } = await supabase().from('child_profiles').update(izmene).eq('id', id)
+    if (error) throw new Error(opisiGresku(error)!)
+    return
+  }
+  const { error } = await supabase().from('child_profiles').insert(profil)
+  if (error) throw new Error(opisiGresku(error)!)
+}
+
+export async function listajNivoeTitula(): Promise<NivoTitule[]> {
+  const { data, error } = await supabase()
+    .from('title_levels').select('*').order('min_stars')
+  if (error) throw new Error(opisiGresku(error)!)
+  return data as NivoTitule[]
+}
+
+export async function sacuvajNivoeTitula(nivoi: Array<{ name: string; min_stars: number }>): Promise<void> {
+  const { data, error } = await supabase().rpc('save_title_levels', { p_levels: nivoi })
+  if (error) throw new Error(opisiGresku(error)!)
+  const odgovor = data as { ok: boolean; error?: string }
+  if (!odgovor.ok) throw new Error('Titule nisu ispravne. Potreban je početni nivo od 0 zvezdica i jedinstveni pragovi.')
+}
+
 // ---------- RPC za dete (bez prijave) ----------
 export async function kvizMeta(token: string): Promise<KvizMeta> {
   const { data, error } = await supabase().rpc('get_quiz_by_token', { p_token: token })
@@ -414,6 +478,15 @@ export async function nastaviPokusaj(attemptToken: string): Promise<PokusajPaylo
   const { data, error } = await supabase().rpc('resume_attempt', { p_attempt_token: attemptToken })
   if (error) return { ok: false, error: opisiGresku(error)! }
   return data as PokusajPayload
+}
+
+export async function potvrdiTajmer(attemptToken: string, remainingSeconds: number): Promise<PotvrdaTajmera> {
+  const { data, error } = await supabase().rpc('checkpoint_attempt_timer', {
+    p_attempt_token: attemptToken,
+    p_remaining_seconds: Math.max(0, Math.floor(remainingSeconds)),
+  })
+  if (error) return { ok: false, error: opisiGresku(error)! }
+  return data as PotvrdaTajmera
 }
 
 export async function posaljiOdgovore(attemptToken: string, answers: Record<string, OdgovorDeteta>): Promise<SavePotvrda> {
@@ -440,4 +513,10 @@ export async function iskoristiSavet(attemptToken: string, quizQuestionId: strin
   })
   if (error) return { ok: false, error: opisiGresku(error)! }
   return data as SavetPayload
+}
+
+export async function ucitajJavniProfil(profileToken: string): Promise<JavniProfilPayload> {
+  const { data, error } = await supabase().rpc('get_child_profile', { p_profile_token: profileToken })
+  if (error) return { ok: false, error: opisiGresku(error)! }
+  return data as JavniProfilPayload
 }

@@ -13,6 +13,8 @@ export interface StanjePokusaja {
   attemptToken: string
   childName: string
   answers: Record<string, LokalniOdgovor>
+  accessMode?: 'generic' | 'profile'
+  profileToken?: string
   // Saveti: opciona polja radi kompatibilnosti sa starijim sačuvanim stanjem
   // (ucitajStanje ih ne zahteva) — tekst otključanih saveta ostaje vidljiv i offline.
   hintsUsed?: number
@@ -58,8 +60,9 @@ export function zapocniStanje(
   kvizToken: string,
   attemptToken: string,
   childName: string,
+  dodatno?: Pick<StanjePokusaja, 'accessMode' | 'profileToken'>,
 ): StanjePokusaja {
-  const stanje: StanjePokusaja = { attemptToken, childName, answers: {} }
+  const stanje: StanjePokusaja = { attemptToken, childName, answers: {}, ...dodatno }
   sacuvajStanje(skladiste, kvizToken, stanje)
   return stanje
 }

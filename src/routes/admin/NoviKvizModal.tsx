@@ -1,11 +1,8 @@
 import { useState, type FormEvent } from 'react'
 import { Modal } from '../../components/Zajednicke'
-import type { FiksnoImeDeteta } from '../../types/db'
-import { IzborFiksnogDeteta } from './FiksnoDete'
 
 export interface NoviKvizPodaci {
   naziv: string
-  fixedChildName: FiksnoImeDeteta | null
 }
 
 interface Props {
@@ -20,7 +17,6 @@ export function NoviKvizModal({
   naslov = 'Novi kviz', pocetniNaziv = '', potvrdaTekst = 'Napravi kviz', onPotvrdi, onZatvori,
 }: Props) {
   const [naziv, setNaziv] = useState(pocetniNaziv)
-  const [fixedChildName, setFixedChildName] = useState<FiksnoImeDeteta | null>(null)
   const [greska, setGreska] = useState<string | null>(null)
   const [cuva, setCuva] = useState(false)
 
@@ -34,7 +30,7 @@ export function NoviKvizModal({
     setCuva(true)
     setGreska(null)
     try {
-      await onPotvrdi({ naziv: naziv.trim(), fixedChildName })
+      await onPotvrdi({ naziv: naziv.trim() })
     } catch (e) {
       setGreska(String((e as Error).message ?? e))
     } finally {
@@ -53,7 +49,6 @@ export function NoviKvizModal({
             placeholder="npr. Množenje — leto 2026"
           />
         </div>
-        <IzborFiksnogDeteta value={fixedChildName} onChange={setFixedChildName} />
         {greska && <p className="poruka poruka--greska" role="alert">{greska}</p>}
         <div className="red razmak-gore">
           <button type="submit" className="dugme dugme--akcenat" disabled={cuva}>

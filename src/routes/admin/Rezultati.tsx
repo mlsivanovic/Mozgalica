@@ -1,7 +1,7 @@
 // Tabela rezultata sa filterima + CSV izvoz
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { listajKvizove, listajPokusaje, ucitajStatuseTitula, type StatusTituleDeteta } from '../../lib/api'
+import { listajKvizove, listajPokusaje } from '../../lib/api'
 import { napraviCsv, preuzmiCsv } from '../../lib/csv'
 import { formatDatum, formatDatumZaInput, formatProcenat, formatTrajanje } from '../../lib/format'
 import { Loader } from '../../components/Zajednicke'
@@ -16,7 +16,6 @@ export function Rezultati() {
   const [greska, setGreska] = useState<string | null>(null)
   const [pokusaji, setPokusaji] = useState<Pokusaj[]>([])
   const [kvizovi, setKvizovi] = useState<Kviz[]>([])
-  const [titule, setTitule] = useState<StatusTituleDeteta[]>([])
 
   const [filterDete, setFilterDete] = useState('')
   const [filterKviz, setFilterKviz] = useState('')
@@ -25,14 +24,13 @@ export function Rezultati() {
   const [filterDo, setFilterDo] = useState(() => formatDatumZaInput())
 
   useEffect(() => {
-    Promise.all([listajPokusaje(), listajKvizove(), ucitajStatuseTitula()])
-      .then(([p, k, t]) => { setPokusaji(p); setKvizovi(k); setTitule(t) })
+    Promise.all([listajPokusaje(), listajKvizove()])
+      .then(([p, k]) => { setPokusaji(p); setKvizovi(k) })
       .catch((e) => setGreska(String(e.message ?? e)))
       .finally(() => setUcitava(false))
   }, [])
 
   const mapaKvizova = useMemo(() => new Map(kvizovi.map((k) => [k.id, k.title])), [kvizovi])
-  const mapaTitula = useMemo(() => new Map(titule.map((t) => [t.childName, t])), [titule])
 
   const filtrirano = useMemo(() => pokusaji.filter((p) => {
     if (filterDete && !p.child_name.toLowerCase().includes(filterDete.toLowerCase())) return false
@@ -52,7 +50,8 @@ export function Rezultati() {
       ['Dete', 'Oznaka', 'Kviz', 'Status', 'Poeni', 'Procenat', 'Zvezdice', 'Pokušaj br.', 'Početak', 'Kraj', 'Trajanje'],
       filtrirano.map((p) => [
         p.child_name, p.child_label ?? '', mapaKvizova.get(p.quiz_id) ?? '', NAZIVI_STATUSA[p.status],
-        p.total_points ?? '', p.score_pct ?? '', p.stars_earned ?? '', p.attempt_no, formatDatum(p.started_at),
+        p.total_points ?? '', p.score_pct ?? '', p.stars_awarded ?? p.stars_earned ?? '',
+        p.attempt_no, formatDatum(p.started_at),
         formatDatum(p.submitted_at), formatTrajanje(p.duration_sec),
       ]),
     )
@@ -71,21 +70,6 @@ export function Rezultati() {
       </div>
 
       {greska && <p className="poruka poruka--greska">{greska}</p>}
-
-      <div className="mreza-kartica razmak-dole">
-        {(['Andrej', 'Filip'] as const).map((ime) => (
-          <div className="kartica centar" key={ime}>
-            <p className="blago malo">{ime} — ukupno zvezdica</p>
-            <h2>⭐ {mapaTitula.get(ime)?.totalStars ?? 0}</h2>
-            <p className="razmak-gore" style={{ fontWeight: 800 }}>
-              {mapaTitula.get(ime)?.titleProgress.currentTitle ?? 'Još bez titule'}
-            </p>
-            <p className="blago malo">
-              Ova sezona: {mapaTitula.get(ime)?.titleProgress.seasonStars ?? 0} ⭐
-            </p>
-          </div>
-        ))}
-      </div>
 
       <div className="kartica razmak-dole">
         <div className="red-polja">
@@ -139,7 +123,11 @@ export function Rezultati() {
                   </span>
                 </td>
                 <td data-naslov="Rezultat">{formatProcenat(p.score_pct)}</td>
-                <td data-naslov="Zvezdice">{p.stars_earned == null ? '—' : `${p.stars_earned} / 3 ⭐`}</td>
+                <td data-naslov="Zvezdice">
+                  {p.stars_awarded == null && p.stars_earned == null
+                    ? '—'
+                    : `${p.stars_awarded ?? p.stars_earned} / 3 ⭐`}
+                </td>
                 <td data-naslov="Pokušaj">#{p.attempt_no}</td>
                 <td data-naslov="Kraj">{formatDatum(p.submitted_at)}</td>
                 <td><Link to={`/admin/rezultati/${p.id}`}>Detalji</Link></td>

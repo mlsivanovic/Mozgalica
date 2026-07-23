@@ -171,7 +171,7 @@ export function PitanjaLista() {
     }
   }
 
-  async function potvrdiNoviKviz({ naziv, fixedChildName }: NoviKvizPodaci) {
+  async function potvrdiNoviKviz({ naziv }: NoviKvizPodaci) {
     if (!noviKviz) return
     setGreska(null)
     setRadiBulk(true)
@@ -180,7 +180,7 @@ export function PitanjaLista() {
         title: naziv, description: null, time_limit_seconds: null,
         default_max_attempts: 1, shuffle_questions: true, shuffle_answers: true,
         show_result: true, show_correct: true, pass_threshold_pct: 90,
-        require_name: true, fixed_child_name: fixedChildName,
+        require_name: true, fixed_child_name: null,
         require_label: false, label_name: 'Odeljenje',
       })
       const pitanjaZaKviz = noviKviz.vrsta === 'nasumicni'

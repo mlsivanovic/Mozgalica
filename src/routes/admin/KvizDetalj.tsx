@@ -2,29 +2,24 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import {
-  dodajPitanjaUKviz, izmeniLink, kvizImaPokusaje, listajLinkove, listajOblasti, listajPitanja,
-  listajPitanjaKviza, listajPokusajeKviza, napraviLink, obrisiPitanjeKviza, sacuvajKviz,
+  dodajPitanjaUKviz, dodeliKvizProfilu, izmeniLink, kvizImaPokusaje, listajLinkove,
+  listajOblasti, listajPitanja, listajPitanjaKviza, listajPokusajeKviza,
+  listajProfileDeteta, napraviLink, obrisiPitanjeKviza, sacuvajKviz,
   statusLinkovaKviza, ucitajKviz, type StatusLinka,
 } from '../../lib/api'
 import { formatDatum, formatProcenat } from '../../lib/format'
 import { mapaPredmetaPoTemi } from '../../lib/predmet'
 import { Loader } from '../../components/Zajednicke'
 import {
-  NAZIVI_PREDMETA, NAZIVI_TIPOVA, type FiksnoImeDeteta, type Kviz, type KvizLink,
-  type KvizPitanje, type Oblast, type Pitanje, type Pokusaj, type Predmet, type StatusPokusaja,
+  NAZIVI_PREDMETA, NAZIVI_TIPOVA, type Kviz, type KvizLink, type KvizPitanje,
+  type Oblast, type Pitanje, type Pokusaj, type Predmet, type ProfilDeteta,
+  type StatusPokusaja,
 } from '../../types/db'
-import { BedzDodeleKviza, IzborFiksnogDeteta } from './FiksnoDete'
-
-const NAZIVI_STATUSA: Record<StatusPokusaja, string> = {
-  in_progress: 'U toku', submitted: 'Završen', expired: 'Istekao',
-}
 
 const BAZA_URL = `${window.location.origin}${import.meta.env.BASE_URL}`
 
-function nazivDodeleKviza(fixedChildName: FiksnoImeDeteta | null): string {
-  return fixedChildName
-    ? `Za ${fixedChildName === 'Andrej' ? 'Andreja' : 'Filipa'}`
-    : 'Slobodan unos imena'
+const NAZIVI_STATUSA: Record<StatusPokusaja, string> = {
+  in_progress: 'U toku', submitted: 'Završen', expired: 'Istekao',
 }
 
 export function KvizDetalj() {
@@ -39,19 +34,21 @@ export function KvizDetalj() {
   const [linkovi, setLinkovi] = useState<KvizLink[]>([])
   const [statusi, setStatusi] = useState<StatusLinka[]>([])
   const [pokusaji, setPokusaji] = useState<Pokusaj[]>([])
+  const [profili, setProfili] = useState<ProfilDeteta[]>([])
 
   async function ucitajSve() {
     if (!id) return
     setUcitava(true)
     try {
-      const [k, zakljuc, snap, banka, obl, lnk, stat, pok] = await Promise.all([
+      const [k, zakljuc, snap, banka, obl, lnk, stat, pok, deca] = await Promise.all([
         ucitajKviz(id), kvizImaPokusaje(id), listajPitanjaKviza(id),
         listajPitanja({}), listajOblasti(), listajLinkove(id), statusLinkovaKviza(id),
-        listajPokusajeKviza(id),
+        listajPokusajeKviza(id), listajProfileDeteta(),
       ])
       setKviz(k); setZakljucano(zakljuc); setSnapshotPitanja(snap)
       setBankaPitanja(banka); setOblasti(obl); setLinkovi(lnk); setStatusi(stat)
       setPokusaji(pok)
+      setProfili(deca)
     } catch (e) {
       setGreska(String((e as Error).message ?? e))
     } finally {
@@ -69,7 +66,7 @@ export function KvizDetalj() {
       <h1>{kviz.title}</h1>
       {greska && <p className="poruka poruka--greska">{greska}</p>}
 
-      <PodesavanjaKviza kviz={kviz} zakljucano={zakljucano} onSacuvano={ucitajSve} />
+      <PodesavanjaKviza kviz={kviz} onSacuvano={ucitajSve} />
 
       <PitanjaKviza
         quizId={kviz.id} zakljucano={zakljucano} snapshot={snapshotPitanja} banka={bankaPitanja}
@@ -79,8 +76,8 @@ export function KvizDetalj() {
       <RezultatiKviza pokusaji={pokusaji} />
 
       <LinkoviKviza
-        quizId={kviz.id} fixedChildName={kviz.fixed_child_name}
-        linkovi={linkovi} statusi={statusi} onPromena={ucitajSve}
+        quizId={kviz.id} linkovi={linkovi} statusi={statusi}
+        profili={profili} onPromena={ucitajSve}
       />
     </div>
   )
@@ -88,8 +85,8 @@ export function KvizDetalj() {
 
 // ---------------------------------------------------------------------------
 function PodesavanjaKviza({
-  kviz, zakljucano, onSacuvano,
-}: { kviz: Kviz; zakljucano: boolean; onSacuvano: () => void }) {
+  kviz, onSacuvano,
+}: { kviz: Kviz; onSacuvano: () => void }) {
   const [otvoreno, setOtvoreno] = useState(false)
   const [f, setF] = useState(kviz)
   const [cuva, setCuva] = useState(false)
@@ -127,7 +124,7 @@ function PodesavanjaKviza({
       {!otvoreno ? (
         <p className="malo blago">
           {f.time_limit_seconds ? `${Math.round(f.time_limit_seconds / 60)} min` : 'Bez vremenskog ograničenja'} ·
-          {' '}Prag {f.pass_threshold_pct}% · Max {f.default_max_attempts} pokušaja · {nazivDodeleKviza(f.fixed_child_name)}
+          {' '}Prag {f.pass_threshold_pct}% · Max {f.default_max_attempts} pokušaja
         </p>
       ) : (
         <>
@@ -139,16 +136,6 @@ function PodesavanjaKviza({
             <label htmlFor="kd-opis">Poruka detetu</label>
             <textarea id="kd-opis" value={f.description ?? ''} onChange={(e) => setF({ ...f, description: e.target.value })} />
           </div>
-          <IzborFiksnogDeteta
-            value={f.fixed_child_name}
-            onChange={(fixedChildName) => setF({ ...f, fixed_child_name: fixedChildName })}
-            disabled={zakljucano}
-          />
-          {zakljucano && (
-            <p className="poruka poruka--info malo">
-              Dodela deteta je zaključana jer kviz već ima pokušaj.
-            </p>
-          )}
           <div className="red-polja">
             <div className="polje">
               <label htmlFor="kd-vreme">Vremensko ograničenje (min, prazno = bez)</label>
@@ -366,7 +353,11 @@ function RezultatiKviza({ pokusaji }: { pokusaji: Pokusaj[] }) {
                     </span>
                   </td>
                   <td data-naslov="Rezultat">{formatProcenat(p.score_pct)}</td>
-                  <td data-naslov="Zvezdice">{p.stars_earned == null ? '—' : `${p.stars_earned} / 3 ⭐`}</td>
+                  <td data-naslov="Zvezdice">
+                    {p.stars_awarded == null && p.stars_earned == null
+                      ? '—'
+                      : `${p.stars_awarded ?? p.stars_earned} / 3 ⭐`}
+                  </td>
                   <td data-naslov="Pokušaj">#{p.attempt_no}</td>
                   <td data-naslov="Kraj">{formatDatum(p.submitted_at)}</td>
                   <td><Link to={`/admin/rezultati/${p.id}`}>Detalji</Link></td>
@@ -382,22 +373,49 @@ function RezultatiKviza({ pokusaji }: { pokusaji: Pokusaj[] }) {
 
 // ---------------------------------------------------------------------------
 function LinkoviKviza({
-  quizId, fixedChildName, linkovi, statusi, onPromena,
+  quizId, linkovi, statusi, profili, onPromena,
 }: {
-  quizId: string; fixedChildName: FiksnoImeDeteta | null; linkovi: KvizLink[]
-  statusi: StatusLinka[]; onPromena: () => void
+  quizId: string
+  linkovi: KvizLink[]
+  statusi: StatusLinka[]
+  profili: ProfilDeteta[]
+  onPromena: () => void
 }) {
   const [label, setLabel] = useState('')
   const [maxAttempts, setMaxAttempts] = useState(1)
+  const [izabraniProfil, setIzabraniProfil] = useState('')
   const [greska, setGreska] = useState<string | null>(null)
   const [radi, setRadi] = useState(false)
   const mapaStatus = new Map(statusi.map((s) => [s.link_id, s]))
+  const mapaProfila = new Map(profili.map((p) => [p.id, p]))
+  const profilniLinkovi = linkovi.filter((l) => l.child_profile_id)
+  const generickiLinkovi = linkovi.filter((l) => !l.child_profile_id)
+  const dodeljeniProfili = new Set(profilniLinkovi.map((l) => l.child_profile_id))
+  const dostupniProfili = profili.filter((p) => !dodeljeniProfili.has(p.id))
 
   async function napravi() {
     setRadi(true); setGreska(null)
     try {
       await napraviLink(quizId, label.trim() || null, maxAttempts, null)
       setLabel('')
+      onPromena()
+    } catch (e) {
+      setGreska(String((e as Error).message ?? e))
+    } finally {
+      setRadi(false)
+    }
+  }
+
+  async function dodeli() {
+    if (!izabraniProfil) {
+      setGreska('Izaberi profil deteta.')
+      return
+    }
+    setRadi(true)
+    setGreska(null)
+    try {
+      await dodeliKvizProfilu(quizId, izabraniProfil)
+      setIzabraniProfil('')
       onPromena()
     } catch (e) {
       setGreska(String((e as Error).message ?? e))
@@ -432,65 +450,126 @@ function LinkoviKviza({
   }
 
   return (
-    <div className="kartica">
-      <div className="red red--razmak razmak-dole">
-        <h2>Linkovi za decu</h2>
-        <BedzDodeleKviza fixedChildName={fixedChildName} />
-      </div>
-      <p className="malo blago razmak-dole">
-        {fixedChildName
-          ? `Svi linkovi ovog kviza automatski koriste ime ${fixedChildName}.`
-          : 'Na svim linkovima ovog kviza dete samo unosi svoje ime.'}
-      </p>
+    <>
+      <section className="kartica razmak-dole">
+        <h2>Dodela profilima</h2>
+        <p className="blago razmak-dole">
+          Dodeljeni kviz se pojavljuje na stalnom profilnom linku deteta i može da se završi samo jednom.
+        </p>
+        {greska && <p className="poruka poruka--greska">{greska}</p>}
+        <div className="red-polja">
+          <div className="polje">
+            <label htmlFor="lk-profil">Profil deteta</label>
+            <select id="lk-profil" value={izabraniProfil} onChange={(e) => setIzabraniProfil(e.target.value)}>
+              <option value="">Izaberi profil…</option>
+              {dostupniProfili.map((p) => <option key={p.id} value={p.id}>{p.avatar} {p.name}</option>)}
+            </select>
+          </div>
+          <button
+            type="button" className="dugme dugme--akcenat"
+            style={{ alignSelf: 'flex-end', marginBottom: '1rem' }}
+            disabled={radi || dostupniProfili.length === 0} onClick={dodeli}
+          >
+            Dodeli kviz
+          </button>
+        </div>
 
-      <div className="red-polja razmak-dole">
-        <div className="polje">
-          <label htmlFor="lk-label">Oznaka linka (opciono, npr. domaći za vikend)</label>
-          <input id="lk-label" type="text" value={label} onChange={(e) => setLabel(e.target.value)} />
-        </div>
-        <div className="polje">
-          <label htmlFor="lk-max">Dozvoljeno pokušaja</label>
-          <input id="lk-max" type="number" min={1} max={20} value={maxAttempts} onChange={(e) => setMaxAttempts(Number(e.target.value))} />
-        </div>
-      </div>
-      {greska && <p className="poruka poruka--greska">{greska}</p>}
-      <button type="button" className="dugme dugme--akcenat razmak-dole" disabled={radi} onClick={napravi}>
-        + Napravi novi link
-      </button>
+        {profilniLinkovi.length === 0 ? (
+          <p className="blago">Kviz još nije dodeljen nijednom profilu.</p>
+        ) : (
+          <div className="tabela-omot">
+            <table className="tabela tabela--kartice">
+              <thead><tr><th>Dete</th><th>Status</th><th>Napredak</th><th></th></tr></thead>
+              <tbody>
+                {profilniLinkovi.map((l) => {
+                  const profil = mapaProfila.get(l.child_profile_id!)
+                  const s = mapaStatus.get(l.id)
+                  const status = !l.is_active ? 'Pauziran'
+                    : s && s.submitted_count > 0 ? 'Završen'
+                    : s && s.in_progress_count > 0 ? 'U toku'
+                    : 'Nije započet'
+                  return (
+                    <tr key={l.id}>
+                      <td data-naslov="Dete">{profil?.avatar} {profil?.name ?? 'Nepoznat profil'}</td>
+                      <td data-naslov="Status">
+                        <span className={`bedz ${
+                          status === 'Završen' ? 'bedz--uspeh'
+                          : status === 'U toku' ? 'bedz--upozorenje'
+                          : status === 'Pauziran' ? 'bedz--greska' : ''
+                        }`}>{status}</span>
+                      </td>
+                      <td data-naslov="Napredak">
+                        {s?.submitted_count ? 'Završeno' : s?.in_progress_count ? 'Odgovori se čuvaju' : '—'}
+                      </td>
+                      <td>
+                        <button type="button" className="dugme dugme--senka dugme--malo" onClick={() => preklopiAktivnost(l)}>
+                          {l.is_active ? 'Sakrij sa profila' : 'Vrati na profil'}
+                        </button>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {profili.length === 0 && (
+          <p className="poruka poruka--info">Prvo napravi profil deteta u Podešavanjima.</p>
+        )}
+      </section>
 
-      {linkovi.length === 0 ? <p className="blago">Još nema napravljenih linkova.</p> : (
-        <div className="tabela-omot">
-          <table className="tabela">
-            <thead><tr><th>Oznaka</th><th>Status</th><th>Pokušaji</th><th>Ističe</th><th></th></tr></thead>
-            <tbody>
-              {linkovi.map((l) => {
-                const s = mapaStatus.get(l.id)
-                return (
-                  <tr key={l.id}>
-                    <td>{l.label || '—'}</td>
-                    <td>
-                      {!l.is_active ? <span className="bedz bedz--greska">Deaktiviran</span>
-                        : s && s.submitted_count > 0 ? <span className="bedz bedz--uspeh">Završen</span>
-                        : s && s.in_progress_count > 0 ? <span className="bedz bedz--upozorenje">Započet</span>
-                        : <span className="bedz">Otvoren</span>}
-                    </td>
-                    <td>{s?.submitted_count ?? 0} / {l.max_attempts}</td>
-                    <td>{l.expires_at ? formatDatum(l.expires_at) : 'Ne ističe'}</td>
-                    <td className="red">
-                      <button type="button" className="dugme dugme--senka dugme--malo" onClick={() => kopiraj(l.token)}>Kopiraj</button>
-                      <button type="button" className="dugme dugme--senka dugme--malo" onClick={() => preklopiAktivnost(l)}>
-                        {l.is_active ? 'Deaktiviraj' : 'Aktiviraj'}
-                      </button>
-                      <button type="button" className="dugme dugme--senka dugme--malo" onClick={() => produzi(l)}>Produži</button>
-                      <button type="button" className="dugme dugme--senka dugme--malo" onClick={() => reissue(l)}>Novi link</button>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
+      <section className="kartica">
+        <h2>Generički linkovi</h2>
+        <p className="blago razmak-dole">
+          Svaki početak preko ovakvog linka pravi novi pokušaj, do podešenog limita.
+        </p>
+
+        <div className="red-polja razmak-dole">
+          <div className="polje">
+            <label htmlFor="lk-label">Oznaka (opciono)</label>
+            <input id="lk-label" type="text" value={label} onChange={(e) => setLabel(e.target.value)} />
+          </div>
+          <div className="polje">
+            <label htmlFor="lk-max">Dozvoljeno pokušaja</label>
+            <input id="lk-max" type="number" min={1} max={20} value={maxAttempts} onChange={(e) => setMaxAttempts(Number(e.target.value))} />
+          </div>
         </div>
-      )}
-    </div>
+        <button type="button" className="dugme dugme--akcenat razmak-dole" disabled={radi} onClick={napravi}>
+          + Napravi generički link
+        </button>
+
+        {generickiLinkovi.length === 0 ? <p className="blago">Još nema generičkih linkova.</p> : (
+          <div className="tabela-omot">
+            <table className="tabela tabela--kartice">
+              <thead><tr><th>Oznaka</th><th>Status</th><th>Pokušaji</th><th>Ističe</th><th></th></tr></thead>
+              <tbody>
+                {generickiLinkovi.map((l) => {
+                  const s = mapaStatus.get(l.id)
+                  return (
+                    <tr key={l.id}>
+                      <td data-naslov="Oznaka">{l.label || '—'}</td>
+                      <td data-naslov="Status">
+                        {!l.is_active ? <span className="bedz bedz--greska">Deaktiviran</span>
+                          : <span className="bedz">Aktivan</span>}
+                      </td>
+                      <td data-naslov="Pokušaji">{s?.submitted_count ?? 0} / {l.max_attempts}</td>
+                      <td data-naslov="Ističe">{l.expires_at ? formatDatum(l.expires_at) : 'Ne ističe'}</td>
+                      <td className="red">
+                        <button type="button" className="dugme dugme--senka dugme--malo" onClick={() => kopiraj(l.token)}>Kopiraj</button>
+                        <button type="button" className="dugme dugme--senka dugme--malo" onClick={() => preklopiAktivnost(l)}>
+                          {l.is_active ? 'Deaktiviraj' : 'Aktiviraj'}
+                        </button>
+                        <button type="button" className="dugme dugme--senka dugme--malo" onClick={() => produzi(l)}>Produži</button>
+                        <button type="button" className="dugme dugme--senka dugme--malo" onClick={() => reissue(l)}>Novi link</button>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+    </>
   )
 }

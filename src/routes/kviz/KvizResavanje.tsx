@@ -2,13 +2,15 @@
 // Predaja se otključava tek kada server potvrdi da su svi odgovori sačuvani.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { Tajmer } from '../../components/Tajmer'
+import { PauziraniTajmer, Tajmer } from '../../components/Tajmer'
 import { Loader, ProgresTraka, TemaDugme } from '../../components/Zajednicke'
 import { PitanjeRenderer, odgovorJePrazan } from '../../components/pitanja/PitanjeRenderer'
-import { iskoristiSavet, nastaviPokusaj, posaljiOdgovore, predajKviz } from '../../lib/api'
 import {
-  nesinhronizovani, oznaciSinhronizovane, sacuvajStanje, sveSinhronizovano, ucitajStanje,
-  upisiHint, upisiOdgovor, type StanjePokusaja,
+  iskoristiSavet, nastaviPokusaj, posaljiOdgovore, potvrdiTajmer, predajKviz,
+} from '../../lib/api'
+import {
+  nesinhronizovani, oznaciSinhronizovane, sacuvajStanje, sveSinhronizovano,
+  ucitajStanje, upisiHint, upisiOdgovor, type StanjePokusaja,
 } from '../../lib/offlineQueue'
 import type { OdgovorDeteta } from '../../types/db'
 import type { PitanjeZaDete } from '../../types/kviz'
@@ -25,6 +27,7 @@ export function KvizResavanje() {
   const [pitanja, setPitanja] = useState<PitanjeZaDete[]>([])
   const [stanje, setStanje] = useState<StanjePokusaja | null>(null)
   const [deadlineAt, setDeadlineAt] = useState<string | null>(null)
+  const [preostaloProfil, setPreostaloProfil] = useState<number | null>(null)
   const [serverOffsetMs, setServerOffsetMs] = useState(0)
   const [indeks, setIndeks] = useState(0)
   const [naMrezi, setNaMrezi] = useState(navigator.onLine)
@@ -49,11 +52,14 @@ export function KvizResavanje() {
       }
       setPitanja(r.questions)
       setDeadlineAt(r.deadlineAt ?? null)
+      setPreostaloProfil(r.accessMode === 'profile' ? (r.remainingSeconds ?? null) : null)
       setServerOffsetMs(r.serverNow ? new Date(r.serverNow).getTime() - Date.now() : 0)
 
       // Server je izvor istine za već sinhronizovane odgovore; lokalne nesinhronizovane čuvamo
       const spojeno: StanjePokusaja = {
         ...lokalno,
+        accessMode: r.accessMode ?? lokalno.accessMode,
+        profileToken: r.profileToken ?? lokalno.profileToken,
         childName: r.childName ?? lokalno.childName,
         answers: { ...lokalno.answers },
         hintsUsed: r.hintsUsed ?? lokalno.hintsUsed ?? 0,
@@ -69,6 +75,9 @@ export function KvizResavanje() {
       for (const q of r.questions) {
         if (q.hint) spojeno.hintovi![q.id] = q.hint
       }
+      const prviNeodgovoren = r.questions.findIndex((p) =>
+        odgovorJePrazan(spojeno.answers[p.id]?.answer ?? null))
+      setIndeks(prviNeodgovoren >= 0 ? prviNeodgovoren : Math.max(0, r.questions.length - 1))
       sacuvajStanje(localStorage, token, spojeno)
       setStanje(spojeno)
       setUcitava(false)
@@ -77,6 +86,12 @@ export function KvizResavanje() {
       setUcitava(false)
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token])
+
+  const potvrdiProfilniTajmer = useCallback((preostalo: number) => {
+    const trenutno = ucitajStanje(localStorage, token)
+    if (!trenutno || trenutno.accessMode !== 'profile') return
+    void potvrdiTajmer(trenutno.attemptToken, preostalo)
   }, [token])
 
   // ---- Online/offline praćenje ----
@@ -107,6 +122,22 @@ export function KvizResavanje() {
       setSinhronizuje(false)
     }
   }, [token])
+
+  // Poslednji pokušaj slanja pri izlasku smanjuje šansu da najnoviji odgovor ostane
+  // samo na ovom uređaju. Ako nema mreže, lokalni red ga i dalje čuva.
+  useEffect(() => {
+    if (!stanje) return
+    const priSakrivanju = () => {
+      if (document.visibilityState !== 'visible') void sinhronizuj(stanje)
+    }
+    const priIzlasku = () => { void sinhronizuj(stanje) }
+    document.addEventListener('visibilitychange', priSakrivanju)
+    window.addEventListener('pagehide', priIzlasku)
+    return () => {
+      document.removeEventListener('visibilitychange', priSakrivanju)
+      window.removeEventListener('pagehide', priIzlasku)
+    }
+  }, [sinhronizuj, stanje])
 
   // Sinhronizuj čim se veza vrati
   useEffect(() => {
@@ -192,18 +223,27 @@ export function KvizResavanje() {
   const nesinhronizovanoBroj = Object.keys(nesinhronizovani(stanje)).length
   const svePotvrdjeno = sveSinhronizovano(stanje)
   const imaSavetaZaBiloKoje = pitanja.some((p) => p.hasHint)
+  const pocetnaRuta = stanje.accessMode === 'profile' && stanje.profileToken
+    ? `/dete/${stanje.profileToken}`
+    : `/kviz/${token}`
 
   return (
     <div className="sadrzaj sadrzaj--usko" style={{ paddingBottom: '5rem' }}>
       <div className="red red--razmak razmak-dole">
         <div className="red">
-          <Link to={`/kviz/${token}`} className="dugme dugme--senka dugme--malo">🏠 Početna</Link>
+          <Link to={pocetnaRuta} className="dugme dugme--senka dugme--malo">🏠 Početna</Link>
           <h1 style={{ fontSize: '1.2rem' }}>{stanje.childName || 'Rešavanje kviza'}</h1>
         </div>
         <div className="red">
-          {deadlineAt && (
+          {stanje.accessMode === 'profile' && preostaloProfil !== null ? (
+            <PauziraniTajmer
+              initialSeconds={preostaloProfil}
+              onCheckpoint={potvrdiProfilniTajmer}
+              onIstek={predajOdmah}
+            />
+          ) : deadlineAt ? (
             <Tajmer deadlineAt={deadlineAt} serverOffsetMs={serverOffsetMs} onIstek={predajOdmah} />
-          )}
+          ) : null}
           <TemaDugme />
         </div>
       </div>

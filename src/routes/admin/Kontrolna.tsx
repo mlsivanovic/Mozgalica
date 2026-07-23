@@ -67,7 +67,11 @@ export function Kontrolna() {
                     <td>{p.child_name}{p.child_label ? ` (${p.child_label})` : ''}</td>
                     <td>{formatDatum(p.submitted_at)}</td>
                     <td>{formatProcenat(p.score_pct)}</td>
-                    <td>{p.stars_earned == null ? '—' : `${p.stars_earned} / 3 ⭐`}</td>
+                    <td>
+                      {p.stars_awarded == null && p.stars_earned == null
+                        ? '—'
+                        : `${p.stars_awarded ?? p.stars_earned} / 3 ⭐`}
+                    </td>
                     <td><Link to={`/admin/rezultati/${p.id}`}>Detalji</Link></td>
                   </tr>
                 ))}

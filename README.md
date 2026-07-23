@@ -9,15 +9,12 @@ obnove gradivo iz matematike.
 ## Kako radi
 
 - **Administrator** (roditelj/nastavnik) se prijavljuje lozinkom ili magic linkom, kreira
-  pitanja ručno ili ih automatski generiše (uz obavezan pregled pre objave), pravi
-  kvizove, po želji ih dodeljuje Andreju ili Filipu i šalje jedinstven link detetu.
-- **Dete** ne otvara nalog — pristupa kvizu preko dobijenog linka i unosi ime samo
-  kada kviz nije unapred dodeljen. Odgovori se čuvaju i offline, a predaja je moguća
-  tek kad server potvrdi da su sačuvani.
-- Za dodeljene kvizove server čuva osvojene zvezdice i odvojeno sabira Andrejev i
-  Filipov najbolji rezultat na svakom kvizu.
-- Zvezdice otključavaju sezonske titule, od `StarScout` do `LegendPrime`; roditelj
-  za svako dete može da započne novu sezonu bez brisanja ukupnog zbira.
+  pitanja i kvizove, uređuje profile dece i dodeljuje im aktivne kvizove. Po potrebi
+  može da napravi i generički link sa više pokušaja.
+- **Dete** ne otvara nalog — preko stalnog profilnog linka vidi aktivne kvizove,
+  zvezdice, titulu i prethodne rezultate. Započeti profilni kviz nastavlja tamo gde je
+  prekinut, uključujući povratak sa drugog uređaja.
+- Odgovori se čuvaju i offline, a predaja je moguća tek kad server potvrdi da su sačuvani.
 - Kada dete završi kviz, administrator dobija mejl sa rezultatom.
 
 ## Tehnologije
@@ -61,6 +58,7 @@ supabase/migrations/   SQL migracije (šema, RLS, RPC funkcije za dete, ocenjiva
 supabase/functions/    Edge funkcija za slanje mejlova
 src/generator/         Deterministički generator matematičkih pitanja (bez AI)
 src/routes/admin/      Administratorski panel
+src/routes/dete/       Javni profil deteta: napredovanje, aktivni kvizovi i istorija
 src/routes/kviz/       Dečji tok: ulaz, rešavanje, rezultat
 src/lib/               Supabase klijent, tipizirani API pozivi, offline red, pomoćne funkcije
 src/data/               Početni skup od 30 primera pitanja

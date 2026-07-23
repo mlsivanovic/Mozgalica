@@ -1,0 +1,165 @@
+import { useEffect, useState } from 'react'
+import { Link, useParams } from 'react-router-dom'
+import { Loader, TemaDugme } from '../../components/Zajednicke'
+import { ucitajJavniProfil } from '../../lib/api'
+import { formatDatum, formatOdbrojavanje, formatProcenat } from '../../lib/format'
+import type { JavniProfilPayload } from '../../types/kviz'
+import './profil.css'
+
+export function ProfilDeteta() {
+  const { profilToken = '' } = useParams<{ profilToken: string }>()
+  const [profil, setProfil] = useState<JavniProfilPayload | null>(null)
+  const [ucitava, setUcitava] = useState(true)
+
+  useEffect(() => {
+    setUcitava(true)
+    ucitajJavniProfil(profilToken)
+      .then(setProfil)
+      .catch((e) => setProfil({ ok: false, error: String((e as Error).message ?? e) }))
+      .finally(() => setUcitava(false))
+  }, [profilToken])
+
+  if (ucitava) return <Loader tekst="Učitavanje profila…" />
+  if (!profil?.ok) {
+    return (
+      <div className="sadrzaj sadrzaj--usko centar profil-greska">
+        <div className="profil-avatar profil-avatar--mali" aria-hidden="true">😕</div>
+        <h1>Profil nije pronađen</h1>
+        <p className="poruka poruka--greska razmak-gore">
+          Proveri da li je profilni link ispravno kopiran.
+        </p>
+      </div>
+    )
+  }
+
+  const ukupnoZvezdica = profil.totalStars ?? 0
+  const trenutna = profil.currentTitle
+  const sledeca = profil.nextTitle
+  const odPraga = trenutna?.minStars ?? 0
+  const doPraga = sledeca?.minStars ?? Math.max(ukupnoZvezdica, 1)
+  const napredak = sledeca
+    ? Math.max(0, Math.min(100, Math.round(100 * (ukupnoZvezdica - odPraga) / Math.max(1, doPraga - odPraga))))
+    : 100
+
+  return (
+    <main className="profil-strana">
+      <div className="profil-omot">
+        <div className="red red--kraj">
+          <TemaDugme />
+        </div>
+
+        <section className="profil-zaglavlje">
+          <div className="profil-avatar" aria-hidden="true">{profil.avatar}</div>
+          <div>
+            <p className="profil-nadnaslov">Moj profil</p>
+            <h1>{profil.name}</h1>
+            <div className="profil-statistike">
+              <span>⭐ <strong>{ukupnoZvezdica}</strong> zvezdica</span>
+              <span>🏅 <strong>{trenutna?.name ?? 'Početnik'}</strong></span>
+            </div>
+          </div>
+        </section>
+
+        <section className="kartica profil-napredak" aria-label="Napredak do sledeće titule">
+          <div className="red red--razmak">
+            <div>
+              <p className="malo blago">Trenutna titula</p>
+              <h2>{trenutna?.name ?? 'Početnik'}</h2>
+            </div>
+            <span className="profil-medalja" aria-hidden="true">🏆</span>
+          </div>
+          <div
+            className="profil-progres"
+            role="progressbar"
+            aria-valuenow={napredak}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label={sledeca ? `Napredak do titule ${sledeca.name}` : 'Najviša titula je osvojena'}
+          >
+            <span style={{ width: `${napredak}%` }} />
+          </div>
+          <p className="malo blago">
+            {sledeca
+              ? `Još ${sledeca.starsNeeded} zvezdica do titule „${sledeca.name}”.`
+              : 'Osvojena je najviša titula — svaka čast!'}
+          </p>
+        </section>
+
+        <section className="profil-sekcija">
+          <div className="profil-sekcija-naslov">
+            <div>
+              <p className="profil-nadnaslov">Vreme je za vežbu</p>
+              <h2>Aktivni kvizovi</h2>
+            </div>
+            <span className="bedz">{profil.activeQuizzes?.length ?? 0}</span>
+          </div>
+
+          {(profil.activeQuizzes?.length ?? 0) === 0 ? (
+            <div className="kartica profil-prazno">
+              <span aria-hidden="true">🌟</span>
+              <div>
+                <h3>Sve je završeno!</h3>
+                <p className="blago">Novi kvizovi će se pojaviti ovde kada budu dodeljeni.</p>
+              </div>
+            </div>
+          ) : (
+            <div className="profil-kvizovi">
+              {profil.activeQuizzes!.map((kviz) => (
+                <article className="kartica profil-kviz" key={kviz.quizToken}>
+                  <div className="red red--razmak">
+                    <span className={`bedz ${kviz.attemptState === 'in_progress' ? 'bedz--upozorenje' : ''}`}>
+                      {kviz.attemptState === 'in_progress' ? 'U toku' : 'Novi kviz'}
+                    </span>
+                    {kviz.timeLimitSeconds != null && (
+                      <span className="malo blago">
+                        ⏱ {formatOdbrojavanje(kviz.remainingSeconds ?? kviz.timeLimitSeconds)}
+                      </span>
+                    )}
+                  </div>
+                  <h3>{kviz.title}</h3>
+                  {kviz.description && <p className="blago malo">{kviz.description}</p>}
+                  <p className="malo">
+                    📝 {kviz.questionCount} pitanja
+                    {kviz.attemptState === 'in_progress' && ` · ${kviz.answeredCount} odgovoreno`}
+                  </p>
+                  <Link className="dugme dugme--akcenat" to={`/kviz/${kviz.quizToken}`}>
+                    {kviz.attemptState === 'in_progress' ? 'Nastavi →' : 'Počni kviz 🚀'}
+                  </Link>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <details className="kartica profil-istorija">
+          <summary>
+            <span>Prethodni rezultati</span>
+            <span className="bedz">{profil.history?.length ?? 0}</span>
+          </summary>
+          <div className="profil-istorija-lista">
+            {(profil.history?.length ?? 0) === 0 ? (
+              <p className="blago">Još nema završenih kvizova.</p>
+            ) : profil.history!.map((rezultat) => (
+              <div className="profil-rezultat" key={rezultat.attemptId}>
+                <div>
+                  <strong>{rezultat.title}</strong>
+                  <p className="malo blago">{formatDatum(rezultat.submittedAt)}</p>
+                </div>
+                {rezultat.pendingReview ? (
+                  <span className="bedz bedz--upozorenje">Čeka pregled</span>
+                ) : (
+                  <div className="profil-rezultat-broj">
+                    <span aria-label={`${rezultat.starsAwarded ?? 0} zvezdica`}>
+                      {'⭐'.repeat(rezultat.starsAwarded ?? 0) || '☆'}
+                    </span>
+                    <strong>{formatProcenat(rezultat.scorePct)}</strong>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </details>
+      </div>
+    </main>
+  )
+}

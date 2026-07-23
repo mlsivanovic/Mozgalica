@@ -36,20 +36,33 @@ export function KvizRezultat() {
     )
   }
 
+  const profilniKviz = rezultat.accessMode === 'profile' && !!rezultat.profileToken
+  const povratak = profilniKviz ? `/dete/${rezultat.profileToken}` : `/kviz/${token}`
+
+  if (rezultat.showResult === false) {
+    return (
+      <div className="sadrzaj sadrzaj--usko centar" style={{ paddingTop: '15vh' }}>
+        <h1>✔ Kviz je predat!</h1>
+        <p className="blago razmak-gore">Tvoj rezultat će videti osoba koja ti je poslala link.</p>
+        <p className="razmak-gore"><Link to={povratak}>🏠 Nazad</Link></p>
+      </div>
+    )
+  }
+
   // Neka pitanja čekaju ručnu ocenu administratora — bez zvezdica/procenta dok se ne oceni.
   if (rezultat.pendingReview) {
     return (
       <div className="sadrzaj sadrzaj--usko centar" style={{ paddingTop: '15vh' }}>
         <h1>Odgovori su poslati na pregled ✅</h1>
         <p className="blago razmak-gore">Rezultat stiže kada ih pregleda odrasla osoba.</p>
-        <button type="button" className="dugme dugme--akcenat razmak-gore" onClick={() => window.location.reload()}>
-          Proveri ponovo
-        </button>
+        <p className="razmak-gore">
+          <Link to={povratak}>🏠 {profilniKviz ? 'Nazad na moj profil' : 'Nazad na početnu'}</Link>
+        </p>
       </div>
     )
   }
 
-  if (typeof rezultat.starsEarned !== 'number') {
+  if (typeof rezultat.starsAwarded !== 'number') {
     return (
       <div className="sadrzaj sadrzaj--usko centar" style={{ paddingTop: '15vh' }}>
         <p className="poruka poruka--greska">Zvezdice trenutno nisu dostupne. Pokušaj ponovo malo kasnije.</p>
@@ -57,12 +70,8 @@ export function KvizRezultat() {
     )
   }
 
-  const zvezdice = rezultat.starsEarned
-  const imaTrajniZbir = typeof rezultat.totalStars === 'number'
-  const imaNapredakTitule = imaTrajniZbir && Boolean(rezultat.titleProgress)
-  const novaTitula = imaNapredakTitule ? rezultat.newlyUnlockedTitle : null
-  const prikaziDetalje = rezultat.showResult !== false
-  const novPokusajMoguc = (rezultat.attemptsLeft ?? 0) > 0
+  const zvezdice = rezultat.starsAwarded
+  const novPokusajMoguc = !profilniKviz && (rezultat.attemptsLeft ?? 0) > 0
 
   function noviPokusaj() {
     obrisiStanje(localStorage, token)
@@ -73,7 +82,7 @@ export function KvizRezultat() {
 
   return (
     <div className="sadrzaj sadrzaj--usko" style={{ paddingBottom: '3rem' }}>
-      {(zvezdice > 0 || novaTitula) && <Konfete />}
+      {zvezdice > 0 && <Konfete />}
       <div className="kartica centar">
         <h1>{rezultat.childName ? `Bravo, ${rezultat.childName}!` : 'Kviz je završen!'}</h1>
         <div className="kviz-zvezde" aria-label={`${zvezdice} od 3 zvezdice`}>
@@ -84,41 +93,21 @@ export function KvizRezultat() {
         <p style={{ fontSize: '1.1rem', fontWeight: 700 }}>
           Na ovom pokušaju: {zvezdice} / 3 ⭐
         </p>
-        {imaTrajniZbir && (
-          <p className="razmak-gore" style={{ fontSize: '1.2rem', fontWeight: 800 }}>
-            Ukupno: {rezultat.totalStars} ⭐
-          </p>
-        )}
-
         <p className="razmak-gore" style={{ fontSize: '1.1rem', fontWeight: 700 }}>
           {porukaOhrabrenja(zvezdice)}
         </p>
 
-        {imaTrajniZbir && (
-          <p className="malo blago razmak-gore">
-            Za svaki kviz u zbir ulazi tvoj najbolji pokušaj, pa slabiji pokušaj ne umanjuje ukupan broj zvezdica.
-          </p>
-        )}
+        <div className="kviz-krug-rezultat" style={{ '--procenat': procenat } as CSSProperties}>
+          <div className="kviz-krug-rezultat-unutra">
+            <span className="kviz-krug-rezultat-broj">{formatProcenat(rezultat.scorePct)}</span>
+          </div>
+        </div>
 
-        {!prikaziDetalje && (
-          <p className="blago razmak-gore">Detaljan rezultat će videti osoba koja ti je poslala link.</p>
-        )}
-
-        {prikaziDetalje && (
-          <>
-            <div className="kviz-krug-rezultat" style={{ '--procenat': procenat } as CSSProperties}>
-              <div className="kviz-krug-rezultat-unutra">
-                <span className="kviz-krug-rezultat-broj">{formatProcenat(rezultat.scorePct)}</span>
-              </div>
-            </div>
-
-            <p className="blago">{rezultat.totalPoints} / {rezultat.maxPoints} poena</p>
-            <div className="kviz-tacnost-cipovi razmak-gore">
-              <span className="bedz bedz--uspeh">✓ {rezultat.correctCount} tačnih</span>
-              <span className="bedz bedz--greska">✗ {rezultat.incorrectCount} netačnih</span>
-            </div>
-          </>
-        )}
+        <p className="blago">{rezultat.totalPoints} / {rezultat.maxPoints} poena</p>
+        <div className="kviz-tacnost-cipovi razmak-gore">
+          <span className="bedz bedz--uspeh">✓ {rezultat.correctCount} tačnih</span>
+          <span className="bedz bedz--greska">✗ {rezultat.incorrectCount} netačnih</span>
+        </div>
 
         {novPokusajMoguc && (
           <button type="button" className="dugme dugme--akcenat razmak-gore" onClick={noviPokusaj}>
@@ -127,21 +116,7 @@ export function KvizRezultat() {
         )}
       </div>
 
-      {novaTitula && (
-        <section className="kartica kviz-nova-titula centar razmak-gore" role="status">
-          <p className="kviz-nova-titula-natpis">✨ Nova titula otključana! ✨</p>
-          <p className="kviz-nova-titula-ime">
-            {rezultat.childName ? `${rezultat.childName} ${novaTitula}` : novaTitula}
-          </p>
-          {rezultat.titleProgress && (
-            <p className="malo">
-              U ovoj sezoni: {rezultat.titleProgress.seasonStars} ⭐
-            </p>
-          )}
-        </section>
-      )}
-
-      {prikaziDetalje && rezultat.questions && (
+      {rezultat.questions && (
         <div className="razmak-gore">
           <h2>Pregled odgovora</h2>
           <div className="mreza-kartica razmak-gore">
@@ -169,7 +144,9 @@ export function KvizRezultat() {
       )}
 
       <p className="centar razmak-gore">
-        <Link to={`/kviz/${token}`}>🏠 Nazad na početnu</Link>
+        <Link to={povratak}>
+          🏠 {profilniKviz ? 'Nazad na moj profil' : 'Nazad na početnu'}
+        </Link>
       </p>
     </div>
   )

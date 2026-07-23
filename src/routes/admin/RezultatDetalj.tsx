@@ -55,7 +55,14 @@ export function RezultatDetalj() {
       <div className="mreza-kartica razmak-dole">
         <div className="kartica centar"><p className="blago malo">Rezultat</p><h2>{formatProcenat(pokusaj.score_pct)}</h2></div>
         <div className="kartica centar"><p className="blago malo">Poeni</p><h2>{pokusaj.total_points} / {pokusaj.max_points}</h2></div>
-        <div className="kartica centar"><p className="blago malo">Zvezdice</p><h2>{pokusaj.stars_earned == null ? '—' : `${pokusaj.stars_earned} / 3 ⭐`}</h2></div>
+        <div className="kartica centar">
+          <p className="blago malo">Zvezdice</p>
+          <h2>
+            {pokusaj.stars_awarded == null && pokusaj.stars_earned == null
+              ? '—'
+              : `${pokusaj.stars_awarded ?? pokusaj.stars_earned} / 3 ⭐`}
+          </h2>
+        </div>
         <div className="kartica centar"><p className="blago malo">Trajanje</p><h2>{formatTrajanje(pokusaj.duration_sec)}</h2></div>
         <div className="kartica centar"><p className="blago malo">Pokušaj</p><h2>#{pokusaj.attempt_no}</h2></div>
       </div>

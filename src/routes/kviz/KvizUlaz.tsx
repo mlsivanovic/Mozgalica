@@ -1,6 +1,6 @@
 // Ulazna strana kviza za dete: unos imena + start (bez naloga)
 import { useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { kvizMeta, zapocniPokusaj } from '../../lib/api'
 import { zapocniStanje } from '../../lib/offlineQueue'
 import { Loader, TemaDugme } from '../../components/Zajednicke'
@@ -15,6 +15,7 @@ const PORUKE_GRESAKA: Record<string, string> = {
   name_required: 'Unesi svoje ime.',
   no_questions: 'Ovaj kviz još nema pitanja.',
   too_many_tries: 'Previše pokušaja sa ovog linka. Obratite se osobi koja vam je poslala link.',
+  already_completed: 'Ovaj kviz je već završen i nalazi se u prethodnim rezultatima.',
 }
 
 export function KvizUlaz() {
@@ -43,16 +44,26 @@ export function KvizUlaz() {
         <p className="poruka poruka--greska razmak-gore">
           {PORUKE_GRESAKA[meta?.error ?? ''] ?? 'Nešto nije u redu sa ovim linkom.'}
         </p>
+        {meta?.profileToken && (
+          <p className="razmak-gore"><Link to={`/dete/${meta.profileToken}`}>← Nazad na moj profil</Link></p>
+        )}
       </div>
     )
   }
 
   async function pokreni() {
-    if (!meta!.fixedChildName && ime.trim() === '') { setGreska('Unesi svoje ime pre početka.'); return }
+    if (meta!.accessMode !== 'profile' && meta!.requireName && ime.trim() === '') {
+      setGreska('Unesi svoje ime pre početka.')
+      return
+    }
     setGreska(null)
     setPokrece(true)
     try {
-      const r = await zapocniPokusaj(token, meta!.fixedChildName ?? ime.trim(), oznaka.trim() || null)
+      const r = await zapocniPokusaj(
+        token,
+        meta!.accessMode === 'profile' ? (meta!.childName ?? '') : ime.trim(),
+        meta!.accessMode === 'profile' ? null : (oznaka.trim() || null),
+      )
       if (!r.ok || !r.attemptToken) {
         setGreska(PORUKE_GRESAKA[r.error ?? ''] ?? 'Nije uspelo pokretanje kviza. Pokušaj ponovo.')
         return
@@ -61,7 +72,13 @@ export function KvizUlaz() {
         setGreska('Server nije vratio ime za ovaj pokušaj. Pokušaj ponovo.')
         return
       }
-      zapocniStanje(localStorage, token, r.attemptToken, r.childName)
+      zapocniStanje(
+        localStorage,
+        token,
+        r.attemptToken,
+        r.childName,
+        { accessMode: r.accessMode, profileToken: r.profileToken },
+      )
       navigate(`/kviz/${token}/resi`)
     } catch (e) {
       setGreska(String((e as Error).message ?? e))
@@ -73,10 +90,18 @@ export function KvizUlaz() {
   return (
     <div className="sadrzaj sadrzaj--usko" style={{ paddingTop: '6vh' }}>
       <div className="red red--kraj">
+        {meta.profileToken && (
+          <Link to={`/dete/${meta.profileToken}`} className="dugme dugme--senka dugme--malo">
+            ← Moj profil
+          </Link>
+        )}
         <TemaDugme />
       </div>
       <div className="kartica kviz-kartica-uvod">
-        <div className="kviz-maskota" aria-hidden="true">🧠</div>
+        <div className="kviz-maskota" aria-hidden="true">{meta.childAvatar ?? '🧠'}</div>
+        {meta.accessMode === 'profile' && (
+          <p className="centar blago">Kviz za {meta.childName}</p>
+        )}
         <h1 className="centar razmak-gore">{meta.title}</h1>
         {meta.description && <p className="centar blago razmak-dole">{meta.description}</p>}
 
@@ -88,42 +113,19 @@ export function KvizUlaz() {
           )}
         </div>
 
-        {meta.fixedChildName ? (
-          <div className="kviz-dete-uvod centar" role="status">
-            <p className="kviz-dete-ime">Zdravo, {meta.fixedChildName}! 👋</p>
-            <p className="blago">
-              Do sada si osvojio <strong>{meta.totalStars ?? 0} ⭐</strong>
-            </p>
-            {meta.titleProgress && (
-              <div className="kviz-titula-uvod">
-                {meta.titleProgress.currentTitle ? (
-                  <p className="kviz-titula-ime">
-                    {meta.fixedChildName} <strong>{meta.titleProgress.currentTitle}</strong>
-                  </p>
-                ) : (
-                  <p className="kviz-titula-ime">Tvoja prva titula te čeka! ✨</p>
-                )}
-                <p className="malo blago">
-                  U ovoj sezoni: <strong>{meta.titleProgress.seasonStars} ⭐</strong>
-                </p>
-                {meta.titleProgress.nextTitle && meta.titleProgress.starsToNextTitle !== null ? (
-                  <p className="kviz-titula-cilj">
-                    Još <strong>{meta.titleProgress.starsToNextTitle} ⭐</strong> do{' '}
-                    <strong>{meta.titleProgress.nextTitle}</strong>.
-                  </p>
-                ) : (
-                  <p className="kviz-titula-cilj">Dostigao si LegendPrime! Nastavi da skupljaš zvezdice. 🌟</p>
-                )}
-              </div>
-            )}
-          </div>
-        ) : (
+        {meta.accessMode !== 'profile' && meta.requireName && (
           <div className="polje">
             <label htmlFor="ku-ime">Kako se zoveš?</label>
             <input id="ku-ime" type="text" value={ime} onChange={(e) => setIme(e.target.value)} autoFocus maxLength={60} />
           </div>
         )}
-        {meta.requireLabel && (
+        {meta.accessMode !== 'profile' && !meta.requireName && (
+          <div className="polje">
+            <label htmlFor="ku-ime">Nadimak (opciono)</label>
+            <input id="ku-ime" type="text" value={ime} onChange={(e) => setIme(e.target.value)} maxLength={60} />
+          </div>
+        )}
+        {meta.accessMode !== 'profile' && meta.requireLabel && (
           <div className="polje">
             <label htmlFor="ku-oznaka">{meta.labelName}</label>
             <input id="ku-oznaka" type="text" value={oznaka} onChange={(e) => setOznaka(e.target.value)} maxLength={60} />
@@ -133,7 +135,11 @@ export function KvizUlaz() {
         {greska && <p className="poruka poruka--greska" role="alert">{greska}</p>}
 
         <button type="button" className="dugme dugme--akcenat" style={{ width: '100%' }} disabled={pokrece} onClick={pokreni}>
-          {pokrece ? 'Pokrećem…' : 'Počni kviz 🚀'}
+          {pokrece
+            ? 'Pokrećem…'
+            : meta.attemptState === 'in_progress'
+              ? `Nastavi kviz (${meta.answeredCount ?? 0}/${meta.questionCount ?? 0})`
+              : 'Počni kviz 🚀'}
         </button>
       </div>
     </div>

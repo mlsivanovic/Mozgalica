@@ -114,7 +114,7 @@ export function GeneratorPregled({ pocetnaPitanja, upozorenje, cfg, oblasti, onN
     }
   }
 
-  async function napraviKviz({ naziv, fixedChildName }: NoviKvizPodaci) {
+  async function napraviKviz({ naziv }: NoviKvizPodaci) {
     setGreska(null)
     setRadi(true)
     try {
@@ -122,7 +122,7 @@ export function GeneratorPregled({ pocetnaPitanja, upozorenje, cfg, oblasti, onN
         title: naziv, description: '', time_limit_seconds: null,
         default_max_attempts: 1, shuffle_questions: true, shuffle_answers: true,
         show_result: true, show_correct: true, pass_threshold_pct: 90,
-        require_name: true, fixed_child_name: fixedChildName,
+        require_name: true, fixed_child_name: null,
         require_label: false, label_name: 'Odeljenje',
       })
       const snapshot: SnapshotUnos[] = pripremiSnapshotUnose().map((u, i) => ({ ...u, quiz_id: kvizId, position: i }))

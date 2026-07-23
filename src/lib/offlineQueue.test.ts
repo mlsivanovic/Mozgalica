@@ -77,6 +77,21 @@ describe('offline red', () => {
     expect(ucitajStanje(s, 'kviz1')).toBeNull()
   })
 
+  it('čuva podatke potrebne za povratak na profil deteta', () => {
+    const s = memorijskoSkladiste()
+    zapocniStanje(s, 'profilni-kviz', 'attempt-token', 'Andreja', {
+      accessMode: 'profile',
+      profileToken: 'profil-token',
+    })
+
+    expect(ucitajStanje(s, 'profilni-kviz')).toMatchObject({
+      attemptToken: 'attempt-token',
+      childName: 'Andreja',
+      accessMode: 'profile',
+      profileToken: 'profil-token',
+    })
+  })
+
   it('otključan savet se čuva lokalno i preživljava ponovno učitavanje', () => {
     const s = memorijskoSkladiste()
     let stanje = zapocniStanje(s, 'kvizH', 't', 'Nina')

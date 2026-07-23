@@ -3,14 +3,11 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { sacuvajKviz } from '../../lib/api'
-import type { FiksnoImeDeteta } from '../../types/db'
-import { IzborFiksnogDeteta } from './FiksnoDete'
 
 export function KvizForma() {
   const navigate = useNavigate()
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
-  const [fixedChildName, setFixedChildName] = useState<FiksnoImeDeteta | null>(null)
   const [greska, setGreska] = useState<string | null>(null)
   const [cuva, setCuva] = useState(false)
 
@@ -23,7 +20,7 @@ export function KvizForma() {
         title: title.trim(), description: description.trim() || null, time_limit_seconds: null,
         default_max_attempts: 1, shuffle_questions: true, shuffle_answers: true,
         show_result: true, show_correct: true, pass_threshold_pct: 90,
-        require_name: true, fixed_child_name: fixedChildName,
+        require_name: true, fixed_child_name: null,
         require_label: false, label_name: 'Odeljenje',
       })
       navigate(`/admin/kvizovi/${id}`)
@@ -46,7 +43,6 @@ export function KvizForma() {
           <label htmlFor="kv-opis">Poruka detetu (opciono)</label>
           <textarea id="kv-opis" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Srećno rešavanje! 🌟" />
         </div>
-        <IzborFiksnogDeteta value={fixedChildName} onChange={setFixedChildName} />
         {greska && <p className="poruka poruka--greska" role="alert">{greska}</p>}
         <button type="button" className="dugme dugme--akcenat" disabled={cuva} onClick={napravi}>
           {cuva ? 'Pravim…' : 'Napravi kviz i nastavi'}

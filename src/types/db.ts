@@ -7,6 +7,7 @@ export type StatusPokusaja = 'in_progress' | 'submitted' | 'expired'
 export type Predmet = 'matematika' | 'srpski'
 export type Razred = 3 | 4
 export type FiksnoImeDeteta = 'Andrej' | 'Filip'
+export type AvatarDeteta = '🧠' | '🚀' | '🦊' | '🦁' | '🤖' | '⭐'
 
 // ---------- jsonb oblici opcija ----------
 export interface Opcija {
@@ -111,6 +112,7 @@ export interface KvizPitanje {
 export interface KvizLink {
   id: string
   quiz_id: string
+  child_profile_id: string | null
   token: string
   label: string | null
   is_active: boolean
@@ -123,6 +125,7 @@ export interface Pokusaj {
   id: string
   quiz_link_id: string
   quiz_id: string
+  child_profile_id: string | null
   attempt_no: number
   child_name: string
   child_label: string | null
@@ -139,6 +142,8 @@ export interface Pokusaj {
   passed: boolean | null
   review_pending: boolean
   stars_earned: number | null
+  stars_awarded: number | null
+  remaining_seconds: number | null
 }
 
 export interface PokusajOdgovor {
@@ -155,6 +160,25 @@ export interface PokusajOdgovor {
 export interface AdminPodesavanja {
   user_id: string
   email_notifications: boolean
+}
+
+export interface ProfilDeteta {
+  id: string
+  owner_id: string
+  name: string
+  birth_date: string | null
+  avatar: AvatarDeteta
+  public_token: string
+  created_at: string
+  updated_at: string
+}
+
+export interface NivoTitule {
+  id: string
+  owner_id: string
+  name: string
+  min_stars: number
+  created_at: string
 }
 
 // ---------- pomoćne konstante ----------
@@ -184,3 +208,5 @@ export const NAZIVI_RAZREDA: Record<Razred, string> = {
   3: '3. razred',
   4: '4. razred',
 }
+
+export const AVATARI_DECE: AvatarDeteta[] = ['🧠', '🚀', '🦊', '🦁', '🤖', '⭐']
