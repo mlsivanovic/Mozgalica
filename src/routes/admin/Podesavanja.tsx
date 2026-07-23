@@ -22,9 +22,18 @@ interface ProfilForma {
   avatar: AvatarDeteta
 }
 
+type TabPodesavanja = 'profili' | 'titule' | 'obavestenja'
+
+const TABOVI: Array<{ id: TabPodesavanja, naziv: string, ikona: string }> = [
+  { id: 'profili', naziv: 'Profili dece', ikona: '👥' },
+  { id: 'titule', naziv: 'Titule', ikona: '🏆' },
+  { id: 'obavestenja', naziv: 'Obaveštenja', ikona: '🔔' },
+]
+
 export function Podesavanja() {
   const { session } = useAuth()
   const [ucitava, setUcitava] = useState(true)
+  const [aktivanTab, setAktivanTab] = useState<TabPodesavanja>('profili')
   const [ukljucena, setUkljucena] = useState(true)
   const [profili, setProfili] = useState<ProfilDeteta[]>([])
   const [preglediProfila, setPreglediProfila] = useState<Record<string, JavniProfilPayload>>({})
@@ -160,6 +169,13 @@ export function Podesavanja() {
     }
   }
 
+  function promeniTab(tab: TabPodesavanja) {
+    setAktivanTab(tab)
+    setForma(null)
+    setGreska(null)
+    setPoruka(null)
+  }
+
   if (ucitava) return <Loader />
 
   return (
@@ -168,7 +184,29 @@ export function Podesavanja() {
       {poruka && <p className="poruka poruka--uspeh razmak-gore">{poruka}</p>}
       {greska && <p className="poruka poruka--greska razmak-gore" role="alert">{greska}</p>}
 
-      <section className="kartica razmak-gore">
+      <div className="podesavanja-tabovi" role="tablist" aria-label="Sekcije podešavanja">
+        {TABOVI.map((tab) => (
+          <button
+            key={tab.id}
+            id={`podesavanja-tab-${tab.id}`}
+            type="button"
+            role="tab"
+            aria-selected={aktivanTab === tab.id}
+            aria-controls={`podesavanja-panel-${tab.id}`}
+            className={`podesavanja-tab ${aktivanTab === tab.id ? 'podesavanja-tab--aktivan' : ''}`}
+            onClick={() => promeniTab(tab.id)}
+          >
+            <span aria-hidden="true">{tab.ikona}</span>
+            {tab.naziv}
+          </button>
+        ))}
+      </div>
+
+      {aktivanTab === 'profili' && (
+      <section
+        id="podesavanja-panel-profili" className="kartica podesavanja-panel"
+        role="tabpanel" aria-labelledby="podesavanja-tab-profili"
+      >
         <div className="red red--razmak">
           <div>
             <h2>Profili dece</h2>
@@ -301,8 +339,13 @@ export function Podesavanja() {
           </div>
         )}
       </section>
+      )}
 
-      <section className="kartica razmak-gore">
+      {aktivanTab === 'titule' && (
+      <section
+        id="podesavanja-panel-titule" className="kartica podesavanja-panel"
+        role="tabpanel" aria-labelledby="podesavanja-tab-titule"
+      >
         <h2>Titule</h2>
         <p className="blago razmak-dole">
           Ista lista važi za svu decu. Mora da postoji početna titula od 0 zvezdica.
@@ -342,8 +385,13 @@ export function Podesavanja() {
           </button>
         </div>
       </section>
+      )}
 
-      <section className="kartica razmak-gore">
+      {aktivanTab === 'obavestenja' && (
+      <section
+        id="podesavanja-panel-obavestenja" className="kartica podesavanja-panel"
+        role="tabpanel" aria-labelledby="podesavanja-tab-obavestenja"
+      >
         <h2>Mejl obaveštenja</h2>
         <p className="blago razmak-dole">
           Kada dete završi kviz, na tvoju email adresu stiže obaveštenje sa rezultatom.
@@ -353,6 +401,7 @@ export function Podesavanja() {
           Pošalji mi mejl kada dete završi kviz
         </label>
       </section>
+      )}
     </div>
   )
 }

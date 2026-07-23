@@ -2,7 +2,7 @@
 import type {
   AdminPodesavanja, AvatarDeteta, FiksnoImeDeteta, Kviz, KvizLink, KvizPitanje,
   NivoTitule, Oblast, OdgovorDeteta, Pitanje, Pokusaj, PokusajOdgovor, Predmet,
-  ProfilDeteta,
+  ProfilDeteta, Razred,
 } from '../types/db'
 import type {
   JavniProfilPayload, KvizMeta, NapredakTitule, PokusajPayload, PotvrdaTajmera,
@@ -176,6 +176,37 @@ export async function listajStatuseArhiveKvizova(): Promise<StatusArhiveKviza[]>
   const { data, error } = await supabase().from('v_quiz_archive_status').select('*')
   if (error) throw new Error(opisiGresku(error)!)
   return data as StatusArhiveKviza[]
+}
+
+export interface KategorijaKviza {
+  quiz_id: string
+  subject: Predmet
+  grade: Razred
+}
+
+export async function listajKategorijeKvizova(): Promise<KategorijaKviza[]> {
+  const [{ data: pitanja, error: greskaPitanja }, { data: oblasti, error: greskaOblasti }] = await Promise.all([
+    supabase().from('quiz_questions').select('quiz_id, topic_id').limit(10000),
+    supabase().from('topics').select('id, subject, grade'),
+  ])
+  if (greskaPitanja) throw new Error(opisiGresku(greskaPitanja)!)
+  if (greskaOblasti) throw new Error(opisiGresku(greskaOblasti)!)
+
+  const oblastPoId = new Map((oblasti ?? []).map((oblast) => [oblast.id, oblast]))
+  const jedinstvene = new Map<string, KategorijaKviza>()
+
+  for (const pitanje of pitanja ?? []) {
+    const oblast = pitanje.topic_id ? oblastPoId.get(pitanje.topic_id) : null
+    if (!oblast) continue
+    const kategorija = {
+      quiz_id: pitanje.quiz_id,
+      subject: oblast.subject as Predmet,
+      grade: oblast.grade as Razred,
+    }
+    jedinstvene.set(`${kategorija.quiz_id}:${kategorija.subject}:${kategorija.grade}`, kategorija)
+  }
+
+  return [...jedinstvene.values()]
 }
 
 // ---------- Pitanja u kvizu (snapshot) ----------

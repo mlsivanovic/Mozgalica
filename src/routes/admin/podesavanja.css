@@ -1,3 +1,50 @@
+.podesavanja-tabovi {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding: 0.35rem;
+  border: 1px solid var(--boja-ivica);
+  border-radius: var(--radius);
+  background: var(--boja-polje);
+}
+
+.podesavanja-tab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-height: 46px;
+  padding: 0.65rem 0.8rem;
+  border: 0;
+  border-radius: calc(var(--radius) - 4px);
+  background: transparent;
+  color: var(--boja-tekst-blagi);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.podesavanja-tab:hover {
+  background: var(--boja-kartica);
+  color: var(--boja-tekst);
+}
+
+.podesavanja-tab:focus-visible {
+  outline: 3px solid var(--boja-akcenat);
+  outline-offset: 2px;
+}
+
+.podesavanja-tab--aktivan {
+  background: var(--boja-kartica);
+  color: var(--boja-primarna-tamna);
+  box-shadow: var(--senka);
+}
+
+.podesavanja-panel {
+  margin-top: 0.75rem;
+}
+
 .profil-admin-kartica {
   border: 1px solid var(--boja-ivica);
   box-shadow: none;
@@ -41,6 +88,14 @@
 }
 
 @media (max-width: 640px) {
+  .podesavanja-tab {
+    flex-direction: column;
+    gap: 0.2rem;
+    padding: 0.5rem 0.2rem;
+    font-size: 0.82rem;
+    text-align: center;
+  }
+
   .profil-admin-rezultat {
     align-items: flex-start;
   }

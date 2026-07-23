@@ -1,40 +1,64 @@
 // Tabela rezultata sa filterima + CSV izvoz
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { listajKvizove, listajPokusaje } from '../../lib/api'
+import {
+  listajKategorijeKvizova, listajKvizove, listajPokusaje, listajProfileDeteta,
+  type KategorijaKviza,
+} from '../../lib/api'
 import { napraviCsv, preuzmiCsv } from '../../lib/csv'
+import { kvizPripadaKategoriji, pokusajPripadaProfilu } from '../../lib/filterRezultata'
 import { formatDatum, formatDatumZaInput, formatProcenat, formatTrajanje } from '../../lib/format'
 import { Loader } from '../../components/Zajednicke'
-import type { Kviz, Pokusaj, StatusPokusaja } from '../../types/db'
+import {
+  NAZIVI_RAZREDA,
+  type Kviz, type Pokusaj, type Predmet, type ProfilDeteta, type Razred, type StatusPokusaja,
+} from '../../types/db'
 
 const NAZIVI_STATUSA: Record<StatusPokusaja, string> = {
   in_progress: 'U toku', submitted: 'Završen', expired: 'Istekao',
 }
+
+const PREDMETI: Array<{ vrednost: Predmet, naziv: string }> = [
+  { vrednost: 'matematika', naziv: 'Matematika' },
+  { vrednost: 'srpski', naziv: 'Srpski' },
+]
 
 export function Rezultati() {
   const [ucitava, setUcitava] = useState(true)
   const [greska, setGreska] = useState<string | null>(null)
   const [pokusaji, setPokusaji] = useState<Pokusaj[]>([])
   const [kvizovi, setKvizovi] = useState<Kviz[]>([])
+  const [profili, setProfili] = useState<ProfilDeteta[]>([])
+  const [kategorijeKvizova, setKategorijeKvizova] = useState<KategorijaKviza[]>([])
 
   const [filterDete, setFilterDete] = useState('')
-  const [filterKviz, setFilterKviz] = useState('')
+  const [filterPredmet, setFilterPredmet] = useState<Predmet | ''>('')
+  const [filterRazred, setFilterRazred] = useState<Razred | ''>(3)
   const [filterStatus, setFilterStatus] = useState('')
   const [filterOd, setFilterOd] = useState(() => formatDatumZaInput())
   const [filterDo, setFilterDo] = useState(() => formatDatumZaInput())
 
   useEffect(() => {
-    Promise.all([listajPokusaje(), listajKvizove(true)])
-      .then(([p, k]) => { setPokusaji(p); setKvizovi(k) })
+    Promise.all([
+      listajPokusaje(), listajKvizove(true), listajProfileDeteta(), listajKategorijeKvizova(),
+    ])
+      .then(([p, k, profiliDeteta, kategorije]) => {
+        setPokusaji(p)
+        setKvizovi(k)
+        setProfili(profiliDeteta)
+        setKategorijeKvizova(kategorije)
+      })
       .catch((e) => setGreska(String(e.message ?? e)))
       .finally(() => setUcitava(false))
   }, [])
 
   const mapaKvizova = useMemo(() => new Map(kvizovi.map((k) => [k.id, k.title])), [kvizovi])
+  const mapaProfila = useMemo(() => new Map(profili.map((profil) => [profil.id, profil])), [profili])
+  const izabraniProfil = filterDete ? mapaProfila.get(filterDete) : undefined
 
   const filtrirano = useMemo(() => pokusaji.filter((p) => {
-    if (filterDete && !p.child_name.toLowerCase().includes(filterDete.toLowerCase())) return false
-    if (filterKviz && p.quiz_id !== filterKviz) return false
+    if (!pokusajPripadaProfilu(p, izabraniProfil)) return false
+    if (!kvizPripadaKategoriji(p, kategorijeKvizova, filterPredmet, filterRazred)) return false
     if (filterStatus === 'review_pending') {
       if (!(p.status === 'submitted' && p.review_pending)) return false
     } else if (filterStatus && p.status !== filterStatus) {
@@ -43,13 +67,21 @@ export function Rezultati() {
     if (filterOd && new Date(p.started_at) < new Date(`${filterOd}T00:00:00`)) return false
     if (filterDo && new Date(p.started_at) > new Date(`${filterDo}T23:59:59.999`)) return false
     return true
-  }), [pokusaji, filterDete, filterKviz, filterStatus, filterOd, filterDo])
+  }), [
+    pokusaji, izabraniProfil, kategorijeKvizova, filterPredmet, filterRazred,
+    filterStatus, filterOd, filterDo,
+  ])
+
+  function imeDeteta(pokusaj: Pokusaj): string {
+    return (pokusaj.child_profile_id && mapaProfila.get(pokusaj.child_profile_id)?.name)
+      || pokusaj.child_name
+  }
 
   function izvezi() {
     const csv = napraviCsv(
       ['Dete', 'Oznaka', 'Kviz', 'Status', 'Poeni', 'Procenat', 'Zvezdice', 'Pokušaj br.', 'Početak', 'Kraj', 'Trajanje'],
       filtrirano.map((p) => [
-        p.child_name, p.child_label ?? '', mapaKvizova.get(p.quiz_id) ?? '', NAZIVI_STATUSA[p.status],
+        imeDeteta(p), p.child_label ?? '', mapaKvizova.get(p.quiz_id) ?? '', NAZIVI_STATUSA[p.status],
         p.total_points ?? '', p.score_pct ?? '', p.stars_awarded ?? p.stars_earned ?? '',
         p.attempt_no, formatDatum(p.started_at),
         formatDatum(p.submitted_at), formatTrajanje(p.duration_sec),
@@ -75,13 +107,35 @@ export function Rezultati() {
         <div className="red-polja">
           <div className="polje">
             <label htmlFor="rf-dete">Dete</label>
-            <input id="rf-dete" type="text" value={filterDete} onChange={(e) => setFilterDete(e.target.value)} />
+            <select id="rf-dete" value={filterDete} onChange={(e) => setFilterDete(e.target.value)}>
+              <option value="">Sva deca</option>
+              {profili.map((profil) => (
+                <option key={profil.id} value={profil.id}>{profil.name}</option>
+              ))}
+            </select>
           </div>
           <div className="polje">
             <label htmlFor="rf-kviz">Kviz</label>
-            <select id="rf-kviz" value={filterKviz} onChange={(e) => setFilterKviz(e.target.value)}>
+            <select
+              id="rf-kviz" value={filterPredmet}
+              onChange={(e) => setFilterPredmet(e.target.value as Predmet | '')}
+            >
               <option value="">Svi kvizovi</option>
-              {kvizovi.map((k) => <option key={k.id} value={k.id}>{k.title}</option>)}
+              {PREDMETI.map((predmet) => (
+                <option key={predmet.vrednost} value={predmet.vrednost}>{predmet.naziv}</option>
+              ))}
+            </select>
+          </div>
+          <div className="polje">
+            <label htmlFor="rf-razred">Razred</label>
+            <select
+              id="rf-razred" value={filterRazred}
+              onChange={(e) => setFilterRazred(e.target.value ? Number(e.target.value) as Razred : '')}
+            >
+              <option value="">Svi razredi</option>
+              {([3, 4] as const).map((razred) => (
+                <option key={razred} value={razred}>{NAZIVI_RAZREDA[razred]}</option>
+              ))}
             </select>
           </div>
           <div className="polje">
@@ -111,7 +165,7 @@ export function Rezultati() {
           <tbody>
             {filtrirano.map((p) => (
               <tr key={p.id}>
-                <td data-naslov="Dete">{p.child_name}{p.child_label ? ` (${p.child_label})` : ''}</td>
+                <td data-naslov="Dete">{imeDeteta(p)}{p.child_label ? ` (${p.child_label})` : ''}</td>
                 <td data-naslov="Kviz">{mapaKvizova.get(p.quiz_id) ?? '—'}</td>
                 <td data-naslov="Status">
                   <span className={`bedz ${
