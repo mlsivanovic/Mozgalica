@@ -70,7 +70,7 @@ export function Kontrolna() {
                     <td>
                       {p.stars_awarded == null && p.stars_earned == null
                         ? '—'
-                        : `${p.stars_awarded ?? p.stars_earned} / 3 ⭐`}
+                        : `${p.stars_awarded ?? p.stars_earned} / 5 ⭐`}
                     </td>
                     <td><Link to={`/admin/rezultati/${p.id}`}>Detalji</Link></td>
                   </tr>

@@ -60,7 +60,7 @@ export function RezultatDetalj() {
           <h2>
             {pokusaj.stars_awarded == null && pokusaj.stars_earned == null
               ? '—'
-              : `${pokusaj.stars_awarded ?? pokusaj.stars_earned} / 3 ⭐`}
+              : `${pokusaj.stars_awarded ?? pokusaj.stars_earned} / 5 ⭐`}
           </h2>
         </div>
         <div className="kartica centar"><p className="blago malo">Trajanje</p><h2>{formatTrajanje(pokusaj.duration_sec)}</h2></div>

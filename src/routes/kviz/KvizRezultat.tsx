@@ -6,7 +6,7 @@ import { PitanjeRenderer } from '../../components/pitanja/PitanjeRenderer'
 import { Konfete, Loader } from '../../components/Zajednicke'
 import { predajKviz } from '../../lib/api'
 import { obrisiStanje, ucitajStanje } from '../../lib/offlineQueue'
-import { porukaOhrabrenja } from '../../lib/ocena'
+import { MAKSIMALNO_ZVEZDICA, porukaOhrabrenja } from '../../lib/ocena'
 import { formatProcenat } from '../../lib/format'
 import type { RezultatPayload } from '../../types/kviz'
 import './kviz.css'
@@ -85,13 +85,13 @@ export function KvizRezultat() {
       {zvezdice > 0 && <Konfete />}
       <div className="kartica centar">
         <h1>{rezultat.childName ? `Bravo, ${rezultat.childName}!` : 'Kviz je završen!'}</h1>
-        <div className="kviz-zvezde" aria-label={`${zvezdice} od 3 zvezdice`}>
-          {Array.from({ length: 3 }, (_, i) => (
+        <div className="kviz-zvezde" aria-label={`${zvezdice} od ${MAKSIMALNO_ZVEZDICA} zvezdica`}>
+          {Array.from({ length: MAKSIMALNO_ZVEZDICA }, (_, i) => (
             <span key={i} aria-hidden="true">{i < zvezdice ? '⭐' : '☆'}</span>
           ))}
         </div>
         <p style={{ fontSize: '1.1rem', fontWeight: 700 }}>
-          Na ovom pokušaju: {zvezdice} / 3 ⭐
+          Na ovom pokušaju: {zvezdice} / {MAKSIMALNO_ZVEZDICA} ⭐
         </p>
         <p className="razmak-gore" style={{ fontSize: '1.1rem', fontWeight: 700 }}>
           {porukaOhrabrenja(zvezdice)}

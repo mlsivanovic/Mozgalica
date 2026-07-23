@@ -1,21 +1,34 @@
-// Lista kvizova admina
-import { useEffect, useState } from 'react'
+// Aktivni i automatski arhivirani kvizovi administratora.
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { listajKvizove, obrisiKviz } from '../../lib/api'
+import {
+  listajKvizove, listajStatuseArhiveKvizova, obrisiKviz,
+  type StatusArhiveKviza,
+} from '../../lib/api'
+import { podeliKvizove, type ArhiviraniKviz } from '../../lib/arhivaKvizova'
 import { formatDatum } from '../../lib/format'
 import { Loader } from '../../components/Zajednicke'
 import type { Kviz } from '../../types/db'
+
+type PrikazKvizova = 'aktivni' | 'arhiva'
 
 export function KvizoviLista() {
   const navigate = useNavigate()
   const [ucitava, setUcitava] = useState(true)
   const [kvizovi, setKvizovi] = useState<Kviz[]>([])
+  const [statusi, setStatusi] = useState<StatusArhiveKviza[]>([])
+  const [prikaz, setPrikaz] = useState<PrikazKvizova>('aktivni')
   const [greska, setGreska] = useState<string | null>(null)
 
   async function ucitaj() {
     setUcitava(true)
+    setGreska(null)
     try {
-      setKvizovi(await listajKvizove())
+      const [ucitaniKvizovi, ucitaniStatusi] = await Promise.all([
+        listajKvizove(), listajStatuseArhiveKvizova(),
+      ])
+      setKvizovi(ucitaniKvizovi)
+      setStatusi(ucitaniStatusi)
     } catch (e) {
       setGreska(String((e as Error).message ?? e))
     } finally {
@@ -23,10 +36,17 @@ export function KvizoviLista() {
     }
   }
 
-  useEffect(() => { ucitaj() }, [])
+  useEffect(() => { void ucitaj() }, [])
+
+  const { aktivni, arhivirani } = useMemo(
+    () => podeliKvizove(kvizovi, statusi),
+    [kvizovi, statusi],
+  )
 
   async function obrisi(id: string) {
-    if (!confirm('Obrisati ovaj kviz i sve povezane linkove i rezultate?')) return
+    if (!confirm(
+      'Ukloniti ovaj kviz? Rezultati, osvojene zvezdice i istorija deteta ostaće sačuvani.',
+    )) return
     try {
       await obrisiKviz(id)
       await ucitaj()
@@ -36,6 +56,10 @@ export function KvizoviLista() {
   }
 
   if (ucitava) return <Loader />
+
+  const prikazaniAktivni = prikaz === 'aktivni' ? aktivni : []
+  const prikazaniArhivirani = prikaz === 'arhiva' ? arhivirani : []
+  const nemaPrikazanih = prikazaniAktivni.length === 0 && prikazaniArhivirani.length === 0
 
   return (
     <div>
@@ -48,23 +72,82 @@ export function KvizoviLista() {
 
       {greska && <p className="poruka poruka--greska">{greska}</p>}
 
-      {kvizovi.length === 0 ? (
-        <p className="blago">Još nema kreiranih kvizova.</p>
+      <div className="red razmak-dole" role="group" aria-label="Prikaz kvizova">
+        <button
+          type="button"
+          className={`dugme ${prikaz === 'aktivni' ? '' : 'dugme--senka'}`}
+          aria-pressed={prikaz === 'aktivni'}
+          onClick={() => setPrikaz('aktivni')}
+        >
+          Aktivni <span className="bedz">{aktivni.length}</span>
+        </button>
+        <button
+          type="button"
+          className={`dugme ${prikaz === 'arhiva' ? '' : 'dugme--senka'}`}
+          aria-pressed={prikaz === 'arhiva'}
+          onClick={() => setPrikaz('arhiva')}
+        >
+          Arhiva <span className="bedz">{arhivirani.length}</span>
+        </button>
+      </div>
+
+      {nemaPrikazanih ? (
+        <p className="blago">
+          {prikaz === 'aktivni'
+            ? 'Nema aktivnih kvizova.'
+            : 'Arhiva je prazna. Završeni kvizovi prelaze ovde narednog dana.'}
+        </p>
       ) : (
         <div className="mreza-kartica">
-          {kvizovi.map((k) => (
-            <div key={k.id} className="kartica">
-              <h2>{k.title}</h2>
-              {k.description && <p className="blago malo">{k.description}</p>}
-              <p className="malo blago razmak-gore">Napravljen: {formatDatum(k.created_at)}</p>
-              <div className="red razmak-gore">
-                <Link to={`/admin/kvizovi/${k.id}`} className="dugme dugme--senka dugme--malo">Otvori</Link>
-                <button type="button" className="dugme dugme--opasno dugme--malo" onClick={() => obrisi(k.id)}>Obriši</button>
-              </div>
-            </div>
+          {prikazaniAktivni.map((kviz) => (
+            <KvizKartica key={kviz.id} kviz={kviz} onObrisi={obrisi} />
+          ))}
+          {prikazaniArhivirani.map((stavka) => (
+            <KvizKartica
+              key={stavka.kviz.id}
+              kviz={stavka.kviz}
+              arhiviran={stavka}
+              onObrisi={obrisi}
+            />
           ))}
         </div>
       )}
     </div>
+  )
+}
+
+function KvizKartica({
+  kviz, arhiviran, onObrisi,
+}: {
+  kviz: Kviz
+  arhiviran?: ArhiviraniKviz
+  onObrisi: (id: string) => Promise<void>
+}) {
+  return (
+    <article className="kartica">
+      {arhiviran && <span className="bedz bedz--neutral razmak-dole">Arhiviran</span>}
+      <h2>{kviz.title}</h2>
+      {kviz.description && <p className="blago malo">{kviz.description}</p>}
+      <p className="malo blago razmak-gore">
+        Kreiran: <time dateTime={kviz.created_at}>{formatDatum(kviz.created_at)}</time>
+      </p>
+      {arhiviran && (
+        <p className="malo blago">
+          Završen: <time dateTime={arhiviran.zavrsen_at}>{formatDatum(arhiviran.zavrsen_at)}</time>
+        </p>
+      )}
+      <div className="red razmak-gore">
+        <Link to={`/admin/kvizovi/${kviz.id}`} className="dugme dugme--senka dugme--malo">
+          Otvori
+        </Link>
+        <button
+          type="button"
+          className="dugme dugme--opasno dugme--malo"
+          onClick={() => { void onObrisi(kviz.id) }}
+        >
+          Obriši
+        </button>
+      </div>
+    </article>
   )
 }

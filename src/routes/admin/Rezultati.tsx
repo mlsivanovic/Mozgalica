@@ -24,7 +24,7 @@ export function Rezultati() {
   const [filterDo, setFilterDo] = useState(() => formatDatumZaInput())
 
   useEffect(() => {
-    Promise.all([listajPokusaje(), listajKvizove()])
+    Promise.all([listajPokusaje(), listajKvizove(true)])
       .then(([p, k]) => { setPokusaji(p); setKvizovi(k) })
       .catch((e) => setGreska(String(e.message ?? e)))
       .finally(() => setUcitava(false))
@@ -126,7 +126,7 @@ export function Rezultati() {
                 <td data-naslov="Zvezdice">
                   {p.stars_awarded == null && p.stars_earned == null
                     ? '—'
-                    : `${p.stars_awarded ?? p.stars_earned} / 3 ⭐`}
+                    : `${p.stars_awarded ?? p.stars_earned} / 5 ⭐`}
                 </td>
                 <td data-naslov="Pokušaj">#{p.attempt_no}</td>
                 <td data-naslov="Kraj">{formatDatum(p.submitted_at)}</td>

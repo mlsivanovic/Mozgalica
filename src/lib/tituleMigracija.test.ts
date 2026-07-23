@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import sql from '../../supabase/migrations/20260720100017_sezonske_titule.sql?raw'
+import sqlPetZvezdica from '../../supabase/migrations/20260723192000_five_star_scale.sql?raw'
 
 interface NivoTitule {
   level: number
@@ -49,8 +50,8 @@ describe('SQL nivoi sezonskih titula', () => {
   })
 
   it('računa sezonski zbir preko najboljeg pokušaja po kvizu', () => {
-    expect(sql).toContain('select max(a.stars_earned)::integer as stars')
-    expect(sql).toContain('group by q.id')
+    expect(sqlPetZvezdica).toContain('select max(a.stars_awarded)::integer as stars')
+    expect(sqlPetZvezdica).toContain('group by q.id')
   })
 
   it('ne spušta trajno otključan nivo kada se sezonski zbir smanji', () => {

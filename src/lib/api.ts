@@ -129,16 +129,19 @@ export async function obrisiPitanja(ids: string[]): Promise<void> {
 }
 
 // ---------- Kvizovi ----------
-export type NoviKviz = Omit<Kviz, 'id' | 'owner_id' | 'created_at' | 'updated_at'>
+export type NoviKviz = Omit<Kviz, 'id' | 'owner_id' | 'created_at' | 'updated_at' | 'deleted_at'>
 
-export async function listajKvizove(): Promise<Kviz[]> {
-  const { data, error } = await supabase().from('quizzes').select('*').order('created_at', { ascending: false })
+export async function listajKvizove(ukljuciObrisane = false): Promise<Kviz[]> {
+  let upit = supabase().from('quizzes').select('*')
+  if (!ukljuciObrisane) upit = upit.is('deleted_at', null)
+  const { data, error } = await upit.order('created_at', { ascending: false })
   if (error) throw new Error(opisiGresku(error)!)
   return data as Kviz[]
 }
 
 export async function ucitajKviz(id: string): Promise<Kviz> {
-  const { data, error } = await supabase().from('quizzes').select('*').eq('id', id).single()
+  const { data, error } = await supabase()
+    .from('quizzes').select('*').eq('id', id).is('deleted_at', null).single()
   if (error) throw new Error(opisiGresku(error)!)
   return data as Kviz
 }
@@ -155,8 +158,24 @@ export async function sacuvajKviz(kviz: NoviKviz, id?: string): Promise<string> 
 }
 
 export async function obrisiKviz(id: string): Promise<void> {
-  const { error } = await supabase().from('quizzes').delete().eq('id', id)
+  const { data, error } = await supabase().rpc('soft_delete_quiz', { p_quiz_id: id })
   if (error) throw new Error(opisiGresku(error)!)
+  const rezultat = data as { ok: boolean, error?: string }
+  if (!rezultat.ok) throw new Error(rezultat.error ?? 'Kviz nije moguće obrisati.')
+}
+
+export interface StatusArhiveKviza {
+  quiz_id: string
+  in_progress_count: number
+  submitted_count: number
+  last_submitted_at: string | null
+  open_link_count: number
+}
+
+export async function listajStatuseArhiveKvizova(): Promise<StatusArhiveKviza[]> {
+  const { data, error } = await supabase().from('v_quiz_archive_status').select('*')
+  if (error) throw new Error(opisiGresku(error)!)
+  return data as StatusArhiveKviza[]
 }
 
 // ---------- Pitanja u kvizu (snapshot) ----------

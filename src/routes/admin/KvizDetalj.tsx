@@ -356,7 +356,7 @@ function RezultatiKviza({ pokusaji }: { pokusaji: Pokusaj[] }) {
                   <td data-naslov="Zvezdice">
                     {p.stars_awarded == null && p.stars_earned == null
                       ? '—'
-                      : `${p.stars_awarded ?? p.stars_earned} / 3 ⭐`}
+                      : `${p.stars_awarded ?? p.stars_earned} / 5 ⭐`}
                   </td>
                   <td data-naslov="Pokušaj">#{p.attempt_no}</td>
                   <td data-naslov="Kraj">{formatDatum(p.submitted_at)}</td>
@@ -455,6 +455,7 @@ function LinkoviKviza({
         <h2>Dodela profilima</h2>
         <p className="blago razmak-dole">
           Dodeljeni kviz se pojavljuje na stalnom profilnom linku deteta i može da se završi samo jednom.
+          Naziv se automatski menja u format „Predmet — Ime deteta”.
         </p>
         {greska && <p className="poruka poruka--greska">{greska}</p>}
         <div className="red-polja">

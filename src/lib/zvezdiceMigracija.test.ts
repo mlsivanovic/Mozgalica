@@ -1,35 +1,33 @@
 import { describe, expect, it } from 'vitest'
-import sql from '../../supabase/migrations/20260720100016_zvezdice_i_fiksno_dete.sql?raw'
+import sql from '../../supabase/migrations/20260723192000_five_star_scale.sql?raw'
 
-const pragovi = sql.match(
-  /add column stars_earned[\s\S]*?when score_pct < (\d+) then (\d+)[\s\S]*?when score_pct <= (\d+) then (\d+)[\s\S]*?when score_pct <= (\d+) then (\d+)[\s\S]*?else (\d+)[\s\S]*?end/,
-)
+const pragovi = [...sql.matchAll(/when p_score >= (\d+) then (\d+)/g)]
+  .map(([, prag, zvezdice]) => [Number(prag), Number(zvezdice)] as const)
 
-if (!pragovi) throw new Error('Pragovi zvezdica nisu pronađeni u migraciji.')
-
-const [, prviPrag, ispodPrvog, drugiPrag, doDrugog, treciPrag, doTreceg, prekoTreceg] = pragovi.map(Number)
+if (pragovi.length !== 5) throw new Error('Pragovi zvezdica nisu pronađeni u migraciji.')
 
 function zvezdiceIzMigracije(procenat: number): number {
-  if (procenat < prviPrag) return ispodPrvog
-  if (procenat <= drugiPrag) return doDrugog
-  if (procenat <= treciPrag) return doTreceg
-  return prekoTreceg
+  return pragovi.find(([prag]) => procenat >= prag)?.[1] ?? 0
 }
 
 describe('SQL pragovi zvezdica', () => {
   it.each([
     [59.9, 0],
     [60, 1],
-    [75, 1],
-    [75.1, 2],
-    [90, 2],
-    [90.1, 3],
-    [100, 3],
+    [69.9, 1],
+    [70, 2],
+    [79.9, 2],
+    [80, 3],
+    [89.9, 3],
+    [90, 4],
+    [99.9, 4],
+    [100, 5],
   ])('%s%% daje %i zvezdica', (procenat, ocekivano) => {
     expect(zvezdiceIzMigracije(procenat)).toBe(ocekivano)
   })
 
-  it('ne dodeljuje zvezdice nezavršenom pokušaju ili dok traje pregled', () => {
-    expect(sql).toContain("when status <> 'submitted' or review_pending or score_pct is null then null")
+  it('čuva samo nagrade od nula do pet i ne nagrađuje nezavršen pokušaj', () => {
+    expect(sql).toContain('check (stars_awarded between 0 and 5)')
+    expect(sql).toContain("when status = 'submitted' and not review_pending")
   })
 })
