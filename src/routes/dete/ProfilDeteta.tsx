@@ -1,8 +1,16 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Loader, TemaDugme } from '../../components/Zajednicke'
 import { ucitajJavniProfil } from '../../lib/api'
 import { formatDatum, formatOdbrojavanje, formatProcenat } from '../../lib/format'
+import {
+  jeSamostalnaPwa, poveziProfilSaPwa, zaboraviPovezaniProfil,
+  zapamtiProfilZaInstalaciju,
+} from '../../lib/profilPwa'
+import {
+  imaPonuduZaInstalaciju, ponudiInstalaciju, postaviDecjiManifest,
+  slusajPonuduZaInstalaciju,
+} from '../../pwa'
 import type { JavniProfilPayload } from '../../types/kviz'
 import './profil.css'
 
@@ -12,9 +20,16 @@ export function ProfilDeteta() {
   const [ucitava, setUcitava] = useState(true)
 
   useEffect(() => {
+    postaviDecjiManifest()
     setUcitava(true)
     ucitajJavniProfil(profilToken)
-      .then(setProfil)
+      .then((ucitaniProfil) => {
+        setProfil(ucitaniProfil)
+        if (!ucitaniProfil.ok) return
+
+        zapamtiProfilZaInstalaciju(profilToken)
+        if (jeSamostalnaPwa()) poveziProfilSaPwa(profilToken)
+      })
       .catch((e) => setProfil({ ok: false, error: String((e as Error).message ?? e) }))
       .finally(() => setUcitava(false))
   }, [profilToken])
@@ -59,6 +74,8 @@ export function ProfilDeteta() {
             </div>
           </div>
         </section>
+
+        <ProfilPwaKontrole ime={profil.name ?? 'dete'} profilToken={profilToken} />
 
         <section className="kartica profil-napredak" aria-label="Napredak do sledeće titule">
           <div className="red red--razmak">
@@ -161,5 +178,63 @@ export function ProfilDeteta() {
         </details>
       </div>
     </main>
+  )
+}
+
+function ProfilPwaKontrole({ ime, profilToken }: { ime: string, profilToken: string }) {
+  const navigate = useNavigate()
+  const samostalnaPwa = jeSamostalnaPwa()
+  const [instalacijaDostupna, setInstalacijaDostupna] = useState(imaPonuduZaInstalaciju)
+  const [poruka, setPoruka] = useState<string | null>(null)
+
+  useEffect(() => slusajPonuduZaInstalaciju(setInstalacijaDostupna), [])
+
+  function promeniProfil() {
+    zaboraviPovezaniProfil()
+    navigate('/dete/pocetak')
+  }
+
+  async function instaliraj() {
+    zapamtiProfilZaInstalaciju(profilToken)
+    const ishod = await ponudiInstalaciju()
+    if (ishod === 'accepted') {
+      setPoruka('Aplikacija je instalirana. Otvori „Moju Mozgalicu” sa početnog ekrana.')
+    } else if (ishod === 'dismissed') {
+      setPoruka('Instalacija je otkazana. Možeš da pokušaš ponovo iz menija pregledača.')
+    }
+  }
+
+  if (samostalnaPwa) {
+    return (
+      <div className="profil-pwa-status">
+        <span>📱 Aplikacija je povezana sa profilom: <strong>{ime}</strong></span>
+        <button type="button" className="dugme dugme--senka dugme--malo" onClick={promeniProfil}>
+          Promeni profil
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <details className="kartica profil-pwa-instalacija">
+      <summary>📲 Instaliraj aplikaciju za {ime}</summary>
+      <div className="profil-pwa-sadrzaj">
+        <p className="blago">
+          Instalirana „Moja Mozgalica” otvaraće direktno ovaj profil, bez administratorske prijave.
+        </p>
+        {instalacijaDostupna ? (
+          <button type="button" className="dugme dugme--akcenat" onClick={instaliraj}>
+            Instaliraj aplikaciju
+          </button>
+        ) : (
+          <p className="malo">
+            U meniju pregledača izaberi <strong>Instaliraj aplikaciju</strong> ili
+            {' '}<strong>Dodaj na početni ekran</strong>. Ako uređaj pri prvom pokretanju
+            zatraži profil, samo nalepi ovaj profilni link.
+          </p>
+        )}
+        {poruka && <p className="poruka poruka--info">{poruka}</p>}
+      </div>
+    </details>
   )
 }

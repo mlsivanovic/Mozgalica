@@ -15,9 +15,21 @@
         } catch (e) {}
       })();
     </script>
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="apple-touch-icon" href="/icon-192.png" />
+    <link rel="icon" type="image/svg+xml" href="%BASE_URL%favicon.svg" />
+    <link rel="apple-touch-icon" href="%BASE_URL%icon-192.png" />
+    <script>
+      // Dečji profil dobija zaseban PWA identitet, bez upisivanja tajnog tokena u manifest.
+      (function () {
+        var decjaRuta = window.location.hash.indexOf('#/dete/') === 0;
+        var manifest = document.createElement('link');
+        manifest.id = 'mozgalica-manifest';
+        manifest.rel = 'manifest';
+        manifest.href = '%BASE_URL%' + (decjaRuta ? 'manifest-dete.webmanifest' : 'manifest.webmanifest');
+        document.head.appendChild(manifest);
+      })();
+    </script>
     <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Mozgalica" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#5b6ee1" />

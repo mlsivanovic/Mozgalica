@@ -16,6 +16,7 @@ import { KvizResavanje } from './routes/kviz/KvizResavanje'
 import { KvizUlaz } from './routes/kviz/KvizUlaz'
 import { NijePronadjeno } from './routes/NijePronadjeno'
 import { ProfilDeteta } from './routes/dete/ProfilDeteta'
+import { PwaPocetakDeteta } from './routes/dete/PwaPocetakDeteta'
 
 function App() {
   return (
@@ -40,6 +41,7 @@ function App() {
           <Route path="/kviz/:token" element={<KvizUlaz />} />
           <Route path="/kviz/:token/resi" element={<KvizResavanje />} />
           <Route path="/kviz/:token/rezultat" element={<KvizRezultat />} />
+          <Route path="/dete/pocetak" element={<PwaPocetakDeteta />} />
           <Route path="/dete/:profilToken" element={<ProfilDeteta />} />
 
           <Route path="*" element={<NijePronadjeno />} />

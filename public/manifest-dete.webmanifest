@@ -1,0 +1,32 @@
+{
+  "id": "mozgalica-dete",
+  "name": "Mozgalica za dete",
+  "short_name": "Moja Mozgalica",
+  "description": "Kvizovi, zvezdice i rezultati deteta",
+  "lang": "sr",
+  "start_url": "./#/dete/pocetak",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f7ff",
+  "theme_color": "#5b6ee1",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

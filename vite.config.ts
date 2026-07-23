@@ -13,27 +13,11 @@ export default defineConfig({
       // ne dozvoli pluginu da ubaci sopstveni auto-registracioni skript
       injectRegister: false,
       devOptions: { enabled: false },
-      includeAssets: ['favicon.svg'],
-      manifest: {
-        id: 'mozgalica',
-        name: 'Mozgalica — matematički kvizovi',
-        short_name: 'Mozgalica',
-        description: 'Zabavno obnavljanje matematike za 3. razred',
-        lang: 'sr',
-        start_url: './',
-        scope: './',
-        display: 'standalone',
-        background_color: '#f4f7ff',
-        theme_color: '#5b6ee1',
-        icons: [
-          { src: 'icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
-          { src: 'icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
-          { src: 'icon-512-maskable.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
-        ],
-      },
+      // Manifesti su statički jer admin i dečja aplikacija moraju da imaju različite ID-eve.
+      manifest: false,
       workbox: {
         // Keširamo samo shell aplikacije; Supabase pozivi se NIKAD ne keširaju
-        globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
+        globPatterns: ['**/*.{js,css,html,webmanifest,svg,png,woff2}'],
         navigateFallback: null,
       },
     }),

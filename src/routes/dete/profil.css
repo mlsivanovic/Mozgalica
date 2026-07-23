@@ -56,10 +56,30 @@
 .profil-rezultat { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.8rem 0; border-top: 1px solid var(--boja-ivica); }
 .profil-rezultat-broj { display: grid; justify-items: end; gap: 0.2rem; white-space: nowrap; }
 
+.profil-pwa-instalacija { margin-top: 1rem; }
+.profil-pwa-instalacija summary { cursor: pointer; font-weight: 800; }
+.profil-pwa-sadrzaj { display: grid; justify-items: start; gap: 0.8rem; margin-top: 0.9rem; }
+.profil-pwa-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  margin-top: 1rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: var(--radius);
+  background: var(--boja-uspeh-svetla);
+  color: var(--boja-uspeh-tekst);
+}
+.profil-pwa-pocetak { padding-top: 1rem; }
+.profil-pwa-pocetak > .kartica { margin-top: 1rem; }
+.profil-pwa-forma { display: grid; text-align: left; }
+.profil-pwa-forma .dugme { justify-self: center; }
+
 @media (max-width: 540px) {
   .profil-strana { padding: 0.7rem; }
   .profil-zaglavlje { align-items: flex-start; }
   .profil-avatar { width: 78px; height: 78px; border-radius: 24px; font-size: 2.4rem; }
   .profil-statistike { font-size: 0.9rem; }
   .profil-rezultat { align-items: flex-start; }
+  .profil-pwa-status { align-items: flex-start; flex-direction: column; }
 }

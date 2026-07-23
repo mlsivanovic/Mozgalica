@@ -3,12 +3,15 @@ import { useEffect, useState } from 'react'
 import { Loader } from '../../components/Zajednicke'
 import {
   listajNivoeTitula, listajProfileDeteta, postaviEmailObavestenja, sacuvajNivoeTitula,
-  sacuvajProfilDeteta, ucitajPodesavanja,
+  sacuvajProfilDeteta, ucitajJavniProfil, ucitajPodesavanja,
 } from '../../lib/api'
 import { useAuth } from '../../lib/auth'
+import { formatDatum, formatProcenat } from '../../lib/format'
 import {
   AVATARI_DECE, type AvatarDeteta, type NivoTitule, type ProfilDeteta,
 } from '../../types/db'
+import type { JavniProfilPayload } from '../../types/kviz'
+import './podesavanja.css'
 
 const BAZA_URL = `${window.location.origin}${import.meta.env.BASE_URL}`
 
@@ -24,6 +27,7 @@ export function Podesavanja() {
   const [ucitava, setUcitava] = useState(true)
   const [ukljucena, setUkljucena] = useState(true)
   const [profili, setProfili] = useState<ProfilDeteta[]>([])
+  const [preglediProfila, setPreglediProfila] = useState<Record<string, JavniProfilPayload>>({})
   const [nivoi, setNivoi] = useState<NivoTitule[]>([])
   const [forma, setForma] = useState<ProfilForma | null>(null)
   const [greska, setGreska] = useState<string | null>(null)
@@ -40,6 +44,10 @@ export function Podesavanja() {
       setUkljucena(podesavanja?.email_notifications ?? true)
       setProfili(ucitaniProfili)
       setNivoi(ucitaniNivoi)
+      const pregledi = await Promise.all(ucitaniProfili.map(async (profil) => (
+        [profil.id, await ucitajJavniProfil(profil.public_token)] as const
+      )))
+      setPreglediProfila(Object.fromEntries(pregledi))
     } catch (e) {
       setGreska(String((e as Error).message ?? e))
     } finally {
@@ -172,29 +180,72 @@ export function Podesavanja() {
         </div>
 
         <div className="mreza-kartica razmak-gore">
-          {profili.map((profil) => (
-            <article key={profil.id} className="kartica" style={{ border: '1px solid var(--boja-ivica)', boxShadow: 'none' }}>
-              <div className="red">
-                <span aria-hidden="true" style={{ fontSize: '2.2rem' }}>{profil.avatar}</span>
-                <div>
-                  <h3>{profil.name}</h3>
-                  <p className="malo blago">
-                    {profil.birth_date
-                      ? `Rođen/a ${new Date(`${profil.birth_date}T12:00:00`).toLocaleDateString('sr-Latn-RS')}`
-                      : 'Datum rođenja nije unet'}
-                  </p>
+          {profili.map((profil) => {
+            const pregled = preglediProfila[profil.id]
+            const istorija = pregled?.history ?? []
+
+            return (
+              <article key={profil.id} className="kartica profil-admin-kartica">
+                <div className="red">
+                  <span aria-hidden="true" style={{ fontSize: '2.2rem' }}>{profil.avatar}</span>
+                  <div>
+                    <h3>{profil.name}</h3>
+                    <p className="malo blago">
+                      {profil.birth_date
+                        ? `Rođen/a ${new Date(`${profil.birth_date}T12:00:00`).toLocaleDateString('sr-Latn-RS')}`
+                        : 'Datum rođenja nije unet'}
+                    </p>
+                  </div>
                 </div>
-              </div>
-              <div className="red razmak-gore">
-                <button type="button" className="dugme dugme--senka dugme--malo" onClick={() => urediProfil(profil)}>
-                  Uredi
-                </button>
-                <button type="button" className="dugme dugme--senka dugme--malo" onClick={() => kopirajProfilniLink(profil)}>
-                  Kopiraj link
-                </button>
-              </div>
-            </article>
-          ))}
+                <div className="red razmak-gore">
+                  <span className="bedz">⭐ {pregled?.totalStars ?? 0} zvezdica</span>
+                  <span className="bedz bedz--neutral">
+                    Titula: {pregled?.currentTitle?.name ?? '—'}
+                  </span>
+                </div>
+                <div className="red razmak-gore">
+                  <button type="button" className="dugme dugme--senka dugme--malo" onClick={() => urediProfil(profil)}>
+                    Uredi
+                  </button>
+                  <button type="button" className="dugme dugme--senka dugme--malo" onClick={() => kopirajProfilniLink(profil)}>
+                    Kopiraj link
+                  </button>
+                </div>
+                <details className="profil-admin-istorija">
+                  <summary>
+                    <span>Završeni kvizovi</span>
+                    <span className="bedz">{istorija.length}</span>
+                  </summary>
+                  <div className="profil-admin-istorija-lista">
+                    {pregled && !pregled.ok ? (
+                      <p className="malo poruka poruka--greska">
+                        Rezultati trenutno nisu dostupni.
+                      </p>
+                    ) : istorija.length === 0 ? (
+                      <p className="malo blago">Još nema završenih kvizova.</p>
+                    ) : istorija.map((rezultat) => (
+                      <div className="profil-admin-rezultat" key={rezultat.attemptId}>
+                        <div>
+                          <strong>{rezultat.title}</strong>
+                          <p className="malo blago">{formatDatum(rezultat.submittedAt)}</p>
+                        </div>
+                        {rezultat.pendingReview ? (
+                          <span className="bedz bedz--upozorenje">Čeka pregled</span>
+                        ) : (
+                          <div className="profil-admin-rezultat-broj">
+                            <span aria-label={`${rezultat.starsAwarded ?? 0} zvezdica`}>
+                              {'⭐'.repeat(rezultat.starsAwarded ?? 0) || '☆'}
+                            </span>
+                            <strong>{formatProcenat(rezultat.scorePct)}</strong>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </details>
+              </article>
+            )
+          })}
         </div>
 
         {forma && (
