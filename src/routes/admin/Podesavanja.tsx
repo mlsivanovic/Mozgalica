@@ -1,11 +1,13 @@
 // Administratorska podešavanja: profili dece, titule i mejl obaveštenja.
 import { useEffect, useState } from 'react'
+import { PushKontrole } from '../../components/PushKontrole'
 import { Loader } from '../../components/Zajednicke'
 import {
   listajNivoeTitula, listajProfileDeteta, postaviEmailObavestenja, sacuvajNivoeTitula,
   sacuvajProfilDeteta, ucitajJavniProfil, ucitajPodesavanja,
 } from '../../lib/api'
 import { useAuth } from '../../lib/auth'
+import { emailJeIspravan, normalizujEmail } from '../../lib/email'
 import { formatDatum, formatProcenat } from '../../lib/format'
 import {
   AVATARI_DECE, type AvatarDeteta, type NivoTitule, type ProfilDeteta,
@@ -20,6 +22,8 @@ interface ProfilForma {
   name: string
   birth_date: string
   avatar: AvatarDeteta
+  email: string
+  notify_new_quiz_email: boolean
 }
 
 type TabPodesavanja = 'profili' | 'titule' | 'obavestenja'
@@ -80,7 +84,13 @@ export function Podesavanja() {
   }
 
   function noviProfil() {
-    setForma({ name: '', birth_date: '', avatar: '🧠' })
+    setForma({
+      name: '',
+      birth_date: '',
+      avatar: '🧠',
+      email: '',
+      notify_new_quiz_email: true,
+    })
     setGreska(null)
     setPoruka(null)
   }
@@ -91,6 +101,8 @@ export function Podesavanja() {
       name: profil.name,
       birth_date: profil.birth_date ?? '',
       avatar: profil.avatar,
+      email: profil.email ?? '',
+      notify_new_quiz_email: profil.notify_new_quiz_email,
     })
     setGreska(null)
     setPoruka(null)
@@ -106,6 +118,10 @@ export function Podesavanja() {
       setGreska('Datum rođenja ne može biti u budućnosti.')
       return
     }
+    if (forma.email && !emailJeIspravan(forma.email)) {
+      setGreska('Unesi ispravnu email adresu deteta.')
+      return
+    }
     setCuvaProfil(true)
     setGreska(null)
     try {
@@ -114,6 +130,8 @@ export function Podesavanja() {
         name: forma.name.trim(),
         birth_date: forma.birth_date || null,
         avatar: forma.avatar,
+        email: forma.email ? normalizujEmail(forma.email) : null,
+        notify_new_quiz_email: forma.notify_new_quiz_email,
       }, forma.id)
       setForma(null)
       await ucitajSve()
@@ -233,6 +251,9 @@ export function Podesavanja() {
                         ? `Rođen/a ${new Date(`${profil.birth_date}T12:00:00`).toLocaleDateString('sr-Latn-RS')}`
                         : 'Datum rođenja nije unet'}
                     </p>
+                    <p className="malo blago">
+                      {profil.email ?? 'Email adresa nije uneta'}
+                    </p>
                   </div>
                 </div>
                 <div className="red razmak-gore">
@@ -304,6 +325,30 @@ export function Podesavanja() {
                   value={forma.birth_date} onChange={(e) => setForma({ ...forma, birth_date: e.target.value })}
                 />
               </div>
+              <div className="polje">
+                <label htmlFor="pd-email">Email deteta (opciono)</label>
+                <input
+                  id="pd-email" type="email" inputMode="email" autoCapitalize="none"
+                  autoCorrect="off" maxLength={254} placeholder="ime@example.com"
+                  value={forma.email}
+                  onChange={(e) => setForma({ ...forma, email: e.target.value })}
+                />
+                <p className="malo blago">
+                  Adresa je vidljiva samo administratoru i koristi se za nove kvizove.
+                </p>
+              </div>
+              <label className="stiklir">
+                <input
+                  type="checkbox"
+                  checked={forma.notify_new_quiz_email}
+                  disabled={!forma.email.trim()}
+                  onChange={(e) => setForma({
+                    ...forma,
+                    notify_new_quiz_email: e.target.checked,
+                  })}
+                />
+                Podrazumevano pošalji mejl kada se dodeli novi kviz
+              </label>
               <fieldset className="polje" style={{ border: 0 }}>
                 <legend style={{ fontWeight: 700 }}>Avatar</legend>
                 <div className="red" style={{ marginTop: '0.4rem' }}>
@@ -400,6 +445,14 @@ export function Podesavanja() {
           <input type="checkbox" checked={ukljucena} onChange={(e) => promeniEmail(e.target.checked)} />
           Pošalji mi mejl kada dete završi kviz
         </label>
+        <div className="podesavanja-push razmak-gore">
+          <h2>Obaveštenja na uređaju</h2>
+          <p className="blago razmak-dole">
+            Uključi sistemsko obaveštenje kada dete završi kviz. Podešavanje važi samo
+            za ovaj pregledač ili instaliranu aplikaciju.
+          </p>
+          <PushKontrole />
+        </div>
       </section>
       )}
     </div>

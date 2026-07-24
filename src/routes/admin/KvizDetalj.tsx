@@ -8,6 +8,7 @@ import {
   statusLinkovaKviza, ucitajKviz, type StatusLinka,
 } from '../../lib/api'
 import { formatDatum, formatProcenat } from '../../lib/format'
+import { podrazumevanoSlanjeMejla } from '../../lib/email'
 import { mapaPredmetaPoTemi } from '../../lib/predmet'
 import { Loader } from '../../components/Zajednicke'
 import {
@@ -384,6 +385,7 @@ function LinkoviKviza({
   const [label, setLabel] = useState('')
   const [maxAttempts, setMaxAttempts] = useState(1)
   const [izabraniProfil, setIzabraniProfil] = useState('')
+  const [posaljiEmail, setPosaljiEmail] = useState(false)
   const [greska, setGreska] = useState<string | null>(null)
   const [radi, setRadi] = useState(false)
   const mapaStatus = new Map(statusi.map((s) => [s.link_id, s]))
@@ -392,6 +394,7 @@ function LinkoviKviza({
   const generickiLinkovi = linkovi.filter((l) => !l.child_profile_id)
   const dodeljeniProfili = new Set(profilniLinkovi.map((l) => l.child_profile_id))
   const dostupniProfili = profili.filter((p) => !dodeljeniProfili.has(p.id))
+  const profilZaDodelu = dostupniProfili.find((p) => p.id === izabraniProfil)
 
   async function napravi() {
     setRadi(true); setGreska(null)
@@ -414,8 +417,9 @@ function LinkoviKviza({
     setRadi(true)
     setGreska(null)
     try {
-      await dodeliKvizProfilu(quizId, izabraniProfil)
+      await dodeliKvizProfilu(quizId, izabraniProfil, posaljiEmail)
       setIzabraniProfil('')
+      setPosaljiEmail(false)
       onPromena()
     } catch (e) {
       setGreska(String((e as Error).message ?? e))
@@ -461,7 +465,19 @@ function LinkoviKviza({
         <div className="red-polja">
           <div className="polje">
             <label htmlFor="lk-profil">Profil deteta</label>
-            <select id="lk-profil" value={izabraniProfil} onChange={(e) => setIzabraniProfil(e.target.value)}>
+            <select
+              id="lk-profil"
+              value={izabraniProfil}
+              onChange={(e) => {
+                const id = e.target.value
+                const profil = dostupniProfili.find((p) => p.id === id)
+                setIzabraniProfil(id)
+                setPosaljiEmail(podrazumevanoSlanjeMejla(
+                  profil?.email,
+                  profil?.notify_new_quiz_email ?? false,
+                ))
+              }}
+            >
               <option value="">Izaberi profil…</option>
               {dostupniProfili.map((p) => <option key={p.id} value={p.id}>{p.avatar} {p.name}</option>)}
             </select>
@@ -474,6 +490,24 @@ function LinkoviKviza({
             Dodeli kviz
           </button>
         </div>
+        {izabraniProfil && (
+          <div className="razmak-dole">
+            <label className="stiklir">
+              <input
+                type="checkbox"
+                checked={posaljiEmail}
+                disabled={!profilZaDodelu?.email}
+                onChange={(e) => setPosaljiEmail(e.target.checked)}
+              />
+              Pošalji i mejl detetu kada kviz stigne
+            </label>
+            <p className="malo blago">
+              {profilZaDodelu?.email
+                ? `Mejl će biti poslat na ${profilZaDodelu.email}.`
+                : <>Profil nema email adresu. <Link to="/admin/podesavanja">Dodaj je u podešavanjima.</Link></>}
+            </p>
+          </div>
+        )}
 
         {profilniLinkovi.length === 0 ? (
           <p className="blago">Kviz još nije dodeljen nijednom profilu.</p>

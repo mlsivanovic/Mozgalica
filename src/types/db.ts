@@ -114,6 +114,8 @@ export interface KvizLink {
   id: string
   quiz_id: string
   child_profile_id: string | null
+  notify_child_email: boolean
+  assignment_request_id: string | null
   token: string
   label: string | null
   is_active: boolean
@@ -169,6 +171,8 @@ export interface ProfilDeteta {
   name: string
   birth_date: string | null
   avatar: AvatarDeteta
+  email: string | null
+  notify_new_quiz_email: boolean
   public_token: string
   created_at: string
   updated_at: string
@@ -180,6 +184,43 @@ export interface NivoTitule {
   name: string
   min_stars: number
   created_at: string
+}
+
+export type TipPrimaocaObavestenja = 'admin' | 'child'
+export type TipDogadjajaObavestenja = 'new_quiz' | 'quiz_completed'
+
+export interface Obavestenje {
+  id: string
+  owner_id?: string
+  child_profile_id?: string | null
+  recipient_type?: TipPrimaocaObavestenja
+  event_type: TipDogadjajaObavestenja
+  title: string
+  body: string
+  target_url: string
+  read_at: string | null
+  created_at: string
+}
+
+export interface InboxObavestenja {
+  obavestenja: Obavestenje[]
+  neprocitano: number
+}
+
+export interface PushPretplata {
+  endpoint: string
+  expirationTime?: number | null
+  keys: {
+    p256dh: string
+    auth: string
+  }
+}
+
+export interface StatusPushObavestenja {
+  podrzano: boolean
+  dozvola: NotificationPermission | 'unsupported'
+  aktivno: boolean
+  razlog?: string
 }
 
 // ---------- pomoćne konstante ----------

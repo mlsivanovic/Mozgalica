@@ -1,7 +1,7 @@
 # Uputstvo za podešavanje — Mozgalica
 
 Ovo uputstvo vodi te kroz **jednokratno** povezivanje aplikacije sa besplatnim
-Supabase i Resend nalozima. Traje oko 20-30 minuta. Sve što se radi je besplatno
+Supabase i Brevo nalozima. Traje oko 30 minuta. Sve što se radi je besplatno
 i ne zahteva unos podataka kartice.
 
 ## 1. Supabase projekat
@@ -52,39 +52,65 @@ Ovo kreira sve tabele, RLS pravila i RPC funkcije iz `supabase/migrations/`.
    ```
    pa tek onda napravi nalog sa tom adresom — trigger radi samo pri registraciji.
 
-## 4. Resend nalog (slanje mejlova)
+## 4. Brevo nalog (slanje mejlova)
 
-1. Napravi besplatan nalog na [resend.com](https://resend.com) (100 mejlova/dan,
-   3000/mesec — bez kartice).
-2. Idi na **API Keys** i napravi novi ključ (`Full access` je najjednostavnije za MVP).
-3. Bez dodavanja sopstvenog domena, Resend šalje mejlove SAMO na email adresu
-   vlasnika naloga — što ovde savršeno odgovara, jer obaveštenja idu tebi kao administratoru.
+1. Napravi besplatan nalog na [brevo.com](https://www.brevo.com/).
+2. U **Senders & IP → Senders** dodaj adresu sa koje Mozgalica šalje i potvrdi
+   šestocifreni kod koji stigne na tu adresu. Sopstveni domen nije obavezan za
+   početak, ali je preporučen za bolju isporučivost.
+3. U **SMTP & API → API Keys** napravi API ključ. Ne upisuj ga u `.env.local`,
+   GitHub ili bilo koji fajl repozitorijuma.
 
-## 5. Deploy Edge funkcije za mejl
+## 5. VAPID ključevi i Edge secrets
 
-```bash
-supabase functions deploy send-result-email --no-verify-jwt
-```
-
-Zatim postavi tajne promenljive za funkciju (ne idu u git):
+Generiši jedan VAPID par (radi se samo jednom):
 
 ```bash
-supabase secrets set RESEND_API_KEY=re_tvoj_kljuc
-supabase secrets set HOOK_SECRET=$(openssl rand -hex 32)
+npx web-push generate-vapid-keys
 ```
 
-Zapamti generisanu `HOOK_SECRET` vrednost — treba ti u sledećem koraku.
+Sačuvaj privatni ključ isključivo kao Supabase secret. Javni ključ će biti i
+frontend promenljiva:
 
-## 6. Poveži bazu sa Edge funkcijom
-
-U Supabase **SQL Editor**-u pokreni (zameni vrednosti svojima):
-
-```sql
-insert into public.app_config (key, value) values
-  ('functions_url', 'https://<tvoj-project-ref>.functions.supabase.co'),
-  ('hook_secret', '<ista HOOK_SECRET vrednost iz koraka 5>')
-on conflict (key) do update set value = excluded.value;
+```bash
+supabase secrets set \
+  BREVO_API_KEY=xkeysib-tvoj-kljuc \
+  BREVO_SENDER_EMAIL=tvoja-potvrdjena-adresa@example.com \
+  BREVO_SENDER_NAME=Mozgalica \
+  APP_BASE_URL=https://mlsivanovic.github.io/Mozgalica/ \
+  VAPID_SUBJECT=mailto:tvoja-adresa@example.com \
+  VAPID_PUBLIC_KEY=tvoj-javni-vapid-kljuc \
+  VAPID_PRIVATE_KEY=tvoj-privatni-vapid-kljuc
 ```
+
+Zatim deploy-uj funkciju sa uključenom JWT proverom:
+
+```bash
+supabase functions deploy dispatch-notifications
+```
+
+## 6. Poveži outbox sa Edge funkcijom
+
+U Supabase Dashboard-u otvori **Database → Webhooks** i napravi webhook:
+
+- tabela: `public.notification_deliveries`;
+- događaj: `INSERT`;
+- cilj: Supabase Edge Function `dispatch-notifications`;
+- metod: `POST`;
+- uključi ugrađeni **Add auth header with service key**.
+
+Webhook odmah pokreće slanje. Za ponovne pokušaje u **Integrations → Cron**
+koriste se dve šifrovane Vault tajne:
+
+- `notification_dispatch_project_url`: URL Supabase projekta;
+- `notification_dispatch_service_role_key`: legacy `service_role` JWT iz
+  **Project Settings → API Keys → Legacy API Keys**.
+
+Vrednosti unesi kroz **Integrations → Vault → Secrets** i nikad ih ne dodaj u
+SQL ili repozitorijum. Migracije automatski uključuju `pg_cron`/`pg_net` i
+kreiraju posao `dispatch_notification_deliveries_retry`, koji na svakih pet
+minuta pokreće istu Edge funkciju. Funkcija obrađuje samo već postojeće,
+serverski napravljene outbox redove i bezbedna je za ponovljene pozive.
 
 ## 7. Podesi frontend environment promenljive
 
@@ -95,12 +121,14 @@ cp .env.example .env.local
 ```
 
 Popuni `.env.local` sa `Project URL` i `anon public` ključem iz koraka 1.
+Dodaj i javni VAPID ključ iz koraka 5.
 
 Za GitHub Pages deploy: u repozitorijumu na GitHubu idi na
 **Settings → Secrets and variables → Actions → Variables** i dodaj:
 
 - `VITE_SUPABASE_URL` = tvoj Project URL
 - `VITE_SUPABASE_ANON_KEY` = tvoj anon ključ
+- `VITE_VAPID_PUBLIC_KEY` = javni VAPID ključ
 
 (Ovo su **Variables**, ne Secrets — anon ključ je javan po dizajnu i RLS ga štiti,
 pa ne treba da bude sakriven, samo van git istorije radi lakše rotacije.)
@@ -112,7 +140,15 @@ npm install
 npm run dev
 ```
 
-Otvori `http://localhost:5173`, prijavi se svojom email adresom i lozinkom iz
+Push service worker se generiše samo u produkcionom buildu. Za punu proveru
+pokreni:
+
+```bash
+npm run build
+npm run preview
+```
+
+Otvori prikazani HTTPS/localhost URL, prijavi se svojom email adresom i lozinkom iz
 koraka 3, i klikni **Učitaj početna pitanja** na strani „Banka pitanja" da dobiješ
 30 primera pitanja za sve oblasti.
 

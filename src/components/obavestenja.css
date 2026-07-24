@@ -1,0 +1,90 @@
+.obavestenja { position: relative; }
+.obavestenja-zvonce {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--boja-ivica);
+  border-radius: 50%;
+  background: var(--boja-kartica);
+  font-size: 1.15rem;
+  cursor: pointer;
+}
+.obavestenja-broj {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 4px;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--boja-kartica);
+  border-radius: 999px;
+  background: var(--boja-greska);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+.obavestenja-panel {
+  position: absolute;
+  z-index: 100;
+  top: calc(100% + 0.6rem);
+  right: 0;
+  width: min(390px, calc(100vw - 1.4rem));
+  overflow: hidden;
+  border: 1px solid var(--boja-ivica);
+  border-radius: var(--radius);
+  background: var(--boja-kartica);
+  box-shadow: var(--senka-jaka);
+}
+.obavestenja-zaglavlje {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.7rem;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--boja-ivica);
+}
+.obavestenja-zaglavlje button {
+  border: 0;
+  background: none;
+  color: var(--boja-primarna);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.obavestenja-lista { max-height: min(520px, 68vh); overflow-y: auto; }
+.obavestenja-stavka {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 34px 1fr;
+  gap: 0.55rem;
+  padding: 0.85rem 1rem;
+  border: 0;
+  border-bottom: 1px solid var(--boja-ivica);
+  background: transparent;
+  color: var(--boja-tekst);
+  text-align: left;
+  cursor: pointer;
+}
+.obavestenja-stavka:hover { background: var(--boja-polje); }
+.obavestenja-stavka--nova { background: var(--boja-primarna-svetla); }
+.obavestenja-stavka > span:last-child { display: grid; gap: 0.2rem; }
+.obavestenja-stavka strong { font-size: 0.9rem; }
+.obavestenja-stavka span span { color: var(--boja-tekst-blagi); font-size: 0.83rem; }
+.obavestenja-stavka small { color: var(--boja-tekst-blagi); font-size: 0.7rem; }
+.obavestenja-ikona { font-size: 1.25rem; }
+.obavestenja-prazno { padding: 1.4rem; color: var(--boja-tekst-blagi); text-align: center; }
+.push-kontrole {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  width: 100%;
+}
+.push-kontrole > div { flex: 1 1 260px; }
+.push-kontrole-poruka { flex-basis: 100%; }

@@ -23,8 +23,9 @@ obnove gradivo iz matematike.
   (radi na GitHub Pages podputanji bez servera).
 - **Backend:** [Supabase](https://supabase.com) — Postgres baza, autentifikacija
   (lozinka + magic link), Edge Functions, Row Level Security. Besplatan paket, bez kartice.
-- **Mejl:** [Resend](https://resend.com) preko Supabase Edge Function-a — API ključ
-  nikad nije izložen u frontendu.
+- **Obaveštenja:** trajni inbox, standardni Web Push sa VAPID ključevima i
+  [Brevo](https://www.brevo.com/) transakcioni mejlovi preko Supabase Edge Function-a.
+  API i privatni ključevi nikad nisu izloženi u frontendu.
 - **PWA:** `vite-plugin-pwa` (manifest + service worker, instalabilna aplikacija,
   offline shell, obaveštenje o novoj verziji).
 - **Hosting:** GitHub Pages, automatski deploy preko GitHub Actions pri svakom
@@ -32,7 +33,7 @@ obnove gradivo iz matematike.
 - **Testovi:** Vitest (generator pitanja, offline red, seed podaci).
 
 Kompletan spisak arhitekturnih odluka i faza razvoja nalazi se u planu projekta;
-koraci za povezivanje sopstvenog Supabase/Resend naloga su u [SETUP.md](./SETUP.md).
+koraci za povezivanje Supabase/Brevo naloga i Web Push-a su u [SETUP.md](./SETUP.md).
 
 ## Pokretanje lokalno
 
@@ -68,4 +69,5 @@ src/data/               Početni skup od 30 primera pitanja
 
 Svaki push na `main` granu automatski builduje i objavljuje aplikaciju na GitHub
 Pages (`.github/workflows/deploy.yml`). Detaljno uputstvo za prvo podešavanje
-(Supabase projekat, Resend nalog, GitHub Variables/Secrets) je u [SETUP.md](./SETUP.md).
+(Supabase projekat, Brevo nalog, Web Push i GitHub Variables/Secrets) je u
+[SETUP.md](./SETUP.md).

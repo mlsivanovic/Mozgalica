@@ -1,5 +1,7 @@
 // Tipovi payload-a koje vraćaju SECURITY DEFINER RPC funkcije za dete
-import type { FiksnoImeDeteta, OdgovorDeteta, OpcijeJson, TacanOdgovor, TipPitanja } from './db'
+import type {
+  FiksnoImeDeteta, Obavestenje, OdgovorDeteta, OpcijeJson, TacanOdgovor, TipPitanja,
+} from './db'
 
 // Pitanje kako ga vidi dete — BEZ tačnog odgovora i objašnjenja.
 // hint je popunjen SAMO ako je savet za ovo pitanje već otključan (use_hint) —
@@ -171,4 +173,11 @@ export interface JavniProfilPayload {
   nextTitle?: ProfilnaTitula | null
   activeQuizzes?: AktivniKvizProfila[]
   history?: IstorijskiRezultatProfila[]
+}
+
+export interface InboxDetetaPayload {
+  ok: boolean
+  error?: string
+  unreadCount?: number
+  notifications?: Obavestenje[]
 }

@@ -1,12 +1,12 @@
 // Tipizirani pozivi ka Supabase-u: tabele za admina, RPC funkcije za dete
 import type {
-  AdminPodesavanja, AvatarDeteta, FiksnoImeDeteta, Kviz, KvizLink, KvizPitanje,
-  NivoTitule, Oblast, OdgovorDeteta, Pitanje, Pokusaj, PokusajOdgovor, Predmet,
-  ProfilDeteta, Razred,
+  AdminPodesavanja, AvatarDeteta, FiksnoImeDeteta, InboxObavestenja, Kviz, KvizLink,
+  KvizPitanje, NivoTitule, Oblast, Obavestenje, OdgovorDeteta, Pitanje, Pokusaj,
+  PokusajOdgovor, Predmet, ProfilDeteta, PushPretplata, Razred,
 } from '../types/db'
 import type {
-  JavniProfilPayload, KvizMeta, NapredakTitule, PokusajPayload, PotvrdaTajmera,
-  RezultatPayload, SavePotvrda, SavetPayload,
+  InboxDetetaPayload, JavniProfilPayload, KvizMeta, NapredakTitule, PokusajPayload,
+  PotvrdaTajmera, RezultatPayload, SavePotvrda, SavetPayload,
 } from '../types/kviz'
 import { SEED_PITANJA } from '../data/seedPitanja'
 import { supabase } from './supabase'
@@ -277,18 +277,18 @@ export async function napraviLink(quizId: string, label: string | null, maxAttem
   return data as KvizLink
 }
 
-export async function dodeliKvizProfilu(quizId: string, childProfileId: string): Promise<KvizLink> {
-  const { data, error } = await supabase()
-    .from('quiz_links')
-    .insert({
-      quiz_id: quizId,
-      child_profile_id: childProfileId,
-      max_attempts: 1,
-      label: null,
-      expires_at: null,
-    })
-    .select('*')
-    .single()
+export async function dodeliKvizProfilu(
+  quizId: string,
+  childProfileId: string,
+  sendEmail: boolean,
+  idempotencyKey = crypto.randomUUID(),
+): Promise<KvizLink> {
+  const { data, error } = await supabase().rpc('assign_quiz_to_profile', {
+    p_quiz_id: quizId,
+    p_child_profile_id: childProfileId,
+    p_send_email: sendEmail,
+    p_idempotency_key: idempotencyKey,
+  })
   if (error) throw new Error(opisiGresku(error)!)
   return data as KvizLink
 }
@@ -478,6 +478,8 @@ export interface NoviProfilDeteta {
   name: string
   birth_date: string | null
   avatar: AvatarDeteta
+  email: string | null
+  notify_new_quiz_email: boolean
 }
 
 export async function sacuvajProfilDeteta(profil: NoviProfilDeteta, id?: string): Promise<void> {
@@ -486,6 +488,8 @@ export async function sacuvajProfilDeteta(profil: NoviProfilDeteta, id?: string)
       name: profil.name,
       birth_date: profil.birth_date,
       avatar: profil.avatar,
+      email: profil.email,
+      notify_new_quiz_email: profil.notify_new_quiz_email,
     }
     const { error } = await supabase().from('child_profiles').update(izmene).eq('id', id)
     if (error) throw new Error(opisiGresku(error)!)
@@ -569,4 +573,128 @@ export async function ucitajJavniProfil(profileToken: string): Promise<JavniProf
   const { data, error } = await supabase().rpc('get_child_profile', { p_profile_token: profileToken })
   if (error) return { ok: false, error: opisiGresku(error)! }
   return data as JavniProfilPayload
+}
+
+// ---------- Obaveštenja i Web Push ----------
+export async function listajAdminObavestenja(): Promise<InboxObavestenja> {
+  const [lista, broj] = await Promise.all([
+    supabase()
+      .from('notifications')
+      .select('id, owner_id, child_profile_id, recipient_type, event_type, title, body, target_url, read_at, created_at')
+      .eq('recipient_type', 'admin')
+      .order('created_at', { ascending: false })
+      .limit(50),
+    supabase()
+      .from('notifications')
+      .select('id', { count: 'exact', head: true })
+      .eq('recipient_type', 'admin')
+      .is('read_at', null),
+  ])
+  if (lista.error) throw new Error(opisiGresku(lista.error)!)
+  if (broj.error) throw new Error(opisiGresku(broj.error)!)
+  return {
+    obavestenja: (lista.data ?? []) as Obavestenje[],
+    neprocitano: broj.count ?? 0,
+  }
+}
+
+export async function oznaciAdminObavestenjaProcitanim(ids?: string[]): Promise<void> {
+  if (ids?.length === 0) return
+  let upit = supabase().from('notifications')
+    .update({ read_at: new Date().toISOString() })
+    .eq('recipient_type', 'admin')
+    .is('read_at', null)
+  if (ids) upit = upit.in('id', ids)
+  const { error } = await upit
+  if (error) throw new Error(opisiGresku(error)!)
+}
+
+export async function listajObavestenjaDeteta(profileToken: string): Promise<InboxObavestenja> {
+  const { data, error } = await supabase().rpc('get_child_notifications', {
+    p_profile_token: profileToken,
+    p_limit: 50,
+  })
+  if (error) throw new Error(opisiGresku(error)!)
+  const odgovor = data as InboxDetetaPayload
+  if (!odgovor.ok) throw new Error(odgovor.error ?? 'Obaveštenja nisu dostupna.')
+
+  return {
+    neprocitano: odgovor.unreadCount ?? 0,
+    obavestenja: (odgovor.notifications ?? []).map((n) => ({
+      ...n,
+      event_type: n.event_type ?? (n as unknown as { eventType: Obavestenje['event_type'] }).eventType,
+      target_url: n.target_url ?? (n as unknown as { targetUrl: string }).targetUrl,
+      read_at: n.read_at ?? (n as unknown as { readAt: string | null }).readAt,
+      created_at: n.created_at ?? (n as unknown as { createdAt: string }).createdAt,
+    })),
+  }
+}
+
+export async function oznaciObavestenjaDetetaProcitanim(
+  profileToken: string,
+  ids?: string[],
+): Promise<void> {
+  if (ids?.length === 0) return
+  const { data, error } = await supabase().rpc('mark_child_notifications_read', {
+    p_profile_token: profileToken,
+    p_notification_ids: ids ?? null,
+  })
+  if (error) throw new Error(opisiGresku(error)!)
+  const odgovor = data as { ok: boolean; error?: string }
+  if (!odgovor.ok) throw new Error(odgovor.error ?? 'Obaveštenja nisu mogla da se označe.')
+}
+
+export async function registrujAdminPush(pretplata: PushPretplata): Promise<void> {
+  await pozoviPushRpc('register_admin_push', {
+    p_subscription: pretplata,
+    p_user_agent: navigator.userAgent,
+  })
+}
+
+export async function ukloniAdminPush(endpoint: string): Promise<void> {
+  await pozoviPushRpc('unregister_admin_push', { p_endpoint: endpoint })
+}
+
+export async function registrujDetePush(
+  profileToken: string,
+  pretplata: PushPretplata,
+): Promise<void> {
+  await pozoviPushRpc('register_child_push', {
+    p_profile_token: profileToken,
+    p_subscription: pretplata,
+    p_user_agent: navigator.userAgent,
+  })
+}
+
+export async function ukloniDetePush(profileToken: string, endpoint: string): Promise<void> {
+  await pozoviPushRpc('unregister_child_push', {
+    p_profile_token: profileToken,
+    p_endpoint: endpoint,
+  })
+}
+
+export async function proveriAdminPush(endpoint: string): Promise<boolean> {
+  return proveriPushRpc('get_admin_push_status', { p_endpoint: endpoint })
+}
+
+export async function proveriDetePush(profileToken: string, endpoint: string): Promise<boolean> {
+  return proveriPushRpc('get_child_push_status', {
+    p_profile_token: profileToken,
+    p_endpoint: endpoint,
+  })
+}
+
+async function pozoviPushRpc(naziv: string, parametri: Record<string, unknown>): Promise<void> {
+  const { data, error } = await supabase().rpc(naziv, parametri)
+  if (error) throw new Error(opisiGresku(error)!)
+  const odgovor = data as { ok: boolean; error?: string }
+  if (!odgovor.ok) throw new Error(odgovor.error ?? 'Push podešavanje nije sačuvano.')
+}
+
+async function proveriPushRpc(naziv: string, parametri: Record<string, unknown>): Promise<boolean> {
+  const { data, error } = await supabase().rpc(naziv, parametri)
+  if (error) throw new Error(opisiGresku(error)!)
+  const odgovor = data as { ok: boolean; active?: boolean; error?: string }
+  if (!odgovor.ok) throw new Error(odgovor.error ?? 'Push status nije dostupan.')
+  return odgovor.active === true
 }

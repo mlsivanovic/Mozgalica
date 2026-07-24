@@ -1,8 +1,16 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import { ObavestenjaZvonce } from '../../components/ObavestenjaZvonce'
+import { PushKontrole } from '../../components/PushKontrole'
 import { Loader, TemaDugme } from '../../components/Zajednicke'
-import { ucitajJavniProfil } from '../../lib/api'
+import {
+  listajObavestenjaDeteta, oznaciObavestenjaDetetaProcitanim, ucitajJavniProfil,
+} from '../../lib/api'
 import { formatDatum, formatOdbrojavanje, formatProcenat } from '../../lib/format'
+import { oznaciInboxProcitanim } from '../../lib/obavestenja'
+import {
+  iskljuciPushZaDete, postaviBedzAplikacije, slusajPushPoruke,
+} from '../../lib/push'
 import {
   jeSamostalnaPwa, poveziProfilSaPwa, zaboraviPovezaniProfil,
   zapamtiProfilZaInstalaciju,
@@ -12,12 +20,28 @@ import {
   slusajPonuduZaInstalaciju,
 } from '../../pwa'
 import type { JavniProfilPayload } from '../../types/kviz'
+import type { InboxObavestenja } from '../../types/db'
 import './profil.css'
 
 export function ProfilDeteta() {
   const { profilToken = '' } = useParams<{ profilToken: string }>()
   const [profil, setProfil] = useState<JavniProfilPayload | null>(null)
   const [ucitava, setUcitava] = useState(true)
+  const [inbox, setInbox] = useState<InboxObavestenja>({ obavestenja: [], neprocitano: 0 })
+
+  const osveziObavestenja = useCallback(async () => {
+    if (!profilToken) return
+    try {
+      const noviInbox = await listajObavestenjaDeteta(profilToken)
+      setInbox(noviInbox)
+    } catch {
+      // Profil i kvizovi ostaju dostupni i kada inbox privremeno ne može da se osveži.
+    }
+  }, [profilToken])
+
+  useEffect(() => {
+    void postaviBedzAplikacije(inbox.neprocitano)
+  }, [inbox.neprocitano])
 
   useEffect(() => {
     postaviDecjiManifest()
@@ -33,6 +57,28 @@ export function ProfilDeteta() {
       .catch((e) => setProfil({ ok: false, error: String((e as Error).message ?? e) }))
       .finally(() => setUcitava(false))
   }, [profilToken])
+
+  useEffect(() => {
+    void osveziObavestenja()
+    const interval = window.setInterval(() => {
+      if (document.visibilityState === 'visible') void osveziObavestenja()
+    }, 30_000)
+    const priFokusu = () => void osveziObavestenja()
+    window.addEventListener('focus', priFokusu)
+    document.addEventListener('visibilitychange', priFokusu)
+    const odjaviPush = slusajPushPoruke(priFokusu)
+    return () => {
+      window.clearInterval(interval)
+      window.removeEventListener('focus', priFokusu)
+      document.removeEventListener('visibilitychange', priFokusu)
+      odjaviPush()
+    }
+  }, [osveziObavestenja])
+
+  async function oznaciProcitanim(ids?: string[]) {
+    await oznaciObavestenjaDetetaProcitanim(profilToken, ids)
+    setInbox((prethodni) => oznaciInboxProcitanim(prethodni, ids))
+  }
 
   if (ucitava) return <Loader tekst="Učitavanje profila…" />
   if (!profil?.ok) {
@@ -60,6 +106,11 @@ export function ProfilDeteta() {
     <main className="profil-strana">
       <div className="profil-omot">
         <div className="red red--kraj">
+          <ObavestenjaZvonce
+            inbox={inbox}
+            onOznaciProcitanim={oznaciProcitanim}
+            nazivPrimaoca={profil.name ?? 'deteta'}
+          />
           <TemaDugme />
         </div>
 
@@ -76,6 +127,9 @@ export function ProfilDeteta() {
         </section>
 
         <ProfilPwaKontrole ime={profil.name ?? 'dete'} profilToken={profilToken} />
+        <section className="kartica profil-push-kontrole">
+          <PushKontrole profilToken={profilToken} />
+        </section>
 
         <section className="kartica profil-napredak" aria-label="Napredak do sledeće titule">
           <div className="red red--razmak">
@@ -189,7 +243,12 @@ function ProfilPwaKontrole({ ime, profilToken }: { ime: string, profilToken: str
 
   useEffect(() => slusajPonuduZaInstalaciju(setInstalacijaDostupna), [])
 
-  function promeniProfil() {
+  async function promeniProfil() {
+    try {
+      await iskljuciPushZaDete(profilToken)
+    } catch {
+      // Promena profila mora da radi i kada je uređaj trenutno offline.
+    }
     zaboraviPovezaniProfil()
     navigate('/dete/pocetak')
   }
@@ -208,7 +267,7 @@ function ProfilPwaKontrole({ ime, profilToken }: { ime: string, profilToken: str
     return (
       <div className="profil-pwa-status">
         <span>📱 Aplikacija je povezana sa profilom: <strong>{ime}</strong></span>
-        <button type="button" className="dugme dugme--senka dugme--malo" onClick={promeniProfil}>
+        <button type="button" className="dugme dugme--senka dugme--malo" onClick={() => void promeniProfil()}>
           Promeni profil
         </button>
       </div>
