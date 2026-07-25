@@ -2,7 +2,7 @@
 // Podešavanja standardnog kviza čuvaju se zasebno za svaku kombinaciju predmeta i razreda u LocalStorage-u.
 import { useEffect, useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { generisi } from '../../generator'
+import { generisi, podrzaneOblasti } from '../../generator'
 import {
   listajOblasti, listajPitanja, sacuvajKviz, postaviPitanjaKviza,
   type FilterPitanja, type SnapshotUnos,
@@ -68,6 +68,9 @@ export function KvizForma() {
   const [razred, setRazred] = useState<Razred>(3)
   const [oblasti, setOblasti] = useState<Oblast[]>([])
   
+  // Spisak oblasti koje imaju automatski generator na backendu
+  const podrzaneSlugs = useMemo(() => podrzaneOblasti(), [])
+
   // Konfiguracija standardnog kviza za trenutni predmet i razred
   const [cfg, setCfg] = useState<StandardQuizConfig>({
     title: '',
@@ -146,11 +149,23 @@ export function KvizForma() {
           oblastiZaPrikaz.some((o) => o.slug === slug)
         ) ?? defaults.selectedTopics
 
+        // Ako je izvor generator, a prelazimo na srpski jezik ili neku drugu kombinaciju
+        let noviIzvor = parsed.source ?? defaults.source
+        if (predmet === 'srpski') {
+          noviIzvor = 'bank'
+        }
+
+        // Ako je izvor generator, filtriraj samo teme koje imaju generator
+        let konacneTeme = ispravniSlugovi.length > 0 ? ispravniSlugovi : defaults.selectedTopics
+        if (noviIzvor === 'generator') {
+          konacneTeme = konacneTeme.filter((slug) => podrzaneSlugs.includes(slug))
+        }
+
         setCfg({
           ...defaults,
           ...parsed,
-          source: predmet === 'srpski' ? 'bank' : (parsed.source ?? defaults.source),
-          selectedTopics: ispravniSlugovi.length > 0 ? ispravniSlugovi : defaults.selectedTopics,
+          source: noviIzvor,
+          selectedTopics: konacneTeme,
         })
       } catch (e) {
         console.error('Greška pri parsiranju sačuvanih podešavanja:', e)
@@ -160,7 +175,7 @@ export function KvizForma() {
       setCfg(getDefaults(predmet, razred, oblasti))
     }
     setGreska(null)
-  }, [predmet, razred, oblasti, oblastiZaPrikaz])
+  }, [predmet, razred, oblasti, oblastiZaPrikaz, podrzaneSlugs])
 
   // Čuvanje izmena u state-u i LocalStorage-u
   const azurirajCfg = (updates: Partial<StandardQuizConfig>) => {
@@ -178,6 +193,15 @@ export function KvizForma() {
     })
   }
 
+  // Funkcija za promenu izvora pitanja sa čišćenjem nekompatibilnih tema
+  const promeniIzvor = (noviIzvor: 'bank' | 'generator') => {
+    let sledeceTeme = cfg.selectedTopics
+    if (noviIzvor === 'generator') {
+      sledeceTeme = cfg.selectedTopics.filter((slug) => podrzaneSlugs.includes(slug))
+    }
+    azurirajCfg({ source: noviIzvor, selectedTopics: sledeceTeme })
+  }
+
   // Selekcija pojedinačne oblasti
   const preklopiOblast = (slug: string) => {
     const sledece = cfg.selectedTopics.includes(slug)
@@ -188,8 +212,13 @@ export function KvizForma() {
 
   // Selekcija svih oblasti
   const preklopiSveOblasti = () => {
-    const sveUkljucene = oblastiZaPrikaz.every((o) => cfg.selectedTopics.includes(o.slug))
-    const sledece = sveUkljucene ? [] : oblastiZaPrikaz.map((o) => o.slug)
+    // Ako je generator uključen, selektuju se samo one oblasti koje imaju generator
+    const dostupneOblasti = cfg.source === 'generator'
+      ? oblastiZaPrikaz.filter((o) => podrzaneSlugs.includes(o.slug))
+      : oblastiZaPrikaz
+
+    const sveUkljucene = dostupneOblasti.every((o) => cfg.selectedTopics.includes(o.slug))
+    const sledece = sveUkljucene ? [] : dostupneOblasti.map((o) => o.slug)
     azurirajCfg({ selectedTopics: sledece })
   }
 
@@ -267,12 +296,18 @@ export function KvizForma() {
 
       // 2a. Ako je izvor generator (samo za matematiku)
       if (cfg.source === 'generator' && predmet === 'matematika') {
-        const n = cfg.selectedTopics.length
+        const generatorTopics = cfg.selectedTopics.filter((slug) => podrzaneSlugs.includes(slug))
+
+        if (generatorTopics.length === 0) {
+          throw new Error('Nijedna od izabranih oblasti nema automatski generator. Izaberi druge oblasti ili promeni izvor na banku.')
+        }
+
+        const n = generatorTopics.length
         const generisanaPitanja = []
 
         for (let i = 0; i < n; i++) {
-          const slug = cfg.selectedTopics[i]
-          // Ravnomerna raspodela broja pitanja po izabranim oblastima
+          const slug = generatorTopics[i]
+          // Ravnomerna raspodela broja pitanja po izabranim oblastima sa generatorom
           const brojZaOblast = Math.floor(cfg.count / n) + (i < cfg.count % n ? 1 : 0)
           if (brojZaOblast === 0) continue
 
@@ -363,7 +398,22 @@ export function KvizForma() {
     }
   }
 
-  const sveOblastiIzabrane = oblastiZaPrikaz.length > 0 && oblastiZaPrikaz.every((o) => cfg.selectedTopics.includes(o.slug))
+  const dostupneOblastiZaPrikaz = useMemo(() => {
+    return oblastiZaPrikaz.map((o) => {
+      const imaGen = podrzaneSlugs.includes(o.slug)
+      const onemoguceno = cfg.source === 'generator' && !imaGen
+      return {
+        ...o,
+        imaGenerator: imaGen,
+        onemoguceno,
+      }
+    })
+  }, [oblastiZaPrikaz, podrzaneSlugs, cfg.source])
+
+  const sveOblastiIzabrane = dostupneOblastiZaPrikaz.length > 0 && 
+    dostupneOblastiZaPrikaz
+      .filter((o) => !o.onemoguceno)
+      .every((o) => cfg.selectedTopics.includes(o.slug))
 
   return (
     <div className="generator-strana">
@@ -436,27 +486,34 @@ export function KvizForma() {
               </button>
             </div>
             
-            {oblastiZaPrikaz.length === 0 ? (
+            {dostupneOblastiZaPrikaz.length === 0 ? (
               <p className="blago">Učitavam oblasti...</p>
             ) : (
               <div className="gen-oblasti">
-                {oblastiZaPrikaz.map((o) => {
+                {dostupneOblastiZaPrikaz.map((o) => {
                   const izabrana = cfg.selectedTopics.includes(o.slug)
                   return (
                     <label
                       key={o.id}
                       className={`gen-oblast ${izabrana ? 'gen-oblast--izabrana' : ''}`}
+                      style={o.onemoguceno ? { opacity: 0.45, cursor: 'not-allowed' } : undefined}
                     >
                       <input
                         type="checkbox"
                         checked={izabrana}
+                        disabled={o.onemoguceno}
                         onChange={() => preklopiOblast(o.slug)}
                       />
                       <span className="gen-oblast-ikona">
                         {IKONE_OBLASTI[o.slug] ?? '❓'}
                       </span>
-                      <span className="gen-oblast-tekst">
-                        {NAZIVI_OBLASTI[o.slug] ?? o.name}
+                      <span className="gen-oblast-tekst" style={{ display: 'flex', flexDirection: 'column' }}>
+                        <span>{NAZIVI_OBLASTI[o.slug] ?? o.name}</span>
+                        {o.onemoguceno && (
+                          <span style={{ fontSize: '0.72rem', fontWeight: 'normal', color: 'var(--boja-tekst-blagi)' }}>
+                            (bez generatora)
+                          </span>
+                        )}
                       </span>
                     </label>
                   )
@@ -534,7 +591,7 @@ export function KvizForma() {
                   <label htmlFor="std-source">Izvor pitanja</label>
                   <select
                     id="std-source" value={cfg.source} disabled={predmet === 'srpski'}
-                    onChange={(e) => azurirajCfg({ source: e.target.value as 'bank' | 'generator' })}
+                    onChange={(e) => promeniIzvor(e.target.value as 'bank' | 'generator')}
                   >
                     <option value="bank">Banka pitanja (iz baze)</option>
                     <option value="generator">Generator (dinamički)</option>
