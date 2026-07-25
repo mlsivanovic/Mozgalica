@@ -15,6 +15,13 @@ dist-ssr
 # Supabase CLI lokalni keš (project ref, verzije servisa — ne treba u git)
 supabase/.temp
 
+# ZCode sesijski podaci (privremeno, alatski)
+.zcode/
+
+# Privremeni radni direktorijumi za analizu/eksport podataka iz baze
+tmp_analiza/
+/tmp_mozgalica*
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

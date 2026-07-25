@@ -12,6 +12,37 @@ Uputstva za rad na ovom projektu (ljudski saradnici i AI agenti).
   Ako nedostaje potreban alat, zatraži dozvolu za njegovu instalaciju, zatim ga
   instaliraj i dovrši posao samostalno.
 
+### Pristup Supabase bazi (CLI)
+
+Anon ključ iz `.env.local` **ne može** da čita/piše tabele direktno — RLS dozvoljava
+samo `authenticated` (admin) preko SECURITY DEFINER RPC funkcija. Za direktan rad
+sa bazom iz terminala koristi Management API preko linkovanog projekta:
+
+```bash
+# Read-only upit (odlično za analizu/verifikaciju stanja baze)
+supabase db query --linked "SELECT ... ;"
+
+# Izvršavanje SQL fajla (za INSERT/UPDATE veće količine podataka)
+supabase db query --linked -f /tmp/skripta.sql
+
+# Read-only sa transakcijom za bezbedno testiranje write operacija
+supabase db query --linked "BEGIN; UPDATE ... ; ROLLBACK;"
+```
+
+`--linked` koristi `supabase/.temp/linked-project.json` (project ref) i
+autentifikuje se preko Management API-ja, **zaobilazeći anon ključ i RLS** —
+radi i za `SELECT` i za `INSERT`/`UPDATE`/`DELETE`.
+
+**Bezbednost write operacija:** Pre bilo koje destruktivne izmene (DELETE, masovni
+UPDATE) napravi backup tabelu: `CREATE TABLE x_backup_datum AS SELECT * FROM x;`.
+
+**Poštuj arhitekturu snapshot-a:** Pitanja i oblasti korišćene u istorijskim
+kvizovima (referencirane u `quiz_questions` preko `source_question_id` FK) ne mogu
+da se obrišu — `trg_quiz_questions_guard` trigger blokira. Njihov tekst/odgovor
+može da se menja (snapshot u `quiz_questions` ima sopstveni `text` i ostaje
+netaknut), ali brisanje pada. Pre brisanja uvek proveri:
+`SELECT count(*) FROM quiz_questions WHERE source_question_id = '<id>';`
+
 ## Konvencije
 
 - **Komentari u kodu, README i dokumentacija: srpski (latinica).** UI tekst za

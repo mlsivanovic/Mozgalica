@@ -62,16 +62,26 @@ export interface FilterPitanja {
 }
 
 export async function listajPitanja(filter: FilterPitanja): Promise<Pitanje[]> {
-  let upit = supabase().from('questions').select('*').order('created_at', { ascending: false })
-  if (filter.topicId) upit = upit.eq('topic_id', filter.topicId)
-  else if (filter.topicIds) upit = upit.in('topic_id', filter.topicIds)
-  if (filter.type) upit = upit.eq('type', filter.type)
-  if (filter.difficulty) upit = upit.eq('difficulty', filter.difficulty)
-  if (filter.source) upit = upit.eq('source', filter.source)
-  if (filter.pretraga) upit = upit.ilike('text', `%${filter.pretraga}%`)
-  const { data, error } = await upit.limit(500)
-  if (error) throw new Error(opisiGresku(error)!)
-  return data as Pitanje[]
+  // Paginirano čitanje: baza može imati znatno više od 1000 pitanja, a PostgREST
+  // inače tiho seče na podrazumevanom limitu. Čitamo u stranicama dok ne prikupimo sve.
+  const VELICINA_STRANE = 1000
+  const sve: Pitanje[] = []
+  let od = 0
+  for (;;) {
+    let upit = supabase().from('questions').select('*').order('created_at', { ascending: false })
+    if (filter.topicId) upit = upit.eq('topic_id', filter.topicId)
+    else if (filter.topicIds) upit = upit.in('topic_id', filter.topicIds)
+    if (filter.type) upit = upit.eq('type', filter.type)
+    if (filter.difficulty) upit = upit.eq('difficulty', filter.difficulty)
+    if (filter.source) upit = upit.eq('source', filter.source)
+    if (filter.pretraga) upit = upit.ilike('text', `%${filter.pretraga}%`)
+    const { data, error } = await upit.range(od, od + VELICINA_STRANE - 1)
+    if (error) throw new Error(opisiGresku(error)!)
+    if (data) sve.push(...(data as Pitanje[]))
+    if (!data || data.length < VELICINA_STRANE) break
+    od += VELICINA_STRANE
+  }
+  return sve
 }
 
 export type NovoPitanje = Omit<Pitanje, 'id' | 'owner_id' | 'created_at' | 'updated_at'>
