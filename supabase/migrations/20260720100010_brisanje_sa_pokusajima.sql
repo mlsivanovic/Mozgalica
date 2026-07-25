@@ -10,6 +10,10 @@ returns trigger
 language plpgsql
 as $$
 begin
+  if TG_OP = 'UPDATE' and new.source_question_id is null then
+    return new;
+  end if;
+
   if exists (select 1 from public.attempts where quiz_id = new.quiz_id) then
     raise exception 'Kviz već ima pokušaje — pitanja se više ne mogu menjati ni dodavati. Pojedinačna pitanja i dalje mogu da se obrišu.';
   end if;

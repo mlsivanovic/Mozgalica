@@ -50,7 +50,7 @@ export function PitanjaLista() {
     setUcitava(true)
     try {
       const o = await listajOblasti()
-      const oblastiPredmeta = o.filter((t) => t.subject === predmet && (predmet !== 'matematika' || t.grade === razred))
+      const oblastiPredmeta = o.filter((t) => t.subject === predmet && t.grade === razred)
       const [p, k] = await Promise.all([
         listajPitanja({
           topicId: filterOblast || undefined,
@@ -87,7 +87,7 @@ export function PitanjaLista() {
 
   const mapaOblasti = useMemo(() => new Map(oblasti.map((o) => [o.id, o.name])), [oblasti])
   const oblastiPredmeta = useMemo(
-    () => oblasti.filter((o) => o.subject === predmet && (predmet !== 'matematika' || o.grade === razred)),
+    () => oblasti.filter((o) => o.subject === predmet && o.grade === razred),
     [oblasti, predmet, razred],
   )
 
@@ -289,20 +289,18 @@ export function PitanjaLista() {
         ))}
       </div>
 
-      {predmet === 'matematika' && (
-        <div className="red razred-tabovi razmak-dole">
-          {([3, 4] as const).map((r) => (
-            <button
-              key={r} type="button"
-              className={`dugme dugme--malo ${razred === r ? '' : 'dugme--senka'}`}
-              aria-current={razred === r}
-              onClick={() => promeniRazred(r)}
-            >
-              {NAZIVI_RAZREDA[r]}
-            </button>
-          ))}
-        </div>
-      )}
+      <div className="red razred-tabovi razmak-dole">
+        {([3, 4] as const).map((r) => (
+          <button
+            key={r} type="button"
+            className={`dugme dugme--malo ${razred === r ? '' : 'dugme--senka'}`}
+            aria-current={razred === r}
+            onClick={() => promeniRazred(r)}
+          >
+            {NAZIVI_RAZREDA[r]}
+          </button>
+        ))}
+      </div>
 
       <div className="zaglavlje-strane">
         <h1>Banka pitanja — {NAZIVI_PREDMETA[predmet]}</h1>

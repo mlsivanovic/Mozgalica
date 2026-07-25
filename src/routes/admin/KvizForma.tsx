@@ -112,23 +112,13 @@ export function KvizForma() {
 
   // Filtriranje oblasti za trenutni predmet i razred
   const oblastiZaPrikaz = useMemo(() => {
-    const filtrirane = oblasti.filter(
-      (o) => o.subject === predmet && (predmet === 'matematika' ? o.grade === razred : true)
-    )
-    // Ako za srpski i 4. razred nemamo još uvek unete posebne oblasti, fallbackujemo na sve srpski oblasti
-    if (filtrirane.length === 0 && predmet === 'srpski') {
-      return oblasti.filter((o) => o.subject === 'srpski')
-    }
-    return filtrirane
+    return oblasti.filter((o) => o.subject === predmet && o.grade === razred)
   }, [oblasti, predmet, razred])
 
   // Funkcija za generisanje inicijalnih default vrednosti
   const getDefaults = (p: Predmet, r: Razred, sveOblasti: Oblast[]): StandardQuizConfig => {
-    const filtrirane = sveOblasti.filter(
-      (o) => o.subject === p && (p === 'matematika' ? o.grade === r : true)
-    )
-    const aktivneOblasti = filtrirane.length > 0 ? filtrirane : sveOblasti.filter((o) => o.subject === p)
-    const topicSlugs = aktivneOblasti.map((o) => o.slug)
+    const filtrirane = sveOblasti.filter((o) => o.subject === p && o.grade === r)
+    const topicSlugs = filtrirane.map((o) => o.slug)
     
     return {
       title: `Standardni kviz — ${NAZIVI_PREDMETA[p]} (${NAZIVI_RAZREDA[r]})`,
@@ -579,22 +569,20 @@ export function KvizForma() {
                   </div>
                 </div>
                 
-                {predmet === 'matematika' && (
-                  <div className="polje">
-                    <label htmlFor="f-razred">Razred</label>
-                    <div className="segment">
-                      {([3, 4] as const).map((r) => (
-                        <button
-                          key={r} type="button"
-                          className={`segment-dugme ${razred === r ? 'segment-dugme--izabran' : ''}`}
-                          onClick={() => setRazred(r)}
-                        >
-                          {NAZIVI_RAZREDA[r]}
-                        </button>
-                      ))}
-                    </div>
+                <div className="polje">
+                  <label htmlFor="f-razred">Razred</label>
+                  <div className="segment">
+                    {([3, 4] as const).map((r) => (
+                      <button
+                        key={r} type="button"
+                        className={`segment-dugme ${razred === r ? 'segment-dugme--izabran' : ''}`}
+                        onClick={() => setRazred(r)}
+                      >
+                        {NAZIVI_RAZREDA[r]}
+                      </button>
+                    ))}
                   </div>
-                )}
+                </div>
               </div>
             </div>
 
