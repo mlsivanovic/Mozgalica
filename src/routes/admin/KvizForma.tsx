@@ -1,27 +1,221 @@
-// Brzo kreiranje novog kviza — detaljna podešavanja i izbor pitanja rade se
-// odmah zatim na strani KvizDetalj
-import { useState } from 'react'
+// Kreiranje novog kviza — podržava Standardni (automatski generisani) i Slobodan (ručni unos) režim rada.
+// Podešavanja standardnog kviza čuvaju se zasebno za svaku kombinaciju predmeta i razreda u LocalStorage-u.
+import { useEffect, useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { sacuvajKviz } from '../../lib/api'
+import { generisi } from '../../generator'
+import {
+  listajOblasti, listajPitanja, sacuvajKviz, postaviPitanjaKviza,
+  type FilterPitanja, type SnapshotUnos,
+} from '../../lib/api'
+import {
+  NAZIVI_PREDMETA, NAZIVI_RAZREDA, NAZIVI_TEZINA, NAZIVI_TIPOVA,
+  type Oblast, type Predmet, type Razred, type Tezina, type TipPitanja,
+} from '../../types/db'
+import './generator.css'
+
+const NAZIVI_OBLASTI: Record<string, string> = {
+  'sabiranje': 'Sabiranje', 'oduzimanje': 'Oduzimanje', 'mnozenje': 'Množenje', 'deljenje': 'Deljenje',
+  'kombinovane-operacije': 'Kombinovane računske operacije', 'poredjenje-brojeva': 'Poređenje brojeva',
+  'nizovi-i-obrasci': 'Nizovi i obrasci', 'obim-i-merenje': 'Obim i merenje dužine',
+  'merne-jedinice': 'Merne jedinice', 'novac': 'Novac',
+  'rimski-brojevi': 'Rimski brojevi', 'jednacine': 'Jednačine', 'nejednacine': 'Nejednačine',
+  // 4. razred
+  'veliki-brojevi-4': 'Veliki brojevi', 'sabiranje-4': 'Sabiranje', 'oduzimanje-4': 'Oduzimanje',
+  'mnozenje-4': 'Množenje', 'deljenje-4': 'Deljenje',
+  'kombinovane-operacije-4': 'Kombinovane računske operacije', 'jednacine-4': 'Jednačine',
+  'nejednacine-4': 'Nejednačine', 'povrsina-4': 'Površina', 'zapremina-4': 'Zapremina',
+  'geometrijska-tela-4': 'Geometrijska tela', 'razlomci-4': 'Razlomci', 'decimalni-brojevi-4': 'Decimalni brojevi',
+  // Srpski jezik
+  'srpski-gramatika': 'Gramatika', 'srpski-pravopis': 'Pravopis', 'srpski-citanje': 'Čitanje i razumevanje',
+  'srpski-recnik': 'Rečnik',
+}
+
+const IKONE_OBLASTI: Record<string, string> = {
+  'sabiranje': '➕', 'oduzimanje': '➖', 'mnozenje': '✖️', 'deljenje': '➗',
+  'kombinovane-operacije': '🧮', 'poredjenje-brojeva': '⚖️',
+  'nizovi-i-obrasci': '🔁', 'obim-i-merenje': '📐',
+  'merne-jedinice': '📏', 'novac': '💰',
+  'rimski-brojevi': '🏛️', 'jednacine': '🟰', 'nejednacine': '≠',
+  // 4. razred
+  'veliki-brojevi-4': '🔢', 'sabiranje-4': '➕', 'oduzimanje-4': '➖',
+  'mnozenje-4': '✖️', 'deljenje-4': '➗',
+  'kombinovane-operacije-4': '🧮', 'jednacine-4': '🟰', 'nejednacine-4': '≠',
+  'povrsina-4': '▦', 'zapremina-4': '📦', 'geometrijska-tela-4': '🧊',
+  'razlomci-4': '🍕', 'decimalni-brojevi-4': '🔟',
+  // Srpski jezik
+  'srpski-gramatika': '📚', 'srpski-pravopis': '✍️', 'srpski-citanje': '📖', 'srpski-recnik': '🗣️',
+}
+
+interface StandardQuizConfig {
+  title: string
+  count: number
+  difficulty: string // '' | '1' | '2' | '3' | '4' | '5'
+  type: string // '' | TipPitanja
+  source: 'bank' | 'generator'
+  selectedTopics: string[]
+  timeLimit: string
+  shuffleQuestions: boolean
+  shuffleAnswers: boolean
+  passThreshold: number
+}
 
 export function KvizForma() {
   const navigate = useNavigate()
-  const [title, setTitle] = useState('')
-  const [description, setDescription] = useState('')
+  const [mod, setMod] = useState<'standard' | 'manual'>('standard')
+  
+  // Opšta podešavanja za standardni kviz
+  const [predmet, setPredmet] = useState<Predmet>('matematika')
+  const [razred, setRazred] = useState<Razred>(3)
+  const [oblasti, setOblasti] = useState<Oblast[]>([])
+  
+  // Konfiguracija standardnog kviza za trenutni predmet i razred
+  const [cfg, setCfg] = useState<StandardQuizConfig>({
+    title: '',
+    count: 10,
+    difficulty: '',
+    type: 'auto',
+    source: 'bank',
+    selectedTopics: [],
+    timeLimit: '',
+    shuffleQuestions: true,
+    shuffleAnswers: true,
+    passThreshold: 90,
+  })
+
+  // Stanje ručne forme
+  const [manualTitle, setManualTitle] = useState('')
+  const [manualDescription, setManualTitleDescription] = useState('')
+
   const [greska, setGreska] = useState<string | null>(null)
   const [cuva, setCuva] = useState(false)
 
-  async function napravi() {
-    if (title.trim().length < 2) { setGreska('Unesi naziv kviza.'); return }
+  // Učitavanje oblasti pri montiranju
+  useEffect(() => {
+    listajOblasti().then(setOblasti).catch((e) => {
+      console.error('Greška pri učitavanju oblasti:', e)
+    })
+  }, [])
+
+  // Filtriranje oblasti za trenutni predmet i razred
+  const oblastiZaPrikaz = useMemo(() => {
+    const filtrirane = oblasti.filter(
+      (o) => o.subject === predmet && (predmet === 'matematika' ? o.grade === razred : true)
+    )
+    // Ako za srpski i 4. razred nemamo još uvek unete posebne oblasti, fallbackujemo na sve srpski oblasti
+    if (filtrirane.length === 0 && predmet === 'srpski') {
+      return oblasti.filter((o) => o.subject === 'srpski')
+    }
+    return filtrirane
+  }, [oblasti, predmet, razred])
+
+  // Funkcija za generisanje inicijalnih default vrednosti
+  const getDefaults = (p: Predmet, r: Razred, sveOblasti: Oblast[]): StandardQuizConfig => {
+    const filtrirane = sveOblasti.filter(
+      (o) => o.subject === p && (p === 'matematika' ? o.grade === r : true)
+    )
+    const aktivneOblasti = filtrirane.length > 0 ? filtrirane : sveOblasti.filter((o) => o.subject === p)
+    const topicSlugs = aktivneOblasti.map((o) => o.slug)
+    
+    return {
+      title: `Standardni kviz — ${NAZIVI_PREDMETA[p]} (${NAZIVI_RAZREDA[r]})`,
+      count: 10,
+      difficulty: '',
+      type: 'auto',
+      source: p === 'matematika' ? 'generator' : 'bank',
+      selectedTopics: topicSlugs,
+      timeLimit: '',
+      shuffleQuestions: true,
+      shuffleAnswers: true,
+      passThreshold: 90,
+    }
+  }
+
+  // Učitavanje podešavanja iz LocalStorage-a za predmet i razred
+  useEffect(() => {
+    if (oblasti.length === 0) return
+
+    const key = `standard_quiz_settings_${predmet}_${razred}`
+    const saved = localStorage.getItem(key)
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved) as Partial<StandardQuizConfig>
+        const defaults = getDefaults(predmet, razred, oblasti)
+        
+        // Spajanje sa sačuvanim vrednostima i validacija oblasti
+        const ispravniSlugovi = parsed.selectedTopics?.filter((slug) =>
+          oblastiZaPrikaz.some((o) => o.slug === slug)
+        ) ?? defaults.selectedTopics
+
+        setCfg({
+          ...defaults,
+          ...parsed,
+          source: predmet === 'srpski' ? 'bank' : (parsed.source ?? defaults.source),
+          selectedTopics: ispravniSlugovi.length > 0 ? ispravniSlugovi : defaults.selectedTopics,
+        })
+      } catch (e) {
+        console.error('Greška pri parsiranju sačuvanih podešavanja:', e)
+        setCfg(getDefaults(predmet, razred, oblasti))
+      }
+    } else {
+      setCfg(getDefaults(predmet, razred, oblasti))
+    }
+    setGreska(null)
+  }, [predmet, razred, oblasti, oblastiZaPrikaz])
+
+  // Čuvanje izmena u state-u i LocalStorage-u
+  const azurirajCfg = (updates: Partial<StandardQuizConfig>) => {
+    setCfg((prev) => {
+      const sledeci = { ...prev, ...updates }
+      
+      // Za srpski jezik nema generatora, uvek mora biti banka
+      if (predmet === 'srpski') {
+        sledeci.source = 'bank'
+      }
+
+      const key = `standard_quiz_settings_${predmet}_${razred}`
+      localStorage.setItem(key, JSON.stringify(sledeci))
+      return sledeci
+    })
+  }
+
+  // Selekcija pojedinačne oblasti
+  const preklopiOblast = (slug: string) => {
+    const sledece = cfg.selectedTopics.includes(slug)
+      ? cfg.selectedTopics.filter((s) => s !== slug)
+      : [...cfg.selectedTopics, slug]
+    azurirajCfg({ selectedTopics: sledece })
+  }
+
+  // Selekcija svih oblasti
+  const preklopiSveOblasti = () => {
+    const sveUkljucene = oblastiZaPrikaz.every((o) => cfg.selectedTopics.includes(o.slug))
+    const sledece = sveUkljucene ? [] : oblastiZaPrikaz.map((o) => o.slug)
+    azurirajCfg({ selectedTopics: sledece })
+  }
+
+  // Kreiranje slobodnog (ručnog) kviza
+  async function napraviRucno() {
+    if (manualTitle.trim().length < 2) {
+      setGreska('Unesi naziv kviza.')
+      return
+    }
     setGreska(null)
     setCuva(true)
     try {
       const id = await sacuvajKviz({
-        title: title.trim(), description: description.trim() || null, time_limit_seconds: null,
-        default_max_attempts: 1, shuffle_questions: true, shuffle_answers: true,
-        show_result: true, show_correct: true, pass_threshold_pct: 90,
-        require_name: true, fixed_child_name: null,
-        require_label: false, label_name: 'Odeljenje',
+        title: manualTitle.trim(),
+        description: manualDescription.trim() || null,
+        time_limit_seconds: null,
+        default_max_attempts: 1,
+        shuffle_questions: true,
+        shuffle_answers: true,
+        show_result: true,
+        show_correct: true,
+        pass_threshold_pct: 90,
+        require_name: true,
+        fixed_child_name: null,
+        require_label: false,
+        label_name: 'Odeljenje',
       })
       navigate(`/admin/kvizovi/${id}`)
     } catch (e) {
@@ -31,26 +225,407 @@ export function KvizForma() {
     }
   }
 
+  // Kreiranje i generisanje standardnog kviza
+  async function generisiKviz() {
+    if (cfg.title.trim().length < 2) {
+      setGreska('Unesi naziv kviza.')
+      return
+    }
+    if (cfg.selectedTopics.length === 0) {
+      setGreska('Moraš izabrati barem jednu oblast za kviz.')
+      return
+    }
+    if (cfg.count < 1) {
+      setGreska('Broj pitanja mora biti veći od nule.')
+      return
+    }
+
+    setGreska(null)
+    setCuva(true)
+
+    try {
+      const timeLimitSeconds = cfg.timeLimit ? Number(cfg.timeLimit) * 60 : null
+      
+      // 1. Snimi novi kviz red u bazi
+      const quizId = await sacuvajKviz({
+        title: cfg.title.trim(),
+        description: `Standardni automatski kviz (${NAZIVI_PREDMETA[predmet]} - ${NAZIVI_RAZREDA[razred]})`,
+        time_limit_seconds: timeLimitSeconds,
+        default_max_attempts: 1,
+        shuffle_questions: cfg.shuffleQuestions,
+        shuffle_answers: cfg.shuffleAnswers,
+        show_result: true,
+        show_correct: true,
+        pass_threshold_pct: cfg.passThreshold,
+        require_name: true,
+        fixed_child_name: null,
+        require_label: false,
+        label_name: 'Odeljenje',
+      })
+
+      let unosi: SnapshotUnos[] = []
+
+      // 2a. Ako je izvor generator (samo za matematiku)
+      if (cfg.source === 'generator' && predmet === 'matematika') {
+        const n = cfg.selectedTopics.length
+        const generisanaPitanja = []
+
+        for (let i = 0; i < n; i++) {
+          const slug = cfg.selectedTopics[i]
+          // Ravnomerna raspodela broja pitanja po izabranim oblastima
+          const brojZaOblast = Math.floor(cfg.count / n) + (i < cfg.count % n ? 1 : 0)
+          if (brojZaOblast === 0) continue
+
+          const ispravnaTezina = cfg.difficulty ? (Number(cfg.difficulty) as Tezina) : (3 as Tezina)
+          const genCfg = {
+            topicSlug: slug,
+            difficulty: ispravnaTezina,
+            count: brojZaOblast,
+            type: (cfg.type === 'auto' || !cfg.type ? 'auto' : cfg.type) as TipPitanja | 'auto',
+            wordProblems: false,
+            allowRepeats: false,
+          }
+
+          const rez = generisi(genCfg)
+          generisanaPitanja.push(...rez.questions)
+        }
+
+        unosi = generisanaPitanja.map((p, i) => {
+          const oblast = oblasti.find((o) => o.slug === p.topicSlug)
+          return {
+            quiz_id: quizId,
+            position: i,
+            source_question_id: null,
+            topic_id: oblast?.id ?? null,
+            topic_name: oblast?.name ?? '—',
+            type: p.type,
+            text: p.text,
+            options: p.options,
+            correct: p.correct,
+            explanation: p.explanation || null,
+            hint: p.hint || null,
+            points: p.points,
+            manual_review: false,
+          }
+        })
+      } 
+      // 2b. Ako je izvor banka pitanja (bilo koji predmet)
+      else {
+        const izabraneOblastiIds = oblasti
+          .filter((o) => cfg.selectedTopics.includes(o.slug))
+          .map((o) => o.id)
+
+        const filter: FilterPitanja = {
+          topicIds: izabraneOblastiIds,
+        }
+
+        if (cfg.difficulty) {
+          filter.difficulty = Number(cfg.difficulty)
+        }
+        if (cfg.type && cfg.type !== 'auto') {
+          filter.type = cfg.type
+        }
+
+        const bankPitanja = await listajPitanja(filter)
+
+        if (bankPitanja.length === 0) {
+          throw new Error('Nije pronađeno nijedno pitanje u banci za izabrana podešavanja. Promeni oblast ili težinu.')
+        }
+
+        // Nasumičan izbor pitanja
+        const promesana = [...bankPitanja].sort(() => Math.random() - 0.5)
+        const odabrana = promesana.slice(0, cfg.count)
+
+        unosi = odabrana.map((p, i) => ({
+          quiz_id: quizId,
+          position: i,
+          source_question_id: p.id,
+          topic_id: p.topic_id,
+          topic_name: oblasti.find((o) => o.id === p.topic_id)?.name ?? '—',
+          type: p.type,
+          text: p.text,
+          options: p.options,
+          correct: p.correct,
+          explanation: p.explanation || null,
+          hint: p.hint || null,
+          points: p.points,
+          manual_review: p.manual_review,
+        }))
+      }
+
+      // 3. Postavi pitanja u kviz i nastavi
+      await postaviPitanjaKviza(quizId, unosi)
+      navigate(`/admin/kvizovi/${quizId}`)
+    } catch (e) {
+      setGreska(String((e as Error).message ?? e))
+    } finally {
+      setCuva(false)
+    }
+  }
+
+  const sveOblastiIzabrane = oblastiZaPrikaz.length > 0 && oblastiZaPrikaz.every((o) => cfg.selectedTopics.includes(o.slug))
+
   return (
-    <div className="sadrzaj--usko">
-      <h1>Novi kviz</h1>
-      <div className="kartica">
-        <div className="polje">
-          <label htmlFor="kv-naziv">Naziv kviza</label>
-          <input id="kv-naziv" type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="npr. Množenje — leto 2026" />
-        </div>
-        <div className="polje">
-          <label htmlFor="kv-opis">Poruka detetu (opciono)</label>
-          <textarea id="kv-opis" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Srećno rešavanje! 🌟" />
-        </div>
-        {greska && <p className="poruka poruka--greska" role="alert">{greska}</p>}
-        <button type="button" className="dugme dugme--akcenat" disabled={cuva} onClick={napravi}>
-          {cuva ? 'Pravim…' : 'Napravi kviz i nastavi'}
-        </button>
-        <p className="malo blago razmak-gore">
-          Detaljna podešavanja, izbor pitanja i linkovi za decu podešavaju se na sledećem koraku.
-        </p>
+    <div className="generator-strana">
+      <div className="zaglavlje-strane">
+        <h1>Novi kviz</h1>
       </div>
+
+      {/* Segmentirani kontroler za izbor MODA (Standardni vs Slobodan) */}
+      <div className="segment razmak-dole" role="tablist">
+        <button
+          type="button" role="tab" aria-selected={mod === 'standard'}
+          className={`segment-dugme ${mod === 'standard' ? 'segment-dugme--izabran' : ''}`}
+          onClick={() => setMod('standard')}
+        >
+          ✨ Standardni kviz (automatski)
+        </button>
+        <button
+          type="button" role="tab" aria-selected={mod === 'manual'}
+          className={`segment-dugme ${mod === 'manual' ? 'segment-dugme--izabran' : ''}`}
+          onClick={() => setMod('manual')}
+        >
+          📝 Slobodan kviz (ručni unos)
+        </button>
+      </div>
+
+      {mod === 'manual' ? (
+        <div className="sadrzaj--usko">
+          <div className="kartica">
+            <h2>Kreiraj ručni kviz</h2>
+            <p className="blago malo razmak-dole">
+              Napravi prazan kviz, pa sam/a biraj i dodaj pitanja iz banke ili kreiraj nova na sledećem koraku.
+            </p>
+
+            <div className="polje">
+              <label htmlFor="kv-naziv">Naziv kviza</label>
+              <input
+                id="kv-naziv" type="text" value={manualTitle}
+                onChange={(e) => setManualTitle(e.target.value)}
+                placeholder="npr. Množenje — leto 2026"
+              />
+            </div>
+
+            <div className="polje">
+              <label htmlFor="kv-opis">Poruka detetu (opciono)</label>
+              <textarea
+                id="kv-opis" value={manualDescription}
+                onChange={(e) => setManualTitleDescription(e.target.value)}
+                placeholder="Srećno rešavanje! 🌟"
+              />
+            </div>
+
+            {greska && <p className="poruka poruka--greska" role="alert">{greska}</p>}
+
+            <button type="button" className="dugme dugme--akcenat" disabled={cuva} onClick={napraviRucno}>
+              {cuva ? 'Pravim…' : 'Napravi kviz i nastavi'}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="gen-forma">
+          {/* LEVA STRANA: Izbor oblasti (samo za standardni kviz) */}
+          <div className="gen-sekcija gen-sekcija--oblasti">
+            <div className="red red--razmak razmak-dole">
+              <p className="gen-naslov">Uključene oblasti</p>
+              <button
+                type="button" className="dugme dugme--malo dugme--senka"
+                onClick={preklopiSveOblasti}
+              >
+                {sveOblastiIzabrane ? 'Deselektuj sve' : 'Izaberi sve'}
+              </button>
+            </div>
+            
+            {oblastiZaPrikaz.length === 0 ? (
+              <p className="blago">Učitavam oblasti...</p>
+            ) : (
+              <div className="gen-oblasti">
+                {oblastiZaPrikaz.map((o) => {
+                  const izabrana = cfg.selectedTopics.includes(o.slug)
+                  return (
+                    <label
+                      key={o.id}
+                      className={`gen-oblast ${izabrana ? 'gen-oblast--izabrana' : ''}`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={izabrana}
+                        onChange={() => preklopiOblast(o.slug)}
+                      />
+                      <span className="gen-oblast-ikona">
+                        {IKONE_OBLASTI[o.slug] ?? '❓'}
+                      </span>
+                      <span className="gen-oblast-tekst">
+                        {NAZIVI_OBLASTI[o.slug] ?? o.name}
+                      </span>
+                    </label>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* DESNA STRANA: Podešavanja predmeta, razreda, količine, težine i izvora */}
+          <div className="gen-desno">
+            {/* Predmet i Razred */}
+            <div className="gen-sekcija">
+              <p className="gen-naslov razmak-dole">Predmet i razred</p>
+              <div className="red-polja">
+                <div className="polje">
+                  <label htmlFor="f-predmet">Predmet</label>
+                  <div className="segment">
+                    {(['matematika', 'srpski'] as const).map((p) => (
+                      <button
+                        key={p} type="button"
+                        className={`segment-dugme ${predmet === p ? 'segment-dugme--izabran' : ''}`}
+                        onClick={() => setPredmet(p)}
+                      >
+                        {NAZIVI_PREDMETA[p]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                
+                {predmet === 'matematika' && (
+                  <div className="polje">
+                    <label htmlFor="f-razred">Razred</label>
+                    <div className="segment">
+                      {([3, 4] as const).map((r) => (
+                        <button
+                          key={r} type="button"
+                          className={`segment-dugme ${razred === r ? 'segment-dugme--izabran' : ''}`}
+                          onClick={() => setRazred(r)}
+                        >
+                          {NAZIVI_RAZREDA[r]}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Podešavanja standardnog kviza */}
+            <div className="gen-sekcija gen-sekcija--podesavanje kartica">
+              <h2>Opcije standardnog kviza</h2>
+              <p className="blago malo razmak-dole">
+                Ove opcije se automatski pamte za kombinaciju {NAZIVI_PREDMETA[predmet]}{predmet === 'matematika' ? ` (${NAZIVI_RAZREDA[razred]})` : ''}.
+              </p>
+
+              <div className="polje">
+                <label htmlFor="std-title">Naziv kviza</label>
+                <input
+                  id="std-title" type="text" value={cfg.title}
+                  onChange={(e) => azurirajCfg({ title: e.target.value })}
+                  placeholder="npr. Matematika 3. razred — Standard"
+                />
+              </div>
+
+              <div className="red-polja">
+                <div className="polje">
+                  <label htmlFor="std-count">Broj pitanja</label>
+                  <input
+                    id="std-count" type="number" min={1} max={50} value={cfg.count}
+                    onChange={(e) => azurirajCfg({ count: Number(e.target.value) })}
+                  />
+                </div>
+
+                <div className="polje">
+                  <label htmlFor="std-source">Izvor pitanja</label>
+                  <select
+                    id="std-source" value={cfg.source} disabled={predmet === 'srpski'}
+                    onChange={(e) => azurirajCfg({ source: e.target.value as 'bank' | 'generator' })}
+                  >
+                    <option value="bank">Banka pitanja (iz baze)</option>
+                    <option value="generator">Generator (dinamički)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="red-polja">
+                <div className="polje">
+                  <label htmlFor="std-difficulty">Težina pitanja</label>
+                  <select
+                    id="std-difficulty" value={cfg.difficulty}
+                    onChange={(e) => azurirajCfg({ difficulty: e.target.value })}
+                  >
+                    <option value="">Sve težine (mešovito)</option>
+                    {Object.entries(NAZIVI_TEZINA).map(([k, v]) => (
+                      <option key={k} value={k}>{v} ({k})</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="polje">
+                  <label htmlFor="std-type">Tip pitanja</label>
+                  <select
+                    id="std-type" value={cfg.type}
+                    onChange={(e) => azurirajCfg({ type: e.target.value })}
+                  >
+                    <option value="auto">Svi tipovi (automatski)</option>
+                    {Object.entries(NAZIVI_TIPOVA).map(([k, v]) => (
+                      <option key={k} value={k}>{v}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Dodatne postavke kviza */}
+            <div className="gen-sekcija gen-sekcija--opcije kartica razmak-gore">
+              <h2>Dodatne opcije kviza</h2>
+              
+              <div className="red-polja">
+                <div className="polje">
+                  <label htmlFor="std-time-limit">Vreme (minuti, opciono)</label>
+                  <input
+                    id="std-time-limit" type="number" min={1} value={cfg.timeLimit}
+                    onChange={(e) => azurirajCfg({ timeLimit: e.target.value })}
+                    placeholder="Bez ograničenja"
+                  />
+                </div>
+
+                <div className="polje">
+                  <label htmlFor="std-pass">Prag prolaza %</label>
+                  <input
+                    id="std-pass" type="number" min={1} max={100} value={cfg.passThreshold}
+                    onChange={(e) => azurirajCfg({ passThreshold: Number(e.target.value) })}
+                  />
+                </div>
+              </div>
+
+              <div className="polje razmak-gore">
+                <label className="stiklir">
+                  <input
+                    type="checkbox" checked={cfg.shuffleQuestions}
+                    onChange={(e) => azurirajCfg({ shuffleQuestions: e.target.checked })}
+                  />
+                  Mešaj redosled pitanja
+                </label>
+              </div>
+
+              <div className="polje">
+                <label className="stiklir">
+                  <input
+                    type="checkbox" checked={cfg.shuffleAnswers}
+                    onChange={(e) => azurirajCfg({ shuffleAnswers: e.target.checked })}
+                  />
+                  Mešaj ponuđene odgovore
+                </label>
+              </div>
+            </div>
+
+            {greska && <p className="poruka poruka--greska" role="alert">{greska}</p>}
+
+            <button
+              type="button" className="dugme dugme--akcenat gen-dugme razmak-gore"
+              disabled={cuva} onClick={generisiKviz}
+            >
+              {cuva ? 'Pravim kviz…' : '⚡ Generiši kviz i nastavi'}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
