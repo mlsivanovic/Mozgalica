@@ -158,8 +158,7 @@ export function Generator() {
                 <label key={s} className={`gen-oblast ${izabrano ? 'gen-oblast--izabrana' : ''}`}>
                   <input type="checkbox" checked={izabrano} onChange={() => preklopiOblast(s)} />
                   <span className="gen-oblast-ikona" aria-hidden="true">{IKONE_OBLASTI[s] ?? '📚'}</span>
-                  <span>{NAZIVI_OBLASTI[s] ?? s}</span>
-                  <span className="gen-oblast-kvaka" aria-hidden="true">{izabrano ? '✓' : ''}</span>
+                  <span className="gen-oblast-tekst">{NAZIVI_OBLASTI[s] ?? s}</span>
                 </label>
               )
             })}

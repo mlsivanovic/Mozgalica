@@ -2,6 +2,16 @@
 
 Uputstva za rad na ovom projektu (ljudski saradnici i AI agenti).
 
+## Važna pravila za AI agente
+
+- **Za svaki rad sa Supabase-om koristi Supabase CLI u terminalu.** Ne obavljaj
+  Supabase izmene preko kontrolne table, osim ako terminalska alternativa zaista
+  ne postoji.
+- **Samostalno izvrši akciju kad god je to moguće.** Ne prebacuj korisniku korake
+  kroz administratorske panele ako se isti rezultat može postići iz terminala.
+  Ako nedostaje potreban alat, zatraži dozvolu za njegovu instalaciju, zatim ga
+  instaliraj i dovrši posao samostalno.
+
 ## Konvencije
 
 - **Komentari u kodu, README i dokumentacija: srpski (latinica).** UI tekst za
@@ -47,7 +57,7 @@ i da distraktori nikad ne pogađaju tačan odgovor.
 
 ## Dodavanje nove oblasti generatora
 
-1. Dodaj red u `topics` (SQL migracija ili kroz admin UI).
+1. Dodaj red u `topics` SQL migracijom, a primeni je Supabase CLI-jem u terminalu.
 2. Napravi `src/generator/moduli/<oblast>.ts` koji implementira `TopicGenerator`
    iz `src/generator/types.ts`.
 3. Registruj modul u `src/generator/index.ts` (`MODULI` niz).
