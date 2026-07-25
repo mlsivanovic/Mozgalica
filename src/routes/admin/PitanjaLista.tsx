@@ -9,7 +9,9 @@ import { Loader, Modal } from '../../components/Zajednicke'
 import {
   NAZIVI_PREDMETA, NAZIVI_RAZREDA, NAZIVI_TEZINA, NAZIVI_TIPOVA,
   type Kviz, type Oblast, type Pitanje, type Predmet, type Razred,
+  type Tezina,
 } from '../../types/db'
+import { napraviCsv, preuzmiCsv } from '../../lib/csv'
 import { PitanjeForma } from './PitanjeForma'
 import { UvozCsv } from './UvozCsv'
 import { NoviKvizModal, type NoviKvizPodaci } from './NoviKvizModal'
@@ -194,6 +196,84 @@ export function PitanjaLista() {
     }
   }
 
+  function izveziUCsv() {
+    if (pitanja.length === 0) return
+
+    const zaglavlja = [
+      'Predmet',
+      'Razred',
+      'Oblast',
+      'Tip',
+      'Težina',
+      'Poeni',
+      'Tekst pitanja',
+      'Ponuđeni odgovori',
+      'Tačan odgovor',
+      'Objašnjenje',
+      'Hint',
+      'Izvor',
+    ]
+
+    const redovi = pitanja.map((p) => {
+      const predmetNaziv = NAZIVI_PREDMETA[predmet] ?? predmet
+      const razredNaziv = predmet === 'matematika' ? NAZIVI_RAZREDA[razred] ?? `${razred}. razred` : '—'
+      const oblastNaziv = mapaOblasti.get(p.topic_id) ?? '—'
+      const tipNaziv = NAZIVI_TIPOVA[p.type] ?? p.type
+      const tezinaNaziv = `${NAZIVI_TEZINA[p.difficulty as Tezina]} (${p.difficulty})`
+
+      let opcijeTekst = ''
+      if (p.options) {
+        if (Array.isArray(p.options)) {
+          opcijeTekst = p.options.map((o) => `${o.id}: ${o.text}`).join(' | ')
+        } else if (p.options.left && p.options.right) {
+          const leftStr = p.options.left.map((o) => `${o.id}: ${o.text}`).join(', ')
+          const rightStr = p.options.right.map((o) => `${o.id}: ${o.text}`).join(', ')
+          opcijeTekst = `Levo: [${leftStr}] | Desno: [${rightStr}]`
+        }
+      }
+
+      let tacanTekst = ''
+      const c = p.correct
+      if (c) {
+        if ('optionId' in c && typeof c.optionId === 'string') {
+          tacanTekst = c.optionId
+        } else if ('optionIds' in c && Array.isArray(c.optionIds)) {
+          tacanTekst = c.optionIds.join(', ')
+        } else if ('value' in c && typeof c.value === 'boolean') {
+          tacanTekst = c.value ? 'Tačno' : 'Netačno'
+        } else if ('value' in c && typeof c.value === 'number') {
+          tacanTekst = String(c.value)
+        } else if ('accept' in c && Array.isArray(c.accept)) {
+          tacanTekst = c.accept.join(' | ')
+        } else if ('pairs' in c && c.pairs) {
+          tacanTekst = Object.entries(c.pairs)
+            .map(([k, v]) => `${k} → ${v}`)
+            .join(' | ')
+        }
+      }
+
+      return [
+        predmetNaziv,
+        razredNaziv,
+        oblastNaziv,
+        tipNaziv,
+        tezinaNaziv,
+        p.points,
+        p.text,
+        opcijeTekst,
+        tacanTekst,
+        p.explanation ?? '',
+        p.hint ?? '',
+        p.source === 'manual' ? 'Ručno' : 'Automatski',
+      ]
+    })
+
+    const datum = new Date().toISOString().slice(0, 10)
+    const imeFajla = `mozgalica-pitanja-${predmet}-${datum}.csv`
+    const sadrzaj = napraviCsv(zaglavlja, redovi)
+    preuzmiCsv(imeFajla, sadrzaj)
+  }
+
   return (
     <div>
       <div className="red predmet-tabovi razmak-dole">
@@ -227,6 +307,11 @@ export function PitanjaLista() {
       <div className="zaglavlje-strane">
         <h1>Banka pitanja — {NAZIVI_PREDMETA[predmet]}</h1>
         <div className="red">
+          {pitanja.length > 0 && (
+            <button type="button" className="dugme dugme--senka" onClick={izveziUCsv}>
+              📥 Izvezi u CSV ({pitanja.length})
+            </button>
+          )}
           {predmet === 'matematika' && pitanja.length === 0 && (
             <button type="button" className="dugme dugme--senka" onClick={ucitajPocetna}>
               Učitaj početna pitanja
