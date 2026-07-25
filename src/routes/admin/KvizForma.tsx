@@ -5,11 +5,13 @@ import { useNavigate } from 'react-router-dom'
 import { generisi, podrzaneOblasti } from '../../generator'
 import {
   listajOblasti, listajPitanja, sacuvajKviz, postaviPitanjaKviza,
+  listajProfileDeteta, dodeliKvizProfilu,
   type FilterPitanja, type SnapshotUnos,
 } from '../../lib/api'
 import {
   NAZIVI_PREDMETA, NAZIVI_RAZREDA, NAZIVI_TEZINA, NAZIVI_TIPOVA,
   type Oblast, type Predmet, type Razred, type Tezina, type TipPitanja,
+  type ProfilDeteta,
 } from '../../types/db'
 import './generator.css'
 
@@ -68,6 +70,10 @@ export function KvizForma() {
   const [razred, setRazred] = useState<Razred>(3)
   const [oblasti, setOblasti] = useState<Oblast[]>([])
   
+  // Profili dece za dodelu kviza
+  const [profiliDece, setProfiliDece] = useState<ProfilDeteta[]>([])
+  const [izabranoDete, setIzabranoDete] = useState<string>('') // prazno za "bez deteta"
+
   // Spisak oblasti koje imaju automatski generator na backendu
   const podrzaneSlugs = useMemo(() => podrzaneOblasti(), [])
 
@@ -96,6 +102,11 @@ export function KvizForma() {
   useEffect(() => {
     listajOblasti().then(setOblasti).catch((e) => {
       console.error('Greška pri učitavanju oblasti:', e)
+    })
+
+    // Učitavanje profila dece
+    listajProfileDeteta().then(setProfiliDece).catch((e) => {
+      console.error('Greška pri učitavanju profila dece:', e)
     })
   }, [])
 
@@ -231,7 +242,7 @@ export function KvizForma() {
     setGreska(null)
     setCuva(true)
     try {
-      const id = await sacuvajKviz({
+      const quizId = await sacuvajKviz({
         title: manualTitle.trim(),
         description: manualDescription.trim() || null,
         time_limit_seconds: null,
@@ -246,7 +257,13 @@ export function KvizForma() {
         require_label: false,
         label_name: 'Odeljenje',
       })
-      navigate(`/admin/kvizovi/${id}`)
+
+      // Dodeli kviz izabranom detetu ako je odabrano
+      if (izabranoDete) {
+        await dodeliKvizProfilu(quizId, izabranoDete, true)
+      }
+
+      navigate(`/admin/kvizovi/${quizId}`)
     } catch (e) {
       setGreska(String((e as Error).message ?? e))
     } finally {
@@ -388,8 +405,14 @@ export function KvizForma() {
         }))
       }
 
-      // 3. Postavi pitanja u kviz i nastavi
+      // 3. Postavi pitanja u kviz
       await postaviPitanjaKviza(quizId, unosi)
+
+      // 4. Dodeli kviz izabranom detetu ako je odabrano
+      if (izabranoDete) {
+        await dodeliKvizProfilu(quizId, izabranoDete, true)
+      }
+
       navigate(`/admin/kvizovi/${quizId}`)
     } catch (e) {
       setGreska(String((e as Error).message ?? e))
@@ -398,22 +421,24 @@ export function KvizForma() {
     }
   }
 
-  const dostupneOblastiZaPrikaz = useMemo(() => {
-    return oblastiZaPrikaz.map((o) => {
+  // Filtrirane oblasti koje se zaista prikazuju (ako je izvor generator, potpuno skrivamo one koje ga nemaju)
+  const vidljiveOblasti = useMemo(() => {
+    const obradjene = oblastiZaPrikaz.map((o) => {
       const imaGen = podrzaneSlugs.includes(o.slug)
-      const onemoguceno = cfg.source === 'generator' && !imaGen
       return {
         ...o,
         imaGenerator: imaGen,
-        onemoguceno,
       }
     })
+
+    if (cfg.source === 'generator') {
+      return obradjene.filter((o) => o.imaGenerator)
+    }
+    return obradjene
   }, [oblastiZaPrikaz, podrzaneSlugs, cfg.source])
 
-  const sveOblastiIzabrane = dostupneOblastiZaPrikaz.length > 0 && 
-    dostupneOblastiZaPrikaz
-      .filter((o) => !o.onemoguceno)
-      .every((o) => cfg.selectedTopics.includes(o.slug))
+  const sveOblastiIzabrane = vidljiveOblasti.length > 0 && 
+    vidljiveOblasti.every((o) => cfg.selectedTopics.includes(o.slug))
 
   return (
     <div className="generator-strana">
@@ -465,6 +490,24 @@ export function KvizForma() {
               />
             </div>
 
+            {profiliDece.length > 0 && (
+              <div className="polje">
+                <label htmlFor="kv-dodeljeno-manual">Dodeli kviz detetu (opciono)</label>
+                <select
+                  id="kv-dodeljeno-manual"
+                  value={izabranoDete}
+                  onChange={(e) => setIzabranoDete(e.target.value)}
+                >
+                  <option value="">Bez deteta (samo kreiraj kviz)</option>
+                  {profiliDece.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.avatar} {p.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             {greska && <p className="poruka poruka--greska" role="alert">{greska}</p>}
 
             <button type="button" className="dugme dugme--akcenat" disabled={cuva} onClick={napraviRucno}>
@@ -486,34 +529,27 @@ export function KvizForma() {
               </button>
             </div>
             
-            {dostupneOblastiZaPrikaz.length === 0 ? (
-              <p className="blago">Učitavam oblasti...</p>
+            {vidljiveOblasti.length === 0 ? (
+              <p className="blago">Nema dostupnih oblasti sa izabranim parametrima.</p>
             ) : (
               <div className="gen-oblasti">
-                {dostupneOblastiZaPrikaz.map((o) => {
+                {vidljiveOblasti.map((o) => {
                   const izabrana = cfg.selectedTopics.includes(o.slug)
                   return (
                     <label
                       key={o.id}
                       className={`gen-oblast ${izabrana ? 'gen-oblast--izabrana' : ''}`}
-                      style={o.onemoguceno ? { opacity: 0.45, cursor: 'not-allowed' } : undefined}
                     >
                       <input
                         type="checkbox"
                         checked={izabrana}
-                        disabled={o.onemoguceno}
                         onChange={() => preklopiOblast(o.slug)}
                       />
                       <span className="gen-oblast-ikona">
                         {IKONE_OBLASTI[o.slug] ?? '❓'}
                       </span>
-                      <span className="gen-oblast-tekst" style={{ display: 'flex', flexDirection: 'column' }}>
-                        <span>{NAZIVI_OBLASTI[o.slug] ?? o.name}</span>
-                        {o.onemoguceno && (
-                          <span style={{ fontSize: '0.72rem', fontWeight: 'normal', color: 'var(--boja-tekst-blagi)' }}>
-                            (bez generatora)
-                          </span>
-                        )}
+                      <span className="gen-oblast-tekst">
+                        {NAZIVI_OBLASTI[o.slug] ?? o.name}
                       </span>
                     </label>
                   )
@@ -577,6 +613,24 @@ export function KvizForma() {
                   placeholder="npr. Matematika 3. razred — Standard"
                 />
               </div>
+
+              {profiliDece.length > 0 && (
+                <div className="polje">
+                  <label htmlFor="std-dodeljeno">Dodeli kviz detetu (opciono)</label>
+                  <select
+                    id="std-dodeljeno"
+                    value={izabranoDete}
+                    onChange={(e) => setIzabranoDete(e.target.value)}
+                  >
+                    <option value="">Bez deteta (samo kreiraj kviz)</option>
+                    {profiliDece.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.avatar} {p.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               <div className="red-polja">
                 <div className="polje">
