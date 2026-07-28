@@ -105,3 +105,92 @@
     align-items: flex-start;
   }
 }
+
+/* Proširive Grupe Titula */
+.titula-grupa {
+  border: 1px solid var(--boja-ivica);
+  border-radius: var(--radius);
+  background: var(--boja-polje);
+  overflow: hidden;
+  transition: all 0.2s ease;
+  margin-bottom: 0.75rem;
+}
+
+.titula-grupa--otvorena {
+  border-color: var(--boja-primarna);
+  box-shadow: var(--senka);
+}
+
+.titula-grupa-zaglavlje {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: var(--boja-kartica);
+  cursor: pointer;
+  user-select: none;
+}
+
+.titula-grupa-strelica {
+  font-size: 0.9rem;
+  color: var(--boja-tekst-blagi);
+  transition: transform 0.2s ease;
+  width: 1.25rem;
+  display: inline-flex;
+  justify-content: center;
+}
+
+.titula-grupa-strelica--otvorena {
+  transform: rotate(90deg);
+}
+
+.titula-grupa-sadrzaj {
+  padding: 0.75rem;
+  display: grid;
+  gap: 0.75rem;
+  border-top: 1px solid var(--boja-ivica);
+  background: var(--boja-kartica);
+}
+
+.titula-podtitula-red {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--boja-polje);
+  border-radius: var(--radius);
+  border: 1px solid var(--boja-ivica);
+}
+
+.titula-podtitula-ime {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--boja-tekst);
+}
+
+.titula-podtitula-unos {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.titula-podtitula-opseg {
+  font-size: 0.8rem;
+  color: var(--boja-tekst-blagi);
+}
+
+@media (max-width: 640px) {
+  .titula-grupa-zaglavlje {
+    flex-wrap: wrap;
+  }
+  .titula-podtitula-red {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.4rem;
+  }
+  .titula-podtitula-unos {
+    width: 100%;
+    justify-content: space-between;
+  }
+}

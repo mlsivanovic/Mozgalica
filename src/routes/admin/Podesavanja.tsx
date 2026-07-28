@@ -15,7 +15,7 @@ import {
 import type { JavniProfilPayload } from '../../types/kviz'
 import './podesavanja.css'
 
-const BAZA_URL = `${window.location.origin}${import.meta.env.BASE_URL}`
+const BAZA_URL = typeof window !== 'undefined' ? `${window.location.origin}${import.meta.env.BASE_URL}` : ''
 
 interface ProfilForma {
   id?: string
@@ -24,6 +24,156 @@ interface ProfilForma {
   avatar: AvatarDeteta
   email: string
   notify_new_quiz_email: boolean
+}
+
+export interface TitleGroup {
+  id: string
+  baseName: string
+  isExpanded: boolean
+  awakenedStars: number
+  empoweredStars: number
+  unboundStars: number
+}
+
+export function groupTitleLevels(flatList: NivoTitule[]): TitleGroup[] {
+  const sorted = [...flatList].sort((a, b) => a.min_stars - b.min_stars)
+  
+  const groups: TitleGroup[] = []
+  const suffixRegex = /\s*(Awakened|Empowered|Unbound)$/
+  
+  const baseNameMap = new Map<string, { id: string; min_stars: number; rank: string }[]>()
+  const baseNameOrder: string[] = []
+  
+  let hasOldFormat = false
+  
+  for (const item of sorted) {
+    const match = item.name.match(suffixRegex)
+    if (match) {
+      const baseName = item.name.replace(suffixRegex, '').trim()
+      const rank = match[1]
+      if (!baseNameMap.has(baseName)) {
+        baseNameMap.set(baseName, [])
+        baseNameOrder.push(baseName)
+      }
+      baseNameMap.get(baseName)!.push({ id: item.id, min_stars: item.min_stars, rank })
+    } else {
+      hasOldFormat = true
+    }
+  }
+  
+  if (hasOldFormat || baseNameOrder.length === 0) {
+    const migratedGroups: TitleGroup[] = []
+    for (let i = 0; i < sorted.length; i++) {
+      const item = sorted[i]
+      const baseName = item.name.trim()
+      const currentStart = item.min_stars
+      const nextStart = i < sorted.length - 1 ? sorted[i + 1].min_stars : currentStart + 15
+      const range = nextStart - currentStart
+      
+      let awakened = currentStart
+      let empowered = currentStart + 1
+      let unbound = currentStart + 2
+      
+      if (range >= 3) {
+        empowered = currentStart + Math.floor(range / 3)
+        unbound = currentStart + Math.floor((2 * range) / 3)
+      } else {
+        empowered = currentStart + 1
+        unbound = currentStart + 2
+      }
+      
+      migratedGroups.push({
+        id: item.id || `migrated-${i}`,
+        baseName,
+        isExpanded: false,
+        awakenedStars: awakened,
+        empoweredStars: empowered,
+        unboundStars: unbound,
+      })
+    }
+    
+    if (migratedGroups.length === 0) {
+      migratedGroups.push({
+        id: `new-${Date.now()}`,
+        baseName: 'Početnik',
+        isExpanded: false,
+        awakenedStars: 0,
+        empoweredStars: 2,
+        unboundStars: 4,
+      })
+    }
+    return migratedGroups
+  }
+  
+  for (const baseName of baseNameOrder) {
+    const items = baseNameMap.get(baseName)!
+    const awakenedItem = items.find(it => it.rank === 'Awakened')
+    const empoweredItem = items.find(it => it.rank === 'Empowered')
+    const unboundItem = items.find(it => it.rank === 'Unbound')
+    
+    const awakenedStars = awakenedItem ? awakenedItem.min_stars : 0
+    const empoweredStars = empoweredItem ? empoweredItem.min_stars : awakenedStars + 1
+    const unboundStars = unboundItem ? unboundItem.min_stars : awakenedStars + 2
+    
+    groups.push({
+      id: awakenedItem?.id ?? `group-${baseName}-${Date.now()}`,
+      baseName,
+      isExpanded: false,
+      awakenedStars,
+      empoweredStars,
+      unboundStars,
+    })
+  }
+  
+  return groups
+}
+
+export function flattenTitleGroups(groups: TitleGroup[]): Array<{ name: string; min_stars: number }> {
+  const flat: Array<{ name: string; min_stars: number }> = []
+  for (const group of groups) {
+    const base = group.baseName.trim()
+    flat.push({ name: `${base} Awakened`, min_stars: group.awakenedStars })
+    flat.push({ name: `${base} Empowered`, min_stars: group.empoweredStars })
+    flat.push({ name: `${base} Unbound`, min_stars: group.unboundStars })
+  }
+  return flat.sort((a, b) => a.min_stars - b.min_stars)
+}
+
+export function validateTitleGroups(groups: TitleGroup[]): string | null {
+  if (groups.length === 0) {
+    return 'Mora postojati barem jedna titula.'
+  }
+  
+  const sortedGroups = [...groups].sort((a, b) => a.awakenedStars - b.awakenedStars)
+  
+  if (sortedGroups[0].awakenedStars !== 0) {
+    return 'Početna titula (prvi rang prve titule) mora kretati od 0 zvezdica.'
+  }
+  
+  for (let i = 0; i < sortedGroups.length; i++) {
+    const g = sortedGroups[i]
+    if (!g.baseName.trim()) {
+      return 'Naziv titule ne sme biti prazan.'
+    }
+    if (g.awakenedStars < 0 || g.empoweredStars < 0 || g.unboundStars < 0) {
+      return `Kod titule „${g.baseName}”, broj zvezdica ne može biti negativan.`
+    }
+    if (g.awakenedStars >= g.empoweredStars) {
+      return `Kod titule „${g.baseName}”, Empowered rang (${g.empoweredStars}⭐) mora zahtevati više zvezdica od Awakened ranga (${g.awakenedStars}⭐).`
+    }
+    if (g.empoweredStars >= g.unboundStars) {
+      return `Kod titule „${g.baseName}”, Unbound rang (${g.unboundStars}⭐) mora zahtevati više zvezdica od Empowered ranga (${g.empoweredStars}⭐).`
+    }
+    
+    if (i < sortedGroups.length - 1) {
+      const sledeca = sortedGroups[i + 1]
+      if (g.unboundStars >= sledeca.awakenedStars) {
+        return `Sledeća titula „${sledeca.baseName}” mora početi sa više zvezdica nego što zahteva prethodni Unbound rang titule „${g.baseName}” (${g.unboundStars}⭐).`
+      }
+    }
+  }
+  
+  return null
 }
 
 type TabPodesavanja = 'profili' | 'titule' | 'obavestenja'
@@ -41,7 +191,7 @@ export function Podesavanja() {
   const [ukljucena, setUkljucena] = useState(true)
   const [profili, setProfili] = useState<ProfilDeteta[]>([])
   const [preglediProfila, setPreglediProfila] = useState<Record<string, JavniProfilPayload>>({})
-  const [nivoi, setNivoi] = useState<NivoTitule[]>([])
+  const [titleGroups, setTitleGroups] = useState<TitleGroup[]>([])
   const [forma, setForma] = useState<ProfilForma | null>(null)
   const [greska, setGreska] = useState<string | null>(null)
   const [poruka, setPoruka] = useState<string | null>(null)
@@ -56,7 +206,7 @@ export function Podesavanja() {
       ])
       setUkljucena(podesavanja?.email_notifications ?? true)
       setProfili(ucitaniProfili)
-      setNivoi(ucitaniNivoi)
+      setTitleGroups(groupTitleLevels(ucitaniNivoi))
       const pregledi = await Promise.all(ucitaniProfili.map(async (profil) => (
         [profil.id, await ucitajJavniProfil(profil.public_token)] as const
       )))
@@ -148,36 +298,78 @@ export function Podesavanja() {
     setPoruka(`Profilni link za ${profil.name} je kopiran.`)
   }
 
-  function izmeniNivo(indeks: number, izmene: Partial<Pick<NivoTitule, 'name' | 'min_stars'>>) {
-    setNivoi((prethodni) => prethodni.map((n, i) => i === indeks ? { ...n, ...izmene } : n))
+  function izmeniBazu(indeks: number, noviNaziv: string) {
+    setTitleGroups((prethodni) =>
+      prethodni.map((g, i) => (i === indeks ? { ...g, baseName: noviNaziv } : g))
+    )
     setPoruka(null)
+    setGreska(null)
   }
 
-  function dodajNivo() {
-    const sledeciPrag = Math.max(-5, ...nivoi.map((n) => n.min_stars)) + 5
-    setNivoi((prethodni) => [...prethodni, {
+  function izmeniZvezdice(
+    indeks: number,
+    polje: 'awakened' | 'empowered' | 'unbound',
+    vrednost: number
+  ) {
+    setTitleGroups((prethodni) =>
+      prethodni.map((g, i) => {
+        if (i !== indeks) return g
+        if (polje === 'awakened') return { ...g, awakenedStars: vrednost }
+        if (polje === 'empowered') return { ...g, empoweredStars: vrednost }
+        return { ...g, unboundStars: vrednost }
+      })
+    )
+    setPoruka(null)
+    setGreska(null)
+  }
+
+  function toggleExpand(indeks: number) {
+    setTitleGroups((prethodni) =>
+      prethodni.map((g, i) => (i === indeks ? { ...g, isExpanded: !g.isExpanded } : g))
+    )
+  }
+
+  function dodajGrupu() {
+    const maxZvezdica = titleGroups.length > 0
+      ? Math.max(...titleGroups.map((g) => g.unboundStars))
+      : -1
+    const noviStart = maxZvezdica + 1
+
+    const novaGrupa: TitleGroup = {
       id: `novi-${Date.now()}`,
-      owner_id: session?.user.id ?? '',
-      name: 'Nova titula',
-      min_stars: sledeciPrag,
-      created_at: new Date().toISOString(),
-    }])
+      baseName: 'Nova titula',
+      isExpanded: true,
+      awakenedStars: noviStart,
+      empoweredStars: noviStart + 2,
+      unboundStars: noviStart + 4,
+    }
+
+    setTitleGroups((prethodni) => [...prethodni, novaGrupa])
+    setPoruka(null)
+    setGreska(null)
   }
 
-  function obrisiNivo(indeks: number) {
-    setNivoi((prethodni) => prethodni.filter((_, i) => i !== indeks))
+  function obrisiGrupu(indeks: number) {
+    setTitleGroups((prethodni) => prethodni.filter((_, i) => i !== indeks))
     setPoruka(null)
+    setGreska(null)
   }
 
   async function sacuvajTitule() {
     setCuvaTitule(true)
     setGreska(null)
     setPoruka(null)
+    
+    const greskaValidacije = validateTitleGroups(titleGroups)
+    if (greskaValidacije) {
+      setGreska(greskaValidacije)
+      setCuvaTitule(false)
+      return
+    }
+
     try {
-      await sacuvajNivoeTitula(nivoi.map((n) => ({
-        name: n.name.trim(),
-        min_stars: Number(n.min_stars),
-      })))
+      const flatSlanje = flattenTitleGroups(titleGroups)
+      await sacuvajNivoeTitula(flatSlanje)
       await ucitajSve()
       setPoruka('Titule su sačuvane.')
     } catch (e) {
@@ -391,40 +583,125 @@ export function Podesavanja() {
         id="podesavanja-panel-titule" className="kartica podesavanja-panel"
         role="tabpanel" aria-labelledby="podesavanja-tab-titule"
       >
-        <h2>Titule</h2>
+        <h2>Titule i podtitule</h2>
         <p className="blago razmak-dole">
-          Ista lista važi za svu decu. Mora da postoji početna titula od 0 zvezdica.
+          Ista lista važi za svu decu. Prva titula mora kretati od 0 zvezdica. Svaka titula ima tri ranga čije poene (zvezdice) podešavaš ispod.
         </p>
-        <div style={{ display: 'grid', gap: '0.7rem' }}>
-          {nivoi.map((nivo, indeks) => (
-            <div className="red-polja" key={nivo.id}>
-              <div className="polje" style={{ marginBottom: 0 }}>
-                <label htmlFor={`titula-${indeks}`}>Naziv</label>
-                <input
-                  id={`titula-${indeks}`} type="text" maxLength={60}
-                  value={nivo.name} onChange={(e) => izmeniNivo(indeks, { name: e.target.value })}
-                />
-              </div>
-              <div className="polje" style={{ marginBottom: 0, maxWidth: 160 }}>
-                <label htmlFor={`prag-${indeks}`}>Od zvezdica</label>
-                <input
-                  id={`prag-${indeks}`} type="number" min={0}
-                  value={nivo.min_stars}
-                  onChange={(e) => izmeniNivo(indeks, { min_stars: Number(e.target.value) })}
-                />
-              </div>
-              <button
-                type="button" className="dugme dugme--opasno dugme--malo"
-                style={{ alignSelf: 'flex-end' }} disabled={nivoi.length === 1}
-                onClick={() => obrisiNivo(indeks)}
+        <div style={{ display: 'grid', gap: '0.75rem' }}>
+          {titleGroups.map((grupa, indeks) => {
+            const isFirstGroup = indeks === 0
+            return (
+              <div
+                className={`titula-grupa ${grupa.isExpanded ? 'titula-grupa--otvorena' : ''}`}
+                key={grupa.id}
               >
-                Obriši
-              </button>
-            </div>
-          ))}
+                <div
+                  className="titula-grupa-zaglavlje"
+                  onClick={() => toggleExpand(indeks)}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', width: '100%' }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1 }}>
+                    <span className={`titula-grupa-strelica ${grupa.isExpanded ? 'titula-grupa-strelica--otvorena' : ''}`}>
+                      ▶
+                    </span>
+                    <div className="polje" style={{ marginBottom: 0, flex: 1 }} onClick={(e) => e.stopPropagation()}>
+                      <input
+                        type="text"
+                        placeholder="Npr. Istraživač"
+                        maxLength={40}
+                        value={grupa.baseName}
+                        onChange={(e) => izmeniBazu(indeks, e.target.value)}
+                        style={{ width: '100%' }}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }} onClick={(e) => e.stopPropagation()}>
+                    <button
+                      type="button"
+                      className="dugme dugme--malo dugme--senka"
+                      style={{ margin: 0 }}
+                      onClick={() => toggleExpand(indeks)}
+                    >
+                      {grupa.isExpanded ? 'Sakrij' : 'Podtitule'}
+                    </button>
+                    <button
+                      type="button"
+                      className="dugme dugme--opasno dugme--malo"
+                      style={{ margin: 0 }}
+                      disabled={titleGroups.length === 1}
+                      onClick={() => obrisiGrupu(indeks)}
+                    >
+                      Obriši
+                    </button>
+                  </div>
+                </div>
+
+                {grupa.isExpanded && (
+                  <div className="titula-grupa-sadrzaj">
+                    {/* Awakened */}
+                    <div className="titula-podtitula-red">
+                      <span className="titula-podtitula-ime">🛡️ {grupa.baseName || 'Nova titula'} Awakened</span>
+                      <div className="titula-podtitula-unos">
+                        {isFirstGroup ? (
+                          <span className="titula-podtitula-opseg">(Zaključano na 0)</span>
+                        ) : (
+                          <span className="titula-podtitula-opseg">
+                            (Opseg: &gt; {indeks > 0 ? titleGroups[indeks - 1].unboundStars : 0})
+                          </span>
+                        )}
+                        <input
+                          type="number"
+                          min={0}
+                          value={grupa.awakenedStars}
+                          disabled={isFirstGroup}
+                          onChange={(e) => izmeniZvezdice(indeks, 'awakened', Number(e.target.value))}
+                          style={{ width: '70px', padding: '0.25rem 0.4rem', borderRadius: '4px', textAlign: 'center' }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Empowered */}
+                    <div className="titula-podtitula-red">
+                      <span className="titula-podtitula-ime">⚡ {grupa.baseName || 'Nova titula'} Empowered</span>
+                      <div className="titula-podtitula-unos">
+                        <span className="titula-podtitula-opseg">
+                          (Opseg: {grupa.awakenedStars + 1} - {grupa.unboundStars - 1})
+                        </span>
+                        <input
+                          type="number"
+                          min={grupa.awakenedStars + 1}
+                          value={grupa.empoweredStars}
+                          onChange={(e) => izmeniZvezdice(indeks, 'empowered', Number(e.target.value))}
+                          style={{ width: '70px', padding: '0.25rem 0.4rem', borderRadius: '4px', textAlign: 'center' }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Unbound */}
+                    <div className="titula-podtitula-red">
+                      <span className="titula-podtitula-ime">🔥 {grupa.baseName || 'Nova titula'} Unbound</span>
+                      <div className="titula-podtitula-unos">
+                        <span className="titula-podtitula-opseg">
+                          (Opseg: &gt; {grupa.empoweredStars})
+                        </span>
+                        <input
+                          type="number"
+                          min={grupa.empoweredStars + 1}
+                          value={grupa.unboundStars}
+                          onChange={(e) => izmeniZvezdice(indeks, 'unbound', Number(e.target.value))}
+                          style={{ width: '70px', padding: '0.25rem 0.4rem', borderRadius: '4px', textAlign: 'center' }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )
+          })}
         </div>
         <div className="red razmak-gore">
-          <button type="button" className="dugme dugme--senka" onClick={dodajNivo}>+ Dodaj titulu</button>
+          <button type="button" className="dugme dugme--senka" onClick={dodajGrupu}>+ Dodaj titulu</button>
           <button type="button" className="dugme" disabled={cuvaTitule} onClick={sacuvajTitule}>
             {cuvaTitule ? 'Čuvam…' : 'Sačuvaj titule'}
           </button>
