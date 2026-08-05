@@ -33,6 +33,9 @@
   top: calc(100% + 0.6rem);
   right: 0;
   width: min(390px, calc(100vw - 1.4rem));
+  max-height: calc(100dvh - 8rem);
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
   border: 1px solid var(--boja-ivica);
   border-radius: var(--radius);
@@ -47,6 +50,7 @@
   padding: 0.85rem 1rem;
   border-bottom: 1px solid var(--boja-ivica);
 }
+.obavestenja-zaglavlje-akcije { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: flex-end; }
 .obavestenja-zaglavlje button {
   border: 0;
   background: none;
@@ -56,7 +60,7 @@
   font-weight: 700;
   cursor: pointer;
 }
-.obavestenja-lista { max-height: min(520px, 68vh); overflow-y: auto; }
+.obavestenja-lista { overflow-y: auto; min-height: 0; }
 .obavestenja-stavka {
   width: 100%;
   display: grid;
@@ -88,3 +92,18 @@
 }
 .push-kontrole > div { flex: 1 1 260px; }
 .push-kontrole-poruka { flex-basis: 100%; }
+
+/* Na mobilu panel ne može da se oslanja na right: 0 — zvonce nije na desnoj
+   ivici ekrana (desno su tema dugme i odjava), pa bi panel virio van leve ivice.
+   Zato se centriramo i vežemo za viewport, da uvek stane u celosti. */
+@media (max-width: 480px) {
+  .obavestenja-panel {
+    position: fixed;
+    top: 4rem;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    width: min(390px, calc(100vw - 1.4rem));
+    max-height: calc(100dvh - 5rem);
+  }
+}
