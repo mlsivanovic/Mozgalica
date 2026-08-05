@@ -31,12 +31,25 @@ export function RezultatDetalj() {
     }
   }
 
+  // Tiho osvežavanje posle ručne ocene — bez Loader-a, da se lista ne unmount-uje
+  // i skrol pozicija ne skoči na vrh usred pregleda.
+  async function osvezi() {
+    if (!id) return
+    try {
+      const p = await ucitajPokusaj(id)
+      const [qq, ans] = await Promise.all([listajPitanjaKviza(p.quiz_id), listajOdgovorePokusaja(id)])
+      setPokusaj(p); setPitanja(qq); setOdgovori(ans)
+    } catch (e) {
+      setGreska(String((e as Error).message ?? e))
+    }
+  }
+
   useEffect(() => { ucitaj() }, [id])
 
   async function ispravi(answerId: string, isCorrect: boolean, points: number) {
     try {
       await overrideOcene(answerId, isCorrect, points)
-      await ucitaj()
+      await osvezi()
     } catch (e) {
       setGreska(String((e as Error).message ?? e))
     }
