@@ -6,7 +6,7 @@ import {
   type KategorijaKviza,
 } from '../../lib/api'
 import { napraviCsv, preuzmiCsv } from '../../lib/csv'
-import { kvizPripadaKategoriji, pokusajPripadaProfilu } from '../../lib/filterRezultata'
+import { kvizImaPredmet, kvizImaRazred, pokusajPripadaProfilu } from '../../lib/filterRezultata'
 import { formatDatum, formatDatumZaInput, formatProcenat, formatTrajanje } from '../../lib/format'
 import { Loader } from '../../components/Zajednicke'
 import {
@@ -33,7 +33,7 @@ export function Rezultati() {
 
   const [filterDete, setFilterDete] = useState('')
   const [filterPredmet, setFilterPredmet] = useState<Predmet | ''>('')
-  const [filterRazred, setFilterRazred] = useState<Razred | ''>(3)
+  const [filterRazred, setFilterRazred] = useState<Razred | ''>('')
   const [filterStatus, setFilterStatus] = useState('')
   const [filterOd, setFilterOd] = useState(() => formatDatumZaInput())
   const [filterDo, setFilterDo] = useState(() => formatDatumZaInput())
@@ -53,12 +53,24 @@ export function Rezultati() {
   }, [])
 
   const mapaKvizova = useMemo(() => new Map(kvizovi.map((k) => [k.id, k.title])), [kvizovi])
+  const mapaRazredaKviza = useMemo(() => {
+    const mapa = new Map<string, Razred>()
+    for (const k of kvizovi) if (k.grade != null) mapa.set(k.id, k.grade)
+    return mapa
+  }, [kvizovi])
   const mapaProfila = useMemo(() => new Map(profili.map((profil) => [profil.id, profil])), [profili])
   const izabraniProfil = filterDete ? mapaProfila.get(filterDete) : undefined
 
+  // Broj pokušaja na čekanju pregleda — nezavisan od aktivnih filtera, da uvek bude tačan.
+  const brojCekaPregled = useMemo(
+    () => pokusaji.filter((p) => p.status === 'submitted' && p.review_pending).length,
+    [pokusaji],
+  )
+
   const filtrirano = useMemo(() => pokusaji.filter((p) => {
     if (!pokusajPripadaProfilu(p, izabraniProfil)) return false
-    if (!kvizPripadaKategoriji(p, kategorijeKvizova, filterPredmet, filterRazred)) return false
+    if (!kvizImaPredmet(p, kategorijeKvizova, filterPredmet)) return false
+    if (!kvizImaRazred(p.quiz_id, mapaRazredaKviza, filterRazred)) return false
     if (filterStatus === 'review_pending') {
       if (!(p.status === 'submitted' && p.review_pending)) return false
     } else if (filterStatus && p.status !== filterStatus) {
@@ -69,7 +81,7 @@ export function Rezultati() {
     return true
   }), [
     pokusaji, izabraniProfil, kategorijeKvizova, filterPredmet, filterRazred,
-    filterStatus, filterOd, filterDo,
+    mapaRazredaKviza, filterStatus, filterOd, filterDo,
   ])
 
   function imeDeteta(pokusaj: Pokusaj): string {
@@ -90,12 +102,25 @@ export function Rezultati() {
     preuzmiCsv(`mozgalica-rezultati-${new Date().toISOString().slice(0, 10)}.csv`, csv)
   }
 
+  // Brza prečica: poništava sve filtere i prikazuje samo pokušaje na čekanju pregleda.
+  function prikaziCekaPregled() {
+    setFilterDete('')
+    setFilterPredmet('')
+    setFilterRazred('')
+    setFilterOd('')
+    setFilterDo('')
+    setFilterStatus('review_pending')
+  }
+
   if (ucitava) return <Loader />
 
   return (
     <div>
       <div className="zaglavlje-strane">
         <h1>Rezultati</h1>
+        <button type="button" className="dugme dugme--senka" onClick={prikaziCekaPregled}>
+          ⏳ Čeka pregled {brojCekaPregled > 0 && <span className="bedz">{brojCekaPregled}</span>}
+        </button>
         <button type="button" className="dugme dugme--senka" disabled={filtrirano.length === 0} onClick={izvezi}>
           ⬇ Izvezi CSV
         </button>

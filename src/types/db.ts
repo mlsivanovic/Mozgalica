@@ -87,6 +87,7 @@ export interface Kviz {
   fixed_child_name: FiksnoImeDeteta | null
   require_label: boolean
   label_name: string
+  grade: Razred | null
   created_at: string
   updated_at: string
   deleted_at: string | null

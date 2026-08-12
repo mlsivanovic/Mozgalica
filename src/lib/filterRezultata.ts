@@ -13,16 +13,30 @@ export function pokusajPripadaProfilu(
   return pokusaj.child_name.localeCompare(profil.name, 'sr', { sensitivity: 'base' }) === 0
 }
 
-export function kvizPripadaKategoriji(
+// Proverava da li kviz pokušaja pripada predmetu, na osnovu izvedenih kategorija
+// (quiz_questions.topic_id → topics.subject). Kvizovi bez kategorije se ne podudaraju
+// ni sa jednim predmetom — prikazuju se samo kad filter predmeta nije aktivan.
+export function kvizImaPredmet(
   pokusaj: OsnovniPokusaj,
   kategorije: KategorijaKviza[],
   predmet: Predmet | '',
-  razred: Razred | '',
 ): boolean {
-  if (!predmet && !razred) return true
+  if (!predmet) return true
   return kategorije.some((kategorija) => (
     kategorija.quiz_id === pokusaj.quiz_id
-    && (!predmet || kategorija.subject === predmet)
-    && (!razred || kategorija.grade === razred)
+    && kategorija.subject === predmet
   ))
+}
+
+// Razred se čita direktno sa kviza (denormalizovana kolona `grade`), jer je
+// posredni put preko topic_id nestabilan (topic_id je nullable i briše se pri
+// brisanju oblasti). Kvizovi sa `grade = null` (stari, nebackfill-ovani) se ne
+// podudaraju ni sa jednim razredom — prikazuju se samo pod "Svi razredi".
+export function kvizImaRazred(
+  quizId: string,
+  razredKvizova: Map<string, Razred>,
+  razred: Razred | '',
+): boolean {
+  if (!razred) return true
+  return razredKvizova.get(quizId) === razred
 }
