@@ -564,7 +564,7 @@ export function Podesavanja() {
   if (ucitava) return <Loader />
 
   return (
-    <div className="sadrzaj sadrzaj--usko">
+    <div className="sadrzaj">
       <h1>Podešavanja</h1>
       {poruka && <p className="poruka poruka--uspeh razmak-gore">{poruka}</p>}
       {greska && <p className="poruka poruka--greska razmak-gore" role="alert">{greska}</p>}
@@ -624,7 +624,17 @@ export function Podesavanja() {
                   </div>
                 </div>
                 <div className="red razmak-gore">
-                  <span className="bedz">⭐ {pregled?.totalStars ?? 0} zvezdica</span>
+                  <span className="bedz" title="Doživotne zvezdice — hrane titulu">
+                    ⭐ {pregled?.totalStars ?? 0} zvezdica
+                  </span>
+                  <span className="bedz bedz--neutral" title="Raspoloživo za trošenje u prodavnici">
+                    🛒 {pregled?.spendableStars ?? 0} raspoloživo
+                  </span>
+                  {(pregled?.activeQuizzes?.length ?? 0) > 0 && (
+                    <span className="bedz bedz--upozorenje" title="Dodeljeni kvizovi koji čekaju rešavanje">
+                      📝 {pregled?.activeQuizzes?.length} aktivno
+                    </span>
+                  )}
                   <span className="bedz bedz--neutral" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
                     {pregled?.currentTitle && (
                       <TitleAvatar
