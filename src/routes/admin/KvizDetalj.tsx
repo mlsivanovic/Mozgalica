@@ -103,6 +103,7 @@ function PodesavanjaKviza({
         pass_threshold_pct: f.pass_threshold_pct, require_name: true,
         fixed_child_name: f.fixed_child_name,
         require_label: f.require_label, label_name: f.label_name,
+        grade: f.grade,
       }, kviz.id)
       setOtvoreno(false)
       onSacuvano()

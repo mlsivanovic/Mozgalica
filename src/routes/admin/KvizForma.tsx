@@ -246,6 +246,7 @@ export function KvizForma() {
         fixed_child_name: null,
         require_label: false,
         label_name: 'Odeljenje',
+        grade: razred,
       })
 
       // Dodeli kviz izabranom detetu ako je odabrano
@@ -297,6 +298,7 @@ export function KvizForma() {
         fixed_child_name: null,
         require_label: false,
         label_name: 'Odeljenje',
+        grade: razred,
       })
 
       let unosi: SnapshotUnos[] = []
@@ -478,6 +480,21 @@ export function KvizForma() {
                 onChange={(e) => setManualTitleDescription(e.target.value)}
                 placeholder="Srećno rešavanje! 🌟"
               />
+            </div>
+
+            <div className="polje">
+              <label htmlFor="kv-razred-manual">Razred</label>
+              <div className="segment">
+                {([3, 4] as const).map((r) => (
+                  <button
+                    key={r} type="button"
+                    className={`segment-dugme ${razred === r ? 'segment-dugme--izabran' : ''}`}
+                    onClick={() => setRazred(r)}
+                  >
+                    {NAZIVI_RAZREDA[r]}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {profiliDece.length > 0 && (

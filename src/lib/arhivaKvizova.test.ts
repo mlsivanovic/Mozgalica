@@ -19,6 +19,7 @@ const KVIZ: Kviz = {
   fixed_child_name: null,
   require_label: false,
   label_name: 'Odeljenje',
+  grade: null,
   created_at: '2026-07-20T10:00:00Z',
   updated_at: '2026-07-20T10:00:00Z',
   deleted_at: null,

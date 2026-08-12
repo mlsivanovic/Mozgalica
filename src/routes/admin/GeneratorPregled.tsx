@@ -118,12 +118,19 @@ export function GeneratorPregled({ pocetnaPitanja, upozorenje, cfg, oblasti, onN
     setGreska(null)
     setRadi(true)
     try {
+      // Razred kviza = razred oblasti prvog prihvaćenog pitanja. Generator obično
+      // radi unutar jednog razreda; ako je neodredivo, ostaje null i korisnik ga
+      // može dopuniti u detaljima kviza.
+      const razredKviza = prihvacena[0]
+        ? mapaOblasti.get(prihvacena[0].pitanje.topicSlug)?.grade ?? null
+        : null
       const kvizId = await sacuvajKviz({
         title: naziv, description: '', time_limit_seconds: null,
         default_max_attempts: 1, shuffle_questions: true, shuffle_answers: true,
         show_result: true, show_correct: true, pass_threshold_pct: 90,
         require_name: true, fixed_child_name: null,
         require_label: false, label_name: 'Odeljenje',
+        grade: razredKviza,
       })
       const snapshot: SnapshotUnos[] = pripremiSnapshotUnose().map((u, i) => ({ ...u, quiz_id: kvizId, position: i }))
       await postaviPitanjaKviza(kvizId, snapshot)

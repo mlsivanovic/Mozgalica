@@ -184,6 +184,7 @@ export function PitanjaLista() {
         show_result: true, show_correct: true, pass_threshold_pct: 90,
         require_name: true, fixed_child_name: null,
         require_label: false, label_name: 'Odeljenje',
+        grade: razred,
       })
       const pitanjaZaKviz = noviKviz.vrsta === 'nasumicni'
         ? pretvoriUSnapshot(nasumicniUzorak(pitanja, Math.min(Math.max(1, brojNasumicnih), pitanja.length)))
