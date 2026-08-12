@@ -60,20 +60,20 @@ describe('Title Grouping, Flattening and Validation', () => {
 
   it('ispravno ravna grupe nazad u format pogodan za slanje API-ju', () => {
     const grupe: TitleGroup[] = [
-      { id: 'g1', baseName: 'Početnik', isExpanded: false, awakenedStars: 0, empoweredStars: 2, unboundStars: 4 },
-      { id: 'g2', baseName: 'Istraživač', isExpanded: false, awakenedStars: 5, empoweredStars: 7, unboundStars: 10 },
+      { id: 'g1', baseName: 'Početnik', isExpanded: false, awakenedStars: 0, empoweredStars: 2, unboundStars: 4, avatar: null },
+      { id: 'g2', baseName: 'Istraživač', isExpanded: false, awakenedStars: 5, empoweredStars: 7, unboundStars: 10, avatar: null },
     ]
 
     const ravno = flattenTitleGroups(grupe)
 
     expect(ravno).toHaveLength(6)
     expect(ravno).toEqual([
-      { name: 'Početnik Awakened', min_stars: 0 },
-      { name: 'Početnik Empowered', min_stars: 2 },
-      { name: 'Početnik Unbound', min_stars: 4 },
-      { name: 'Istraživač Awakened', min_stars: 5 },
-      { name: 'Istraživač Empowered', min_stars: 7 },
-      { name: 'Istraživač Unbound', min_stars: 10 },
+      { name: 'Početnik Awakened', min_stars: 0, avatar: null },
+      { name: 'Početnik Empowered', min_stars: 2, avatar: null },
+      { name: 'Početnik Unbound', min_stars: 4, avatar: null },
+      { name: 'Istraživač Awakened', min_stars: 5, avatar: null },
+      { name: 'Istraživač Empowered', min_stars: 7, avatar: null },
+      { name: 'Istraživač Unbound', min_stars: 10, avatar: null },
     ])
   })
 

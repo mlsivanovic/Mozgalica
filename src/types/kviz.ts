@@ -141,6 +141,7 @@ export interface ProfilnaTitula {
   name: string
   minStars: number
   starsNeeded?: number
+  avatar?: string | null
 }
 
 export interface AktivniKvizProfila {

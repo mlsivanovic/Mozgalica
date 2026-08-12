@@ -1,7 +1,8 @@
 // Administratorska podešavanja: profili dece, titule i mejl obaveštenja.
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { PushKontrole } from '../../components/PushKontrole'
 import { Loader } from '../../components/Zajednicke'
+import { TitleAvatar } from '../../components/TitleAvatar'
 import {
   listajNivoeTitula, listajProfileDeteta, postaviEmailObavestenja, sacuvajNivoeTitula,
   sacuvajProfilDeteta, ucitajJavniProfil, ucitajPodesavanja,
@@ -33,6 +34,7 @@ export interface TitleGroup {
   awakenedStars: number
   empoweredStars: number
   unboundStars: number
+  avatar?: string | null
 }
 
 export function groupTitleLevels(flatList: NivoTitule[]): TitleGroup[] {
@@ -41,7 +43,7 @@ export function groupTitleLevels(flatList: NivoTitule[]): TitleGroup[] {
   const groups: TitleGroup[] = []
   const suffixRegex = /\s*(Awakened|Empowered|Unbound)$/
   
-  const baseNameMap = new Map<string, { id: string; min_stars: number; rank: string }[]>()
+  const baseNameMap = new Map<string, { id: string; min_stars: number; rank: string; avatar?: string | null }[]>()
   const baseNameOrder: string[] = []
   
   let hasOldFormat = false
@@ -55,7 +57,7 @@ export function groupTitleLevels(flatList: NivoTitule[]): TitleGroup[] {
         baseNameMap.set(baseName, [])
         baseNameOrder.push(baseName)
       }
-      baseNameMap.get(baseName)!.push({ id: item.id, min_stars: item.min_stars, rank })
+      baseNameMap.get(baseName)!.push({ id: item.id, min_stars: item.min_stars, rank, avatar: item.avatar })
     } else {
       hasOldFormat = true
     }
@@ -89,17 +91,19 @@ export function groupTitleLevels(flatList: NivoTitule[]): TitleGroup[] {
         awakenedStars: awakened,
         empoweredStars: empowered,
         unboundStars: unbound,
+        avatar: item.avatar || null,
       })
     }
     
     if (migratedGroups.length === 0) {
       migratedGroups.push({
         id: `new-${Date.now()}`,
-        baseName: 'Početnik',
+        baseName: 'ShadowNoob',
         isExpanded: false,
         awakenedStars: 0,
         empoweredStars: 2,
         unboundStars: 4,
+        avatar: null,
       })
     }
     return migratedGroups
@@ -114,6 +118,7 @@ export function groupTitleLevels(flatList: NivoTitule[]): TitleGroup[] {
     const awakenedStars = awakenedItem ? awakenedItem.min_stars : 0
     const empoweredStars = empoweredItem ? empoweredItem.min_stars : awakenedStars + 1
     const unboundStars = unboundItem ? unboundItem.min_stars : awakenedStars + 2
+    const avatar = awakenedItem?.avatar || empoweredItem?.avatar || unboundItem?.avatar || null
     
     groups.push({
       id: awakenedItem?.id ?? `group-${baseName}-${Date.now()}`,
@@ -122,19 +127,21 @@ export function groupTitleLevels(flatList: NivoTitule[]): TitleGroup[] {
       awakenedStars,
       empoweredStars,
       unboundStars,
+      avatar,
     })
   }
   
   return groups
 }
 
-export function flattenTitleGroups(groups: TitleGroup[]): Array<{ name: string; min_stars: number }> {
-  const flat: Array<{ name: string; min_stars: number }> = []
+export function flattenTitleGroups(groups: TitleGroup[]): Array<{ name: string; min_stars: number; avatar?: string | null }> {
+  const flat: Array<{ name: string; min_stars: number; avatar?: string | null }> = []
   for (const group of groups) {
     const base = group.baseName.trim()
-    flat.push({ name: `${base} Awakened`, min_stars: group.awakenedStars })
-    flat.push({ name: `${base} Empowered`, min_stars: group.empoweredStars })
-    flat.push({ name: `${base} Unbound`, min_stars: group.unboundStars })
+    const avatar = group.avatar || null
+    flat.push({ name: `${base} Awakened`, min_stars: group.awakenedStars, avatar })
+    flat.push({ name: `${base} Empowered`, min_stars: group.empoweredStars, avatar })
+    flat.push({ name: `${base} Unbound`, min_stars: group.unboundStars, avatar })
   }
   return flat.sort((a, b) => a.min_stars - b.min_stars)
 }
@@ -323,6 +330,14 @@ export function Podesavanja() {
     setGreska(null)
   }
 
+  function izmeniAvatar(indeks: number, noviAvatar: string | null) {
+    setTitleGroups((prethodni) =>
+      prethodni.map((g, i) => (i === indeks ? { ...g, avatar: noviAvatar } : g))
+    )
+    setPoruka(null)
+    setGreska(null)
+  }
+
   function toggleExpand(indeks: number) {
     setTitleGroups((prethodni) =>
       prethodni.map((g, i) => (i === indeks ? { ...g, isExpanded: !g.isExpanded } : g))
@@ -342,6 +357,7 @@ export function Podesavanja() {
       awakenedStars: noviStart,
       empoweredStars: noviStart + 2,
       unboundStars: noviStart + 4,
+      avatar: null,
     }
 
     setTitleGroups((prethodni) => [...prethodni, novaGrupa])
@@ -450,7 +466,14 @@ export function Podesavanja() {
                 </div>
                 <div className="red razmak-gore">
                   <span className="bedz">⭐ {pregled?.totalStars ?? 0} zvezdica</span>
-                  <span className="bedz bedz--neutral">
+                  <span className="bedz bedz--neutral" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                    {pregled?.currentTitle && (
+                      <TitleAvatar
+                        name={pregled.currentTitle.name}
+                        avatar={pregled.currentTitle.avatar}
+                        size={22}
+                      />
+                    )}
                     Titula: {pregled?.currentTitle?.name ?? '—'}
                   </span>
                 </div>
@@ -639,6 +662,96 @@ export function Podesavanja() {
 
                 {grupa.isExpanded && (
                   <div className="titula-grupa-sadrzaj">
+                    {/* Avatar sekcija */}
+                    <div className="titula-avatar-podesavanje" style={{ padding: '1rem', borderBottom: '1px solid var(--boja-ivica)', background: 'var(--boja-polje)', borderRadius: 'var(--radius)', marginBottom: '1rem' }}>
+                      <p className="malo blago" style={{ fontWeight: 800, textTransform: 'uppercase', marginBottom: '0.6rem' }}>Avatar i izgled titule</p>
+                      
+                      {/* Previews */}
+                      <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap', alignItems: 'center', marginBottom: '1rem' }}>
+                        <div style={{ textAlign: 'center' }}>
+                          <TitleAvatar name={`${grupa.baseName || 'Nova titula'} Awakened`} avatar={grupa.avatar} size={64} />
+                          <p className="malo blago" style={{ marginTop: '0.2rem' }}>Awakened</p>
+                        </div>
+                        <div style={{ textAlign: 'center' }}>
+                          <TitleAvatar name={`${grupa.baseName || 'Nova titula'} Empowered`} avatar={grupa.avatar} size={64} />
+                          <p className="malo blago" style={{ marginTop: '0.2rem' }}>Empowered</p>
+                        </div>
+                        <div style={{ textAlign: 'center' }}>
+                          <TitleAvatar name={`${grupa.baseName || 'Nova titula'} Unbound`} avatar={grupa.avatar} size={64} />
+                          <p className="malo blago" style={{ marginTop: '0.2rem' }}>Unbound</p>
+                        </div>
+                      </div>
+
+                      {/* Controls */}
+                      <div style={{ display: 'flex', gap: '0.8rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          style={{ display: 'none' }}
+                          id={`avatar-upload-${indeks}`}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0]
+                            if (!file) return
+                            const reader = new FileReader()
+                            reader.onload = (event) => {
+                              const img = new Image()
+                              img.onload = () => {
+                                const canvas = document.createElement('canvas')
+                                const ctx = canvas.getContext('2d')
+                                const maxDim = 256
+                                let width = img.width
+                                let height = img.height
+                                if (width > maxDim || height > maxDim) {
+                                  if (width > height) {
+                                    height = Math.round((height * maxDim) / width)
+                                    width = maxDim
+                                  } else {
+                                    width = Math.round((width * maxDim) / height)
+                                    height = maxDim
+                                  }
+                                }
+                                canvas.width = width
+                                canvas.height = height
+                                ctx?.drawImage(img, 0, 0, width, height)
+                                const base64 = canvas.toDataURL('image/png')
+                                izmeniAvatar(indeks, base64)
+                              }
+                              img.src = event.target?.result as string
+                            }
+                            reader.readAsDataURL(file)
+                          }}
+                        />
+                        <button
+                          type="button"
+                          className="dugme dugme--malo dugme--senka"
+                          onClick={() => document.getElementById(`avatar-upload-${indeks}`)?.click()}
+                        >
+                          📁 Izaberi sliku...
+                        </button>
+
+                        <div className="polje" style={{ marginBottom: 0, minWidth: '150px', flex: '1' }}>
+                          <input
+                            type="text"
+                            placeholder="Ili unesi emoji / URL slike"
+                            value={grupa.avatar || ''}
+                            onChange={(e) => izmeniAvatar(indeks, e.target.value || null)}
+                            style={{ padding: '0.35rem 0.5rem', fontSize: '0.9rem' }}
+                          />
+                        </div>
+
+                        {grupa.avatar && (
+                          <button
+                            type="button"
+                            className="dugme dugme--malo"
+                            onClick={() => izmeniAvatar(indeks, null)}
+                            style={{ background: 'var(--boja-ivica)', color: 'var(--boja-tekst)' }}
+                          >
+                            Resetuj na fabričku sliku
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
                     {/* Awakened */}
                     <div className="titula-podtitula-red">
                       <span className="titula-podtitula-ime">🛡️ {grupa.baseName || 'Nova titula'} Awakened</span>

@@ -21,6 +21,7 @@ import {
 } from '../../pwa'
 import type { JavniProfilPayload } from '../../types/kviz'
 import type { InboxObavestenja } from '../../types/db'
+import { TitleAvatar } from '../../components/TitleAvatar'
 import './profil.css'
 
 export function ProfilDeteta() {
@@ -121,7 +122,10 @@ export function ProfilDeteta() {
             <h1>{profil.name}</h1>
             <div className="profil-statistike">
               <span>⭐ <strong>{ukupnoZvezdica}</strong> zvezdica</span>
-              <span>🏅 <strong>{trenutna?.name ?? 'Početnik'}</strong></span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                <TitleAvatar name={trenutna?.name ?? 'ShadowNoob'} avatar={trenutna?.avatar} size={18} />
+                <strong>{trenutna?.name ?? 'ShadowNoob'}</strong>
+              </span>
             </div>
           </div>
         </section>
@@ -132,12 +136,16 @@ export function ProfilDeteta() {
         </section>
 
         <section className="kartica profil-napredak" aria-label="Napredak do sledeće titule">
-          <div className="red red--razmak">
+          <div className="red red--razmak" style={{ alignItems: 'center' }}>
             <div>
               <p className="malo blago">Trenutna titula</p>
-              <h2>{trenutna?.name ?? 'Početnik'}</h2>
+              <h2>{trenutna?.name ?? 'ShadowNoob'}</h2>
             </div>
-            <span className="profil-medalja" aria-hidden="true">🏆</span>
+            <TitleAvatar
+              name={trenutna?.name ?? 'ShadowNoob'}
+              avatar={trenutna?.avatar}
+              size={72}
+            />
           </div>
           <div
             className="profil-progres"

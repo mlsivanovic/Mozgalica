@@ -516,7 +516,7 @@ export async function listajNivoeTitula(): Promise<NivoTitule[]> {
   return data as NivoTitule[]
 }
 
-export async function sacuvajNivoeTitula(nivoi: Array<{ name: string; min_stars: number }>): Promise<void> {
+export async function sacuvajNivoeTitula(nivoi: Array<{ name: string; min_stars: number; avatar?: string | null }>): Promise<void> {
   const { data, error } = await supabase().rpc('save_title_levels', { p_levels: nivoi })
   if (error) throw new Error(opisiGresku(error)!)
   const odgovor = data as { ok: boolean; error?: string }

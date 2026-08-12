@@ -184,6 +184,7 @@ export interface NivoTitule {
   owner_id: string
   name: string
   min_stars: number
+  avatar?: string | null
   created_at: string
 }
 
