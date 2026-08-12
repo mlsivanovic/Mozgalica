@@ -1,12 +1,13 @@
 // Tipizirani pozivi ka Supabase-u: tabele za admina, RPC funkcije za dete
 import type {
-  AdminPodesavanja, AvatarDeteta, FiksnoImeDeteta, InboxObavestenja, Kviz, KvizLink,
-  KvizPitanje, NivoTitule, Oblast, Obavestenje, OdgovorDeteta, Pitanje, Pokusaj,
-  PokusajOdgovor, Predmet, ProfilDeteta, PushPretplata, Razred,
+  AdminPodesavanja, AvatarDeteta, FiksnoImeDeteta, InboxObavestenja,
+  Kviz, KvizLink, KvizPitanje, NivoTitule, Oblast, Obavestenje, OdgovorDeteta, Pitanje,
+  Pokusaj, PokusajOdgovor, Predmet, ProfilDeteta, PushPretplata, Razred, StavkaProdavnice,
 } from '../types/db'
 import type {
-  InboxDetetaPayload, JavniProfilPayload, KvizMeta, NapredakTitule, PokusajPayload,
-  PotvrdaTajmera, RezultatPayload, SavePotvrda, SavetPayload,
+  InboxDetetaPayload, JavniProfilPayload, KupovinaPayload, KvizMeta, NapredakTitule,
+  PokusajPayload, PotvrdaTajmera, ProdavnicaPayload, RezultatPayload, SavePotvrda,
+  SavetPayload,
 } from '../types/kviz'
 import { SEED_PITANJA } from '../data/seedPitanja'
 import { supabase } from './supabase'
@@ -523,6 +524,65 @@ export async function sacuvajNivoeTitula(nivoi: Array<{ name: string; min_stars:
   if (!odgovor.ok) throw new Error('Titule nisu ispravne. Potreban je početni nivo od 0 zvezdica i jedinstveni pragovi.')
 }
 
+// ---------- Prodavnica (admin) ----------
+// Napomena: save_shop_items radi „replace-all” (briše stavke koje nisu u payloadu,
+// upisuje preostale). Zato se sve stavke čuvaju odjednom — nema pojedinačnog update.
+export type NoviStavkaProdavnice = Omit<StavkaProdavnice, 'id' | 'owner_id' | 'created_at' | 'updated_at'>
+
+export async function listajStavkeProdavnice(): Promise<StavkaProdavnice[]> {
+  const { data, error } = await supabase()
+    .from('shop_items').select('*').order('sort_order').order('created_at')
+  if (error) throw new Error(opisiGresku(error)!)
+  return data as StavkaProdavnice[]
+}
+
+export async function sacuvajStavkeProdavnice(stavke: NoviStavkaProdavnice[]): Promise<void> {
+  const { data, error } = await supabase().rpc('save_shop_items', { p_items: stavke })
+  if (error) throw new Error(opisiGresku(error)!)
+  const odgovor = data as { ok: boolean; error?: string }
+  if (!odgovor.ok) throw new Error('Stavke nisu ispravne. Proveri naslov (1–60 znakova), cenu (>0) i emoji.')
+}
+
+export interface KupovinaAdminPrikaz {
+  id: string
+  childName: string
+  childAvatar: string
+  title: string
+  emoji: string
+  cost: number
+  isRepeatable: boolean
+  status: 'requested' | 'consumed' | 'cancelled'
+  requestedAt: string
+  consumedAt: string | null
+  note: string | null
+}
+
+export async function listajKupovineProdavnice(): Promise<KupovinaAdminPrikaz[]> {
+  const { data, error } = await supabase().rpc('admin_list_shop_purchases')
+  if (error) throw new Error(opisiGresku(error)!)
+  const odgovor = data as { ok: boolean; error?: string; purchases?: KupovinaAdminPrikaz[] }
+  if (!odgovor.ok || !odgovor.purchases) throw new Error(odgovor.error ?? 'Kupovine nisu dostupne.')
+  return odgovor.purchases
+}
+
+export async function oznaciKupovinuKonzumiranom(id: string, beleška?: string): Promise<void> {
+  const { data, error } = await supabase().rpc('admin_consume_purchase', {
+    p_purchase_id: id, p_note: beleška ?? null,
+  })
+  if (error) throw new Error(opisiGresku(error)!)
+  const odgovor = data as { ok: boolean; error?: string }
+  if (!odgovor.ok) throw new Error(odgovor.error ?? 'Kupovina nije mogla da se označi.')
+}
+
+export async function otkaziKupovinu(id: string, razlog?: string): Promise<void> {
+  const { data, error } = await supabase().rpc('admin_cancel_purchase', {
+    p_purchase_id: id, p_reason: razlog ?? null,
+  })
+  if (error) throw new Error(opisiGresku(error)!)
+  const odgovor = data as { ok: boolean; error?: string }
+  if (!odgovor.ok) throw new Error(odgovor.error ?? 'Kupovina nije mogla da se otkaže.')
+}
+
 // ---------- RPC za dete (bez prijave) ----------
 export async function kvizMeta(token: string): Promise<KvizMeta> {
   const { data, error } = await supabase().rpc('get_quiz_by_token', { p_token: token })
@@ -583,6 +643,21 @@ export async function ucitajJavniProfil(profileToken: string): Promise<JavniProf
   const { data, error } = await supabase().rpc('get_child_profile', { p_profile_token: profileToken })
   if (error) return { ok: false, error: opisiGresku(error)! }
   return data as JavniProfilPayload
+}
+
+// ---------- RPC za dete — prodavnica ----------
+export async function ucitajProdavnicu(profileToken: string): Promise<ProdavnicaPayload> {
+  const { data, error } = await supabase().rpc('get_shop', { p_profile_token: profileToken })
+  if (error) return { ok: false, error: opisiGresku(error)! }
+  return data as ProdavnicaPayload
+}
+
+export async function kupiStavku(profileToken: string, itemId: string): Promise<KupovinaPayload> {
+  const { data, error } = await supabase().rpc('purchase_shop_item', {
+    p_profile_token: profileToken, p_item_id: itemId,
+  })
+  if (error) return { ok: false, error: opisiGresku(error)! }
+  return data as KupovinaPayload
 }
 
 // ---------- Obaveštenja i Web Push ----------

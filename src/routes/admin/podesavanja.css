@@ -1,6 +1,6 @@
 .podesavanja-tabovi {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
   gap: 0.5rem;
   margin-top: 1rem;
   padding: 0.35rem;
@@ -103,6 +103,113 @@
 
   .profil-admin-rezultat {
     align-items: flex-start;
+  }
+}
+
+/* Prodavnica — katalog i kupovine */
+.prodavnica-stavka-red {
+  display: grid;
+  grid-template-columns: 60px 1fr 90px auto auto;
+  gap: 0.6rem;
+  align-items: center;
+  padding: 0.6rem;
+  border: 1px solid var(--boja-ivica);
+  border-radius: var(--radius);
+  background: var(--boja-polje);
+}
+
+.prodavnica-stavka-red--neaktivna {
+  opacity: 0.6;
+}
+
+.prodavnica-stavka-red .polje { margin: 0; flex: 1; }
+
+.prodavnica-stavka-red input[type='text'],
+.prodavnica-stavka-red input[type='number'],
+.prodavnica-stavka-red textarea {
+  width: 100%;
+  padding: 0.4rem 0.55rem;
+}
+
+.prodavnica-stavka-red textarea { resize: vertical; min-height: 38px; }
+
+.prodavnica-stavka-emoji-unos {
+  text-align: center;
+  font-size: 1.4rem;
+  padding: 0.3rem !important;
+}
+
+.prodavnica-stavka-cena-unos {
+  text-align: center;
+  font-weight: 700;
+}
+
+.prodavnica-stavka-ponavlja {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+}
+
+.prodavnica-filteri {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.9rem;
+}
+
+.prodavnica-kupovine {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.prodavnica-kupovina {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 0.8rem;
+  align-items: center;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--boja-ivica);
+  border-radius: var(--radius);
+  background: var(--boja-polje);
+}
+
+.prodavnica-kupovina-detepregled {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.prodavnica-kupovina-emoji {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: var(--boja-kartica);
+  border: 1px solid var(--boja-ivica);
+  font-size: 1.3rem;
+}
+
+.prodavnica-kupovina-akcije {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+@media (max-width: 720px) {
+  .prodavnica-stavka-red {
+    grid-template-columns: 1fr 1fr;
+  }
+  .prodavnica-stavka-red > *:first-child {
+    grid-column: 1 / -1;
+  }
+  .prodavnica-kupovina {
+    grid-template-columns: 1fr;
+  }
+  .prodavnica-kupovina-akcije {
+    justify-content: flex-start;
   }
 }
 

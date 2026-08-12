@@ -188,6 +188,42 @@ export interface NivoTitule {
   created_at: string
 }
 
+export interface StavkaProdavnice {
+  id: string
+  owner_id: string
+  title: string
+  description: string | null
+  emoji: string
+  cost: number
+  repeatable: boolean
+  sort_order: number
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+// Status kupovine nagrade u prodavnici.
+//   requested — dete upravo traži nagradu (čeka isporuku).
+//   consumed  — admin je ostvario nagradu; kod ponavljajućih stavki oslobađa
+//               slot za sledeću kupovinu.
+//   cancelled — admin otkazao; vraća potrošene zvezdice u raspoloživi balans.
+export type StatusKupovineProdavnice = 'requested' | 'consumed' | 'cancelled'
+
+export interface KupovinaProdavnice {
+  id: string
+  shop_item_id: string | null
+  child_profile_id: string
+  owner_id: string
+  item_title: string
+  item_emoji: string
+  cost: number
+  is_repeatable: boolean
+  status: StatusKupovineProdavnice
+  requested_at: string
+  consumed_at: string | null
+  note: string | null
+}
+
 export type TipPrimaocaObavestenja = 'admin' | 'child'
 export type TipDogadjajaObavestenja = 'new_quiz' | 'quiz_completed'
 

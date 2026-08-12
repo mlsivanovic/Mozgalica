@@ -95,6 +95,7 @@ export function ProfilDeteta() {
   }
 
   const ukupnoZvezdica = profil.totalStars ?? 0
+  const raspolozivoZvezdica = profil.spendableStars ?? ukupnoZvezdica
   const trenutna = profil.currentTitle
   const sledeca = profil.nextTitle
   const odPraga = trenutna?.minStars ?? 0
@@ -122,6 +123,9 @@ export function ProfilDeteta() {
             <h1>{profil.name}</h1>
             <div className="profil-statistike">
               <span>⭐ <strong>{ukupnoZvezdica}</strong> zvezdica</span>
+              <span title="Zvezdice raspoložive za trošenje u prodavnici">
+                🛒 Raspoloživo: <strong>{raspolozivoZvezdica}</strong>
+              </span>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
                 <TitleAvatar name={trenutna?.name ?? 'ShadowNoob'} avatar={trenutna?.avatar} size={18} />
                 <strong>{trenutna?.name ?? 'ShadowNoob'}</strong>
@@ -162,6 +166,18 @@ export function ProfilDeteta() {
               ? `Još ${sledeca.starsNeeded} zvezdica do titule „${sledeca.name}”.`
               : 'Osvojena je najviša titula — svaka čast!'}
           </p>
+        </section>
+
+        <section className="kartica profil-prodavnica-link" aria-label="Prodavnica nagrada">
+          <div className="red red--razmak" style={{ alignItems: 'center' }}>
+            <div>
+              <p className="malo blago">Zameni zvezdice za nagrade</p>
+              <h2 style={{ margin: 0 }}>🛒 Prodavnica</h2>
+            </div>
+            <Link className="dugme dugme--akcenat" to={`/prodavnica/${profilToken}`}>
+              Otvori prodavnicu →
+            </Link>
+          </div>
         </section>
 
         <section className="profil-sekcija">

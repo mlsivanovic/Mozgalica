@@ -170,10 +170,64 @@ export interface JavniProfilPayload {
   name?: string
   avatar?: string
   totalStars?: number
+  // Raspoložive zvezdice za trošenje u prodavnici (ukupno − potrošeno).
+  // Razlikuje se od totalStars koji ostaje doživotno dostignuće i hrani titule.
+  spendableStars?: number
   currentTitle?: ProfilnaTitula | null
   nextTitle?: ProfilnaTitula | null
   activeQuizzes?: AktivniKvizProfila[]
   history?: IstorijskiRezultatProfila[]
+}
+
+// ---------- Prodavnica ----------
+
+export interface StavkaProdavnicePrikaz {
+  id: string
+  title: string
+  description: string | null
+  emoji: string
+  cost: number
+  repeatable: boolean
+  // Jednokratna: true ako je ikada kupljena. Ponavljajuća: true ako je aktivna
+  // kupovina (čeka konzumaciju) — u oba slučaja onemogućava ponovnu kupovinu.
+  purchased: boolean
+  // Samo za ponavljajuće sa aktivnom kupovinom (status='requested').
+  awaitingConsumption: boolean
+  // Broj prethodno konzumiranih kupovina (prikaz „ranije isporučeno N×”).
+  previousCount: number
+}
+
+export interface KupovinaPrikaz {
+  id: string
+  title: string
+  emoji: string
+  cost: number
+  isRepeatable: boolean
+  status: 'requested' | 'consumed' | 'cancelled'
+  requestedAt: string
+  consumedAt: string | null
+}
+
+export interface ProdavnicaPayload {
+  ok: boolean
+  error?: string
+  name?: string
+  avatar?: string
+  balance?: number
+  totalStars?: number
+  items?: StavkaProdavnicePrikaz[]
+  purchases?: KupovinaPrikaz[]
+}
+
+export interface KupovinaPayload {
+  ok: boolean
+  error?: string
+  // 'profile_not_found' | 'item_not_found' | 'already_purchased'
+  // | 'awaiting_consumption' | 'insufficient_balance'
+  purchaseId?: string
+  newBalance?: number
+  balance?: number
+  cost?: number
 }
 
 export interface InboxDetetaPayload {

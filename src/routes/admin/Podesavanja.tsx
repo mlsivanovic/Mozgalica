@@ -1,17 +1,19 @@
-// Administratorska podešavanja: profili dece, titule i mejl obaveštenja.
+// Administratorska podešavanja: profili dece, titule, prodavnica nagrada i mejl obaveštenja.
 import { useEffect, useState } from 'react'
 import { PushKontrole } from '../../components/PushKontrole'
 import { Loader } from '../../components/Zajednicke'
 import { OznakaRangaTitule, TitleAvatar } from '../../components/TitleAvatar'
 import {
-  listajNivoeTitula, listajProfileDeteta, postaviEmailObavestenja, sacuvajNivoeTitula,
-  sacuvajProfilDeteta, ucitajJavniProfil, ucitajPodesavanja,
+  listajKupovineProdavnice, listajNivoeTitula, listajProfileDeteta, listajStavkeProdavnice,
+  oznaciKupovinuKonzumiranom, otkaziKupovinu, postaviEmailObavestenja,
+  sacuvajNivoeTitula, sacuvajProfilDeteta, sacuvajStavkeProdavnice, ucitajJavniProfil,
+  ucitajPodesavanja, type KupovinaAdminPrikaz,
 } from '../../lib/api'
 import { useAuth } from '../../lib/auth'
 import { emailJeIspravan, normalizujEmail } from '../../lib/email'
 import { formatDatum, formatProcenat } from '../../lib/format'
 import {
-  AVATARI_DECE, type AvatarDeteta, type NivoTitule, type ProfilDeteta,
+  AVATARI_DECE, type AvatarDeteta, type NivoTitule, type ProfilDeteta, type StavkaProdavnice,
 } from '../../types/db'
 import type { JavniProfilPayload } from '../../types/kviz'
 import './podesavanja.css'
@@ -183,11 +185,65 @@ export function validateTitleGroups(groups: TitleGroup[]): string | null {
   return null
 }
 
-type TabPodesavanja = 'profili' | 'titule' | 'obavestenja'
+type TabPodesavanja = 'profili' | 'titule' | 'prodavnica' | 'obavestenja'
+
+// Lokalna (ne-sačuvana) stavka kataloga — privremeni id se koristi samo za React key.
+interface StavkaForma {
+  tempId: string
+  title: string
+  description: string
+  emoji: string
+  cost: number
+  repeatable: boolean
+  is_active: boolean
+  sort_order: number
+}
+
+function stavkaUFormu(s: StavkaProdavnice): StavkaForma {
+  return {
+    tempId: s.id,
+    title: s.title,
+    description: s.description ?? '',
+    emoji: s.emoji,
+    cost: s.cost,
+    repeatable: s.repeatable,
+    is_active: s.is_active,
+    sort_order: s.sort_order,
+  }
+}
+
+function novuStavku(sortOrder: number): StavkaForma {
+  return {
+    tempId: `nova-${Date.now()}`,
+    title: '',
+    description: '',
+    emoji: '🎁',
+    cost: 5,
+    repeatable: false,
+    is_active: true,
+    sort_order: sortOrder,
+  }
+}
+
+function validirajStavke(stavke: StavkaForma[]): string | null {
+  for (const s of stavke) {
+    if (!s.title.trim() || s.title.trim().length > 60) {
+      return 'Naslov svake stavke mora imati 1–60 znakova.'
+    }
+    if (!Number.isFinite(s.cost) || s.cost <= 0) {
+      return `Cena stavke „${s.title}” mora biti veća od 0.`
+    }
+    if (!s.emoji || s.emoji.length < 1 || s.emoji.length > 8) {
+      return `Emoji stavke „${s.title}” mora imati 1–8 znakova.`
+    }
+  }
+  return null
+}
 
 const TABOVI: Array<{ id: TabPodesavanja, naziv: string, ikona: string }> = [
   { id: 'profili', naziv: 'Profili dece', ikona: '👥' },
   { id: 'titule', naziv: 'Titule', ikona: '🏆' },
+  { id: 'prodavnica', naziv: 'Prodavnica', ikona: '🛒' },
   { id: 'obavestenja', naziv: 'Obaveštenja', ikona: '🔔' },
 ]
 
@@ -205,15 +261,26 @@ export function Podesavanja() {
   const [cuvaProfil, setCuvaProfil] = useState(false)
   const [cuvaTitule, setCuvaTitule] = useState(false)
 
+  // Prodavnica — katalog i kupovine
+  const [stavkeProdavnice, setStavkeProdavnice] = useState<StavkaForma[]>([])
+  const [kupovine, setKupovine] = useState<KupovinaAdminPrikaz[]>([])
+  const [filterKupovina, setFilterKupovina] = useState<'sve' | 'requested' | 'consumed' | 'cancelled'>('sve')
+  const [cuvaKatalog, setCuvaKatalog] = useState(false)
+  const [radiKupovinu, setRadiKupovinu] = useState(false)
+
   async function ucitajSve() {
     setUcitava(true)
     try {
-      const [podesavanja, ucitaniProfili, ucitaniNivoi] = await Promise.all([
+      const [podesavanja, ucitaniProfili, ucitaniNivoi, stavke, ucitaneKupovine] = await Promise.all([
         ucitajPodesavanja(), listajProfileDeteta(), listajNivoeTitula(),
+        listajStavkeProdavnice().catch(() => [] as StavkaProdavnice[]),
+        listajKupovineProdavnice().catch(() => [] as KupovinaAdminPrikaz[]),
       ])
       setUkljucena(podesavanja?.email_notifications ?? true)
       setProfili(ucitaniProfili)
       setTitleGroups(groupTitleLevels(ucitaniNivoi))
+      setStavkeProdavnice(stavke.map(stavkaUFormu))
+      setKupovine(ucitaneKupovine)
       const pregledi = await Promise.all(ucitaniProfili.map(async (profil) => (
         [profil.id, await ucitajJavniProfil(profil.public_token)] as const
       )))
@@ -375,7 +442,7 @@ export function Podesavanja() {
     setCuvaTitule(true)
     setGreska(null)
     setPoruka(null)
-    
+
     const greskaValidacije = validateTitleGroups(titleGroups)
     if (greskaValidacije) {
       setGreska(greskaValidacije)
@@ -392,6 +459,98 @@ export function Podesavanja() {
       setGreska(String((e as Error).message ?? e))
     } finally {
       setCuvaTitule(false)
+    }
+  }
+
+  // ---------- Prodavnica: katalog i kupovine ----------
+  function dodajStavku() {
+    const sledeciSort = stavkeProdavnice.length > 0
+      ? Math.max(...stavkeProdavnice.map((s) => s.sort_order)) + 1
+      : 0
+    setStavkeProdavnice([...stavkeProdavnice, novuStavku(sledeciSort)])
+    setGreska(null)
+    setPoruka(null)
+  }
+
+  function izmeniStavku(tempId: string, izmene: Partial<StavkaForma>) {
+    setStavkeProdavnice((prethodno) =>
+      prethodno.map((s) => (s.tempId === tempId ? { ...s, ...izmene } : s))
+    )
+    setGreska(null)
+    setPoruka(null)
+  }
+
+  function obrisiStavku(tempId: string) {
+    setStavkeProdavnice((prethodno) => prethodno.filter((s) => s.tempId !== tempId))
+    setGreska(null)
+    setPoruka(null)
+  }
+
+  async function sacuvajKatalog() {
+    setCuvaKatalog(true)
+    setGreska(null)
+    setPoruka(null)
+
+    const greskaValidacije = validirajStavke(stavkeProdavnice)
+    if (greskaValidacije) {
+      setGreska(greskaValidacije)
+      setCuvaKatalog(false)
+      return
+    }
+
+    try {
+      // save_shop_items je replace-all: šaljemo sve (uključujući neaktivne)
+      // da bi istorija kupovina ostala povezana sa stavkama koje više nisu u ponudi.
+      const payload = stavkeProdavnice.map((s, i) => ({
+        title: s.title.trim(),
+        description: s.description.trim() || null,
+        emoji: s.emoji,
+        cost: s.cost,
+        repeatable: s.repeatable,
+        is_active: s.is_active,
+        sort_order: i,
+      }))
+      await sacuvajStavkeProdavnice(payload)
+      await ucitajSve()
+      setPoruka('Katalog prodavnice je sačuvan.')
+    } catch (e) {
+      setGreska(String((e as Error).message ?? e))
+    } finally {
+      setCuvaKatalog(false)
+    }
+  }
+
+  async function konzumiraj(kupovina: KupovinaAdminPrikaz) {
+    setRadiKupovinu(true)
+    setGreska(null)
+    setPoruka(null)
+    try {
+      await oznaciKupovinuKonzumiranom(kupovina.id)
+      await ucitajSve()
+      setPoruka(`Kupovina „${kupovina.title}” za ${kupovina.childName} je označena kao ostvarena.`)
+    } catch (e) {
+      setGreska(String((e as Error).message ?? e))
+    } finally {
+      setRadiKupovinu(false)
+    }
+  }
+
+  async function otkazi(kupovina: KupovinaAdminPrikaz) {
+    if (!window.confirm(
+      `Otkaži kupovinu „${kupovina.title}” za ${kupovina.childName}? `
+      + `${kupovina.cost}⭐ se vraća detetu u raspoloživi balans.`
+    )) return
+    setRadiKupovinu(true)
+    setGreska(null)
+    setPoruka(null)
+    try {
+      await otkaziKupovinu(kupovina.id)
+      await ucitajSve()
+      setPoruka(`Kupovina „${kupovina.title}” je otkazana; zvezdice su vraćene.`)
+    } catch (e) {
+      setGreska(String((e as Error).message ?? e))
+    } finally {
+      setRadiKupovinu(false)
     }
   }
 
@@ -821,6 +980,196 @@ export function Podesavanja() {
           <button type="button" className="dugme" disabled={cuvaTitule} onClick={sacuvajTitule}>
             {cuvaTitule ? 'Čuvam…' : 'Sačuvaj titule'}
           </button>
+        </div>
+      </section>
+      )}
+
+      {aktivanTab === 'prodavnica' && (
+      <section
+        id="podesavanja-panel-prodavnica" className="kartica podesavanja-panel"
+        role="tabpanel" aria-labelledby="podesavanja-tab-prodavnica"
+      >
+        <div className="red red--razmak">
+          <div>
+            <h2>Katalog nagrada</h2>
+            <p className="blago malo">
+              Dete kupuje nagrade za osvojene zvezdice. Jednokratne se kupuju jednom;
+              ponavljajuće može da kupi ponovo tek kad označiš da je prethodna ostvarena.
+            </p>
+          </div>
+          <button type="button" className="dugme dugme--akcenat dugme--malo" onClick={dodajStavku}>
+            + Nova stavka
+          </button>
+        </div>
+
+        <div className="prodavnica-katalog razmak-gore" style={{ display: 'grid', gap: '0.6rem' }}>
+          {stavkeProdavnice.length === 0 ? (
+            <p className="blago">Još nema stavki. Dodaj prvu nagradu gore.</p>
+          ) : stavkeProdavnice.map((stavka) => (
+            <div
+              key={stavka.tempId}
+              className={`prodavnica-stavka-red ${stavka.is_active ? '' : 'prodavnica-stavka-red--neaktivna'}`}
+            >
+              <input
+                type="text"
+                className="prodavnica-stavka-emoji-unos"
+                maxLength={8}
+                value={stavka.emoji}
+                aria-label="Emoji"
+                onChange={(e) => izmeniStavku(stavka.tempId, { emoji: e.target.value })}
+              />
+              <div style={{ display: 'grid', gap: '0.35rem' }}>
+                <input
+                  type="text"
+                  maxLength={60}
+                  placeholder="Naslov (npr. Sladoled)"
+                  value={stavka.title}
+                  aria-label="Naslov"
+                  onChange={(e) => izmeniStavku(stavka.tempId, { title: e.target.value })}
+                />
+                <textarea
+                  rows={2}
+                  maxLength={300}
+                  placeholder="Kratak opis (opciono)"
+                  value={stavka.description}
+                  aria-label="Opis"
+                  onChange={(e) => izmeniStavku(stavka.tempId, { description: e.target.value })}
+                />
+              </div>
+              <input
+                type="number"
+                min={1}
+                className="prodavnica-stavka-cena-unos"
+                aria-label="Cena u zvezdicama"
+                value={stavka.cost}
+                onChange={(e) => izmeniStavku(stavka.tempId, { cost: Number(e.target.value) })}
+              />
+              <div className="prodavnica-stavka-ponavlja">
+                <label className="stiklir">
+                  <input
+                    type="checkbox"
+                    checked={stavka.repeatable}
+                    onChange={(e) => izmeniStavku(stavka.tempId, { repeatable: e.target.checked })}
+                  />
+                  Ponavljajuća
+                </label>
+                <label className="stiklir">
+                  <input
+                    type="checkbox"
+                    checked={stavka.is_active}
+                    onChange={(e) => izmeniStavku(stavka.tempId, { is_active: e.target.checked })}
+                  />
+                  Aktivna
+                </label>
+              </div>
+              <button
+                type="button"
+                className="dugme dugme--opasno dugme--malo"
+                onClick={() => obrisiStavku(stavka.tempId)}
+              >
+                Obriši
+              </button>
+            </div>
+          ))}
+        </div>
+
+        <div className="red razmak-gore">
+          <button type="button" className="dugme" disabled={cuvaKatalog} onClick={sacuvajKatalog}>
+            {cuvaKatalog ? 'Čuvam…' : 'Sačuvaj katalog'}
+          </button>
+        </div>
+
+        <div style={{ marginTop: '2rem', borderTop: '1px solid var(--boja-ivica)', paddingTop: '1.2rem' }}>
+          <h2>Kupovine dece</h2>
+          <p className="blago malo">
+            Označi nagradu kao ostvarenu kada je isporučiš detetu. Otkazivanje vraća potrošene
+            zvezdice u detetov raspoloživi balans.
+          </p>
+
+          <div className="prodavnica-filteri razmak-gore" role="group" aria-label="Filter po statusu">
+            {([
+              ['sve', 'Sve'],
+              ['requested', 'Čeka isporuku'],
+              ['consumed', 'Ostvarene'],
+              ['cancelled', 'Otkazane'],
+            ] as const).map(([id, naziv]) => {
+              const broj = id === 'sve'
+                ? kupovine.length
+                : kupovine.filter((k) => k.status === id).length
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  className={`dugme dugme--malo ${filterKupovina === id ? 'dugme--akcenat' : 'dugme--senka'}`}
+                  onClick={() => setFilterKupovina(id)}
+                >
+                  {naziv} ({broj})
+                </button>
+              )
+            })}
+          </div>
+
+          <div className="prodavnica-kupovine razmak-gore">
+            {kupovine.filter((k) => filterKupovina === 'sve' || k.status === filterKupovina).length === 0 ? (
+              <p className="blago">Nema kupovina u ovoj kategoriji.</p>
+            ) : kupovine
+              .filter((k) => filterKupovina === 'sve' || k.status === filterKupovina)
+              .map((kupovina) => (
+                <div key={kupovina.id} className="prodavnica-kupovina">
+                  <div className="prodavnica-kupovina-detepregled">
+                    <span aria-hidden="true" style={{ fontSize: '1.6rem' }}>{kupovina.childAvatar}</span>
+                    <div>
+                      <strong>{kupovina.childName}</strong>
+                      <p className="malo blago">
+                        {formatDatum(kupovina.requestedAt)}
+                        {kupovina.consumedAt && ` · ostvareno ${formatDatum(kupovina.consumedAt)}`}
+                      </p>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
+                    <span className="prodavnica-kupovina-emoji" aria-hidden="true">{kupovina.emoji}</span>
+                    <div>
+                      <strong>{kupovina.title}</strong>
+                      <p className="malo blago">
+                        {kupovina.cost}⭐
+                        {kupovina.isRepeatable && ' · ponavljajuća'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="prodavnica-kupovina-akcije">
+                    {kupovina.status === 'requested' && (
+                      <span className="bedz bedz--upozorenje">Čeka isporuku</span>
+                    )}
+                    {kupovina.status === 'consumed' && (
+                      <span className="bedz bedz--uspeh">Ostvareno</span>
+                    )}
+                    {kupovina.status === 'cancelled' && (
+                      <span className="bedz bedz--neutral">Otkazano</span>
+                    )}
+                    {kupovina.status === 'requested' && (
+                      <button
+                        type="button"
+                        className="dugme dugme--akcenat dugme--malo"
+                        disabled={radiKupovinu}
+                        onClick={() => konzumiraj(kupovina)}
+                      >
+                        Označi ostvarenom
+                      </button>
+                    )}
+                    {(kupovina.status === 'requested' || kupovina.status === 'consumed') && (
+                      <button
+                        type="button"
+                        className="dugme dugme--senka dugme--malo"
+                        disabled={radiKupovinu}
+                        onClick={() => otkazi(kupovina)}
+                      >
+                        Otkaži
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+          </div>
         </div>
       </section>
       )}

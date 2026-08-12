@@ -1,0 +1,182 @@
+.prodavnica-strana {
+  min-height: 100vh;
+  padding: 1rem;
+  background:
+    radial-gradient(circle at 10% 10%, var(--boja-primarna-svetla), transparent 34%),
+    radial-gradient(circle at 90% 30%, var(--boja-upozorenje-svetla), transparent 30%),
+    var(--boja-pozadina);
+}
+
+.prodavnica-omot { width: min(860px, 100%); margin: 0 auto; }
+.prodavnica-greska { padding-top: 15vh; }
+
+.prodavnica-zaglavlje {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 1.4rem 0 1rem;
+}
+
+.prodavnica-zaglavlje .profil-avatar {
+  width: 78px;
+  height: 78px;
+  border-radius: 24px;
+  font-size: 2.4rem;
+}
+
+.prodavnica-zaglavlje h1 { font-size: clamp(1.6rem, 5vw, 2.4rem); }
+.prodavnica-nadnaslov { color: var(--boja-primarna); font-size: 0.78rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; }
+
+.prodavnica-balans {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 0.6rem;
+}
+
+.prodavnica-balans .bedz {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.85rem;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.prodavnica-balans .bedz--raspolozivo {
+  background: linear-gradient(145deg, var(--boja-akcenat), var(--boja-primarna));
+  color: #fff;
+  box-shadow: var(--senka-jaka);
+}
+
+.prodavnica-sekcija { margin-top: 1.6rem; }
+.prodavnica-sekcija-naslov {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  margin-bottom: 0.8rem;
+  gap: 0.75rem;
+}
+.prodavnica-sekcija-naslov h2 { font-size: 1.3rem; }
+
+.prodavnica-mreza {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.prodavnica-stavka {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  border-top: 5px solid var(--boja-akcenat);
+  padding-top: 0.9rem;
+}
+
+.prodavnica-stavka--kupljeno { border-top-color: var(--boja-uspeh); }
+.prodavnica-stavka--zakljucano { border-top-color: var(--boja-ivica); opacity: 0.78; }
+
+.prodavnica-stavka-glava {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.prodavnica-stavka-emoji {
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  flex: 0 0 auto;
+  border-radius: 18px;
+  background: linear-gradient(145deg, var(--boja-primarna-svetla), var(--boja-kartica));
+  border: 2px solid var(--boja-kartica);
+  box-shadow: var(--senka);
+  font-size: 2rem;
+}
+
+.prodavnica-stavka-cena {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  background: var(--boja-zvezda-svetla, var(--boja-primarna-svetla));
+  color: var(--boja-primarna-tamna);
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.prodavnica-stavka h3 { font-size: 1.05rem; }
+.prodavnica-stavka-opis { color: var(--boja-tekst-blagi); font-size: 0.9rem; line-height: 1.35; }
+
+.prodavnica-stavka-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  color: var(--boja-tekst-blagi);
+}
+
+.prodavnica-stavka .dugme { margin-top: auto; width: 100%; }
+
+.prodavnica-prazno {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.prodavnica-prazno > span { font-size: 2.2rem; }
+
+.prodavnica-nagrada {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding: 0.7rem 0;
+  border-top: 1px solid var(--boja-ivica);
+}
+
+.prodavnica-nagrada-glava {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.prodavnica-nagrada-emoji {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: var(--boja-polje);
+  border: 1px solid var(--boja-ivica);
+  font-size: 1.3rem;
+}
+
+.prodavnica-nagrada-status {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.15rem;
+  text-align: right;
+}
+
+.prodavnica-potvrda-telo { display: grid; gap: 0.8rem; }
+.prodavnica-potvrda-stavka {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.8rem;
+  border-radius: var(--radius);
+  background: var(--boja-polje);
+  border: 1px solid var(--boja-ivica);
+}
+.prodavnica-potvrda-stavka .prodavnica-stavka-emoji { width: 48px; height: 48px; font-size: 1.6rem; border-radius: 14px; }
+
+@media (max-width: 540px) {
+  .prodavnica-strana { padding: 0.7rem; }
+  .prodavnica-zaglavlje { align-items: flex-start; }
+  .prodavnica-nagrada { align-items: flex-start; }
+  .prodavnica-nagrada-status { align-items: flex-start; text-align: left; }
+}
