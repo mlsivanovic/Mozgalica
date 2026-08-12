@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { PushKontrole } from '../../components/PushKontrole'
 import { Loader } from '../../components/Zajednicke'
-import { TitleAvatar } from '../../components/TitleAvatar'
+import { OznakaRangaTitule, TitleAvatar } from '../../components/TitleAvatar'
 import {
   listajNivoeTitula, listajProfileDeteta, postaviEmailObavestenja, sacuvajNivoeTitula,
   sacuvajProfilDeteta, ucitajJavniProfil, ucitajPodesavanja,
@@ -752,9 +752,10 @@ export function Podesavanja() {
                       </div>
                     </div>
 
-                    {/* Awakened */}
                     <div className="titula-podtitula-red">
-                      <span className="titula-podtitula-ime">🛡️ {grupa.baseName || 'Nova titula'} Awakened</span>
+                      <span className="titula-podtitula-ime">
+                        <OznakaRangaTitule rang="Awakened" /> {grupa.baseName || 'Nova titula'} Awakened
+                      </span>
                       <div className="titula-podtitula-unos">
                         {isFirstGroup ? (
                           <span className="titula-podtitula-opseg">(Zaključano na 0)</span>
@@ -774,9 +775,10 @@ export function Podesavanja() {
                       </div>
                     </div>
 
-                    {/* Empowered */}
                     <div className="titula-podtitula-red">
-                      <span className="titula-podtitula-ime">⚡ {grupa.baseName || 'Nova titula'} Empowered</span>
+                      <span className="titula-podtitula-ime">
+                        <OznakaRangaTitule rang="Empowered" /> {grupa.baseName || 'Nova titula'} Empowered
+                      </span>
                       <div className="titula-podtitula-unos">
                         <span className="titula-podtitula-opseg">
                           (Opseg: {grupa.awakenedStars + 1} - {grupa.unboundStars - 1})
@@ -791,9 +793,10 @@ export function Podesavanja() {
                       </div>
                     </div>
 
-                    {/* Unbound */}
                     <div className="titula-podtitula-red">
-                      <span className="titula-podtitula-ime">🔥 {grupa.baseName || 'Nova titula'} Unbound</span>
+                      <span className="titula-podtitula-ime">
+                        <OznakaRangaTitule rang="Unbound" /> {grupa.baseName || 'Nova titula'} Unbound
+                      </span>
                       <div className="titula-podtitula-unos">
                         <span className="titula-podtitula-opseg">
                           (Opseg: &gt; {grupa.empoweredStars})

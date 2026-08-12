@@ -199,51 +199,65 @@ table.tabela { width: 100%; border-collapse: collapse; background: var(--boja-ka
   }
 }
 
-/* ---------- TitleAvatar Styles & Glow Effects ---------- */
+/* ---------- Bedževi titula ---------- */
 .titula-avatar-omot {
   display: inline-block;
   position: relative;
   flex-shrink: 0;
+  border-radius: 50%;
+  transition: filter 0.25s ease, transform 0.25s ease;
 }
 
 .titula-avatar-img,
-.titula-avatar-fallback-wrapper svg {
+.titula-avatar-bedz {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: contain;
   border-radius: 50%;
-  transition: transform 0.3s ease, filter 0.3s ease;
 }
 
-/* Awakened (normal look) */
-.titula-avatar-img--awakened {
-  /* no extra styles */
+.titula-avatar-emoji-krug {
+  overflow: hidden;
 }
 
-/* Empowered (small gold/primary glow) */
-.titula-avatar-img--empowered {
-  filter: drop-shadow(0 0 5px var(--boja-primarna)) drop-shadow(0 0 2px var(--boja-primarna-svetla));
+.titula-avatar-omot.titula-avatar-img--empowered {
+  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--boja-primarna) 72%, transparent));
 }
 
-/* Unbound (large gold/orange glowing animation) */
-.titula-avatar-img--unbound {
-  filter: drop-shadow(0 0 12px #ff9800) drop-shadow(0 0 4px #ff5722);
-  animation: titula-unbound-pulsiranje 2.5s infinite ease-in-out;
+.titula-avatar-omot.titula-avatar-img--unbound {
+  filter: drop-shadow(0 0 8px color-mix(in srgb, #ffbe4d 76%, transparent));
+  animation: titula-unbound-sjaj 3.4s infinite ease-in-out;
 }
 
-/* Animacija za najviši rang */
-@keyframes titula-unbound-pulsiranje {
+@keyframes titula-unbound-sjaj {
   0% {
-    transform: scale(1) rotate(-1deg);
-    filter: drop-shadow(0 0 9px #ff9800) drop-shadow(0 0 3px #ff5722);
+    transform: scale(1);
+    filter: drop-shadow(0 0 7px color-mix(in srgb, #ffbe4d 65%, transparent));
   }
   50% {
-    transform: scale(1.05) rotate(1deg);
-    filter: drop-shadow(0 0 16px #ffeb3b) drop-shadow(0 0 6px #ff5722) drop-shadow(0 0 2px #ff9800);
+    transform: scale(1.035);
+    filter: drop-shadow(0 0 12px color-mix(in srgb, #ffe39a 84%, transparent));
   }
   100% {
-    transform: scale(1) rotate(-1deg);
-    filter: drop-shadow(0 0 9px #ff9800) drop-shadow(0 0 3px #ff5722);
+    transform: scale(1);
+    filter: drop-shadow(0 0 7px color-mix(in srgb, #ffbe4d 65%, transparent));
+  }
+}
+
+.oznaka-ranga-titule {
+  display: inline-block;
+  flex: 0 0 auto;
+  vertical-align: -0.18em;
+}
+
+.oznaka-ranga-titule--awakened { color: #64748b; }
+.oznaka-ranga-titule--empowered { color: #2563eb; }
+.oznaka-ranga-titule--unbound { color: #d97706; }
+
+@media (prefers-reduced-motion: reduce) {
+  .titula-avatar-omot {
+    animation: none;
+    transition: none;
   }
 }
