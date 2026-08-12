@@ -182,6 +182,8 @@ function PitanjaKviza({
   quizId: string; zakljucano: boolean; snapshot: KvizPitanje[]; banka: Pitanje[]
   oblasti: Oblast[]; onSacuvano: () => void
 }) {
+  const [pitanjaOtvoreno, setPitanjaOtvoreno] = useState(false)
+  const [bankaOtvoreno, setBankaOtvoreno] = useState(false)
   const [izabrana, setIzabrana] = useState<string[]>([])
   const [dodaje, setDodaje] = useState(false)
   const [greska, setGreska] = useState<string | null>(null)
@@ -239,79 +241,111 @@ function PitanjaKviza({
   }
 
   return (
-    <div className="kartica razmak-dole">
-      <h2>Pitanja u kvizu ({snapshot.length})</h2>
-      {greska && <p className="poruka poruka--greska">{greska}</p>}
-
-      {snapshot.length === 0 ? (
-        <p className="blago">Kviz još nema pitanja.</p>
-      ) : (
-        <ol className="razmak-dole">
-          {snapshot.map((s) => (
-            <li key={s.id} className="red red--razmak">
-              <span>{s.text}</span>
-              <button
-                type="button" className="dugme dugme--opasno dugme--malo"
-                disabled={brise === s.id} onClick={() => obrisiJedno(s.id)}
-              >
-                {brise === s.id ? 'Brišem…' : 'Obriši'}
-              </button>
-            </li>
-          ))}
-        </ol>
-      )}
-
-      {zakljucano ? (
-        <p className="poruka poruka--info">
-          Ovaj kviz već ima pokušaje, pa se nova pitanja ne mogu dodavati (za drugačiji izbor napravi novi kviz).
-          Pojedinačna pitanja i dalje mogu da se obrišu — rezultati predatih pokušaja se tada automatski preračunavaju.
-        </p>
-      ) : (
-        <>
-          <h3>Dodaj pitanja iz banke</h3>
-          <div className="polje" style={{ maxWidth: 220 }}>
-            <label htmlFor="pk-predmet">Predmet</label>
-            <select id="pk-predmet" value={filterPredmet} onChange={(e) => setFilterPredmet(e.target.value as '' | Predmet)}>
-              <option value="">Svi predmeti</option>
-              {Object.entries(NAZIVI_PREDMETA).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-            </select>
-          </div>
-          <div className="tabela-omot" style={{ maxHeight: 360 }}>
-            <table className="tabela">
-              <thead>
-                <tr>
-                  <th>
-                    <input
-                      type="checkbox"
-                      checked={bankaFiltrirana.length > 0 && bankaFiltrirana.every((p) => izabrana.includes(p.id))}
-                      onChange={preklopiSve}
-                      aria-label="Izaberi sva prikazana pitanja"
-                    />
-                  </th>
-                  <th>Pitanje</th><th>Oblast</th><th>Tip</th>
-                </tr>
-              </thead>
-              <tbody>
-                {bankaFiltrirana.map((p) => (
-                  <tr key={p.id}>
-                    <td><input type="checkbox" checked={izabrana.includes(p.id)} onChange={() => preklopi(p.id)} /></td>
-                    <td>{p.text}</td>
-                    <td>{mapaOblasti.get(p.topic_id) ?? '—'}</td>
-                    <td>{NAZIVI_TIPOVA[p.type]}</td>
-                  </tr>
-                ))}
-                {bankaFiltrirana.length === 0 && (
-                  <tr><td colSpan={4} className="centar blago" style={{ padding: '1rem' }}>Nema dostupnih pitanja za dodavanje.</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-          <button type="button" className="dugme dugme--akcenat razmak-gore" disabled={dodaje || izabrana.length === 0} onClick={dodaj}>
-            {dodaje ? 'Dodajem…' : `Dodaj izabrana pitanja u kviz (${izabrana.length})`}
+    <>
+      <div className="kartica razmak-dole">
+        <div className="red red--razmak">
+          <h2>Pitanja u kvizu ({snapshot.length})</h2>
+          <button type="button" className="dugme dugme--senka dugme--malo" onClick={() => setPitanjaOtvoreno(!pitanjaOtvoreno)}>
+            {pitanjaOtvoreno ? 'Sakrij' : 'Prikaži'}
           </button>
-        </>
+        </div>
+
+        {greska && <p className="poruka poruka--greska">{greska}</p>}
+
+        {!pitanjaOtvoreno ? (
+          <p className="malo blago">
+            {snapshot.length === 0 ? 'Kviz još nema pitanja.' : `${snapshot.length} ${snapshot.length === 1 ? 'pitanje' : snapshot.length < 5 ? 'pitanja' : 'pitanja'}`}
+          </p>
+        ) : (
+          <>
+            {snapshot.length === 0 ? (
+              <p className="blago">Kviz još nema pitanja.</p>
+            ) : (
+              <ol className="razmak-dole">
+                {snapshot.map((s) => (
+                  <li key={s.id} className="red red--razmak">
+                    <span>{s.text}</span>
+                    <button
+                      type="button" className="dugme dugme--opasno dugme--malo"
+                      disabled={brise === s.id} onClick={() => obrisiJedno(s.id)}
+                    >
+                      {brise === s.id ? 'Brišem…' : 'Obriši'}
+                    </button>
+                  </li>
+                ))}
+              </ol>
+            )}
+
+            {zakljucano && (
+              <p className="poruka poruka--info">
+                Ovaj kviz već ima pokušaje, pa se nova pitanja ne mogu dodavati (za drugačiji izbor napravi novi kviz).
+                Pojedinačna pitanja i dalje mogu da se obrišu — rezultati predatih pokušaja se tada automatski preračunavaju.
+              </p>
+            )}
+          </>
+        )}
+      </div>
+
+      {!zakljucano && (
+        <div className="kartica razmak-dole">
+          <div className="red red--razmak">
+            <h2>Dodaj pitanja iz banke</h2>
+            <button type="button" className="dugme dugme--senka dugme--malo" onClick={() => setBankaOtvoreno(!bankaOtvoreno)}>
+              {bankaOtvoreno ? 'Sakrij' : 'Prikaži'}
+            </button>
+          </div>
+
+          {!bankaOtvoreno ? (
+            <p className="malo blago">
+              Dodaj nova pitanja iz baze pitanja u ovaj kviz.
+            </p>
+          ) : (
+            <>
+              <div className="polje" style={{ maxWidth: 220 }}>
+                <label htmlFor="pk-predmet">Predmet</label>
+                <select id="pk-predmet" value={filterPredmet} onChange={(e) => setFilterPredmet(e.target.value as '' | Predmet)}>
+                  <option value="">Svi predmeti</option>
+                  {Object.entries(NAZIVI_PREDMETA).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                </select>
+              </div>
+              <div className="tabela-omot" style={{ maxHeight: 360 }}>
+                <table className="tabela">
+                  <thead>
+                    <tr>
+                      <th>
+                        <input
+                          type="checkbox"
+                          checked={bankaFiltrirana.length > 0 && bankaFiltrirana.every((p) => izabrana.includes(p.id))}
+                          onChange={preklopiSve}
+                          aria-label="Izaberi sva prikazana pitanja"
+                        />
+                      </th>
+                      <th>Pitanje</th><th>Oblast</th><th>Tip</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {bankaFiltrirana.map((p) => (
+                      <tr key={p.id}>
+                        <td><input type="checkbox" checked={izabrana.includes(p.id)} onChange={() => preklopi(p.id)} /></td>
+                        <td>{p.text}</td>
+                        <td>{mapaOblasti.get(p.topic_id) ?? '—'}</td>
+                        <td>{NAZIVI_TIPOVA[p.type]}</td>
+                      </tr>
+                    ))}
+                    {bankaFiltrirana.length === 0 && (
+                      <tr><td colSpan={4} className="centar blago" style={{ padding: '1rem' }}>Nema dostupnih pitanja za dodavanje.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+              <button type="button" className="dugme dugme--akcenat razmak-gore" disabled={dodaje || izabrana.length === 0} onClick={dodaj}>
+                {dodaje ? 'Dodajem…' : `Dodaj izabrana pitanja u kviz (${izabrana.length})`}
+              </button>
+            </>
+          )}
+        </div>
       )}
-    </div>
+    </>
   )
 }
 
