@@ -1,5 +1,5 @@
 // Administratorska podešavanja: profili dece, titule i mejl obaveštenja.
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { PushKontrole } from '../../components/PushKontrole'
 import { Loader } from '../../components/Zajednicke'
 import { TitleAvatar } from '../../components/TitleAvatar'
