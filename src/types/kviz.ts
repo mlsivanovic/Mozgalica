@@ -179,6 +179,114 @@ export interface JavniProfilPayload {
   history?: IstorijskiRezultatProfila[]
 }
 
+// ---------- Administratorska statistika po detetu ----------
+
+export interface StatusKupovinaStatistike {
+  requestedCount: number
+  consumedCount: number
+  cancelledCount: number
+}
+
+// Nagrade su uvek zasnovane samo na pokušajima trajno vezanim za profil.
+// Stariji generički rezultati služe isključivo za obrazovnu statistiku.
+export interface NagradeStatistikeDeteta {
+  totalStars: number
+  spendableStars: number
+  spentStars: number
+  currentTitle: ProfilnaTitula | null
+  purchaseStatus: StatusKupovinaStatistike
+}
+
+export interface PregledStatistikeDeteta {
+  profileId: string
+  name: string
+  avatar: string
+  completedAttempts: number
+  avgScorePct: number | null
+  passRatePct: number | null
+  lastActivityAt: string | null
+  // Razlika proseka poslednja tri i tri prethodna završena kviza.
+  // null znači da nema dovoljno pokušaja za pouzdano poređenje.
+  recentTrendPct: number | null
+  rewards: NagradeStatistikeDeteta
+}
+
+export interface PregledStatistikeDecePayload {
+  ok: boolean
+  error?: string
+  children?: PregledStatistikeDeteta[]
+}
+
+export interface PeriodStatistikeDeteta {
+  from: string | null
+  to: string | null
+}
+
+export interface SazetakStatistikeDeteta {
+  completedAttempts: number
+  avgScorePct: number | null
+  passRatePct: number | null
+  correctAnswers: number
+  questionCount: number
+  avgTimePerQuestionSec: number | null
+  activeDays: number
+  recentTrendPct: number | null
+}
+
+export interface TackaTrendaDeteta {
+  date: string
+  avgScorePct: number
+  attemptsCount: number
+}
+
+export interface StatistikaOblastiDeteta {
+  topicName: string
+  questionCount: number
+  correctCount: number
+  incorrectCount: number
+  successPct: number
+}
+
+export interface TeskoPitanjeDeteta {
+  questionKey: string
+  text: string
+  topicName: string
+  answersCount: number
+  correctCount: number
+  wrongCount: number
+  successPct: number
+  lastAttemptId: string
+}
+
+export interface PokusajStatistikeDeteta {
+  attemptId: string
+  title: string
+  submittedAt: string
+  scorePct: number
+  durationSec: number | null
+  starsAwarded: number | null
+  correctCount: number | null
+  questionCount: number
+  source: 'profile' | 'history'
+}
+
+export interface StatistikaDetetaPayload {
+  ok: boolean
+  error?: string
+  profileId?: string
+  name?: string
+  avatar?: string
+  period?: PeriodStatistikeDeteta
+  summary?: SazetakStatistikeDeteta
+  timeline?: TackaTrendaDeteta[]
+  topics?: StatistikaOblastiDeteta[]
+  strongTopics?: StatistikaOblastiDeteta[]
+  practiceTopics?: StatistikaOblastiDeteta[]
+  difficultQuestions?: TeskoPitanjeDeteta[]
+  recentAttempts?: PokusajStatistikeDeteta[]
+  rewards?: NagradeStatistikeDeteta
+}
+
 // ---------- Prodavnica ----------
 
 export interface StavkaProdavnicePrikaz {

@@ -11,6 +11,8 @@ import { Podesavanja } from './routes/admin/Podesavanja'
 import { Prijava } from './routes/admin/Prijava'
 import { RezultatDetalj } from './routes/admin/RezultatDetalj'
 import { Rezultati } from './routes/admin/Rezultati'
+import { StatistikaDece } from './routes/admin/StatistikaDece'
+import { StatistikaDetetaDetalj } from './routes/admin/StatistikaDetetaDetalj'
 import { KvizRezultat } from './routes/kviz/KvizRezultat'
 import { KvizResavanje } from './routes/kviz/KvizResavanje'
 import { KvizUlaz } from './routes/kviz/KvizUlaz'
@@ -36,6 +38,8 @@ function App() {
             <Route path="kvizovi/:id" element={<KvizDetalj />} />
             <Route path="rezultati" element={<Rezultati />} />
             <Route path="rezultati/:id" element={<RezultatDetalj />} />
+            <Route path="statistika-dece" element={<StatistikaDece />} />
+            <Route path="statistika-dece/:profilId" element={<StatistikaDetetaDetalj />} />
             <Route path="podesavanja" element={<Podesavanja />} />
           </Route>
 

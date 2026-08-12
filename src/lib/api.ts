@@ -6,8 +6,8 @@ import type {
 } from '../types/db'
 import type {
   InboxDetetaPayload, JavniProfilPayload, KupovinaPayload, KvizMeta, NapredakTitule,
-  PokusajPayload, PotvrdaTajmera, ProdavnicaPayload, RezultatPayload, SavePotvrda,
-  SavetPayload,
+  PokusajPayload, PotvrdaTajmera, PregledStatistikeDecePayload, ProdavnicaPayload,
+  RezultatPayload, SavePotvrda, SavetPayload, StatistikaDetetaPayload,
 } from '../types/kviz'
 import { SEED_PITANJA } from '../data/seedPitanja'
 import { supabase } from './supabase'
@@ -461,6 +461,38 @@ export async function uspesnostPoOblastima(): Promise<StatistikaOblasti[]> {
   const { data, error } = await supabase().from('v_topic_stats').select('*')
   if (error) throw new Error(opisiGresku(error)!)
   return data as StatistikaOblasti[]
+}
+
+// ---------- Statistika dece (admin) ----------
+function opisiGreskuStatistike(greska: string | undefined): string {
+  if (greska === 'forbidden') return 'Nemaš dozvolu za pregled statistike.'
+  if (greska === 'not_found') return 'Profil deteta nije pronađen.'
+  if (greska === 'invalid_period') return 'Izabrani vremenski period nije ispravan.'
+  return greska ?? 'Statistika trenutno nije dostupna.'
+}
+
+export async function ucitajPregledStatistikeDece(): Promise<PregledStatistikeDecePayload> {
+  const { data, error } = await supabase().rpc('admin_get_child_statistics_overview')
+  if (error) throw new Error(opisiGresku(error)!)
+  const odgovor = data as PregledStatistikeDecePayload
+  if (!odgovor.ok) throw new Error(opisiGreskuStatistike(odgovor.error))
+  return odgovor
+}
+
+export async function ucitajStatistikuDeteta(
+  profileId: string,
+  from: string | null,
+  to: string | null,
+): Promise<StatistikaDetetaPayload> {
+  const { data, error } = await supabase().rpc('admin_get_child_statistics_detail', {
+    p_profile_id: profileId,
+    p_from_date: from,
+    p_to_date: to,
+  })
+  if (error) throw new Error(opisiGresku(error)!)
+  const odgovor = data as StatistikaDetetaPayload
+  if (!odgovor.ok) throw new Error(opisiGreskuStatistike(odgovor.error))
+  return odgovor
 }
 
 // ---------- Podešavanja ----------

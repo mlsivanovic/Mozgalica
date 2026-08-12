@@ -1,0 +1,262 @@
+/* Administratorski pregled napretka: kartice, trend i oblasti ostaju čitljivi
+   i na malom ekranu bez oslanjanja na biblioteku za grafikone. */
+.statistika-dece-kartice {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
+  gap: 1rem;
+}
+
+.statistika-dete-kartica {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  border: 1px solid var(--boja-ivica);
+}
+
+.statistika-dete-kartica-zaglavlje,
+.statistika-sekcija-zaglavlje,
+.statistika-dete-identitet,
+.statistika-nagrade-pregled,
+.statistika-titula,
+.statistika-status-kupovina {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.statistika-dete-kartica-zaglavlje,
+.statistika-sekcija-zaglavlje,
+.statistika-nagrade-pregled {
+  justify-content: space-between;
+}
+
+.statistika-dete-identitet { min-width: 0; }
+.statistika-dete-identitet > div { min-width: 0; }
+.statistika-dete-identitet h1,
+.statistika-dete-identitet h2 { overflow-wrap: anywhere; }
+
+.statistika-dete-avatar {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--boja-primarna-svetla);
+  font-size: 1.75rem;
+}
+
+.statistika-dete-avatar--veliki {
+  width: 64px;
+  height: 64px;
+  font-size: 2.25rem;
+}
+
+.statistika-metrike {
+  display: grid;
+  gap: 0.65rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.statistika-metrike > div {
+  display: grid;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.statistika-metrike dt,
+.statistika-metrike small {
+  color: var(--boja-tekst-blagi);
+  font-size: 0.78rem;
+}
+
+.statistika-metrike dd {
+  font-size: 1.12rem;
+  font-weight: 800;
+}
+
+.statistika-metrike--kartica {
+  padding: 0.8rem;
+  border-radius: var(--radius-mali);
+  background: var(--boja-primarna-svetla);
+}
+
+.statistika-nagrade-pregled {
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--boja-ivica);
+}
+
+.statistika-titula { min-width: 0; }
+.statistika-titula span { display: grid; min-width: 0; }
+.statistika-titula strong { overflow-wrap: anywhere; }
+.statistika-titula small { color: var(--boja-tekst-blagi); font-size: 0.76rem; }
+
+.statistika-zvezdice {
+  display: grid;
+  justify-items: end;
+  gap: 0.1rem;
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
+.statistika-dete-kartica-link { align-self: flex-start; }
+
+.statistika-prazno {
+  display: grid;
+  justify-items: center;
+  gap: 0.7rem;
+  padding: 2.3rem 1.3rem;
+  text-align: center;
+}
+
+.statistika-prazno > span { font-size: 2.8rem; }
+.statistika-prazno .dugme { margin-top: 0.25rem; }
+
+.statistika-detalj { display: grid; gap: 1rem; }
+.statistika-detalj > .zaglavlje-strane { margin-bottom: 0; }
+.statistika-detalj-naslov { display: grid; gap: 0.55rem; }
+.statistika-nazad { width: fit-content; font-weight: 700; }
+
+.statistika-periodi { display: grid; gap: 0.75rem; }
+.statistika-period-dugmad { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+
+.statistika-period-dugme--aktivno {
+  background: var(--boja-primarna) !important;
+  border-color: var(--boja-primarna) !important;
+  color: var(--boja-na-boji) !important;
+}
+
+.statistika-prilagodjeni-period {
+  display: grid;
+  grid-template-columns: minmax(150px, 1fr) minmax(150px, 1fr) auto;
+  align-items: end;
+  gap: 0.7rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--boja-ivica);
+}
+
+.statistika-prilagodjeni-period .polje { margin: 0; }
+.statistika-prilagodjeni-period .poruka { grid-column: 1 / -1; margin: 0; }
+
+.statistika-metrike-mreza {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.75rem;
+}
+
+.statistika-metrika {
+  display: grid;
+  gap: 0.2rem;
+  min-height: 126px;
+  align-content: start;
+  border: 1px solid var(--boja-ivica);
+}
+
+.statistika-metrika > strong {
+  font-size: 1.5rem;
+  line-height: 1.22;
+}
+
+.statistika-metrika small { font-size: 0.75rem; line-height: 1.35; }
+
+.statistika-trend { display: grid; gap: 0.25rem; border-left: 5px solid var(--boja-ivica); }
+.statistika-trend--rast { border-left-color: var(--boja-uspeh); }
+.statistika-trend--pad { border-left-color: var(--boja-upozorenje); }
+
+.statistika-grafik-kartica { display: grid; gap: 0.85rem; }
+.statistika-grafik { display: block; width: 100%; min-height: 210px; overflow: visible; }
+.statistika-grafik-mreza { stroke: var(--boja-ivica); stroke-width: 1; }
+.statistika-grafik-osa { fill: var(--boja-tekst-blagi); font-size: 12px; }
+.statistika-grafik-linija { fill: none; stroke: var(--boja-primarna); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+.statistika-grafik-tacka { fill: var(--boja-kartica); stroke: var(--boja-akcenat); stroke-width: 2.5; }
+.statistika-grafik-opis { padding-left: 0.2rem; }
+
+.statistika-oblasti-kartica { display: grid; gap: 0.8rem; }
+.statistika-oblasti-lista { display: grid; gap: 0.9rem; list-style: none; }
+.statistika-oblast { display: grid; gap: 0.35rem; }
+.statistika-oblast-zaglavlje { display: flex; justify-content: space-between; gap: 0.8rem; font-size: 0.92rem; }
+.statistika-oblast-zaglavlje span { color: var(--boja-tekst-blagi); white-space: nowrap; }
+
+.statistika-oblast-traka {
+  height: 13px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--boja-primarna-svetla);
+}
+
+.statistika-oblast-traka > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--boja-primarna), var(--boja-uspeh));
+}
+
+.statistika-oblast small { font-size: 0.76rem; }
+
+.statistika-izdvojene-mreza,
+.statistika-donja-mreza {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.statistika-izdvojene-oblasti { border: 1px solid var(--boja-ivica); }
+.statistika-izdvojene-oblasti--jake { border-top: 4px solid var(--boja-uspeh); }
+.statistika-izdvojene-oblasti--vezba { border-top: 4px solid var(--boja-akcenat); }
+
+.statistika-kratka-lista { display: grid; gap: 0.55rem; list-style: none; }
+.statistika-kratka-lista li { display: flex; justify-content: space-between; gap: 0.75rem; font-size: 0.9rem; }
+.statistika-kratka-lista span { color: var(--boja-tekst-blagi); text-align: right; }
+
+.statistika-teska-pitanja { display: grid; gap: 0.7rem; }
+.statistika-teska-lista { display: grid; gap: 0; list-style-position: inside; }
+.statistika-teska-lista > li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1rem;
+  padding: 0.8rem 0;
+  border-top: 1px solid var(--boja-ivica);
+}
+
+.statistika-tesko-meta { display: grid; justify-items: end; align-content: start; gap: 0.25rem; font-size: 0.83rem; text-align: right; }
+.statistika-tesko-meta span { color: var(--boja-tekst-blagi); }
+
+.statistika-poslednji-kvizovi { min-width: 0; }
+.statistika-poslednji-kvizovi .tabela { min-width: 640px; }
+.statistika-istorijski-bedz { margin-left: 0.4rem; vertical-align: middle; }
+
+.statistika-nagrade-kartica { display: grid; align-content: start; gap: 0.85rem; border: 1px solid var(--boja-ivica); }
+.statistika-nagrada-titula { font-size: 1.05rem; }
+.statistika-metrike--nagrade { grid-template-columns: 1fr; padding: 0.7rem 0; border-top: 1px solid var(--boja-ivica); border-bottom: 1px solid var(--boja-ivica); }
+.statistika-metrike--nagrade > div { grid-template-columns: 1fr auto; align-items: baseline; }
+.statistika-metrike--nagrade dd { font-size: 1rem; }
+
+.statistika-status-kupovina { align-items: stretch; gap: 0.45rem; flex-wrap: wrap; }
+.statistika-status-kupovina span { flex: 1 1 120px; padding: 0.45rem; border-radius: var(--radius-mali); background: var(--boja-neutral); color: var(--boja-tekst-blagi); font-size: 0.78rem; text-align: center; }
+
+@media (max-width: 760px) {
+  .statistika-dete-kartica-zaglavlje,
+  .statistika-nagrade-pregled,
+  .statistika-sekcija-zaglavlje { align-items: flex-start; }
+  .statistika-dete-kartica-zaglavlje { flex-direction: column; }
+  .statistika-zvezdice { justify-items: start; }
+  .statistika-prilagodjeni-period { grid-template-columns: 1fr; }
+  .statistika-prilagodjeni-period .dugme { width: 100%; }
+  .statistika-izdvojene-mreza,
+  .statistika-donja-mreza { grid-template-columns: 1fr; }
+  .statistika-poslednji-kvizovi .tabela { min-width: 0; }
+}
+
+@media (max-width: 480px) {
+  .statistika-metrike { grid-template-columns: 1fr; }
+  .statistika-metrike--kartica { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .statistika-dete-avatar--veliki { width: 56px; height: 56px; font-size: 2rem; }
+  .statistika-period-dugmad { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .statistika-period-dugmad .dugme { width: 100%; }
+  .statistika-oblast-zaglavlje,
+  .statistika-teska-lista > li { grid-template-columns: 1fr; }
+  .statistika-oblast-zaglavlje { display: grid; gap: 0.15rem; }
+  .statistika-tesko-meta { justify-items: start; text-align: left; }
+  .statistika-kratka-lista li { display: grid; gap: 0.1rem; }
+  .statistika-kratka-lista span { text-align: left; }
+}

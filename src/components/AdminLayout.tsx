@@ -66,6 +66,7 @@ export function AdminLayout() {
             <NavLink to="/admin/generator">Generator</NavLink>
             <NavLink to="/admin/kvizovi">Kvizovi</NavLink>
             <NavLink to="/admin/rezultati">Rezultati</NavLink>
+            <NavLink to="/admin/statistika-dece">Statistika dece</NavLink>
             <NavLink to="/admin/podesavanja">Podešavanja</NavLink>
           </nav>
           <div className="red">
