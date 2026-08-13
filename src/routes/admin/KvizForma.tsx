@@ -8,6 +8,7 @@ import {
   listajProfileDeteta, dodeliKvizProfilu,
   type FilterPitanja, type SnapshotUnos,
 } from '../../lib/api'
+import { napraviPlanOblastiKviza, type IzvorStandardnogKviza } from '../../lib/raspodelaKviza'
 import {
   NAZIVI_PREDMETA, NAZIVI_RAZREDA, NAZIVI_TEZINA, NAZIVI_TIPOVA,
   type Oblast, type Predmet, type Razred, type Tezina, type TipPitanja,
@@ -54,7 +55,7 @@ interface StandardQuizConfig {
   count: number
   difficulty: string // '' | '1' | '2' | '3' | '4' | '5'
   type: string // '' | TipPitanja
-  source: 'bank' | 'generator'
+  source: IzvorStandardnogKviza
   selectedTopics: string[]
   timeLimit: string
   shuffleQuestions: boolean
@@ -115,20 +116,24 @@ export function KvizForma() {
   const oblastiZaPrikaz = useMemo(() => {
     return oblasti.filter((o) => o.subject === predmet && o.grade === razred)
   }, [oblasti, predmet, razred])
+  const kombinovaniDostupan = predmet === 'srpski'
+    && oblastiZaPrikaz.some((o) => podrzaneSlugs.includes(o.slug))
+    && oblastiZaPrikaz.some((o) => !podrzaneSlugs.includes(o.slug))
 
   // Funkcija za generisanje inicijalnih default vrednosti
   const getDefaults = (p: Predmet, r: Razred, sveOblasti: Oblast[]): StandardQuizConfig => {
     const filtrirane = sveOblasti.filter((o) => o.subject === p && o.grade === r)
     const generatorSlugs = filtrirane.filter((o) => podrzaneSlugs.includes(o.slug)).map((o) => o.slug)
     const koristiGenerator = generatorSlugs.length > 0
+    const source: IzvorStandardnogKviza = koristiGenerator ? 'generator' : 'bank'
     
     return {
       title: `Standardni kviz — ${NAZIVI_PREDMETA[p]} (${NAZIVI_RAZREDA[r]})`,
       count: 10,
       difficulty: '',
       type: 'auto',
-      source: koristiGenerator ? 'generator' : 'bank',
-      selectedTopics: koristiGenerator ? generatorSlugs : filtrirane.map((o) => o.slug),
+      source,
+      selectedTopics: source === 'generator' ? generatorSlugs : filtrirane.map((o) => o.slug),
       timeLimit: '',
       shuffleQuestions: true,
       shuffleAnswers: true,
@@ -156,13 +161,16 @@ export function KvizForma() {
         if (noviIzvor === 'generator' && !oblastiZaPrikaz.some((o) => podrzaneSlugs.includes(o.slug))) {
           noviIzvor = 'bank'
         }
+        if (noviIzvor === 'combined' && !kombinovaniDostupan) {
+          noviIzvor = defaults.source
+        }
 
         // Ako je izvor generator, filtriraj samo teme koje imaju generator
         let konacneTeme = ispravniSlugovi.length > 0 ? ispravniSlugovi : defaults.selectedTopics
         if (noviIzvor === 'generator') {
           konacneTeme = konacneTeme.filter((slug) => podrzaneSlugs.includes(slug))
         }
-        const konacniTip = noviIzvor === 'generator' && predmet === 'srpski'
+        const konacniTip = noviIzvor !== 'bank' && predmet === 'srpski'
           && !['auto', 'single', 'truefalse'].includes(parsed.type ?? defaults.type)
           ? 'auto'
           : (parsed.type ?? defaults.type)
@@ -182,7 +190,7 @@ export function KvizForma() {
       setCfg(getDefaults(predmet, razred, oblasti))
     }
     setGreska(null)
-  }, [predmet, razred, oblasti, oblastiZaPrikaz, podrzaneSlugs])
+  }, [predmet, razred, oblasti, oblastiZaPrikaz, podrzaneSlugs, kombinovaniDostupan])
 
   // Čuvanje izmena u state-u i LocalStorage-u
   const azurirajCfg = (updates: Partial<StandardQuizConfig>) => {
@@ -196,12 +204,12 @@ export function KvizForma() {
   }
 
   // Funkcija za promenu izvora pitanja sa čišćenjem nekompatibilnih tema
-  const promeniIzvor = (noviIzvor: 'bank' | 'generator') => {
+  const promeniIzvor = (noviIzvor: IzvorStandardnogKviza) => {
     let sledeceTeme = cfg.selectedTopics
     if (noviIzvor === 'generator') {
       sledeceTeme = cfg.selectedTopics.filter((slug) => podrzaneSlugs.includes(slug))
     }
-    const tip = noviIzvor === 'generator' && predmet === 'srpski'
+    const tip = noviIzvor !== 'bank' && predmet === 'srpski'
       && !['auto', 'single', 'truefalse'].includes(cfg.type)
       ? 'auto'
       : cfg.type
@@ -308,55 +316,89 @@ export function KvizForma() {
 
       let unosi: SnapshotUnos[] = []
 
-      // 2a. Ako je izvor generator
-      if (cfg.source === 'generator') {
-        const generatorTopics = cfg.selectedTopics.filter((slug) => podrzaneSlugs.includes(slug))
+      // 2a. Generator ili kombinovani izvor: ravnomerno po oblastima, a kod
+      // kombinovanog izvora svaka oblast bira generator ili banku.
+      if (cfg.source === 'generator' || cfg.source === 'combined') {
+        const plan = napraviPlanOblastiKviza(
+          cfg.selectedTopics, cfg.count, new Set(podrzaneSlugs), cfg.source,
+        )
 
-        if (generatorTopics.length === 0) {
+        if (plan.length === 0) {
           throw new Error('Nijedna od izabranih oblasti nema automatski generator. Izaberi druge oblasti ili promeni izvor na banku.')
         }
 
-        const n = generatorTopics.length
-        const generisanaPitanja = []
-
-        for (let i = 0; i < n; i++) {
-          const slug = generatorTopics[i]
-          // Ravnomerna raspodela broja pitanja po izabranim oblastima sa generatorom
-          const brojZaOblast = Math.floor(cfg.count / n) + (i < cfg.count % n ? 1 : 0)
-          if (brojZaOblast === 0) continue
-
-          const ispravnaTezina = cfg.difficulty ? (Number(cfg.difficulty) as Tezina) : (3 as Tezina)
-          const genCfg = {
-            topicSlug: slug,
-            difficulty: ispravnaTezina,
-            count: brojZaOblast,
-            type: (cfg.type === 'auto' || !cfg.type ? 'auto' : cfg.type) as TipPitanja | 'auto',
-            wordProblems: false,
-            allowRepeats: false,
-          }
-
-          const rez = generisi(genCfg)
-          generisanaPitanja.push(...rez.questions)
+        const planBanke = plan.filter((stavka) => stavka.source === 'bank')
+        const oblastiBanke = planBanke.map((stavka) => oblasti.find((o) => o.slug === stavka.topicSlug))
+        if (oblastiBanke.some((oblast) => !oblast)) {
+          throw new Error('Jedna od izabranih oblasti nije pronađena.')
         }
 
-        unosi = generisanaPitanja.map((p, i) => {
-          const oblast = oblasti.find((o) => o.slug === p.topicSlug)
-          return {
-            quiz_id: quizId,
-            position: i,
-            source_question_id: null,
-            topic_id: oblast?.id ?? null,
-            topic_name: oblast?.name ?? '—',
-            type: p.type,
-            text: p.text,
-            options: p.options,
-            correct: p.correct,
-            explanation: p.explanation || null,
-            hint: p.hint || null,
-            points: p.points,
-            manual_review: false,
+        const filterBanke: FilterPitanja = {
+          topicIds: oblastiBanke.map((oblast) => oblast!.id),
+        }
+        if (cfg.difficulty) filterBanke.difficulty = Number(cfg.difficulty)
+        if (cfg.type && cfg.type !== 'auto') filterBanke.type = cfg.type
+        const svaPitanjaIzBanke = planBanke.length > 0 ? await listajPitanja(filterBanke) : []
+
+        for (const stavka of plan) {
+          const oblast = oblasti.find((o) => o.slug === stavka.topicSlug)
+          if (!oblast) throw new Error(`Oblast „${stavka.topicSlug}“ nije pronađena.`)
+
+          if (stavka.source === 'generator') {
+            const rez = generisi({
+              topicSlug: stavka.topicSlug,
+              difficulty: cfg.difficulty ? (Number(cfg.difficulty) as Tezina) : (3 as Tezina),
+              count: stavka.questionCount,
+              type: (cfg.type === 'auto' || !cfg.type ? 'auto' : cfg.type) as TipPitanja | 'auto',
+              wordProblems: false,
+              allowRepeats: false,
+            })
+            if (rez.questions.length < stavka.questionCount) {
+              throw new Error(`Generator za oblast „${oblast.name}“ napravio je ${rez.questions.length} od potrebnih ${stavka.questionCount} pitanja.`)
+            }
+            for (const pitanje of rez.questions) {
+              unosi.push({
+                quiz_id: quizId,
+                position: unosi.length,
+                source_question_id: null,
+                topic_id: oblast.id,
+                topic_name: oblast.name,
+                type: pitanje.type,
+                text: pitanje.text,
+                options: pitanje.options,
+                correct: pitanje.correct,
+                explanation: pitanje.explanation || null,
+                hint: pitanje.hint || null,
+                points: pitanje.points,
+                manual_review: false,
+              })
+            }
+            continue
           }
-        })
+
+          const kandidati = svaPitanjaIzBanke.filter((pitanje) => pitanje.topic_id === oblast.id)
+          const odabrana = [...kandidati].sort(() => Math.random() - 0.5).slice(0, stavka.questionCount)
+          if (odabrana.length < stavka.questionCount) {
+            throw new Error(`U banci za oblast „${oblast.name}“ pronađeno je ${odabrana.length} od potrebnih ${stavka.questionCount} pitanja sa izabranim filterima.`)
+          }
+          for (const pitanje of odabrana) {
+            unosi.push({
+              quiz_id: quizId,
+              position: unosi.length,
+              source_question_id: pitanje.id,
+              topic_id: pitanje.topic_id,
+              topic_name: oblast.name,
+              type: pitanje.type,
+              text: pitanje.text,
+              options: pitanje.options,
+              correct: pitanje.correct,
+              explanation: pitanje.explanation || null,
+              hint: pitanje.hint || null,
+              points: pitanje.points,
+              manual_review: pitanje.manual_review,
+            })
+          }
+        }
       } 
       // 2b. Ako je izvor banka pitanja (bilo koji predmet)
       else {
@@ -540,6 +582,11 @@ export function KvizForma() {
                 {sveOblastiIzabrane ? 'Deselektuj sve' : 'Izaberi sve'}
               </button>
             </div>
+            {cfg.source === 'combined' && (
+              <p className="blago malo razmak-dole">
+                Oblasti označene kao „generator“ prave nova pitanja, a oblasti označene kao „banka“ koriste postojeća pitanja iz baze.
+              </p>
+            )}
             
             {vidljiveOblasti.length === 0 ? (
               <p className="blago">Nema dostupnih oblasti sa izabranim parametrima.</p>
@@ -562,6 +609,9 @@ export function KvizForma() {
                       </span>
                       <span className="gen-oblast-tekst">
                         {NAZIVI_OBLASTI[o.slug] ?? o.name}
+                        {cfg.source === 'combined' && (
+                          <small className="blago"> · {o.imaGenerator ? 'generator' : 'banka'}</small>
+                        )}
                       </span>
                     </label>
                   )
@@ -655,10 +705,11 @@ export function KvizForma() {
                   <label htmlFor="std-source">Izvor pitanja</label>
                   <select
                     id="std-source" value={cfg.source}
-                    onChange={(e) => promeniIzvor(e.target.value as 'bank' | 'generator')}
+                    onChange={(e) => promeniIzvor(e.target.value as IzvorStandardnogKviza)}
                   >
                     <option value="bank">Banka pitanja (iz baze)</option>
                     <option value="generator">Generator (dinamički)</option>
+                    {kombinovaniDostupan && <option value="combined">Kombinovano (generator + banka)</option>}
                   </select>
                 </div>
               </div>
@@ -685,7 +736,7 @@ export function KvizForma() {
                   >
                     <option value="auto">Svi tipovi (automatski)</option>
                     {Object.entries(NAZIVI_TIPOVA)
-                      .filter(([k]) => cfg.source !== 'generator' || predmet !== 'srpski' || ['single', 'truefalse'].includes(k))
+                      .filter(([k]) => cfg.source === 'bank' || predmet !== 'srpski' || ['single', 'truefalse'].includes(k))
                       .map(([k, v]) => (
                       <option key={k} value={k}>{v}</option>
                     ))}
