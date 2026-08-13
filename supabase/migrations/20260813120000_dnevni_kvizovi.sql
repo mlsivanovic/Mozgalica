@@ -132,8 +132,8 @@ begin
 
   if exists (
     select 1
-    from unnest(p_topic_ids) id
-    left join public.topics t on t.id = id
+    from unnest(p_topic_ids) as izabrana(topic_id)
+    left join public.topics t on t.id = izabrana.topic_id
     where t.id is null or t.subject <> p_subject or t.grade <> p_grade
   ) then
     raise exception 'Sve oblasti moraju pripadati izabranom predmetu i razredu.';
@@ -190,7 +190,8 @@ begin
   end if;
 
   insert into public.daily_quiz_schedule_topics (schedule_id, topic_id)
-  select v_schedule.id, id from unnest(p_topic_ids) id;
+  select v_schedule.id, izabrana.topic_id
+  from unnest(p_topic_ids) as izabrana(topic_id);
 
   return v_schedule;
 end;
