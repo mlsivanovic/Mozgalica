@@ -1,11 +1,11 @@
 // Testovi generatora pitanja za 4. razred: matematička pravila po novim oblastima
 // + test za decimals ekstenziju zajedničkog helpera (distraktori/opcije).
 import { describe, expect, it } from 'vitest'
-import type { Opcija } from '../types/db'
-import { generisi } from './index'
-import { napraviDistraktore, napraviOpcije } from './distraktori'
-import { napraviRng } from './random'
-import type { GeneratorConfig } from './types'
+import type { Opcija } from '../types/db.ts'
+import { generisi } from './index.ts'
+import { napraviDistraktore, napraviOpcije } from './distraktori.ts'
+import { napraviRng } from './random.ts'
+import type { GeneratorConfig } from './types.ts'
 
 function cfg4(delimicno: Partial<GeneratorConfig>): GeneratorConfig {
   return {

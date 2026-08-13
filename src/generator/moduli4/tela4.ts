@@ -3,10 +3,10 @@
 // tačno/netačno + višestruki izbor ("koja tvrdnja NIJE tačna", kombinovane
 // osobine). Ograničeno na činjenice/klasifikaciju — crtanje mreža ostaje ručno
 // unošenje pitanja (kao i "geometrija"/"razlomci" u 3. razredu).
-import type { Opcija } from '../../types/db'
-import { izaberi, promesaj, type Rng } from '../random'
-import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types'
-import { poeniZaTezinu, upakujRacun } from '../moduli/zajednicko'
+import type { Opcija } from '../../types/db.ts'
+import { izaberi, promesaj, type Rng } from '../random.ts'
+import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types.ts'
+import { poeniZaTezinu, upakujRacun } from '../moduli/zajednicko.ts'
 
 interface Rogljasto {
   naziv: string

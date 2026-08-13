@@ -1,7 +1,7 @@
 // Generator: merne jedinice (dužina, masa, zapremina)
-import { ceoBroj, izaberi, type Rng } from '../random'
-import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types'
-import { upakujRacun } from './zajednicko'
+import { ceoBroj, izaberi, type Rng } from '../random.ts'
+import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types.ts'
+import { upakujRacun } from './zajednicko.ts'
 
 interface Konverzija {
   iz: string

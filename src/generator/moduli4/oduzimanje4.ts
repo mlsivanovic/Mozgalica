@@ -1,12 +1,12 @@
 // Generator: oduzimanje (4. razred) — višecifreni brojevi, do 1 000 000.
 // Isti pattern kao src/generator/moduli/oduzimanje.ts (reuse-uje lanacOduzimanja),
 // samo veći opseg po nivou težine.
-import { bezPozajmice, zamenaCifara } from '../distraktori'
-import { lanacOduzimanja } from '../moduli/oduzimanje'
-import type { Tezina } from '../../types/db'
-import { ceoBroj, izaberi, type Rng } from '../random'
-import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types'
-import { dvaImena, genMn, izaberiPredmet, kolicina, upakujRacun } from '../moduli/zajednicko'
+import { bezPozajmice, zamenaCifara } from '../distraktori.ts'
+import { lanacOduzimanja } from '../moduli/oduzimanje.ts'
+import type { Tezina } from '../../types/db.ts'
+import { ceoBroj, izaberi, type Rng } from '../random.ts'
+import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types.ts'
+import { dvaImena, genMn, izaberiPredmet, kolicina, upakujRacun } from '../moduli/zajednicko.ts'
 
 const MAX_DISTRAKTOR = 6_000_000
 

@@ -1,8 +1,8 @@
 // Generator: konvertovanje arapskih brojeva u rimske i obrnuto
-import type { Tezina } from '../../types/db'
-import { ceoBroj, izaberi, type Rng } from '../random'
-import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types'
-import { poeniZaTezinu, upakujRacun } from './zajednicko'
+import type { Tezina } from '../../types/db.ts'
+import { ceoBroj, izaberi, type Rng } from '../random.ts'
+import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types.ts'
+import { poeniZaTezinu, upakujRacun } from './zajednicko.ts'
 
 const VREDNOSTI: [number, string][] = [
   [1000, 'M'], [900, 'CM'], [500, 'D'], [400, 'CD'],

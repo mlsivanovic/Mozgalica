@@ -3,9 +3,9 @@
 // (uklj. prelazak preko zapete), višekorak, i tekstualni zadatak.
 // Koristi decimals? ekstenziju upakujRacun/napraviDistraktore (podrazumevano 0
 // za sve ostale module — ovde je jedini modul koji je koristi).
-import { ceoBroj, type Rng } from '../random'
-import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types'
-import { upakujRacun } from '../moduli/zajednicko'
+import { ceoBroj, type Rng } from '../random.ts'
+import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types.ts'
+import { upakujRacun } from '../moduli/zajednicko.ts'
 
 function fmt(n: number, decimals: number): string {
   return n.toFixed(decimals).replace('.', ',')

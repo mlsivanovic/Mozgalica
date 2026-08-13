@@ -91,6 +91,38 @@ export interface Kviz {
   created_at: string
   updated_at: string
   deleted_at: string | null
+  daily_schedule_id?: string | null
+  daily_local_date?: string | null
+}
+
+export type IzvorDnevnogKviza = 'generator' | 'bank'
+
+// Prikaz jednog trajnog rasporeda. Oblasti ostaju kao ID-jevi radi izmene, a
+// slugovi služe za čitljiv rezime bez dodatnih poziva bazi.
+export interface DnevniRasporedKviza {
+  id: string
+  child_profile_id: string
+  child_name: string
+  child_avatar: string
+  subject: Predmet
+  grade: Razred
+  source: IzvorDnevnogKviza
+  topic_ids: string[]
+  topic_slugs: string[]
+  difficulty: Tezina | null
+  question_type: TipPitanja | null
+  question_count: number
+  time_limit_seconds: number | null
+  shuffle_questions: boolean
+  shuffle_answers: boolean
+  pass_threshold_pct: number
+  daily_time: string
+  timezone: 'Europe/Belgrade'
+  is_active: boolean
+  next_run_on: string
+  last_sent_at: string | null
+  last_quiz_id: string | null
+  last_error: string | null
 }
 
 // Snapshot pitanja unutar kviza (kopija u trenutku dodavanja)

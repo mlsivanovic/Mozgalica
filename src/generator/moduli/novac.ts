@@ -1,7 +1,7 @@
 // Generator: novac (cene i kusur u dinarima) — zadaci su po prirodi tekstualni
-import { ceoBroj, izaberi, type Rng } from '../random'
-import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types'
-import { dvaImena, upakujRacun } from './zajednicko'
+import { ceoBroj, izaberi, type Rng } from '../random.ts'
+import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types.ts'
+import { dvaImena, upakujRacun } from './zajednicko.ts'
 
 const ARTIKLI = [
   'sveska', 'čokolada', 'sok', 'sladoled', 'olovka', 'lopta', 'bojanka', 'sendvič',

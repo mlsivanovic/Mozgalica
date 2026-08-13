@@ -1,8 +1,8 @@
 // Generator: proste jednačine sa jednom nepoznatom — rešavanje inverznom operacijom
-import type { Tezina } from '../../types/db'
-import { ceoBroj, izaberi, type Rng } from '../random'
-import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types'
-import { upakujRacun } from './zajednicko'
+import type { Tezina } from '../../types/db.ts'
+import { ceoBroj, izaberi, type Rng } from '../random.ts'
+import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types.ts'
+import { upakujRacun } from './zajednicko.ts'
 
 type Oblik = 'x+a=b' | 'a-x=b' | 'x-a=b' | 'a*x=b' | 'x:a=b'
 

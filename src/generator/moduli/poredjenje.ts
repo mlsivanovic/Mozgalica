@@ -1,8 +1,8 @@
 // Generator: poređenje brojeva i izraza (<, =, >)
-import type { Opcija, Tezina } from '../../types/db'
-import { ceoBroj, izaberi, type Rng } from '../random'
-import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types'
-import { poeniZaTezinu } from './zajednicko'
+import type { Opcija, Tezina } from '../../types/db.ts'
+import { ceoBroj, izaberi, type Rng } from '../random.ts'
+import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types.ts'
+import { poeniZaTezinu } from './zajednicko.ts'
 
 interface Strana {
   prikaz: string

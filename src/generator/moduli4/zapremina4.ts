@@ -3,9 +3,9 @@
 // računskim nivoima (ne samo kvadar), uz inverzne zadatke.
 // Grade-3 modul „merne-jedinice" radi samo konverziju tečnosti (l/dl/cl/ml) —
 // ovaj modul dodaje stvarno RAČUNANJE zapremine preko formule.
-import { ceoBroj, type Rng } from '../random'
-import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types'
-import { upakujRacun } from '../moduli/zajednicko'
+import { ceoBroj, type Rng } from '../random.ts'
+import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types.ts'
+import { upakujRacun } from '../moduli/zajednicko.ts'
 
 interface Konverzija {
   iz: string

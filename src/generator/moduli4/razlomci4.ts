@@ -3,10 +3,10 @@
 // razlomak broja, i višekoračni zadaci (razlika dva "dela", "do celog", zbir tri).
 // Da ostane kompatibilno sa celobrojnim upakujRacun pipeline-om, rezultati
 // sabiranja/oduzimanja se izražavaju kroz BROJILAC (imenilac je dat u tekstu).
-import type { Opcija } from '../../types/db'
-import { ceoBroj, izaberi, promesaj, type Rng } from '../random'
-import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types'
-import { poeniZaTezinu, upakujRacun } from '../moduli/zajednicko'
+import type { Opcija } from '../../types/db.ts'
+import { ceoBroj, izaberi, promesaj, type Rng } from '../random.ts'
+import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types.ts'
+import { poeniZaTezinu, upakujRacun } from '../moduli/zajednicko.ts'
 
 export const razlomci4: TopicGenerator = {
   slug: 'razlomci-4',

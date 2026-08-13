@@ -3,9 +3,9 @@
 // a·(x±b) [± d] ? c, i deljenje N:(x±b) ? c (pravac nejednakosti se OKREĆE kod
 // deljenja, jer je količnik OPADAJUĆA funkcija delioca). Traži se granični ceo
 // broj x — isti princip kao src/generator/moduli/nejednacine.ts.
-import { ceoBroj, izaberi, type Rng } from '../random'
-import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types'
-import { upakujRacun } from '../moduli/zajednicko'
+import { ceoBroj, izaberi, type Rng } from '../random.ts'
+import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types.ts'
+import { upakujRacun } from '../moduli/zajednicko.ts'
 
 const MAX_DISTRAKTOR = 2_000_000
 

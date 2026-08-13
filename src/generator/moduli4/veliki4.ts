@@ -2,10 +2,10 @@
 // zbir cifara, poređenje, "koliko hiljada/miliona", prethodnik/sledbenik, i
 // izbor najvećeg/najmanjeg — u opsegu do milijarde (udžbenik ide do klase
 // milijardi/biliona). Više tipova pitanja po nivou da fond ne bude tanak.
-import type { Opcija } from '../../types/db'
-import { ceoBroj, izaberi, promesaj, type Rng } from '../random'
-import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types'
-import { poeniZaTezinu, upakujRacun } from '../moduli/zajednicko'
+import type { Opcija } from '../../types/db.ts'
+import { ceoBroj, izaberi, promesaj, type Rng } from '../random.ts'
+import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types.ts'
+import { poeniZaTezinu, upakujRacun } from '../moduli/zajednicko.ts'
 
 // Nazivi mesta po poziciji cifre (0 = jedinice, računato zdesna), do milijarde.
 const MESTA = [

@@ -1,12 +1,12 @@
 // Generator: sabiranje (4. razred) — višecifreni brojevi, do 1 000 000.
 // Isti pattern kao src/generator/moduli/sabiranje.ts (reuse-uje viseSabiraka),
 // samo veći opseg po nivou težine.
-import { bezPrenosa, zamenaCifara } from '../distraktori'
-import { viseSabiraka } from '../moduli/sabiranje'
-import type { Tezina } from '../../types/db'
-import { ceoBroj, izaberi, type Rng } from '../random'
-import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types'
-import { dvaImena, genMn, izaberiPredmet, kolicina, upakujRacun } from '../moduli/zajednicko'
+import { bezPrenosa, zamenaCifara } from '../distraktori.ts'
+import { viseSabiraka } from '../moduli/sabiranje.ts'
+import type { Tezina } from '../../types/db.ts'
+import { ceoBroj, izaberi, type Rng } from '../random.ts'
+import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types.ts'
+import { dvaImena, genMn, izaberiPredmet, kolicina, upakujRacun } from '../moduli/zajednicko.ts'
 
 // Gornja granica distraktora — jedna zajednička konstanta za sve nivoe (samo
 // gornji limit, ne mora biti tesna) da napraviDistraktore ne odbaci kandidate.

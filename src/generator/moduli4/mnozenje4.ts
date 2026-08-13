@@ -1,10 +1,10 @@
 // Generator: množenje (4. razred) — višecifreni × višecifreni, do 1 000 000.
 // Isti "budžetiraj preostali činilac" trik kao src/generator/moduli/mnozenje.ts,
 // samo veći opseg i naglasak na množenju decadnom jedinicom (10/100/1000/...).
-import type { Tezina } from '../../types/db'
-import { ceoBroj, izaberi, type Rng } from '../random'
-import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types'
-import { dvaImena, genMn, izaberiPredmet, kolicina, upakujRacun } from '../moduli/zajednicko'
+import type { Tezina } from '../../types/db.ts'
+import { ceoBroj, izaberi, type Rng } from '../random.ts'
+import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types.ts'
+import { dvaImena, genMn, izaberiPredmet, kolicina, upakujRacun } from '../moduli/zajednicko.ts'
 
 const MAX_DISTRAKTOR = 12_000_000
 const DECADNE = [10, 100, 1_000] as const

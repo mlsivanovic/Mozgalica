@@ -1,7 +1,7 @@
 // Generator: obim figura i merenje dužine
-import { ceoBroj, type Rng } from '../random'
-import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types'
-import { upakujRacun } from './zajednicko'
+import { ceoBroj, type Rng } from '../random.ts'
+import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types.ts'
+import { upakujRacun } from './zajednicko.ts'
 
 export const obim: TopicGenerator = {
   slug: 'obim-i-merenje',

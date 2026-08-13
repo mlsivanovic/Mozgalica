@@ -1,6 +1,6 @@
 // Zajednički tipovi generatora pitanja
-import type { OpcijeJson, TacanOdgovor, Tezina, TipPitanja } from '../types/db'
-import type { Rng } from './random'
+import type { OpcijeJson, TacanOdgovor, Tezina, TipPitanja } from '../types/db.ts'
+import type { Rng } from './random.ts'
 
 export interface GeneratorConfig {
   topicSlug: string
@@ -12,6 +12,10 @@ export interface GeneratorConfig {
   wordProblems: boolean
   allowRepeats: boolean
   seed?: number
+  // Potpisi iz prethodnih dnevnih kvizova. Generator ih preskače dok ima
+  // dovoljno prostora za nove zadatke, a pozivalac po potrebi može da dozvoli
+  // ponavljanje kao rezervnu varijantu.
+  excludedSignatures?: Iterable<string>
 }
 
 // Generisano pitanje — poklapa se sa kolonama tabele questions

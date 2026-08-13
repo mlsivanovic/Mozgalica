@@ -1,10 +1,10 @@
 // Generator: množenje. Nivo 1: dva činioca (tablica). Nivoi 2/3: VIŠE činilaca
 // (3, pa 4, ili 3 sa jednim dvocifrenim). Nivoi 4/5: dvocifreno množenje —
 // obuhvatnost umesto samo većih brojeva.
-import type { Tezina } from '../../types/db'
-import { ceoBroj, izaberi, type Rng } from '../random'
-import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types'
-import { dvaImena, genMn, izaberiPredmet, kolicina, upakujRacun } from './zajednicko'
+import type { Tezina } from '../../types/db.ts'
+import { ceoBroj, izaberi, type Rng } from '../random.ts'
+import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types.ts'
+import { dvaImena, genMn, izaberiPredmet, kolicina, upakujRacun } from './zajednicko.ts'
 
 // Dani za tekstualne zadatke: oblici su bezbedni uz sve brojeve
 const DAN: [string, string, string, string] = ['dan', 'dana', 'dana', 'dan']

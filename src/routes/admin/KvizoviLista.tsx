@@ -2,21 +2,23 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
-  listajKvizove, listajStatuseArhiveKvizova, obrisiKviz,
+  listajDnevneRasporedeKvizova, listajKvizove, listajStatuseArhiveKvizova, obrisiKviz,
   type StatusArhiveKviza,
 } from '../../lib/api'
 import { podeliKvizove, type ArhiviraniKviz } from '../../lib/arhivaKvizova'
 import { formatDatum } from '../../lib/format'
 import { Loader } from '../../components/Zajednicke'
-import type { Kviz } from '../../types/db'
+import type { DnevniRasporedKviza, Kviz } from '../../types/db'
+import { DnevniRasporedi } from './DnevniRasporedi'
 
-type PrikazKvizova = 'aktivni' | 'arhiva'
+type PrikazKvizova = 'aktivni' | 'arhiva' | 'rasporedi'
 
 export function KvizoviLista() {
   const navigate = useNavigate()
   const [ucitava, setUcitava] = useState(true)
   const [kvizovi, setKvizovi] = useState<Kviz[]>([])
   const [statusi, setStatusi] = useState<StatusArhiveKviza[]>([])
+  const [rasporedi, setRasporedi] = useState<DnevniRasporedKviza[]>([])
   const [prikaz, setPrikaz] = useState<PrikazKvizova>('aktivni')
   const [greska, setGreska] = useState<string | null>(null)
 
@@ -24,11 +26,12 @@ export function KvizoviLista() {
     setUcitava(true)
     setGreska(null)
     try {
-      const [ucitaniKvizovi, ucitaniStatusi] = await Promise.all([
-        listajKvizove(), listajStatuseArhiveKvizova(),
+      const [ucitaniKvizovi, ucitaniStatusi, ucitaniRasporedi] = await Promise.all([
+        listajKvizove(), listajStatuseArhiveKvizova(), listajDnevneRasporedeKvizova(),
       ])
       setKvizovi(ucitaniKvizovi)
       setStatusi(ucitaniStatusi)
+      setRasporedi(ucitaniRasporedi)
     } catch (e) {
       setGreska(String((e as Error).message ?? e))
     } finally {
@@ -89,9 +92,19 @@ export function KvizoviLista() {
         >
           Arhiva <span className="bedz">{arhivirani.length}</span>
         </button>
+        <button
+          type="button"
+          className={`dugme ${prikaz === 'rasporedi' ? '' : 'dugme--senka'}`}
+          aria-pressed={prikaz === 'rasporedi'}
+          onClick={() => setPrikaz('rasporedi')}
+        >
+          Dnevni rasporedi <span className="bedz">{rasporedi.length}</span>
+        </button>
       </div>
 
-      {nemaPrikazanih ? (
+      {prikaz === 'rasporedi' ? (
+        <DnevniRasporedi rasporedi={rasporedi} onPromena={ucitaj} />
+      ) : nemaPrikazanih ? (
         <p className="blago">
           {prikaz === 'aktivni'
             ? 'Nema aktivnih kvizova.'

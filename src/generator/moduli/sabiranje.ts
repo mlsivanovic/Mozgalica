@@ -1,10 +1,10 @@
 // Generator: sabiranje (do 1000). Nivo 1: dva sabirka uz kontrolisan prenos.
 // Nivoi 2–5: VIŠE sabiraka (3, 4, 5, pa 6) — obuhvatnost umesto samo većih brojeva.
-import type { Tezina } from '../../types/db'
-import { bezPrenosa, zamenaCifara } from '../distraktori'
-import { ceoBroj, izaberi, type Rng } from '../random'
-import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types'
-import { dvaImena, genMn, izaberiPredmet, kolicina, upakujRacun } from './zajednicko'
+import type { Tezina } from '../../types/db.ts'
+import { bezPrenosa, zamenaCifara } from '../distraktori.ts'
+import { ceoBroj, izaberi, type Rng } from '../random.ts'
+import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types.ts'
+import { dvaImena, genMn, izaberiPredmet, kolicina, upakujRacun } from './zajednicko.ts'
 
 // Nivo 1: tačno dva sabirka sa kontrolisanim prenosom (nepromenjeno)
 function dvaSabirkaNivo1(rng: Rng): number[] {

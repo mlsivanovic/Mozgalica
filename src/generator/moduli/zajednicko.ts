@@ -1,9 +1,9 @@
 // Zajednički pomoćnici za module generatora: pakovanje pitanja,
 // srpski oblici imenica uz brojeve i imena za tekstualne zadatke.
-import type { TipPitanja, Tezina } from '../../types/db'
-import { napraviDistraktore, napraviOpcije } from '../distraktori'
-import { izaberi, type Rng } from '../random'
-import type { GeneratorConfig, GenerisanoPitanje } from '../types'
+import type { TipPitanja, Tezina } from '../../types/db.ts'
+import { napraviDistraktore, napraviOpcije } from '../distraktori.ts'
+import { izaberi, type Rng } from '../random.ts'
+import type { GeneratorConfig, GenerisanoPitanje } from '../types.ts'
 
 export const IMENA = [
   'Lena', 'Marko', 'Ana', 'Miloš', 'Sara', 'Vuk', 'Mina', 'Luka', 'Iva', 'Filip',

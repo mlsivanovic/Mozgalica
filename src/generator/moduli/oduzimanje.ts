@@ -1,11 +1,11 @@
 // Generator: oduzimanje. Nivo 1: dva broja uz kontrolisanu pozajmicu.
 // Nivoi 2–5: LANAC oduzimanja (a − b − c...) — konstruisan iznutra-napolje
 // (od konačnog rezultata unazad) tako da nijedan međurezultat nikad ne postane negativan.
-import type { Tezina } from '../../types/db'
-import { bezPozajmice, zamenaCifara } from '../distraktori'
-import { ceoBroj, izaberi, type Rng } from '../random'
-import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types'
-import { dvaImena, genMn, izaberiPredmet, kolicina, upakujRacun } from './zajednicko'
+import type { Tezina } from '../../types/db.ts'
+import { bezPozajmice, zamenaCifara } from '../distraktori.ts'
+import { ceoBroj, izaberi, type Rng } from '../random.ts'
+import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types.ts'
+import { dvaImena, genMn, izaberiPredmet, kolicina, upakujRacun } from './zajednicko.ts'
 
 // Nivo 1: tačno dva broja sa kontrolisanom pozajmicom (nepromenjeno)
 function dvaBrojaNivo1(rng: Rng): number[] {

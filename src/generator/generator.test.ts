@@ -1,11 +1,11 @@
 // Testovi generatora pitanja: determinizam, matematička pravila, distraktori, duplikati
 import { describe, expect, it } from 'vitest'
-import type { Opcija } from '../types/db'
-import { generisi, podrzaneOblasti, REGISTAR } from './index'
-import { napraviRng } from './random'
-import type { GeneratorConfig, GenerisanoPitanje } from './types'
-import { bezPozajmice, bezPrenosa, napraviDistraktore, zamenaCifara } from './distraktori'
-import { izRimskog, uRimski } from './moduli/rimski'
+import type { Opcija } from '../types/db.ts'
+import { generisi, podrzaneOblasti, REGISTAR } from './index.ts'
+import { napraviRng } from './random.ts'
+import type { GeneratorConfig, GenerisanoPitanje } from './types.ts'
+import { bezPozajmice, bezPrenosa, napraviDistraktore, zamenaCifara } from './distraktori.ts'
+import { izRimskog, uRimski } from './moduli/rimski.ts'
 
 const TEZINE = [1, 2, 3, 4, 5] as const
 
@@ -198,6 +198,17 @@ describe('duplikati', () => {
     const r = generisi(cfg({ topicSlug: 'mnozenje', count: 100, seed: 3 }))
     expect(r.questions.length).toBeLessThan(100)
     expect(r.warning).toBeTruthy()
+  })
+
+  it('preskače potpise iz prethodnog dnevnog kviza dok postoje druge kombinacije', () => {
+    const prvi = generisi(cfg({ topicSlug: 'sabiranje', difficulty: 3, count: 5, seed: 12 }))
+    const drugi = generisi(cfg({
+      topicSlug: 'sabiranje', difficulty: 3, count: 5, seed: 13,
+      excludedSignatures: prvi.questions.map((p) => p.signature),
+    }))
+    const prethodni = new Set(prvi.questions.map((p) => p.signature))
+    expect(drugi.questions).toHaveLength(5)
+    expect(drugi.questions.some((p) => prethodni.has(p.signature))).toBe(false)
   })
 })
 

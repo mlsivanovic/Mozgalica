@@ -1,7 +1,7 @@
 // Pravljenje realističnih pogrešnih odgovora (distraktora) za pitanja sa izborom.
 // Distraktori modeluju česte dečje greške u računanju.
-import type { Opcija } from '../types/db'
-import { ceoBroj, promesaj, type Rng } from './random'
+import type { Opcija } from '../types/db.ts'
+import { ceoBroj, promesaj, type Rng } from './random.ts'
 
 // Sabiranje cifara po mestima BEZ prenosa (česta greška: 47+38 = 75 umesto 85)
 export function bezPrenosa(a: number, b: number): number {

@@ -1,9 +1,9 @@
 // Generator: kombinovane računske operacije (4. razred) — veći brojevi, dublje
 // ugnježdene zagrade, deljenje unutar izraza, i izrazi sa promenljivom
 // (dat je x, izračunaj vrednost izraza).
-import { ceoBroj, izaberi, promesaj, type Rng } from '../random'
-import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types'
-import { poeniZaTezinu, upakujRacun } from '../moduli/zajednicko'
+import { ceoBroj, izaberi, promesaj, type Rng } from '../random.ts'
+import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types.ts'
+import { poeniZaTezinu, upakujRacun } from '../moduli/zajednicko.ts'
 
 const MAX_DISTRAKTOR = 2_000_000
 

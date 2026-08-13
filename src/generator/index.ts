@@ -1,32 +1,32 @@
 // Glavni ulaz generatora: registar modula po oblastima + petlja generisanja
-import { napraviRng } from './random'
-import type { GeneratorConfig, GenerisanoPitanje, RezultatGenerisanja, TopicGenerator } from './types'
-import { deljenje } from './moduli/deljenje'
-import { jednacine } from './moduli/jednacine'
-import { jedinice } from './moduli/jedinice'
-import { kombinovane } from './moduli/kombinovane'
-import { mnozenje } from './moduli/mnozenje'
-import { nejednacine } from './moduli/nejednacine'
-import { nizovi } from './moduli/nizovi'
-import { novac } from './moduli/novac'
-import { obim } from './moduli/obim'
-import { oduzimanje } from './moduli/oduzimanje'
-import { poredjenje } from './moduli/poredjenje'
-import { rimski } from './moduli/rimski'
-import { sabiranje } from './moduli/sabiranje'
-import { sabiranje4 } from './moduli4/sabiranje4'
-import { oduzimanje4 } from './moduli4/oduzimanje4'
-import { mnozenje4 } from './moduli4/mnozenje4'
-import { deljenje4 } from './moduli4/deljenje4'
-import { veliki4 } from './moduli4/veliki4'
-import { kombinovane4 } from './moduli4/kombinovane4'
-import { jednacine4 } from './moduli4/jednacine4'
-import { nejednacine4 } from './moduli4/nejednacine4'
-import { povrsina4 } from './moduli4/povrsina4'
-import { zapremina4 } from './moduli4/zapremina4'
-import { razlomci4 } from './moduli4/razlomci4'
-import { tela4 } from './moduli4/tela4'
-import { decimal4 } from './moduli4/decimal4'
+import { napraviRng } from './random.ts'
+import type { GeneratorConfig, GenerisanoPitanje, RezultatGenerisanja, TopicGenerator } from './types.ts'
+import { deljenje } from './moduli/deljenje.ts'
+import { jednacine } from './moduli/jednacine.ts'
+import { jedinice } from './moduli/jedinice.ts'
+import { kombinovane } from './moduli/kombinovane.ts'
+import { mnozenje } from './moduli/mnozenje.ts'
+import { nejednacine } from './moduli/nejednacine.ts'
+import { nizovi } from './moduli/nizovi.ts'
+import { novac } from './moduli/novac.ts'
+import { obim } from './moduli/obim.ts'
+import { oduzimanje } from './moduli/oduzimanje.ts'
+import { poredjenje } from './moduli/poredjenje.ts'
+import { rimski } from './moduli/rimski.ts'
+import { sabiranje } from './moduli/sabiranje.ts'
+import { sabiranje4 } from './moduli4/sabiranje4.ts'
+import { oduzimanje4 } from './moduli4/oduzimanje4.ts'
+import { mnozenje4 } from './moduli4/mnozenje4.ts'
+import { deljenje4 } from './moduli4/deljenje4.ts'
+import { veliki4 } from './moduli4/veliki4.ts'
+import { kombinovane4 } from './moduli4/kombinovane4.ts'
+import { jednacine4 } from './moduli4/jednacine4.ts'
+import { nejednacine4 } from './moduli4/nejednacine4.ts'
+import { povrsina4 } from './moduli4/povrsina4.ts'
+import { zapremina4 } from './moduli4/zapremina4.ts'
+import { razlomci4 } from './moduli4/razlomci4.ts'
+import { tela4 } from './moduli4/tela4.ts'
+import { decimal4 } from './moduli4/decimal4.ts'
 
 const MODULI: TopicGenerator[] = [
   sabiranje, oduzimanje, mnozenje, deljenje, kombinovane,
@@ -55,7 +55,7 @@ export function generisi(cfg: GeneratorConfig): RezultatGenerisanja {
 
   const rng = napraviRng(cfg.seed ?? Math.floor(Math.random() * 2 ** 31))
   const questions: GenerisanoPitanje[] = []
-  const taken = new Set<string>()
+  const taken = new Set<string>(cfg.excludedSignatures ?? [])
 
   for (let i = 0; i < cfg.count; i++) {
     let pitanje: GenerisanoPitanje | null = null

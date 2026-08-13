@@ -1,8 +1,8 @@
 // Generator: kombinovane računske operacije (redosled operacija, zagrade)
-import type { Tezina } from '../../types/db'
-import { ceoBroj, type Rng } from '../random'
-import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types'
-import { upakujRacun } from './zajednicko'
+import type { Tezina } from '../../types/db.ts'
+import { ceoBroj, type Rng } from '../random.ts'
+import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types.ts'
+import { upakujRacun } from './zajednicko.ts'
 
 interface Izraz {
   text: string

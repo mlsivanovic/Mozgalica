@@ -2,7 +2,8 @@
 import type {
   AdminPodesavanja, AvatarDeteta, FiksnoImeDeteta, InboxObavestenja,
   Kviz, KvizLink, KvizPitanje, NivoTitule, Oblast, Obavestenje, OdgovorDeteta, Pitanje,
-  Pokusaj, PokusajOdgovor, Predmet, ProfilDeteta, PushPretplata, Razred, StavkaProdavnice,
+  DnevniRasporedKviza, IzvorDnevnogKviza, Pokusaj, PokusajOdgovor, Predmet, ProfilDeteta,
+  PushPretplata, Razred, StavkaProdavnice, Tezina, TipPitanja,
 } from '../types/db'
 import type {
   InboxDetetaPayload, JavniProfilPayload, KupovinaPayload, KvizMeta, NapredakTitule,
@@ -187,6 +188,66 @@ export async function listajStatuseArhiveKvizova(): Promise<StatusArhiveKviza[]>
   const { data, error } = await supabase().from('v_quiz_archive_status').select('*')
   if (error) throw new Error(opisiGresku(error)!)
   return data as StatusArhiveKviza[]
+}
+
+// ---------- Dnevni rasporedi kvizova ----------
+export interface NoviDnevniRasporedKviza {
+  childProfileId: string
+  subject: Predmet
+  grade: Razred
+  source: IzvorDnevnogKviza
+  topicIds: string[]
+  difficulty: Tezina | null
+  questionType: TipPitanja | null
+  questionCount: number
+  timeLimitSeconds: number | null
+  shuffleQuestions: boolean
+  shuffleAnswers: boolean
+  passThresholdPct: number
+  dailyTime: string
+}
+
+export async function listajDnevneRasporedeKvizova(): Promise<DnevniRasporedKviza[]> {
+  const { data, error } = await supabase().rpc('list_daily_quiz_schedules')
+  if (error) throw new Error(opisiGresku(error)!)
+  return data as DnevniRasporedKviza[]
+}
+
+export async function sacuvajDnevniRasporedKviza(
+  raspored: NoviDnevniRasporedKviza,
+  id?: string,
+): Promise<DnevniRasporedKviza> {
+  const { data, error } = await supabase().rpc('save_daily_quiz_schedule', {
+    p_schedule_id: id ?? null,
+    p_child_profile_id: raspored.childProfileId,
+    p_subject: raspored.subject,
+    p_grade: raspored.grade,
+    p_source: raspored.source,
+    p_topic_ids: raspored.topicIds,
+    p_difficulty: raspored.difficulty,
+    p_question_type: raspored.questionType ?? 'auto',
+    p_question_count: raspored.questionCount,
+    p_time_limit_seconds: raspored.timeLimitSeconds,
+    p_shuffle_questions: raspored.shuffleQuestions,
+    p_shuffle_answers: raspored.shuffleAnswers,
+    p_pass_threshold_pct: raspored.passThresholdPct,
+    p_daily_time: raspored.dailyTime,
+  })
+  if (error) throw new Error(opisiGresku(error)!)
+  return data as DnevniRasporedKviza
+}
+
+export async function postaviAktivnostDnevnogRasporeda(id: string, aktivan: boolean): Promise<void> {
+  const { error } = await supabase().rpc('set_daily_quiz_schedule_active', {
+    p_schedule_id: id,
+    p_is_active: aktivan,
+  })
+  if (error) throw new Error(opisiGresku(error)!)
+}
+
+export async function obrisiDnevniRasporedKviza(id: string): Promise<void> {
+  const { error } = await supabase().rpc('delete_daily_quiz_schedule', { p_schedule_id: id })
+  if (error) throw new Error(opisiGresku(error)!)
 }
 
 export interface KategorijaKviza {

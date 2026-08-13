@@ -1,9 +1,9 @@
 // Generator: površina (4. razred) — merne jedinice za površinu (uklj. mešoviti
 // zapis), površina pravougaonika/kvadrata (P=a·b, P=a·a) i inverz, površina
 // kvadra P=2·(a·b+b·c+a·c), i kocke P=6·a·a (uklj. inverz i sintezu "3 strane").
-import { ceoBroj, izaberi, type Rng } from '../random'
-import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types'
-import { upakujRacun } from '../moduli/zajednicko'
+import { ceoBroj, izaberi, type Rng } from '../random.ts'
+import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types.ts'
+import { upakujRacun } from '../moduli/zajednicko.ts'
 
 interface Konverzija {
   iz: string

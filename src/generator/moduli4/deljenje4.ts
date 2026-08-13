@@ -1,8 +1,8 @@
 // Generator: deljenje (4. razred) — UVEK konstruisano iz proizvoda (nema ostatka),
 // isti pattern kao src/generator/moduli/deljenje.ts, naglasak na dvocifrenom deliocu.
-import { ceoBroj, izaberi, type Rng } from '../random'
-import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types'
-import { genMn, izaberiPredmet, kolicina, upakujRacun, dvaImena } from '../moduli/zajednicko'
+import { ceoBroj, izaberi, type Rng } from '../random.ts'
+import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types.ts'
+import { genMn, izaberiPredmet, kolicina, upakujRacun, dvaImena } from '../moduli/zajednicko.ts'
 
 const MAX_DISTRAKTOR = 1_500_000
 const DRUG: [string, string, string, string] = ['drug', 'druga', 'drugova', 'druga']

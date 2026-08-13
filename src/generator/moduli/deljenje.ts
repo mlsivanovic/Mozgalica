@@ -1,10 +1,10 @@
 // Generator: deljenje — UVEK konstruisano iz proizvoda, pa nema ostatka.
 // Nivo 1/2: jedno deljenje. Nivo 3: LANAC dva uzastopna deljenja (deljenik : d1 : d2).
 // Nivo 4: deljenje dvocifrenim deliocem. Nivo 5: lanac sa dvocifrenim prvim deliocem.
-import type { Tezina } from '../../types/db'
-import { ceoBroj, izaberi, type Rng } from '../random'
-import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types'
-import { genMn, izaberiPredmet, kolicina, upakujRacun, dvaImena } from './zajednicko'
+import type { Tezina } from '../../types/db.ts'
+import { ceoBroj, izaberi, type Rng } from '../random.ts'
+import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types.ts'
+import { genMn, izaberiPredmet, kolicina, upakujRacun, dvaImena } from './zajednicko.ts'
 
 const DRUG: [string, string, string, string] = ['drug', 'druga', 'drugova', 'druga']
 const KUTIJA: [string, string, string, string] = ['kutija', 'kutije', 'kutija', 'kutiju']

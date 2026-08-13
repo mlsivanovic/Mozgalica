@@ -1,8 +1,8 @@
 // Generator: nejednačine — traži se granični ceo broj (jedinstven, proverljiv odgovor),
 // umesto "koji broj zadovoljava x < 15" što ima beskonačno mnogo tačnih odgovora
-import { ceoBroj, izaberi, type Rng } from '../random'
-import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types'
-import { upakujRacun } from './zajednicko'
+import { ceoBroj, izaberi, type Rng } from '../random.ts'
+import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types.ts'
+import { upakujRacun } from './zajednicko.ts'
 
 export const nejednacine: TopicGenerator = {
   slug: 'nejednacine',
