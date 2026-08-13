@@ -226,6 +226,7 @@ export interface StavkaProdavnice {
   title: string
   description: string | null
   emoji: string
+  icon_url: string | null
   cost: number
   repeatable: boolean
   sort_order: number
@@ -248,6 +249,7 @@ export interface KupovinaProdavnice {
   owner_id: string
   item_title: string
   item_emoji: string
+  item_icon_url: string | null
   cost: number
   is_repeatable: boolean
   status: StatusKupovineProdavnice

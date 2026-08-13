@@ -294,6 +294,7 @@ export interface StavkaProdavnicePrikaz {
   title: string
   description: string | null
   emoji: string
+  iconUrl: string | null
   cost: number
   repeatable: boolean
   // Jednokratna: true ako je ikada kupljena. Ponavljajuća: true ako je aktivna
@@ -309,6 +310,7 @@ export interface KupovinaPrikaz {
   id: string
   title: string
   emoji: string
+  iconUrl: string | null
   cost: number
   isRepeatable: boolean
   status: 'requested' | 'consumed' | 'cancelled'

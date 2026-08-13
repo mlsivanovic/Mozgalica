@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { ObavestenjaZvonce } from '../../components/ObavestenjaZvonce'
+import { IkonaNagrade } from '../../components/IkonaNagrade'
 import { Loader, Modal, TemaDugme } from '../../components/Zajednicke'
 import { kupiStavku, listajObavestenjaDeteta, oznaciObavestenjaDetetaProcitanim, ucitajProdavnicu } from '../../lib/api'
 import { formatDatum } from '../../lib/format'
@@ -188,7 +189,11 @@ export function Prodavnica() {
                 return (
                   <article key={stavka.id} className={`kartica prodavnica-stavka ${stanje.klasaKartice}`}>
                     <div className="prodavnica-stavka-glava">
-                      <span className="prodavnica-stavka-emoji" aria-hidden="true">{stavka.emoji}</span>
+                      <IkonaNagrade
+                        iconUrl={stavka.iconUrl}
+                        emoji={stavka.emoji}
+                        className="prodavnica-stavka-emoji"
+                      />
                       <span className="prodavnica-stavka-cena">{stavka.cost}⭐</span>
                     </div>
                     <h3>{stavka.title}</h3>
@@ -238,7 +243,11 @@ export function Prodavnica() {
                 return (
                   <div className="prodavnica-nagrada" key={kupovina.id}>
                     <div className="prodavnica-nagrada-glava">
-                      <span className="prodavnica-nagrada-emoji" aria-hidden="true">{kupovina.emoji}</span>
+                      <IkonaNagrade
+                        iconUrl={kupovina.iconUrl}
+                        emoji={kupovina.emoji}
+                        className="prodavnica-nagrada-emoji"
+                      />
                       <div>
                         <strong>{kupovina.title}</strong>
                         <p className="malo blago">
@@ -262,7 +271,11 @@ export function Prodavnica() {
         <Modal naslov="Potvrda kupovine" onZatvori={kupuje ? () => {} : () => setPotvrda(null)}>
           <div className="prodavnica-potvrda-telo">
             <div className="prodavnica-potvrda-stavka">
-              <span className="prodavnica-stavka-emoji" aria-hidden="true">{potvrda.emoji}</span>
+              <IkonaNagrade
+                iconUrl={potvrda.iconUrl}
+                emoji={potvrda.emoji}
+                className="prodavnica-stavka-emoji"
+              />
               <div>
                 <strong>{potvrda.title}</strong>
                 {potvrda.description && <p className="malo blago">{potvrda.description}</p>}

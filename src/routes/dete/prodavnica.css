@@ -94,6 +94,7 @@
   border: 2px solid var(--boja-kartica);
   box-shadow: var(--senka);
   font-size: 2rem;
+  object-fit: cover;
 }
 
 .prodavnica-stavka-cena {
@@ -152,6 +153,7 @@
   background: var(--boja-polje);
   border: 1px solid var(--boja-ivica);
   font-size: 1.3rem;
+  object-fit: cover;
 }
 
 .prodavnica-nagrada-status {

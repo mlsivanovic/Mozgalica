@@ -633,7 +633,7 @@ export async function sacuvajStavkeProdavnice(stavke: NoviStavkaProdavnice[]): P
   const { data, error } = await supabase().rpc('save_shop_items', { p_items: stavke })
   if (error) throw new Error(opisiGresku(error)!)
   const odgovor = data as { ok: boolean; error?: string }
-  if (!odgovor.ok) throw new Error('Stavke nisu ispravne. Proveri naslov (1–60 znakova), cenu (>0) i emoji.')
+  if (!odgovor.ok) throw new Error('Stavke nisu ispravne. Proveri naslov (1–60 znakova), cenu (>0), emoji i HTTPS adresu ikonice.')
 }
 
 export interface KupovinaAdminPrikaz {
@@ -642,6 +642,7 @@ export interface KupovinaAdminPrikaz {
   childAvatar: string
   title: string
   emoji: string
+  iconUrl: string | null
   cost: number
   isRepeatable: boolean
   status: 'requested' | 'consumed' | 'cancelled'

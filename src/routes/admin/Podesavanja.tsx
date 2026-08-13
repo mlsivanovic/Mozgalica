@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { PushKontrole } from '../../components/PushKontrole'
 import { Loader } from '../../components/Zajednicke'
+import { IkonaNagrade } from '../../components/IkonaNagrade'
 import { OznakaRangaTitule, TitleAvatar } from '../../components/TitleAvatar'
 import {
   listajKupovineProdavnice, listajNivoeTitula, listajProfileDeteta, listajStavkeProdavnice,
@@ -193,6 +194,7 @@ interface StavkaForma {
   title: string
   description: string
   emoji: string
+  icon_url: string
   cost: number
   repeatable: boolean
   is_active: boolean
@@ -205,6 +207,7 @@ function stavkaUFormu(s: StavkaProdavnice): StavkaForma {
     title: s.title,
     description: s.description ?? '',
     emoji: s.emoji,
+    icon_url: s.icon_url ?? '',
     cost: s.cost,
     repeatable: s.repeatable,
     is_active: s.is_active,
@@ -218,6 +221,7 @@ function novuStavku(sortOrder: number): StavkaForma {
     title: '',
     description: '',
     emoji: '🎁',
+    icon_url: '',
     cost: 5,
     repeatable: false,
     is_active: true,
@@ -235,6 +239,14 @@ function validirajStavke(stavke: StavkaForma[]): string | null {
     }
     if (!s.emoji || s.emoji.length < 1 || s.emoji.length > 8) {
       return `Emoji stavke „${s.title}” mora imati 1–8 znakova.`
+    }
+    if (s.icon_url.trim()) {
+      try {
+        const url = new URL(s.icon_url.trim())
+        if (url.protocol !== 'https:') throw new Error('Nije HTTPS')
+      } catch {
+        return `Ikonica stavke „${s.title}” mora imati ispravnu HTTPS adresu slike.`
+      }
     }
   }
   return null
@@ -505,6 +517,7 @@ export function Podesavanja() {
         title: s.title.trim(),
         description: s.description.trim() || null,
         emoji: s.emoji,
+        icon_url: s.icon_url.trim() || null,
         cost: s.cost,
         repeatable: s.repeatable,
         is_active: s.is_active,
@@ -1020,14 +1033,24 @@ export function Podesavanja() {
               key={stavka.tempId}
               className={`prodavnica-stavka-red ${stavka.is_active ? '' : 'prodavnica-stavka-red--neaktivna'}`}
             >
-              <input
-                type="text"
-                className="prodavnica-stavka-emoji-unos"
-                maxLength={8}
-                value={stavka.emoji}
-                aria-label="Emoji"
-                onChange={(e) => izmeniStavku(stavka.tempId, { emoji: e.target.value })}
-              />
+              <div className="prodavnica-stavka-ikona">
+                <IkonaNagrade
+                  iconUrl={stavka.icon_url}
+                  emoji={stavka.emoji}
+                  className="prodavnica-stavka-emoji-pregled"
+                />
+                <label className="prodavnica-stavka-emoji-polje">
+                  <span>Emoji rezerva</span>
+                  <input
+                    type="text"
+                    className="prodavnica-stavka-emoji-unos"
+                    maxLength={8}
+                    value={stavka.emoji}
+                    aria-label="Emoji rezerva"
+                    onChange={(e) => izmeniStavku(stavka.tempId, { emoji: e.target.value })}
+                  />
+                </label>
+              </div>
               <div style={{ display: 'grid', gap: '0.35rem' }}>
                 <input
                   type="text"
@@ -1044,6 +1067,15 @@ export function Podesavanja() {
                   value={stavka.description}
                   aria-label="Opis"
                   onChange={(e) => izmeniStavku(stavka.tempId, { description: e.target.value })}
+                />
+                <input
+                  type="url"
+                  maxLength={2048}
+                  inputMode="url"
+                  placeholder="https://…/ikonica.png (opciono)"
+                  value={stavka.icon_url}
+                  aria-label="HTTPS adresa ikonice"
+                  onChange={(e) => izmeniStavku(stavka.tempId, { icon_url: e.target.value })}
                 />
               </div>
               <input
@@ -1137,7 +1169,11 @@ export function Podesavanja() {
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
-                    <span className="prodavnica-kupovina-emoji" aria-hidden="true">{kupovina.emoji}</span>
+                    <IkonaNagrade
+                      iconUrl={kupovina.iconUrl}
+                      emoji={kupovina.emoji}
+                      className="prodavnica-kupovina-emoji"
+                    />
                     <div>
                       <strong>{kupovina.title}</strong>
                       <p className="malo blago">
