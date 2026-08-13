@@ -11,6 +11,11 @@ Uputstva za rad na ovom projektu (ljudski saradnici i AI agenti).
   kroz administratorske panele ako se isti rezultat može postići iz terminala.
   Ako nedostaje potreban alat, zatraži dozvolu za njegovu instalaciju, zatim ga
   instaliraj i dovrši posao samostalno.
+- **Po završetku svake implementirane izmene objavi je na `main`.** Agent treba
+  da proveri izmene, stage-uje samo relevantne fajlove, napravi smislen commit i
+  samostalno uradi `git push origin main`, bez čekanja posebnog zahteva. Izuzetak
+  važi samo kada korisnik izričito traži da se ne commit-uje/ne šalje ili navede
+  drugu granu.
 
 ### Pristup Supabase bazi (CLI)
 
