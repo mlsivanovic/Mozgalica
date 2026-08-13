@@ -28,8 +28,8 @@ const NAZIVI_OBLASTI: Record<string, string> = {
   'nejednacine-4': 'Nejednačine', 'povrsina-4': 'Površina', 'zapremina-4': 'Zapremina',
   'geometrijska-tela-4': 'Geometrijska tela', 'razlomci-4': 'Razlomci', 'decimalni-brojevi-4': 'Decimalni brojevi',
   // Srpski jezik
-  'srpski-gramatika': 'Gramatika', 'srpski-pravopis': 'Pravopis', 'srpski-citanje': 'Čitanje i razumevanje',
-  'srpski-recnik': 'Rečnik',
+  'srpski-vrste-reci': 'Vrste reči', 'srpski-gramatika': 'Gramatika', 'srpski-pravopis': 'Pravopis',
+  'srpski-citanje': 'Čitanje i razumevanje', 'srpski-recnik': 'Rečnik',
 }
 
 const IKONE_OBLASTI: Record<string, string> = {
@@ -45,7 +45,8 @@ const IKONE_OBLASTI: Record<string, string> = {
   'povrsina-4': '▦', 'zapremina-4': '📦', 'geometrijska-tela-4': '🧊',
   'razlomci-4': '🍕', 'decimalni-brojevi-4': '🔟',
   // Srpski jezik
-  'srpski-gramatika': '📚', 'srpski-pravopis': '✍️', 'srpski-citanje': '📖', 'srpski-recnik': '🗣️',
+  'srpski-vrste-reci': '🔤', 'srpski-gramatika': '📚', 'srpski-pravopis': '✍️',
+  'srpski-citanje': '📖', 'srpski-recnik': '🗣️',
 }
 
 interface StandardQuizConfig {
@@ -118,15 +119,16 @@ export function KvizForma() {
   // Funkcija za generisanje inicijalnih default vrednosti
   const getDefaults = (p: Predmet, r: Razred, sveOblasti: Oblast[]): StandardQuizConfig => {
     const filtrirane = sveOblasti.filter((o) => o.subject === p && o.grade === r)
-    const topicSlugs = filtrirane.map((o) => o.slug)
+    const generatorSlugs = filtrirane.filter((o) => podrzaneSlugs.includes(o.slug)).map((o) => o.slug)
+    const koristiGenerator = generatorSlugs.length > 0
     
     return {
       title: `Standardni kviz — ${NAZIVI_PREDMETA[p]} (${NAZIVI_RAZREDA[r]})`,
       count: 10,
       difficulty: '',
       type: 'auto',
-      source: p === 'matematika' ? 'generator' : 'bank',
-      selectedTopics: topicSlugs,
+      source: koristiGenerator ? 'generator' : 'bank',
+      selectedTopics: koristiGenerator ? generatorSlugs : filtrirane.map((o) => o.slug),
       timeLimit: '',
       shuffleQuestions: true,
       shuffleAnswers: true,
@@ -150,9 +152,8 @@ export function KvizForma() {
           oblastiZaPrikaz.some((o) => o.slug === slug)
         ) ?? defaults.selectedTopics
 
-        // Ako je izvor generator, a prelazimo na srpski jezik ili neku drugu kombinaciju
         let noviIzvor = parsed.source ?? defaults.source
-        if (predmet === 'srpski') {
+        if (noviIzvor === 'generator' && !oblastiZaPrikaz.some((o) => podrzaneSlugs.includes(o.slug))) {
           noviIzvor = 'bank'
         }
 
@@ -161,11 +162,16 @@ export function KvizForma() {
         if (noviIzvor === 'generator') {
           konacneTeme = konacneTeme.filter((slug) => podrzaneSlugs.includes(slug))
         }
+        const konacniTip = noviIzvor === 'generator' && predmet === 'srpski'
+          && !['auto', 'single', 'truefalse'].includes(parsed.type ?? defaults.type)
+          ? 'auto'
+          : (parsed.type ?? defaults.type)
 
         setCfg({
           ...defaults,
           ...parsed,
           source: noviIzvor,
+          type: konacniTip,
           selectedTopics: konacneTeme,
         })
       } catch (e) {
@@ -183,11 +189,6 @@ export function KvizForma() {
     setCfg((prev) => {
       const sledeci = { ...prev, ...updates }
       
-      // Za srpski jezik nema generatora, uvek mora biti banka
-      if (predmet === 'srpski') {
-        sledeci.source = 'bank'
-      }
-
       const key = `standard_quiz_settings_${predmet}_${razred}`
       localStorage.setItem(key, JSON.stringify(sledeci))
       return sledeci
@@ -200,7 +201,11 @@ export function KvizForma() {
     if (noviIzvor === 'generator') {
       sledeceTeme = cfg.selectedTopics.filter((slug) => podrzaneSlugs.includes(slug))
     }
-    azurirajCfg({ source: noviIzvor, selectedTopics: sledeceTeme })
+    const tip = noviIzvor === 'generator' && predmet === 'srpski'
+      && !['auto', 'single', 'truefalse'].includes(cfg.type)
+      ? 'auto'
+      : cfg.type
+    azurirajCfg({ source: noviIzvor, selectedTopics: sledeceTeme, type: tip })
   }
 
   // Selekcija pojedinačne oblasti
@@ -303,8 +308,8 @@ export function KvizForma() {
 
       let unosi: SnapshotUnos[] = []
 
-      // 2a. Ako je izvor generator (samo za matematiku)
-      if (cfg.source === 'generator' && predmet === 'matematika') {
+      // 2a. Ako je izvor generator
+      if (cfg.source === 'generator') {
         const generatorTopics = cfg.selectedTopics.filter((slug) => podrzaneSlugs.includes(slug))
 
         if (generatorTopics.length === 0) {
@@ -649,7 +654,7 @@ export function KvizForma() {
                 <div className="polje">
                   <label htmlFor="std-source">Izvor pitanja</label>
                   <select
-                    id="std-source" value={cfg.source} disabled={predmet === 'srpski'}
+                    id="std-source" value={cfg.source}
                     onChange={(e) => promeniIzvor(e.target.value as 'bank' | 'generator')}
                   >
                     <option value="bank">Banka pitanja (iz baze)</option>
@@ -679,7 +684,9 @@ export function KvizForma() {
                     onChange={(e) => azurirajCfg({ type: e.target.value })}
                   >
                     <option value="auto">Svi tipovi (automatski)</option>
-                    {Object.entries(NAZIVI_TIPOVA).map(([k, v]) => (
+                    {Object.entries(NAZIVI_TIPOVA)
+                      .filter(([k]) => cfg.source !== 'generator' || predmet !== 'srpski' || ['single', 'truefalse'].includes(k))
+                      .map(([k, v]) => (
                       <option key={k} value={k}>{v}</option>
                     ))}
                   </select>

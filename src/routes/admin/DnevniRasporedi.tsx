@@ -112,13 +112,21 @@ export function DnevniRasporedi({
     if (!forma) return
     const subject = izmene.subject ?? forma.subject
     const grade = izmene.grade ?? forma.grade
-    const source = subject === 'srpski' ? 'bank' : (izmene.source ?? forma.source)
-    const teme = oblasti.filter((oblast) =>
+    let source = izmene.source ?? forma.source
+    let teme = oblasti.filter((oblast) =>
       oblast.subject === subject
       && oblast.grade === grade
       && (source === 'bank' || podrzane.has(oblast.slug)),
     )
-    setForma({ ...forma, ...izmene, subject, grade, source, topicIds: teme.map((oblast) => oblast.id) })
+    if (source === 'generator' && teme.length === 0) {
+      source = 'bank'
+      teme = oblasti.filter((oblast) => oblast.subject === subject && oblast.grade === grade)
+    }
+    const questionType = source === 'generator' && subject === 'srpski'
+      && forma.questionType != null && !['single', 'truefalse'].includes(forma.questionType)
+      ? null
+      : forma.questionType
+    setForma({ ...forma, ...izmene, subject, grade, source, questionType, topicIds: teme.map((oblast) => oblast.id) })
   }
 
   function preklopiOblast(id: string) {
@@ -240,8 +248,8 @@ export function DnevniRasporedi({
           <div className="red-polja">
             <div className="polje">
               <label htmlFor="dr-izvor">Izvor pitanja</label>
-              <select id="dr-izvor" value={forma.source} disabled={forma.subject === 'srpski'} onChange={(e) => promeniKontekst({ source: e.target.value as 'generator' | 'bank' })}>
-                <option value="generator">Generator (matematika)</option>
+              <select id="dr-izvor" value={forma.source} onChange={(e) => promeniKontekst({ source: e.target.value as 'generator' | 'bank' })}>
+                <option value="generator">Generator</option>
                 <option value="bank">Banka pitanja</option>
               </select>
             </div>
@@ -260,7 +268,9 @@ export function DnevniRasporedi({
               <label htmlFor="dr-tip">Tip pitanja</label>
               <select id="dr-tip" value={forma.questionType ?? ''} onChange={(e) => setForma({ ...forma, questionType: e.target.value ? e.target.value as TipPitanja : null })}>
                 <option value="">Automatski / svi tipovi</option>
-                {Object.entries(NAZIVI_TIPOVA).map(([vrednost, naziv]) => <option key={vrednost} value={vrednost}>{naziv}</option>)}
+                {Object.entries(NAZIVI_TIPOVA)
+                  .filter(([vrednost]) => forma.source !== 'generator' || forma.subject !== 'srpski' || ['single', 'truefalse'].includes(vrednost))
+                  .map(([vrednost, naziv]) => <option key={vrednost} value={vrednost}>{naziv}</option>)}
               </select>
             </div>
           </div>

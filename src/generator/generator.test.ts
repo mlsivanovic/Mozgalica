@@ -131,7 +131,7 @@ describe('matematička pravila po oblastima', () => {
   it('svi rezultati su u opsegu 0–1000 (osim mernih jedinica do 10000) — samo 3. razred', () => {
     // 4. razred (slugovi sa sufiksom "-4") ima mnogo veće brojeve po dizajnu —
     // svaki modul dobija svoju granicu u generator4.test.ts.
-    for (const oblast of podrzaneOblasti().filter((s) => !s.endsWith('-4'))) {
+    for (const oblast of podrzaneOblasti().filter((s) => !s.endsWith('-4') && !s.startsWith('srpski-'))) {
       if (oblast === 'poredjenje-brojeva' || oblast === 'rimski-brojevi') continue // odgovor može biti znak/rimski string, ne broj
       const maks = oblast === 'merne-jedinice' ? 10000 : 1000
       for (const tezina of TEZINE) {
@@ -252,13 +252,18 @@ describe('tekstualni zadaci', () => {
 })
 
 describe('registar', () => {
-  it('svih 26 oblasti ima generator', () => {
-    expect(REGISTAR.size).toBe(26)
+  it('svih 31 oblasti ima generator', () => {
+    expect(REGISTAR.size).toBe(31)
     expect(podrzaneOblasti()).toContain('sabiranje')
     expect(podrzaneOblasti()).toContain('novac')
     expect(podrzaneOblasti()).toContain('rimski-brojevi')
     expect(podrzaneOblasti()).toContain('jednacine')
     expect(podrzaneOblasti()).toContain('nejednacine')
+    expect(podrzaneOblasti()).toContain('srpski-vrste-reci')
+    expect(podrzaneOblasti()).toContain('srpski-gramatika')
+    expect(podrzaneOblasti()).toContain('srpski-pravopis')
+    expect(podrzaneOblasti()).toContain('srpski-citanje')
+    expect(podrzaneOblasti()).toContain('srpski-recnik')
   })
 
   it('nepoznata oblast vraća upozorenje bez pitanja', () => {

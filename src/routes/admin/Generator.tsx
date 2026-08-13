@@ -7,7 +7,10 @@ import { podrzaneOblasti } from '../../generator'
 import { generisi } from '../../generator'
 import type { GeneratorConfig, GenerisanoPitanje } from '../../generator/types'
 import { listajOblasti } from '../../lib/api'
-import { NAZIVI_RAZREDA, NAZIVI_TEZINA, type Oblast, type Razred, type Tezina, type TipPitanja } from '../../types/db'
+import {
+  NAZIVI_PREDMETA, NAZIVI_RAZREDA, NAZIVI_TEZINA,
+  type Oblast, type Predmet, type Razred, type Tezina, type TipPitanja,
+} from '../../types/db'
 import { GeneratorPregled } from './GeneratorPregled'
 import './generator.css'
 
@@ -23,6 +26,9 @@ const NAZIVI_OBLASTI: Record<string, string> = {
   'kombinovane-operacije-4': 'Kombinovane računske operacije', 'jednacine-4': 'Jednačine',
   'nejednacine-4': 'Nejednačine', 'povrsina-4': 'Površina', 'zapremina-4': 'Zapremina',
   'geometrijska-tela-4': 'Geometrijska tela', 'razlomci-4': 'Razlomci', 'decimalni-brojevi-4': 'Decimalni brojevi',
+  // Srpski jezik
+  'srpski-vrste-reci': 'Vrste reči', 'srpski-gramatika': 'Gramatika', 'srpski-pravopis': 'Pravopis',
+  'srpski-citanje': 'Čitanje i razumevanje', 'srpski-recnik': 'Rečnik',
 }
 
 const IKONE_OBLASTI: Record<string, string> = {
@@ -37,19 +43,30 @@ const IKONE_OBLASTI: Record<string, string> = {
   'kombinovane-operacije-4': '🧮', 'jednacine-4': '🟰', 'nejednacine-4': '≠',
   'povrsina-4': '▦', 'zapremina-4': '📦', 'geometrijska-tela-4': '🧊',
   'razlomci-4': '🍕', 'decimalni-brojevi-4': '🔟',
+  // Srpski jezik
+  'srpski-vrste-reci': '🔤', 'srpski-gramatika': '📚', 'srpski-pravopis': '✍️',
+  'srpski-citanje': '📖', 'srpski-recnik': '🗣️',
 }
 
+const PREDMETI: Predmet[] = ['matematika', 'srpski']
 const RAZREDI: Razred[] = [3, 4]
 
-const TIPOVI: { vrednost: TipPitanja | 'auto'; naziv: string }[] = [
+const TIPOVI_MATEMATIKA: { vrednost: TipPitanja | 'auto'; naziv: string }[] = [
   { vrednost: 'auto', naziv: 'Automatski izbor' },
   { vrednost: 'numeric', naziv: 'Unos broja' },
   { vrednost: 'single', naziv: 'Ponuđeni odgovori' },
 ]
 
+const TIPOVI_SRPSKI: { vrednost: TipPitanja | 'auto'; naziv: string }[] = [
+  { vrednost: 'auto', naziv: 'Automatski izbor' },
+  { vrednost: 'single', naziv: 'Ponuđeni odgovori' },
+  { vrednost: 'truefalse', naziv: 'Tačno / netačno' },
+]
+
 export function Generator() {
   const navigate = useNavigate()
   const [oblasti, setOblasti] = useState<Oblast[]>([])
+  const [predmet, setPredmet] = useState<Predmet>('matematika')
   const [razred, setRazred] = useState<Razred>(3)
   const [topicSlugovi, setTopicSlugovi] = useState<string[]>(['sabiranje'])
   const [difficulty, setDifficulty] = useState<Tezina>(3)
@@ -63,13 +80,36 @@ export function Generator() {
   useEffect(() => { listajOblasti().then(setOblasti).catch(() => {}) }, [])
 
   const podrzane = podrzaneOblasti()
-  // Samo oblasti aktivnog razreda — sprečava da se 3. i 4. razred pomešaju u istom kvizu.
-  const podrzaneRazreda = podrzane.filter((s) => oblasti.some((o) => o.slug === s && o.grade === razred))
+  // Samo oblasti aktivnog predmeta i razreda — kviz ne sme da ih meša.
+  const podrzaneRazreda = podrzane.filter((s) => oblasti.some(
+    (o) => o.slug === s && o.subject === predmet && o.grade === razred,
+  ))
+
+  function promeniPredmet(p: Predmet) {
+    setPredmet(p)
+    setType('auto')
+    setWordProblems(false)
+    const trenutniRazredJePodrzan = podrzane.some((s) => oblasti.some(
+      (o) => o.slug === s && o.subject === p && o.grade === razred,
+    ))
+    const ciljniRazred = trenutniRazredJePodrzan
+      ? razred
+      : (RAZREDI.find((r) => podrzane.some((s) => oblasti.some(
+          (o) => o.slug === s && o.subject === p && o.grade === r,
+        ))) ?? razred)
+    setRazred(ciljniRazred)
+    const vazeci = podrzane.filter((s) => oblasti.some(
+      (o) => o.slug === s && o.subject === p && o.grade === ciljniRazred,
+    ))
+    setTopicSlugovi(vazeci.slice(0, 1))
+  }
 
   function promeniRazred(r: Razred) {
     setRazred(r)
-    // Teme iz drugog razreda više ne bi bile validne za generisanje.
-    setTopicSlugovi((prev) => prev.filter((s) => oblasti.some((o) => o.slug === s && o.grade === r)))
+    const vazeci = podrzane.filter((s) => oblasti.some(
+      (o) => o.slug === s && o.subject === predmet && o.grade === r,
+    ))
+    setTopicSlugovi(vazeci.slice(0, 1))
   }
 
   function preklopiOblast(slug: string) {
@@ -124,6 +164,21 @@ export function Generator() {
       </p>
 
       <div className="kartica razmak-dole gen-forma">
+        <div className="gen-sekcija gen-sekcija--razred">
+          <p className="gen-naslov razmak-dole">Predmet</p>
+          <div className="segment" role="radiogroup" aria-label="Predmet">
+            {PREDMETI.map((p) => (
+              <button
+                key={p} type="button" role="radio" aria-checked={predmet === p}
+                className={`segment-dugme ${predmet === p ? 'segment-dugme--izabran' : ''}`}
+                onClick={() => promeniPredmet(p)}
+              >
+                {NAZIVI_PREDMETA[p]}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div className="gen-sekcija gen-sekcija--razred">
           <p className="gen-naslov razmak-dole">Razred</p>
           <div className="segment" role="radiogroup" aria-label="Razred">
@@ -189,7 +244,7 @@ export function Generator() {
             <div className="polje" style={{ flex: 2 }}>
               <label>Tip pitanja</label>
               <div className="segment" role="radiogroup" aria-label="Tip pitanja">
-                {TIPOVI.map((t) => (
+                {(predmet === 'srpski' ? TIPOVI_SRPSKI : TIPOVI_MATEMATIKA).map((t) => (
                   <button
                     key={t.vrednost} type="button" role="radio" aria-checked={type === t.vrednost}
                     className={`segment-dugme ${type === t.vrednost ? 'segment-dugme--izabran' : ''}`}
@@ -204,10 +259,12 @@ export function Generator() {
         </div>
 
         <div className="gen-sekcija gen-sekcija--opcije">
-          <label className="stiklir">
-            <input type="checkbox" checked={wordProblems} onChange={(e) => setWordProblems(e.target.checked)} />
-            Tekstualni zadaci (priča umesto golog izraza)
-          </label>
+          {predmet === 'matematika' && (
+            <label className="stiklir">
+              <input type="checkbox" checked={wordProblems} onChange={(e) => setWordProblems(e.target.checked)} />
+              Tekstualni zadaci (priča umesto golog izraza)
+            </label>
+          )}
           <label className="stiklir">
             <input type="checkbox" checked={allowRepeats} onChange={(e) => setAllowRepeats(e.target.checked)} />
             Dozvoli ponavljanje sličnih zadataka

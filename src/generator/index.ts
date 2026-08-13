@@ -14,6 +14,11 @@ import { oduzimanje } from './moduli/oduzimanje.ts'
 import { poredjenje } from './moduli/poredjenje.ts'
 import { rimski } from './moduli/rimski.ts'
 import { sabiranje } from './moduli/sabiranje.ts'
+import { srpskiCitanje } from './moduli/srpskiCitanje.ts'
+import { srpskiGramatika } from './moduli/srpskiGramatika.ts'
+import { srpskiPravopis } from './moduli/srpskiPravopis.ts'
+import { srpskiRecnik } from './moduli/srpskiRecnik.ts'
+import { srpskiVrsteReci } from './moduli/srpskiVrsteReci.ts'
 import { sabiranje4 } from './moduli4/sabiranje4.ts'
 import { oduzimanje4 } from './moduli4/oduzimanje4.ts'
 import { mnozenje4 } from './moduli4/mnozenje4.ts'
@@ -35,6 +40,8 @@ const MODULI: TopicGenerator[] = [
   // 4. razred
   sabiranje4, oduzimanje4, mnozenje4, deljenje4, veliki4, kombinovane4,
   jednacine4, nejednacine4, povrsina4, zapremina4, razlomci4, tela4, decimal4,
+  // Srpski jezik, 3. razred
+  srpskiVrsteReci, srpskiGramatika, srpskiPravopis, srpskiCitanje, srpskiRecnik,
 ]
 
 export const REGISTAR = new Map<string, TopicGenerator>(MODULI.map((m) => [m.slug, m]))
