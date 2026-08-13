@@ -1,6 +1,6 @@
 // Okvir administratorskog dela: navigacija + zaštita prijavom (RequireAuth)
 import { useCallback, useEffect, useState } from 'react'
-import { NavLink, Navigate, Outlet, useLocation } from 'react-router-dom'
+import { NavLink, Navigate, Outlet } from 'react-router-dom'
 import {
   listajAdminObavestenja, oznaciAdminObavestenjaProcitanim,
 } from '../lib/api'
@@ -13,7 +13,6 @@ import { ObavestenjaZvonce } from './ObavestenjaZvonce'
 import './adminLayout.css'
 
 export function AdminLayout() {
-  const lokacija = useLocation()
   const { session, ucitava, odjavi } = useAuth()
   const [inbox, setInbox] = useState<InboxObavestenja>({ obavestenja: [], neprocitano: 0 })
 
@@ -57,30 +56,15 @@ export function AdminLayout() {
   if (ucitava) return <Loader tekst="Provera prijave…" />
   if (!session) return <Navigate to="/prijava" replace />
 
-  const pitanjaAktivna = lokacija.pathname.startsWith('/admin/pitanja')
-    || lokacija.pathname.startsWith('/admin/generator')
-  const rezultatiAktivni = lokacija.pathname.startsWith('/admin/rezultati')
-    || lokacija.pathname.startsWith('/admin/statistika-dece')
-
   return (
     <>
       <header className="admin-zaglavlje">
         <div className="admin-zaglavlje-unutra">
           <NavLink to="/admin" end className="admin-logo">🧠 Mozgalica</NavLink>
           <nav className="admin-nav" aria-label="Glavna navigacija">
-            <div className={`admin-nav-grupa ${pitanjaAktivna ? 'admin-nav-grupa--aktivna' : ''}`}>
-              <NavLink to="/admin/pitanja" className="admin-nav-glavna">Pitanja</NavLink>
-              <div className="admin-nav-podsekcije" aria-label="Pitanja — podsekcije">
-                <NavLink to="/admin/generator">Generator</NavLink>
-              </div>
-            </div>
+            <NavLink to="/admin/pitanja">Pitanja</NavLink>
             <NavLink to="/admin/kvizovi">Kvizovi</NavLink>
-            <div className={`admin-nav-grupa ${rezultatiAktivni ? 'admin-nav-grupa--aktivna' : ''}`}>
-              <NavLink to="/admin/rezultati" className="admin-nav-glavna">Rezultati</NavLink>
-              <div className="admin-nav-podsekcije" aria-label="Rezultati — podsekcije">
-                <NavLink to="/admin/statistika-dece">Statistika dece</NavLink>
-              </div>
-            </div>
+            <NavLink to="/admin/rezultati">Rezultati</NavLink>
             <NavLink to="/admin/podesavanja">Podešavanja</NavLink>
           </nav>
           <div className="red">

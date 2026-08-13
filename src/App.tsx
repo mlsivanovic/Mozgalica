@@ -1,5 +1,6 @@
-import { HashRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { HashRouter, Navigate, Route, Routes, useParams } from 'react-router-dom'
 import { AdminLayout } from './components/AdminLayout'
+import { PitanjaSekcija, RezultatiSekcija } from './components/AdminSekcijaTabovi'
 import { AuthProvider } from './lib/auth'
 import { Generator } from './routes/admin/Generator'
 import { KvizDetalj } from './routes/admin/KvizDetalj'
@@ -31,15 +32,22 @@ function App() {
 
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<Kontrolna />} />
-            <Route path="pitanja" element={<PitanjaLista />} />
-            <Route path="generator" element={<Generator />} />
+            <Route path="pitanja" element={<PitanjaSekcija />}>
+              <Route index element={<PitanjaLista />} />
+              <Route path="generator" element={<Generator />} />
+            </Route>
+            <Route path="generator" element={<Navigate to="/admin/pitanja/generator" replace />} />
             <Route path="kvizovi" element={<KvizoviLista />} />
             <Route path="kvizovi/novi" element={<KvizForma />} />
             <Route path="kvizovi/:id" element={<KvizDetalj />} />
-            <Route path="rezultati" element={<Rezultati />} />
-            <Route path="rezultati/:id" element={<RezultatDetalj />} />
-            <Route path="statistika-dece" element={<StatistikaDece />} />
-            <Route path="statistika-dece/:profilId" element={<StatistikaDetetaDetalj />} />
+            <Route path="rezultati" element={<RezultatiSekcija />}>
+              <Route index element={<Rezultati />} />
+              <Route path="statistika" element={<StatistikaDece />} />
+              <Route path="statistika/:profilId" element={<StatistikaDetetaDetalj />} />
+              <Route path=":id" element={<RezultatDetalj />} />
+            </Route>
+            <Route path="statistika-dece" element={<Navigate to="/admin/rezultati/statistika" replace />} />
+            <Route path="statistika-dece/:profilId" element={<PreusmeriStaruStatistiku />} />
             <Route path="podesavanja" element={<Podesavanja />} />
           </Route>
 
@@ -55,6 +63,11 @@ function App() {
       </AuthProvider>
     </HashRouter>
   )
+}
+
+function PreusmeriStaruStatistiku() {
+  const { profilId } = useParams<{ profilId: string }>()
+  return <Navigate to={`/admin/rezultati/statistika/${profilId ?? ''}`} replace />
 }
 
 export default App

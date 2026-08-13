@@ -282,7 +282,7 @@ export function StatistikaDetetaDetalj() {
   if (!statistika?.ok || !statistika.summary || !statistika.rewards) {
     return (
       <div>
-        <Link to="/admin/statistika-dece" className="dugme dugme--senka dugme--malo">← Sva deca</Link>
+        <Link to="/admin/rezultati/statistika" className="dugme dugme--senka dugme--malo">← Statistika</Link>
         <p className="poruka poruka--greska razmak-gore">{greska ?? 'Statistika deteta nije dostupna.'}</p>
       </div>
     )
@@ -298,7 +298,7 @@ export function StatistikaDetetaDetalj() {
     <div className="statistika-detalj">
       <div className="zaglavlje-strane">
         <div className="statistika-detalj-naslov">
-          <Link to="/admin/statistika-dece" className="statistika-nazad">← Sva deca</Link>
+          <Link to="/admin/rezultati/statistika" className="statistika-nazad">← Statistika</Link>
           <div className="statistika-dete-identitet">
             <span className="statistika-dete-avatar statistika-dete-avatar--veliki" aria-hidden="true">{statistika.avatar}</span>
             <div>

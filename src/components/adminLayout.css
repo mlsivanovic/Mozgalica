@@ -17,13 +17,29 @@
 }
 .admin-nav a:hover { background: var(--boja-primarna-svetla); text-decoration: none; }
 .admin-nav a.active { background: var(--boja-primarna); color: var(--boja-na-boji); }
-.admin-nav-grupa { display: flex; align-items: center; gap: 0.1rem; }
-.admin-nav-grupa--aktivna > .admin-nav-glavna {
-  background: var(--boja-primarna); color: var(--boja-na-boji);
+.admin-sekcioni-tabovi {
+  display: flex;
+  gap: 0.25rem;
+  width: fit-content;
+  max-width: 100%;
+  margin-bottom: 1.25rem;
+  padding: 0.25rem;
+  overflow-x: auto;
+  border: 1px solid var(--boja-ivica);
+  border-radius: var(--radius);
+  background: var(--boja-kartica);
 }
-.admin-nav-podsekcije { display: flex; align-items: center; border-left: 1px solid var(--boja-ivica); }
-.admin-nav-podsekcije a { font-size: 0.8rem; padding: 0.35rem 0.55rem; }
-.admin-nav-podsekcije a::before { content: '↳ '; }
+
+.admin-sekcioni-tab {
+  flex: 0 0 auto;
+  padding: 0.5rem 0.9rem;
+  border-radius: calc(var(--radius) - 0.2rem);
+  color: var(--boja-tekst-blagi);
+  font-weight: 700;
+}
+
+.admin-sekcioni-tab:hover { background: var(--boja-primarna-svetla); text-decoration: none; }
+.admin-sekcioni-tab--aktivan { background: var(--boja-primarna); color: var(--boja-na-boji); }
 
 @media (max-width: 640px) {
   .admin-zaglavlje-unutra { padding: 0.5rem 0.8rem; gap: 0.6rem; }
@@ -37,6 +53,5 @@
   }
   .admin-nav::-webkit-scrollbar { display: none; }
   .admin-nav a { flex: 0 0 auto; padding: 0.5rem 0.9rem; }
-  .admin-nav-grupa { flex: 0 0 auto; }
-  .admin-nav-podsekcije a { padding: 0.45rem 0.65rem; }
+  .admin-sekcioni-tabovi { width: 100%; }
 }

@@ -25,7 +25,7 @@ function KarticaStatistikeDeteta({ dete }: { dete: PregledStatistikeDeteta }) {
         <div className="statistika-dete-identitet">
           <span className="statistika-dete-avatar" aria-hidden="true">{dete.avatar}</span>
           <div>
-            <h2><Link to={`/admin/statistika-dece/${dete.profileId}`}>{dete.name}</Link></h2>
+            <h2><Link to={`/admin/rezultati/statistika/${dete.profileId}`}>{dete.name}</Link></h2>
             <p className="malo blago">
               {dete.completedAttempts === 0
                 ? 'Još nema potpuno ocenjenih kvizova.'
@@ -65,7 +65,7 @@ function KarticaStatistikeDeteta({ dete }: { dete: PregledStatistikeDeteta }) {
         </div>
       </div>
 
-      <Link className="dugme dugme--senka dugme--malo statistika-dete-kartica-link" to={`/admin/statistika-dece/${dete.profileId}`}>
+      <Link className="dugme dugme--senka dugme--malo statistika-dete-kartica-link" to={`/admin/rezultati/statistika/${dete.profileId}`}>
         Otvori detaljnu statistiku →
       </Link>
     </article>
@@ -98,7 +98,7 @@ export function StatistikaDece() {
     <div>
       <div className="zaglavlje-strane">
         <div>
-          <h1>Statistika dece</h1>
+          <h1>Statistika</h1>
           <p className="blago razmak-gore">
             Pregled napretka zasnovan je na potpuno ocenjenim kvizovima.
           </p>
