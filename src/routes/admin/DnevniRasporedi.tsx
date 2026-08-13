@@ -9,7 +9,7 @@ import {
 import { formatDatum } from '../../lib/format'
 import {
   NAZIVI_PREDMETA, NAZIVI_RAZREDA, NAZIVI_TEZINA, NAZIVI_TIPOVA,
-  type DnevniRasporedKviza, type Oblast, type ProfilDeteta, type Tezina, type TipPitanja,
+  type DnevniRasporedKviza, type IzvorDnevnogKviza, type Oblast, type ProfilDeteta, type Tezina, type TipPitanja,
 } from '../../types/db'
 import './generator.css'
 
@@ -64,6 +64,12 @@ function opisSledeceg(raspored: DnevniRasporedKviza): string {
   return `${datum.toLocaleDateString('sr-Latn-RS', { day: 'numeric', month: 'long' })} u ${raspored.daily_time.slice(0, 5)}`
 }
 
+function nazivIzvora(izvor: IzvorDnevnogKviza): string {
+  if (izvor === 'generator') return 'Generator'
+  if (izvor === 'combined') return 'Kombinovano'
+  return 'Banka pitanja'
+}
+
 export function DnevniRasporedi({
   rasporedi, onPromena,
 }: {
@@ -91,9 +97,12 @@ export function DnevniRasporedi({
     return oblasti.filter((oblast) =>
       oblast.subject === forma.subject
       && oblast.grade === forma.grade
-      && (forma.source === 'bank' || podrzane.has(oblast.slug)),
+      && (forma.source !== 'generator' || podrzane.has(oblast.slug)),
     )
   }, [forma, oblasti, podrzane])
+  const kombinovaniDostupan = forma != null
+    && oblasti.some((oblast) => oblast.subject === forma.subject && oblast.grade === forma.grade && podrzane.has(oblast.slug))
+    && oblasti.some((oblast) => oblast.subject === forma.subject && oblast.grade === forma.grade && !podrzane.has(oblast.slug))
 
   useEffect(() => {
     if (!forma || oblastiZaFormu.length === 0) return
@@ -113,16 +122,15 @@ export function DnevniRasporedi({
     const subject = izmene.subject ?? forma.subject
     const grade = izmene.grade ?? forma.grade
     let source = izmene.source ?? forma.source
-    let teme = oblasti.filter((oblast) =>
-      oblast.subject === subject
-      && oblast.grade === grade
-      && (source === 'bank' || podrzane.has(oblast.slug)),
-    )
-    if (source === 'generator' && teme.length === 0) {
-      source = 'bank'
-      teme = oblasti.filter((oblast) => oblast.subject === subject && oblast.grade === grade)
+    const sveTeme = oblasti.filter((oblast) => oblast.subject === subject && oblast.grade === grade)
+    const generatorskeTeme = sveTeme.filter((oblast) => podrzane.has(oblast.slug))
+    const imaKombinaciju = generatorskeTeme.length > 0 && generatorskeTeme.length < sveTeme.length
+    if (source === 'combined' && !imaKombinaciju) {
+      source = generatorskeTeme.length > 0 ? 'generator' : 'bank'
     }
-    const questionType = source === 'generator' && subject === 'srpski'
+    if (source === 'generator' && generatorskeTeme.length === 0) source = 'bank'
+    const teme = source === 'generator' ? generatorskeTeme : sveTeme
+    const questionType = source !== 'bank' && subject === 'srpski'
       && forma.questionType != null && !['single', 'truefalse'].includes(forma.questionType)
       ? null
       : forma.questionType
@@ -248,9 +256,10 @@ export function DnevniRasporedi({
           <div className="red-polja">
             <div className="polje">
               <label htmlFor="dr-izvor">Izvor pitanja</label>
-              <select id="dr-izvor" value={forma.source} onChange={(e) => promeniKontekst({ source: e.target.value as 'generator' | 'bank' })}>
+              <select id="dr-izvor" value={forma.source} onChange={(e) => promeniKontekst({ source: e.target.value as IzvorDnevnogKviza })}>
                 <option value="generator">Generator</option>
                 <option value="bank">Banka pitanja</option>
+                {kombinovaniDostupan && <option value="combined">Kombinovano (generator + banka)</option>}
               </select>
             </div>
             <div className="polje">
@@ -260,7 +269,7 @@ export function DnevniRasporedi({
             <div className="polje">
               <label htmlFor="dr-tezina">Težina</label>
               <select id="dr-tezina" value={forma.difficulty ?? ''} onChange={(e) => setForma({ ...forma, difficulty: e.target.value ? Number(e.target.value) as Tezina : null })}>
-                <option value="">{forma.source === 'generator' ? 'Podrazumevano (3)' : 'Sve težine'}</option>
+                <option value="">{forma.source !== 'bank' ? 'Podrazumevano (3)' : 'Sve težine'}</option>
                 {Object.entries(NAZIVI_TEZINA).map(([vrednost, naziv]) => <option key={vrednost} value={vrednost}>{naziv}</option>)}
               </select>
             </div>
@@ -269,7 +278,7 @@ export function DnevniRasporedi({
               <select id="dr-tip" value={forma.questionType ?? ''} onChange={(e) => setForma({ ...forma, questionType: e.target.value ? e.target.value as TipPitanja : null })}>
                 <option value="">Automatski / svi tipovi</option>
                 {Object.entries(NAZIVI_TIPOVA)
-                  .filter(([vrednost]) => forma.source !== 'generator' || forma.subject !== 'srpski' || ['single', 'truefalse'].includes(vrednost))
+                  .filter(([vrednost]) => forma.source === 'bank' || forma.subject !== 'srpski' || ['single', 'truefalse'].includes(vrednost))
                   .map(([vrednost, naziv]) => <option key={vrednost} value={vrednost}>{naziv}</option>)}
               </select>
             </div>
@@ -280,13 +289,23 @@ export function DnevniRasporedi({
               <p className="gen-naslov">Oblasti</p>
               <button type="button" className="dugme dugme--senka dugme--malo" onClick={() => setForma({ ...forma, topicIds: oblastiZaFormu.map((oblast) => oblast.id) })}>Izaberi sve</button>
             </div>
+            {forma.source === 'combined' && (
+              <p className="blago malo razmak-dole">
+                Oblasti sa generatorom prave nova pitanja; ostale koriste pitanja iz banke.
+              </p>
+            )}
             <div className="gen-oblasti">
               {oblastiZaFormu.map((oblast) => {
                 const izabrana = forma.topicIds.includes(oblast.id)
                 return (
                   <label key={oblast.id} className={`gen-oblast ${izabrana ? 'gen-oblast--izabrana' : ''}`}>
                     <input type="checkbox" checked={izabrana} onChange={() => preklopiOblast(oblast.id)} />
-                    <span className="gen-oblast-tekst">{oblast.name}</span>
+                    <span className="gen-oblast-tekst">
+                      {oblast.name}
+                      {forma.source === 'combined' && (
+                        <small className="blago"> · {podrzane.has(oblast.slug) ? 'generator' : 'banka'}</small>
+                      )}
+                    </span>
                   </label>
                 )
               })}
@@ -320,7 +339,7 @@ export function DnevniRasporedi({
                 <span className={`bedz ${raspored.is_active ? 'bedz--uspeh' : 'bedz--neutral'}`}>{raspored.is_active ? 'Aktivan' : 'Pauziran'}</span>
               </div>
               <p>{NAZIVI_PREDMETA[raspored.subject]} · {NAZIVI_RAZREDA[raspored.grade]} · {raspored.question_count} pitanja</p>
-              <p className="malo blago">{raspored.source === 'generator' ? 'Generator' : 'Banka pitanja'} · {raspored.topic_slugs.length} {raspored.topic_slugs.length === 1 ? 'oblast' : 'oblasti'}</p>
+              <p className="malo blago">{nazivIzvora(raspored.source)} · {raspored.topic_slugs.length} {raspored.topic_slugs.length === 1 ? 'oblast' : 'oblasti'}</p>
               <p className="malo razmak-gore"><strong>Sledeći:</strong> {opisSledeceg(raspored)}</p>
               <p className="malo blago">Poslednji: {raspored.last_sent_at ? formatDatum(raspored.last_sent_at) : 'još nije poslat'}</p>
               {raspored.last_error && <p className="poruka poruka--greska malo">Poslednja greška: {raspored.last_error}</p>}

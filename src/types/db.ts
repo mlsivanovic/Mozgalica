@@ -95,7 +95,7 @@ export interface Kviz {
   daily_local_date?: string | null
 }
 
-export type IzvorDnevnogKviza = 'generator' | 'bank'
+export type IzvorDnevnogKviza = 'generator' | 'bank' | 'combined'
 
 // Prikaz jednog trajnog rasporeda. Oblasti ostaju kao ID-jevi radi izmene, a
 // slugovi služe za čitljiv rezime bez dodatnih poziva bazi.

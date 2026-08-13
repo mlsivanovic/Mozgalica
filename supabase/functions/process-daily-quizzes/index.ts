@@ -1,12 +1,13 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2'
-import { generisi } from '../../../src/generator/index.ts'
+import { generisi, podrzaneOblasti } from '../../../src/generator/index.ts'
 import { napraviRng, promesaj } from '../../../src/generator/random.ts'
 import type { GenerisanoPitanje } from '../../../src/generator/types.ts'
+import { napraviPlanOblastiKviza } from '../../../src/lib/raspodelaKviza.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
-type Izvor = 'generator' | 'bank'
+type Izvor = 'generator' | 'bank' | 'combined'
 
 interface DnevniRad {
   run_id: string
@@ -58,6 +59,16 @@ interface SnapshotPitanje {
   points: number
   manual_review: boolean
 }
+
+interface Tema {
+  id: string
+  slug: string
+  name: string
+}
+
+type SnapshotBezPozicije = Omit<SnapshotPitanje, 'position'>
+
+const PODRZANI_GENERATORI = new Set(podrzaneOblasti())
 
 function odgovor(tekst: string, status = 200) {
   return new Response(JSON.stringify(tekst), {
@@ -118,47 +129,91 @@ function izaberiIzBanke(
     .map(({ pitanje }) => pitanje)
 }
 
+function generisiZaOblast(
+  rad: DnevniRad,
+  topicSlug: string,
+  count: number,
+  seed: number,
+  indeks: number,
+  prethodni: Set<string>,
+): GenerisanoPitanje[] {
+  const konfiguracija = {
+    topicSlug,
+    difficulty: (rad.difficulty ?? 3) as 1 | 2 | 3 | 4 | 5,
+    count,
+    type: (rad.question_type ?? 'auto') as 'auto' | 'single' | 'multi' | 'numeric' | 'text' | 'truefalse' | 'matching',
+    wordProblems: false,
+    allowRepeats: false,
+    seed: seed + indeks,
+    excludedSignatures: prethodni,
+  }
+  let pitanja = generisi(konfiguracija).questions
+
+  // Kada je mali prostor zadataka već iskorišćen, dopuni kviz postojećim
+  // kombinacijama, ali i dalje bez duplikata unutar istog dnevnog kviza.
+  if (pitanja.length < count) {
+    const dopuna = generisi({ ...konfiguracija, excludedSignatures: undefined, seed: seed + 1000 + indeks }).questions
+    const vidjena = new Set(pitanja.map((p) => p.signature))
+    pitanja = [...pitanja, ...dopuna.filter((p) => !vidjena.has(p.signature))].slice(0, count)
+  }
+  pitanja.forEach((pitanje) => prethodni.add(pitanje.signature))
+  return pitanja
+}
+
 function generisiPitanja(rad: DnevniRad, seed: number): GenerisanoPitanje[] {
   const prethodni = new Set(rad.used_question_keys)
-  const sva: GenerisanoPitanje[] = []
-  const brojOblasti = rad.topic_slugs.length
-  if (brojOblasti === 0) return sva
-
-  for (let indeks = 0; indeks < brojOblasti; indeks++) {
-    const brojZaOblast = Math.floor(rad.question_count / brojOblasti)
-      + (indeks < rad.question_count % brojOblasti ? 1 : 0)
-    if (brojZaOblast === 0) continue
-
-    const konfiguracija = {
-      topicSlug: rad.topic_slugs[indeks],
-      difficulty: (rad.difficulty ?? 3) as 1 | 2 | 3 | 4 | 5,
-      count: brojZaOblast,
-      type: (rad.question_type ?? 'auto') as 'auto' | 'single' | 'multi' | 'numeric' | 'text' | 'truefalse' | 'matching',
-      wordProblems: false,
-      allowRepeats: false,
-      seed: seed + indeks,
-      excludedSignatures: prethodni,
-    }
-    let pitanja = generisi(konfiguracija).questions
-
-    // Kada je mali prostor zadataka već iskorišćen, dopuni kviz postojećim
-    // kombinacijama, ali i dalje bez duplikata unutar istog dnevnog kviza.
-    if (pitanja.length < brojZaOblast) {
-      const dopuna = generisi({ ...konfiguracija, excludedSignatures: undefined, seed: seed + 1000 + indeks }).questions
-      const vidjena = new Set(pitanja.map((p) => p.signature))
-      pitanja = [...pitanja, ...dopuna.filter((p) => !vidjena.has(p.signature))].slice(0, brojZaOblast)
-    }
-    pitanja.forEach((pitanje) => prethodni.add(pitanje.signature))
-    sva.push(...pitanja)
-  }
-
+  const plan = napraviPlanOblastiKviza(
+    rad.topic_slugs, rad.question_count, PODRZANI_GENERATORI, 'generator',
+  )
+  const sva = plan.flatMap((stavka, indeks) => generisiZaOblast(
+    rad, stavka.topicSlug, stavka.questionCount, seed, indeks, prethodni,
+  ))
   return promesaj(napraviRng(seed + 2000), sva)
+}
+
+function snapshotIzBanke(pitanje: PitanjeIzBanke, tema: Tema): SnapshotBezPozicije {
+  return {
+    source_question_id: pitanje.id,
+    topic_id: pitanje.topic_id,
+    topic_name: tema.name,
+    type: pitanje.type,
+    text: pitanje.text,
+    options: pitanje.options,
+    correct: pitanje.correct,
+    explanation: pitanje.explanation,
+    hint: pitanje.hint,
+    points: pitanje.points,
+    manual_review: pitanje.manual_review,
+  }
+}
+
+function snapshotIzGeneratora(pitanje: GenerisanoPitanje, tema: Tema): SnapshotBezPozicije {
+  return {
+    source_question_id: null,
+    topic_id: tema.id,
+    topic_name: tema.name,
+    type: pitanje.type,
+    text: pitanje.text,
+    options: pitanje.options,
+    correct: pitanje.correct,
+    explanation: pitanje.explanation || null,
+    hint: pitanje.hint,
+    points: pitanje.points,
+    manual_review: false,
+  }
 }
 
 async function obradi(rad: DnevniRad, supabase: ReturnType<typeof createClient>) {
   const seed = await seedZa(rad)
   let snapshot: SnapshotPitanje[]
   let kljucevi: string[]
+  const { data: teme, error: greskaTema } = await supabase
+    .from('topics')
+    .select('id, slug, name')
+    .in('id', rad.topic_ids)
+  if (greskaTema) throw new Error(greskaTema.message)
+  const mapaPoId = new Map((teme ?? []).map((tema) => [tema.id as string, tema as Tema]))
+  const mapaPoSlugu = new Map((teme ?? []).map((tema) => [tema.slug as string, tema as Tema]))
 
   if (rad.source === 'bank') {
     const izabrana = izaberiIzBanke(
@@ -167,48 +222,65 @@ async function obradi(rad: DnevniRad, supabase: ReturnType<typeof createClient>)
     if (izabrana.length === 0) {
       throw new Error('Nema pitanja u banci za izabrane oblasti, težinu i tip.')
     }
-    const mapaOblasti = new Map(rad.topic_ids.map((id, indeks) => [id, rad.topic_slugs[indeks] ?? 'Oblast']))
     snapshot = izabrana.map((pitanje, position) => ({
-      source_question_id: pitanje.id,
+      ...snapshotIzBanke(pitanje, mapaPoId.get(pitanje.topic_id) ?? {
+        id: pitanje.topic_id, slug: 'oblast', name: 'Oblast',
+      }),
       position,
-      topic_id: pitanje.topic_id,
-      topic_name: mapaOblasti.get(pitanje.topic_id) ?? 'Oblast',
-      type: pitanje.type,
-      text: pitanje.text,
-      options: pitanje.options,
-      correct: pitanje.correct,
-      explanation: pitanje.explanation,
-      hint: pitanje.hint,
-      points: pitanje.points,
-      manual_review: pitanje.manual_review,
     }))
     kljucevi = izabrana.map((pitanje) => pitanje.id)
-  } else {
+  } else if (rad.source === 'generator') {
     const generisana = generisiPitanja(rad, seed)
-    if (generisana.length === 0) {
-      throw new Error('Generator nije uspeo da napravi nijedno pitanje za izabrane oblasti.')
+    if (generisana.length < rad.question_count) {
+      throw new Error(`Generator je napravio ${generisana.length} od potrebnih ${rad.question_count} pitanja.`)
     }
-    const { data: teme, error: greskaTema } = await supabase
-      .from('topics')
-      .select('id, slug, name')
-      .in('id', rad.topic_ids)
-    if (greskaTema) throw new Error(greskaTema.message)
-    const mapaOblasti = new Map((teme ?? []).map((tema) => [tema.slug as string, tema]))
-    snapshot = generisana.map((pitanje, position) => ({
-      source_question_id: null,
-      position,
-      topic_id: mapaOblasti.get(pitanje.topicSlug)?.id ?? null,
-      topic_name: mapaOblasti.get(pitanje.topicSlug)?.name ?? pitanje.topicSlug,
-      type: pitanje.type,
-      text: pitanje.text,
-      options: pitanje.options,
-      correct: pitanje.correct,
-      explanation: pitanje.explanation || null,
-      hint: pitanje.hint,
-      points: pitanje.points,
-      manual_review: false,
-    }))
+    snapshot = generisana.map((pitanje, position) => {
+      const tema = mapaPoSlugu.get(pitanje.topicSlug)
+      if (!tema) throw new Error(`Oblast „${pitanje.topicSlug}“ nije pronađena.`)
+      return { ...snapshotIzGeneratora(pitanje, tema), position }
+    })
     kljucevi = generisana.map((pitanje) => pitanje.signature)
+  } else {
+    const plan = napraviPlanOblastiKviza(
+      rad.topic_slugs, rad.question_count, PODRZANI_GENERATORI, 'combined',
+    )
+    const pitanjaIzBanke = await ucitajPitanjaIzBanke(supabase, rad)
+    const prethodni = new Set(rad.used_question_keys)
+    const stavke: Array<{ snapshot: SnapshotBezPozicije; key: string }> = []
+
+    for (let indeks = 0; indeks < plan.length; indeks++) {
+      const planirana = plan[indeks]
+      const tema = mapaPoSlugu.get(planirana.topicSlug)
+      if (!tema) throw new Error(`Oblast „${planirana.topicSlug}“ nije pronađena.`)
+
+      if (planirana.source === 'generator') {
+        const pitanja = generisiZaOblast(
+          rad, planirana.topicSlug, planirana.questionCount, seed, indeks, prethodni,
+        )
+        if (pitanja.length < planirana.questionCount) {
+          throw new Error(`Generator za oblast „${tema.name}“ napravio je ${pitanja.length} od potrebnih ${planirana.questionCount} pitanja.`)
+        }
+        stavke.push(...pitanja.map((pitanje) => ({
+          snapshot: snapshotIzGeneratora(pitanje, tema), key: pitanje.signature,
+        })))
+        continue
+      }
+
+      const kandidati = pitanjaIzBanke.filter((pitanje) => pitanje.topic_id === tema.id)
+      const izabrana = izaberiIzBanke(
+        kandidati, rad.used_question_keys, planirana.questionCount, seed + indeks,
+      )
+      if (izabrana.length < planirana.questionCount) {
+        throw new Error(`U banci za oblast „${tema.name}“ pronađeno je ${izabrana.length} od potrebnih ${planirana.questionCount} pitanja.`)
+      }
+      stavke.push(...izabrana.map((pitanje) => ({
+        snapshot: snapshotIzBanke(pitanje, tema), key: pitanje.id,
+      })))
+    }
+
+    const promesane = promesaj(napraviRng(seed + 2000), stavke)
+    snapshot = promesane.map((stavka, position) => ({ ...stavka.snapshot, position }))
+    kljucevi = promesane.map((stavka) => stavka.key)
   }
 
   const { error } = await supabase.rpc('complete_daily_quiz_run', {
