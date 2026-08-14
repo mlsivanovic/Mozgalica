@@ -1,27 +1,27 @@
-// Testovi generatora srpskog jezika: jednoznačni odgovori, nivoi i determinizam.
+// Testovi generatora srpskog jezika: ukucani odgovori, samostalne tvrdnje,
+// fiksan najteži nivo (težina je uklonjena) i determinizam.
 import { describe, expect, it } from 'vitest'
-import type { Opcija } from '../types/db.ts'
 import { generisi } from './index.ts'
 import type { GeneratorConfig, GenerisanoPitanje } from './types.ts'
 
 const OBLASTI = [
   'srpski-vrste-reci',
   'srpski-gramatika',
-  'srpski-pravopis',
   'srpski-citanje',
   'srpski-recnik',
   'srpski-gramatika-4',
-  'srpski-pravopis-4',
   'srpski-recnik-4',
   'srpski-citanje-4',
 ] as const
 
+const TIPOVI = ['text', 'truefalse', 'numeric'] as const
+
 function cfg(delimicno: Partial<GeneratorConfig>): GeneratorConfig {
   return {
     topicSlug: 'srpski-gramatika',
-    difficulty: 1,
+    difficulty: 3,
     count: 8,
-    type: 'single',
+    type: 'auto',
     wordProblems: false,
     allowRepeats: false,
     seed: 42,
@@ -29,144 +29,140 @@ function cfg(delimicno: Partial<GeneratorConfig>): GeneratorConfig {
   }
 }
 
-function tekstTacnogOdgovora(pitanje: GenerisanoPitanje): string {
-  const options = pitanje.options as Opcija[]
-  const id = (pitanje.correct as { optionId: string }).optionId
-  return options.find((opcija) => opcija.id === id)!.text
+function accept(pitanje: GenerisanoPitanje): string[] {
+  return (pitanje.correct as { accept: string[] }).accept
+}
+
+// Potpis bez teksta primera — „ona“ se javlja u dva konteksta pa se porede
+// same kombinacije kategorija (lice/broj/rod), ne ceo tekst primera
+function potpisBezPrimer(pitanje: GenerisanoPitanje): string {
+  return pitanje.signature.split(':').slice(0, 3).join(':')
 }
 
 describe('generatori srpskog jezika', () => {
-  it('svaka oblast na svakom nivou pravi automatski ocenljiva pitanja', () => {
+  it('svaka oblast pravi pitanja isključivo dozvoljenih tipova, bez obzira na težinu', () => {
     for (const oblast of OBLASTI) {
-      for (const difficulty of [1, 2, 3, 4, 5] as const) {
+      for (const difficulty of [1, 3, 5] as const) {
         const rezultat = generisi(cfg({ topicSlug: oblast, difficulty, count: 6, seed: 100 + difficulty }))
         expect(rezultat.questions, `${oblast}, nivo ${difficulty}`).toHaveLength(6)
         for (const pitanje of rezultat.questions) {
           expect(pitanje.topicSlug).toBe(oblast)
-          expect(pitanje.difficulty).toBe(difficulty)
-          expect(pitanje.type).toBe('single')
+          expect(TIPOVI).toContain(pitanje.type)
+          expect(pitanje.type).not.toBe('single')
+          // Težina je uklonjena: sva pitanja idu na najtežem nivou
+          expect(pitanje.difficulty).toBe(5)
+          expect(pitanje.points).toBe(5)
           expect(pitanje.text.length).toBeGreaterThan(10)
           expect(pitanje.explanation.length).toBeGreaterThan(5)
+          expect(pitanje.text).not.toContain('undefined')
         }
       }
     }
   })
 
-  it('svaka težina daje tačno 4 međusobno različite opcije', () => {
+  it('tekstualna pitanja imaju listu prihvaćenih odgovora bez duplikata', () => {
     for (const oblast of OBLASTI) {
-      for (const difficulty of [1, 2, 3, 4, 5] as const) {
-        const pitanja = generisi(cfg({ topicSlug: oblast, difficulty, count: 8, seed: 200 + difficulty })).questions
-        expect(pitanja, `${oblast}, nivo ${difficulty}`).toHaveLength(8)
-        // Rod imenice ima samo tri moguća odgovora — prirodan izuzetak
-        const ocekivano = oblast === 'srpski-gramatika' && difficulty === 1 ? 3 : 4
-        for (const pitanje of pitanja) {
-          const options = pitanje.options as Opcija[]
-          expect(options, `${oblast}, nivo ${difficulty}: ${pitanje.signature}`).toHaveLength(ocekivano)
-          expect(new Set(options.map((opcija) => opcija.text)).size).toBe(ocekivano)
-          expect(options.map((opcija) => opcija.text)).toContain(tekstTacnogOdgovora(pitanje))
-        }
-      }
-    }
-  })
-
-  it('izričit izbor tačno/netačno poštuje se u svim oblastima', () => {
-    for (const oblast of OBLASTI) {
-      const pitanja = generisi(cfg({ topicSlug: oblast, difficulty: 3, count: 8, type: 'truefalse', seed: 91 })).questions
-      expect(pitanja).toHaveLength(8)
-      for (const pitanje of pitanja) {
-        expect(pitanje.type).toBe('truefalse')
+      const pitanja = generisi(cfg({ topicSlug: oblast, count: 15, seed: 11 })).questions
+      for (const pitanje of pitanja.filter((p) => p.type === 'text')) {
         expect(pitanje.options).toBeNull()
-        expect(pitanje.text.length).toBeGreaterThan(10)
-        expect(pitanje.text).not.toContain('undefined')
-        expect(typeof (pitanje.correct as { value: boolean }).value).toBe('boolean')
+        const lista = accept(pitanje)
+        expect(lista.length).toBeGreaterThan(0)
+        for (const odgovor of lista) expect(odgovor.trim().length).toBeGreaterThan(0)
+        // Duplikati po normalizovanom obliku (velika/mala slova, dijakritici)
+        const normalizovano = lista.map((odgovor) =>
+          odgovor.toLowerCase().replaceAll(/[čć]/g, 'c').replaceAll('š', 's').replaceAll('ž', 'z').replaceAll('đ', 'd').replace(/\s+/g, ' ').trim())
+        expect(new Set(normalizovano).size).toBe(normalizovano.length)
       }
     }
   })
 
-  it('nivoi menjaju vrstu zadatka kod vrsta reči, gramatike i rečnika', () => {
-    expect(generisi(cfg({ topicSlug: 'srpski-vrste-reci', difficulty: 1, count: 1 })).questions[0].signature).toContain(':rec:')
-    expect(generisi(cfg({ topicSlug: 'srpski-vrste-reci', difficulty: 4, count: 1 })).questions[0].signature).toContain(':broj:')
-    expect(generisi(cfg({ topicSlug: 'srpski-vrste-reci', difficulty: 5, count: 1 })).questions[0].signature).toContain(':redosled:')
+  it('tačno/netačno tvrdnje su samostalne i jednoznačne', () => {
+    for (const oblast of OBLASTI) {
+      const pitanja = generisi(cfg({ topicSlug: oblast, count: 12, type: 'truefalse', seed: 91 })).questions
+      expect(pitanja.length).toBeGreaterThan(0)
+      for (const pitanje of pitanja) {
+        if (pitanje.type !== 'truefalse') continue
+        expect(pitanje.options).toBeNull()
+        expect(typeof (pitanje.correct as { value: boolean }).value).toBe('boolean')
+        // Tvrdnja ne sme da visi u praznini (npr. „pripada ovoj porodici reči“)
+        expect(pitanje.text).not.toMatch(/\bovoj\b/)
+        expect(pitanje.text).toContain('„')
+        expect(pitanje.text).not.toContain('undefined')
+      }
+    }
+  })
 
-    expect(generisi(cfg({ topicSlug: 'srpski-gramatika', difficulty: 1, count: 1 })).questions[0].signature).toContain(':rod:')
-    expect(generisi(cfg({ topicSlug: 'srpski-gramatika', difficulty: 2, count: 1 })).questions[0].signature).toContain(':broj:')
-    expect(generisi(cfg({ topicSlug: 'srpski-gramatika', difficulty: 5, count: 1 })).questions[0].signature).toContain(':subjekat-predikat:')
+  it('čitanje uvek traži ukucan odgovor, čak i kad je izabran tačno/netačno', () => {
+    for (const oblast of ['srpski-citanje', 'srpski-citanje-4'] as const) {
+      for (const type of ['auto', 'text', 'truefalse'] as const) {
+        const pitanja = generisi(cfg({ topicSlug: oblast, count: 8, type, seed: 55 })).questions
+        expect(pitanja).toHaveLength(8)
+        for (const pitanje of pitanja) {
+          expect(pitanje.type).toBe('text')
+          expect(pitanje.text).toContain('Pročitaj tekst:')
+          expect(accept(pitanje).length).toBeGreaterThan(0)
+        }
+      }
+    }
+  })
 
-    expect(generisi(cfg({ topicSlug: 'srpski-recnik', difficulty: 1, count: 1 })).questions[0].signature).toContain(':antonim:')
-    expect(generisi(cfg({ topicSlug: 'srpski-recnik', difficulty: 3, count: 1 })).questions[0].signature).toContain(':porodica:')
-    expect(generisi(cfg({ topicSlug: 'srpski-recnik', difficulty: 5, count: 1 })).questions[0].signature).toContain(':izraz:')
+  it('ime glavnog lika iz čitanja zaista se nalazi u tekstu priče', () => {
+    for (const oblast of ['srpski-citanje', 'srpski-citanje-4'] as const) {
+      const pitanja = generisi(cfg({ topicSlug: oblast, count: 12, seed: 77 })).questions
+      const oImenu = pitanja.filter((pitanje) => pitanje.signature.endsWith(':ko'))
+      expect(oImenu.length).toBeGreaterThan(0)
+      for (const pitanje of oImenu) {
+        const telo = pitanje.text.split('\n\n')[1] ?? ''
+        expect(telo).toContain(accept(pitanje)[0])
+      }
+    }
+  })
 
-    expect(generisi(cfg({ topicSlug: 'srpski-gramatika-4', difficulty: 3, count: 1 })).questions[0].signature).toContain(':glagol-vreme-lice-broj:')
+  it('brojanje reči u rečenici daje brojčani unos', () => {
+    const pitanja = generisi(cfg({ topicSlug: 'srpski-vrste-reci', count: 10, type: 'numeric', seed: 33 })).questions
+    expect(pitanja).toHaveLength(10)
+    for (const pitanje of pitanja) {
+      expect(pitanje.type).toBe('numeric')
+      const vrednost = (pitanje.correct as { value: number }).value
+      expect(vrednost).toBeGreaterThanOrEqual(1)
+      expect(vrednost).toBeLessThanOrEqual(3)
+      expect(pitanje.text).toMatch(/Koliko (imenica|glagola|prideva) ima/)
+    }
+  })
+
+  it('ukucani tip poštuje se svuda gde postoji', () => {
+    for (const oblast of OBLASTI) {
+      if (oblast === 'srpski-vrste-reci') continue
+      const pitanja = generisi(cfg({ topicSlug: oblast, count: 8, type: 'text', seed: 21 })).questions
+      for (const pitanje of pitanja) expect(pitanje.type).toBe('text')
+    }
   })
 
   it('zamenica „ona“ daje različite potpise za ženski rod jednine i srednji rod množine', () => {
     const potpisi = new Set<string>()
-    for (let seed = 1; seed <= 30; seed++) {
-      const pitanja = generisi(cfg({ topicSlug: 'srpski-gramatika-4', difficulty: 2, count: 10, seed })).questions
-      for (const pitanje of pitanja) potpisi.add(pitanje.signature)
-    }
-    const one = [...potpisi].filter((potpis) => potpis.includes(':ona:'))
-    expect(one.length).toBe(2)
-    expect(one[0]).not.toBe(one[1])
-  })
-
-  it('distraktori pitanja čitanja nisu potkrepljeni tekstom priče', () => {
-    for (const oblast of ['srpski-citanje', 'srpski-citanje-4'] as const) {
-      for (const difficulty of [1, 2, 3, 4, 5] as const) {
-        const pitanja = generisi(cfg({ topicSlug: oblast, difficulty, count: 12, seed: 31 + difficulty })).questions
-        for (const pitanje of pitanja) {
-          const delovi = pitanje.text.split('\n\n')
-          const telo = delovi[1] ?? ''
-          const tacan = tekstTacnogOdgovora(pitanje)
-          const netacni = (pitanje.options as Opcija[]).map((opcija) => opcija.text).filter((tekst) => tekst !== tacan)
-          for (const netacan of netacni) {
-            expect(telo.includes(netacan), `${oblast} ${pitanje.signature}: „${netacan}“ se nalazi u tekstu priče`).toBe(false)
-          }
-        }
-      }
-    }
-  })
-
-  it('distraktori se razlikuju od pitanja do pitanja iste vrste', () => {
-    const trojke = new Set<string>()
-    for (let seed = 1; seed <= 15; seed++) {
-      const pitanja = generisi(cfg({ topicSlug: 'srpski-citanje', difficulty: 1, count: 5, seed })).questions
+    for (let seed = 1; seed <= 40; seed++) {
+      const pitanja = generisi(cfg({ topicSlug: 'srpski-gramatika-4', count: 10, seed })).questions
       for (const pitanje of pitanja) {
-        if (!pitanje.text.endsWith('Ko je glavni lik u tekstu?')) continue
-        const tacan = tekstTacnogOdgovora(pitanje)
-        const netacni = (pitanje.options as Opcija[])
-          .map((opcija) => opcija.text)
-          .filter((tekst) => tekst !== tacan)
-          .sort()
-        trojke.add(netacni.join('|'))
+        if (pitanje.signature.includes(':ona:')) potpisi.add(potpisBezPrimer(pitanje))
       }
     }
-    // Sa fiksnim distraktorima iz početka liste bilo bi svega dva-tri različita tripleta
-    expect(trojke.size).toBeGreaterThanOrEqual(5)
+    // „ona“ (jednina, ženski rod) i „ona“ (množina, srednji rod) su dva zadatka
+    expect(potpisi.size).toBeGreaterThanOrEqual(2)
   })
 
   it('bez ponavljanja vraća najviše onoliko pitanja koliko ima različitih zadataka', () => {
-    // Izvedene reči u 4. razredu: 14 različitih osnova
-    const rezultat = generisi(cfg({ topicSlug: 'srpski-recnik-4', difficulty: 3, count: 20, seed: 7 }))
-    expect(rezultat.questions).toHaveLength(14)
+    // Složenice (12×2) + izvedene reči (14) = 38 ukucanih zadataka rečnika 4. razreda
+    const rezultat = generisi(cfg({ topicSlug: 'srpski-recnik-4', count: 50, type: 'text', seed: 7 }))
+    expect(rezultat.questions).toHaveLength(38)
     expect(rezultat.warning).not.toBeNull()
-    expect(new Set(rezultat.questions.map((pitanje) => pitanje.signature)).size).toBe(14)
+    expect(new Set(rezultat.questions.map((pitanje) => pitanje.signature)).size).toBe(38)
   })
 
   it('isti seed daje potpuno isti skup pitanja', () => {
     for (const oblast of OBLASTI) {
-      const prvi = generisi(cfg({ topicSlug: oblast, difficulty: 4, seed: 123 }))
-      const drugi = generisi(cfg({ topicSlug: oblast, difficulty: 4, seed: 123 }))
+      const prvi = generisi(cfg({ topicSlug: oblast, seed: 123 }))
+      const drugi = generisi(cfg({ topicSlug: oblast, seed: 123 }))
       expect(prvi).toEqual(drugi)
-    }
-  })
-
-  it('pitanja čitanja uvek sadrže tekst i različite potpise', () => {
-    for (const oblast of ['srpski-citanje', 'srpski-citanje-4'] as const) {
-      const pitanja = generisi(cfg({ topicSlug: oblast, difficulty: 4, count: 12, seed: 77 })).questions
-      expect(pitanja).toHaveLength(12)
-      expect(new Set(pitanja.map((pitanje) => pitanje.signature)).size).toBe(12)
-      for (const pitanje of pitanja) expect(pitanje.text).toContain('Pročitaj tekst:')
     }
   })
 })

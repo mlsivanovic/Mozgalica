@@ -1,63 +1,74 @@
-// Generator: rečnik — antonimi, sinonimi, porodice reči i značenja izraza.
+// Generator: rečnik — antonimi, sinonimi, porodice reči i umanjenice se
+// ukucaju; značenja izraza se proveravaju tačno/netačno tvrdnjama.
 import { izaberi, type Rng } from '../random.ts'
 import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types.ts'
-import { upakujSrpskiIzbor, type SrpskiIzborUlaz } from './srpskiZajednicko.ts'
+import { upakujSrpskiTekst, upakujSrpskiTvrdnju } from './srpskiZajednicko.ts'
 
-const ANTONIMI = [
-  ['visok', 'nizak'], ['topao', 'hladan'], ['brz', 'spor'], ['svetao', 'taman'], ['širok', 'uzak'],
-  ['veseo', 'tužan'], ['pun', 'prazan'], ['mek', 'tvrd'], ['blizu', 'daleko'], ['početak', 'kraj'],
-  ['jak', 'slab'], ['težak', 'lak'], ['hrabar', 'plašljiv'], ['nov', 'star'], ['čist', 'prljav'],
-  ['dobar', 'loš'], ['isti', 'različit'], ['dug', 'kratak'], ['jeftin', 'skup'], ['bogat', 'siromašan'],
-  ['zdrav', 'bolestan'], ['beo', 'crn'], ['istina', 'laž'], ['dan', 'noć'], ['prijatelj', 'neprijatelj'],
-  ['ljubav', 'mržnja'], ['gust', 'redak'], ['sladak', 'gorak'], ['plitak', 'dubok'],
-  ['darežljiv', 'škrt'], ['strpljiv', 'nestrpljiv'],
-] as const
-
-const SINONIMI = [
-  ['srećan', 'radostan'], ['brz', 'hitar'], ['pametan', 'mudar'], ['pričati', 'govoriti'], ['dom', 'kuća'],
-  ['put', 'staza'], ['hrabar', 'odvažan'], ['čuvati', 'paziti'], ['ljut', 'srdit'], ['poklon', 'dar'],
-  ['đak', 'učenik'], ['tuga', 'žalost'], ['vrt', 'bašta'], ['doktor', 'lekar'],
-  ['prijatelj', 'drugar'], ['misliti', 'razmišljati'], ['rukovati', 'upravljati'], ['šuma', 'gora'],
-  ['lep', 'krasan'], ['briga', 'staranje'], ['jasan', 'očigledan'], ['buka', 'galama'], ['hladnoća', 'studen'],
-  ['velik', 'ogroman'], ['radost', 'veselje'], ['lepo', 'divno'], ['mali', 'sićušan'], ['tužan', 'neveseo'],
-  ['brzo', 'hitro'], ['star', 'drevan'], ['smešan', 'duhovit'],
-] as const
-
-const PORODICE = [
-  { osnova: 'rad', clan: 'radnik', uljezi: ['voda', 'radost', 'grad'] },
-  { osnova: 'škola', clan: 'školski', uljezi: ['školjka', 'polje', 'sto'] },
-  { osnova: 'voda', clan: 'vodeni', uljezi: ['vođa', 'vodič', 'voz'] },
-  { osnova: 'zima', clan: 'zimski', uljezi: ['zemlja', 'zid', 'zmaj'] },
-  { osnova: 'riba', clan: 'ribar', uljezi: ['ribizla', 'bunar', 'čamac'] },
-  { osnova: 'cvet', clan: 'cvetni', uljezi: ['svet', 'vetar', 'boja'] },
-  { osnova: 'igra', clan: 'igrač', uljezi: ['igla', 'grad', 'račun'] },
-  { osnova: 'list', clan: 'listić', uljezi: ['lisica', 'slika', 'pismo'] },
-  { osnova: 'sunce', clan: 'sunčan', uljezi: ['sundjer', 'san', 'mesec'] },
-  { osnova: 'more', clan: 'morski', uljezi: ['mora', 'most', 'barka'] },
-  { osnova: 'pisati', clan: 'pisac', uljezi: ['pijac', 'pesak', 'pas'] },
-  { osnova: 'zub', clan: 'zubni', uljezi: ['zubor', 'zob', 'buba'] },
-  { osnova: 'šum', clan: 'šumski', uljezi: ['šala', 'šlem', 'šator'] },
-  { osnova: 'put', clan: 'putnik', uljezi: ['ptica', 'pauk', 'peta'] },
-  { osnova: 'led', clan: 'leden', uljezi: ['leđa', 'lepak', 'lep'] },
-  { osnova: 'drvo', clan: 'drveni', uljezi: ['društvo', 'dva', 'dugme'] },
-  { osnova: 'sol', clan: 'slan', uljezi: ['slon', 'sito', 'smer'] },
-  { osnova: 'mleko', clan: 'mlečni', uljezi: ['mlin', 'metla', 'more'] },
-  { osnova: 'glava', clan: 'glavni', uljezi: ['glina', 'glas', 'guma'] },
-  { osnova: 'oko', clan: 'očni', uljezi: ['osa', 'ovca', 'orac'] },
-  { osnova: 'vrt', clan: 'vrtlar', uljezi: ['vrat', 'vaza', 'vuk'] },
-  { osnova: 'kuća', clan: 'kućni', uljezi: ['kula', 'kum', 'kuka'] },
-  { osnova: 'noć', clan: 'noćni', uljezi: ['nos', 'nož', 'nokat'] },
-  { osnova: 'hleb', clan: 'hlebni', uljezi: ['hlađenje', 'hrana', 'hram'] },
-  { osnova: 'prijatelj', clan: 'prijateljski', uljezi: ['priča', 'prozor', 'ptica'] },
+// [reč, tačan odgovor, …prihvaćene varijante (npr. ženski oblik prideva)]
+const ANTONIMI: Array<[string, string, ...string[]]> = [
+  ['visok', 'nizak', 'niska'], ['topao', 'hladan', 'hladna'], ['brz', 'spor', 'spora'],
+  ['svetao', 'taman', 'tamna'], ['širok', 'uzak', 'uzka'], ['veseo', 'tužan', 'tužna'],
+  ['pun', 'prazan', 'prazna'], ['mek', 'tvrd', 'tvrda'], ['blizu', 'daleko'],
+  ['početak', 'kraj'], ['jak', 'slab', 'slaba'], ['težak', 'lak', 'laka'],
+  ['hrabar', 'plašljiv', 'plašljiva'], ['nov', 'star', 'stara'], ['čist', 'prljav', 'prljava'],
+  ['dobar', 'loš', 'loša'], ['isti', 'različit', 'različita'], ['dug', 'kratak', 'kratka'],
+  ['jeftin', 'skup', 'skupa'], ['bogat', 'siromašan', 'siromašna'],
+  ['zdrav', 'bolestan', 'bolesna'], ['beo', 'crn', 'crna'], ['istina', 'laž'],
+  ['dan', 'noć'], ['prijatelj', 'neprijatelj'], ['ljubav', 'mržnja'],
+  ['gust', 'redak', 'retka'], ['sladak', 'gorak', 'gorka'], ['plitak', 'dubok', 'duboka'],
+  ['darežljiv', 'škrt', 'škrta'], ['strpljiv', 'nestrpljiv', 'nestrpljiva'],
 ]
 
-const UMALJENICE = [
-  ['kuća', 'kućica'], ['knjiga', 'knjižica'], ['kamen', 'kamenčić'], ['cvet', 'cvetić'], ['prozor', 'prozorčić'],
-  ['ptica', 'ptičica'], ['zvezda', 'zvezdica'], ['riba', 'ribica'], ['stolica', 'stoličica'], ['torba', 'torbica'],
-  ['drvo', 'drvce'], ['reka', 'rečica'], ['mačka', 'mačkica'], ['dete', 'detence'], ['lopta', 'loptica'],
-  ['most', 'mostić'], ['sat', 'satić'], ['pas', 'psić'], ['leptir', 'leptirić'], ['olovka', 'olovčica'],
-  ['glava', 'glavica'], ['zub', 'zubić'], ['list', 'listić'], ['sunce', 'sunašce'], ['vetar', 'vetrić'],
-] as const
+const SINONIMI: Array<[string, string, ...string[]]> = [
+  ['srećan', 'radostan', 'radostna'], ['brz', 'hitar', 'hitra'], ['pametan', 'mudar', 'mudra'],
+  ['pričati', 'govoriti'], ['dom', 'kuća'], ['put', 'staza'],
+  ['hrabar', 'odvažan', 'odvažna'], ['čuvati', 'paziti'], ['ljut', 'srdit', 'srdita'],
+  ['poklon', 'dar'], ['đak', 'učenik'], ['tuga', 'žalost'],
+  ['vrt', 'bašta'], ['doktor', 'lekar'], ['prijatelj', 'drugar'],
+  ['misliti', 'razmišljati'], ['rukovati', 'upravljati'], ['šuma', 'gora'],
+  ['lep', 'krasan', 'krasna'], ['briga', 'staranje'], ['jasan', 'očigledan', 'očigledna'],
+  ['buka', 'galama'], ['hladnoća', 'studen'], ['velik', 'ogroman', 'ogromna'],
+  ['radost', 'veselje'], ['lepo', 'divno'], ['mali', 'sićušan', 'sićušna'],
+  ['tužan', 'neveseo', 'nevesela'], ['brzo', 'hitro'], ['star', 'drevan', 'drevna'],
+  ['smešan', 'duhovit', 'duhovita'],
+]
+
+const PORODICE = [
+  { osnova: 'rad', clan: 'radnik' },
+  { osnova: 'škola', clan: 'školski' },
+  { osnova: 'voda', clan: 'vodeni' },
+  { osnova: 'zima', clan: 'zimski' },
+  { osnova: 'riba', clan: 'ribar' },
+  { osnova: 'cvet', clan: 'cvetni' },
+  { osnova: 'igra', clan: 'igrač' },
+  { osnova: 'list', clan: 'listić' },
+  { osnova: 'sunce', clan: 'sunčan' },
+  { osnova: 'more', clan: 'morski' },
+  { osnova: 'pisati', clan: 'pisac' },
+  { osnova: 'zub', clan: 'zubni' },
+  { osnova: 'šum', clan: 'šumski' },
+  { osnova: 'put', clan: 'putnik' },
+  { osnova: 'led', clan: 'leden' },
+  { osnova: 'drvo', clan: 'drveni' },
+  { osnova: 'mleko', clan: 'mlečni' },
+  { osnova: 'glava', clan: 'glavni' },
+  { osnova: 'oko', clan: 'očni' },
+  { osnova: 'vrt', clan: 'vrtlar' },
+  { osnova: 'kuća', clan: 'kućni' },
+  { osnova: 'noć', clan: 'noćni' },
+  { osnova: 'hleb', clan: 'hlebni' },
+  { osnova: 'prijatelj', clan: 'prijateljski' },
+]
+
+const UMALJENICE: Array<[string, string]> = [
+  ['kuća', 'kućica'], ['knjiga', 'knjižica'], ['kamen', 'kamenčić'], ['cvet', 'cvetić'],
+  ['prozor', 'prozorčić'], ['ptica', 'ptičica'], ['zvezda', 'zvezdica'], ['riba', 'ribica'],
+  ['stolica', 'stoličica'], ['torba', 'torbica'], ['drvo', 'drvce'], ['reka', 'rečica'],
+  ['mačka', 'mačkica'], ['dete', 'detence'], ['lopta', 'loptica'], ['most', 'mostić'],
+  ['sat', 'satić'], ['pas', 'psić'], ['leptir', 'leptirić'], ['olovka', 'olovčica'],
+  ['glava', 'glavica'], ['zub', 'zubić'], ['list', 'listić'], ['sunce', 'sunašce'],
+  ['vetar', 'vetrić'],
+]
 
 const IZRAZI = [
   { izraz: 'ima zlatne ruke', znacenje: 'veoma je vešt', netacni: ['nosi zlatan nakit', 'ruke su mu hladne', 'ne voli da radi'] },
@@ -92,64 +103,84 @@ const IZRAZI = [
   { izraz: 'gladan kao vuk', znacenje: 'veoma je gladan', netacni: ['čuva vukove', 'glasno laje', 'živi u šumi'] },
 ]
 
-function izborZa(cfg: GeneratorConfig, rng: Rng): SrpskiIzborUlaz {
-  if (cfg.difficulty === 1) {
-    const [rec, tacan] = izaberi(rng, ANTONIMI)
-    return {
-      pitanje: `Koja reč ima suprotno značenje od reči „${rec}“?`, tacan,
-      netacni: ANTONIMI.map((par) => par[1]).filter((x) => x !== tacan),
-      tvrdnja: (odgovor) => `Reč „${odgovor}“ ima suprotno značenje od reči „${rec}“.`,
-      explanation: `Reči „${rec}“ i „${tacan}“ su antonimi.`,
-      hint: 'Traži reč koja znači potpuno suprotno.', signature: `srpski-recnik:antonim:${rec}`,
-    }
-  }
-  if (cfg.difficulty === 2) {
-    const [rec, tacan] = izaberi(rng, SINONIMI)
-    return {
-      pitanje: `Koja reč ima isto ili slično značenje kao „${rec}“?`, tacan,
-      netacni: SINONIMI.map((par) => par[1]).filter((x) => x !== tacan),
-      tvrdnja: (odgovor) => `Reč „${odgovor}“ ima isto ili slično značenje kao „${rec}“.`,
-      explanation: `Reči „${rec}“ i „${tacan}“ su sinonimi.`,
-      hint: 'Sinonimi su reči istog ili sličnog značenja.', signature: `srpski-recnik:sinonim:${rec}`,
-    }
-  }
-  if (cfg.difficulty === 3) {
-    const primer = izaberi(rng, PORODICE)
-    return {
-      pitanje: `Koja reč pripada porodici reči „${primer.osnova}“?`, tacan: primer.clan,
-      netacni: primer.uljezi,
-      tvrdnja: (odgovor) => `Reč „${odgovor}“ pripada porodici reči „${primer.osnova}“.`,
-      explanation: `„${primer.osnova}“ i „${primer.clan}“ imaju zajednički koren i povezano značenje.`,
-      hint: 'Slična slova nisu dovoljna — reči moraju imati i povezano značenje.', signature: `srpski-recnik:porodica:${primer.osnova}`,
-    }
-  }
-  if (cfg.difficulty === 4) {
-    const [rec, tacan] = izaberi(rng, UMALJENICE)
-    return {
-      pitanje: `Koja je umanjenica od reči „${rec}“?`, tacan,
-      netacni: UMALJENICE.map((par) => par[1]).filter((x) => x !== tacan),
-      tvrdnja: (odgovor) => `Reč „${odgovor}“ je umanjenica od reči „${rec}“.`,
-      explanation: `Umanjenica od „${rec}“ glasi „${tacan}“.`,
-      hint: 'Umanjenica često označava nešto manje ili od milja.', signature: `srpski-recnik:umanjenica:${rec}`,
-    }
-  }
-  const primer = izaberi(rng, IZRAZI)
-  return {
-    pitanje: `Šta znači izraz „${primer.izraz}“?`, tacan: primer.znacenje, netacni: primer.netacni,
-    tvrdnja: (odgovor) => `Izraz „${primer.izraz}“ znači: ${odgovor}.`,
-    explanation: `Značenje izraza „${primer.izraz}“ je: ${primer.znacenje}.`,
-    hint: 'Ne tumači svaku reč doslovno; razmisli o poruci celog izraza.', signature: `srpski-recnik:izraz:${primer.izraz}`,
-  }
-}
-
 export const srpskiRecnik: TopicGenerator = {
   slug: 'srpski-recnik',
-  supportedTypes: ['single', 'truefalse'],
+  supportedTypes: ['text', 'truefalse'],
   supportsWordProblems: false,
 
   generateOne(cfg: GeneratorConfig, rng: Rng, taken: Set<string>): GenerisanoPitanje | null {
-    const ulaz = izborZa(cfg, rng)
-    if (taken.has(ulaz.signature)) return null
-    return upakujSrpskiIzbor(cfg, rng, ulaz)
+    // Značenje izraza ne može da se ukuca kratkim odgovorom, pa je taj tip
+    // pitanja uvek tačno/netačno tvrdnja.
+    const kategorija = cfg.type === 'truefalse'
+      ? 'izraz'
+      : cfg.type === 'text'
+        ? izaberi(rng, ['antonim', 'sinonim', 'porodica', 'umanjenica'] as const)
+        : izaberi(rng, ['antonim', 'sinonim', 'porodica', 'umanjenica', 'izraz'] as const)
+
+    if (kategorija === 'izraz') {
+      const primer = izaberi(rng, IZRAZI)
+      const signature = `srpski-recnik:izraz:${primer.izraz}`
+      if (taken.has(signature)) return null
+      const netacno = izaberi(rng, primer.netacni)
+      return upakujSrpskiTvrdnju(cfg, rng, {
+        tvrdnjaTacna: `Izraz „${primer.izraz}“ znači: ${primer.znacenje}.`,
+        tvrdnjaNetacna: `Izraz „${primer.izraz}“ znači: ${netacno}.`,
+        explanation: `Značenje izraza „${primer.izraz}“ je: ${primer.znacenje}.`,
+        hint: 'Ne tumači svaku reč doslovno; razmisli o poruci celog izraza.',
+        signature,
+      })
+    }
+
+    if (kategorija === 'antonim') {
+      const [rec, ...tacni] = izaberi(rng, ANTONIMI)
+      const signature = `srpski-recnik:antonim:${rec}`
+      if (taken.has(signature)) return null
+      return upakujSrpskiTekst(cfg, {
+        pitanje: `Napiši antonim (reč suprotnog značenja) reči „${rec}“.`,
+        tacan: tacni[0],
+        prihvaceni: tacni.slice(1),
+        explanation: `Reči „${rec}“ i „${tacni[0]}“ su antonimi.`,
+        hint: 'Traži reč koja znači potpuno suprotno.',
+        signature,
+      })
+    }
+
+    if (kategorija === 'sinonim') {
+      const [rec, ...tacni] = izaberi(rng, SINONIMI)
+      const signature = `srpski-recnik:sinonim:${rec}`
+      if (taken.has(signature)) return null
+      return upakujSrpskiTekst(cfg, {
+        pitanje: `Napiši sinonim (reč istog ili sličnog značenja) reči „${rec}“.`,
+        tacan: tacni[0],
+        prihvaceni: tacni.slice(1),
+        explanation: `Reči „${rec}“ i „${tacni[0]}“ su sinonimi.`,
+        hint: 'Sinonimi su reči istog ili sličnog značenja.',
+        signature,
+      })
+    }
+
+    if (kategorija === 'porodica') {
+      const primer = izaberi(rng, PORODICE)
+      const signature = `srpski-recnik:porodica:${primer.osnova}`
+      if (taken.has(signature)) return null
+      return upakujSrpskiTekst(cfg, {
+        pitanje: `Od koje reči je izvedena reč „${primer.clan}“? (upiši tu reč)`,
+        tacan: primer.osnova,
+        explanation: `Reč „${primer.clan}“ izvedena je od reči „${primer.osnova}“ — imaju zajednički koren i povezano značenje.`,
+        hint: 'Traži reč sa kojom naša reč deli koren i značenje.',
+        signature,
+      })
+    }
+
+    const [rec, tacan] = izaberi(rng, UMALJENICE)
+    const signature = `srpski-recnik:umanjenica:${rec}`
+    if (taken.has(signature)) return null
+    return upakujSrpskiTekst(cfg, {
+      pitanje: `Napiši umanjenicu od reči „${rec}“.`,
+      tacan,
+      explanation: `Umanjenica od „${rec}“ glasi „${tacan}“.`,
+      hint: 'Umanjenica označava nešto manje ili od milja.',
+      signature,
+    })
   },
 }

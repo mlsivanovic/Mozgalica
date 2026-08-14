@@ -27,10 +27,10 @@ const NAZIVI_OBLASTI: Record<string, string> = {
   'nejednacine-4': 'Nejednačine', 'povrsina-4': 'Površina', 'zapremina-4': 'Zapremina',
   'geometrijska-tela-4': 'Geometrijska tela', 'razlomci-4': 'Razlomci', 'decimalni-brojevi-4': 'Decimalni brojevi',
   // Srpski jezik
-  'srpski-vrste-reci': 'Vrste reči', 'srpski-gramatika': 'Gramatika', 'srpski-pravopis': 'Pravopis',
+  'srpski-vrste-reci': 'Vrste reči', 'srpski-gramatika': 'Gramatika',
   'srpski-citanje': 'Čitanje i razumevanje', 'srpski-recnik': 'Rečnik',
   // Srpski 4. razred
-  'srpski-gramatika-4': 'Gramatika', 'srpski-pravopis-4': 'Pravopis', 'srpski-recnik-4': 'Rečnik',
+  'srpski-gramatika-4': 'Gramatika', 'srpski-recnik-4': 'Rečnik',
   'srpski-citanje-4': 'Čitanje i razumevanje',
 }
 
@@ -47,10 +47,10 @@ const IKONE_OBLASTI: Record<string, string> = {
   'povrsina-4': '▦', 'zapremina-4': '📦', 'geometrijska-tela-4': '🧊',
   'razlomci-4': '🍕', 'decimalni-brojevi-4': '🔟',
   // Srpski jezik
-  'srpski-vrste-reci': '🔤', 'srpski-gramatika': '📚', 'srpski-pravopis': '✍️',
+  'srpski-vrste-reci': '🔤', 'srpski-gramatika': '📚',
   'srpski-citanje': '📖', 'srpski-recnik': '🗣️',
   // Srpski 4. razred
-  'srpski-gramatika-4': '📚', 'srpski-pravopis-4': '✍️', 'srpski-recnik-4': '🗣️', 'srpski-citanje-4': '📖',
+  'srpski-gramatika-4': '📚', 'srpski-recnik-4': '🗣️', 'srpski-citanje-4': '📖',
 }
 
 const PREDMETI: Predmet[] = ['matematika', 'srpski']
@@ -62,9 +62,11 @@ const TIPOVI_MATEMATIKA: { vrednost: TipPitanja | 'auto'; naziv: string }[] = [
   { vrednost: 'single', naziv: 'Ponuđeni odgovori' },
 ]
 
+// Srpski jezik nema ponuđene odgovore — odgovor se ukucava, uz povremenu
+// tačno/netačno tvrdnju.
 const TIPOVI_SRPSKI: { vrednost: TipPitanja | 'auto'; naziv: string }[] = [
   { vrednost: 'auto', naziv: 'Automatski izbor' },
-  { vrednost: 'single', naziv: 'Ponuđeni odgovori' },
+  { vrednost: 'text', naziv: 'Unos teksta' },
   { vrednost: 'truefalse', naziv: 'Tačno / netačno' },
 ]
 
@@ -225,20 +227,23 @@ export function Generator() {
           </div>
         </div>
 
-        <div className="gen-sekcija gen-sekcija--tezina">
-          <p className="gen-naslov razmak-dole">Nivo težine</p>
-          <div className="segment" role="radiogroup" aria-label="Nivo težine">
-            {(Object.entries(NAZIVI_TEZINA) as [string, string][]).map(([k, naziv]) => (
-              <button
-                key={k} type="button" role="radio" aria-checked={difficulty === Number(k)}
-                className={`segment-dugme ${difficulty === Number(k) ? 'segment-dugme--izabran' : ''}`}
-                onClick={() => setDifficulty(Number(k) as Tezina)}
-              >
-                {naziv}
-              </button>
-            ))}
+        {/* Srpski jezik nema nivoe težine — sva pitanja idu na najtežem nivou */}
+        {predmet === 'matematika' && (
+          <div className="gen-sekcija gen-sekcija--tezina">
+            <p className="gen-naslov razmak-dole">Nivo težine</p>
+            <div className="segment" role="radiogroup" aria-label="Nivo težine">
+              {(Object.entries(NAZIVI_TEZINA) as [string, string][]).map(([k, naziv]) => (
+                <button
+                  key={k} type="button" role="radio" aria-checked={difficulty === Number(k)}
+                  className={`segment-dugme ${difficulty === Number(k) ? 'segment-dugme--izabran' : ''}`}
+                  onClick={() => setDifficulty(Number(k) as Tezina)}
+                >
+                  {naziv}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="gen-sekcija gen-sekcija--podesavanje">
           <div className="red-polja">
@@ -278,7 +283,7 @@ export function Generator() {
 
         {topicSlugovi.length > 0 && (
           <p className="gen-rezime gen-sekcija gen-sekcija--rezime">
-            📋 {count} pitanja · {NAZIVI_TEZINA[difficulty]} · {topicSlugovi.length} {topicSlugovi.length === 1 ? 'oblast izabrana' : 'oblasti izabrano'}
+            📋 {count} pitanja{predmet === 'matematika' ? ` · ${NAZIVI_TEZINA[difficulty]}` : ''} · {topicSlugovi.length} {topicSlugovi.length === 1 ? 'oblast izabrana' : 'oblasti izabrano'}
           </p>
         )}
 

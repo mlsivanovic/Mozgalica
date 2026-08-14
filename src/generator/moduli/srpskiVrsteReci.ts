@@ -1,7 +1,8 @@
-// Generator: vrste reči — imenice, glagoli i pridevi u jasnom kontekstu.
+// Generator: vrste reči — određivanje vrste (ukucavanjem) i prebrojavanje
+// u rečenici (brojčanim unosom). Povremeno tačno/netačno tvrdnja o vrsti.
 import { izaberi, type Rng } from '../random.ts'
 import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types.ts'
-import { upakujSrpskiIzbor } from './srpskiZajednicko.ts'
+import { hoceTvrdnju, upakujSrpskiTekst, upakujSrpskiTvrdnju } from './srpskiZajednicko.ts'
 
 type VrstaReci = 'imenica' | 'glagol' | 'pridev'
 
@@ -69,94 +70,84 @@ interface AnalizaRecenice {
   imenice: number
   glagoli: number
   pridevi: number
-  redosled: string
 }
 
 const ANALIZE: AnalizaRecenice[] = [
-  { tekst: 'Mala ptica peva.', imenice: 1, glagoli: 1, pridevi: 1, redosled: 'pridev — imenica — glagol' },
-  { tekst: 'Veseli pas trči.', imenice: 1, glagoli: 1, pridevi: 1, redosled: 'pridev — imenica — glagol' },
-  { tekst: 'Ana čita zanimljivu knjigu.', imenice: 2, glagoli: 1, pridevi: 1, redosled: 'imenica — glagol — pridev — imenica' },
-  { tekst: 'Stari hrast zaklanja kuću.', imenice: 2, glagoli: 1, pridevi: 1, redosled: 'pridev — imenica — glagol — imenica' },
-  { tekst: 'Hladan vetar njiše grane.', imenice: 2, glagoli: 1, pridevi: 1, redosled: 'pridev — imenica — glagol — imenica' },
-  { tekst: 'Miloš nosi težak ranac.', imenice: 2, glagoli: 1, pridevi: 1, redosled: 'imenica — glagol — pridev — imenica' },
-  { tekst: 'Crvena jabuka miriše.', imenice: 1, glagoli: 1, pridevi: 1, redosled: 'pridev — imenica — glagol' },
-  { tekst: 'Učenici pišu kratke priče.', imenice: 2, glagoli: 1, pridevi: 1, redosled: 'imenica — glagol — pridev — imenica' },
-  { tekst: 'Sunce greje zelenu livadu.', imenice: 2, glagoli: 1, pridevi: 1, redosled: 'imenica — glagol — pridev — imenica' },
-  { tekst: 'Spretna veverica skuplja orahe.', imenice: 2, glagoli: 1, pridevi: 1, redosled: 'pridev — imenica — glagol — imenica' },
-  // Nove rečenice
-  { tekst: 'Hrabar vojnik brani zemlju.', imenice: 2, glagoli: 1, pridevi: 1, redosled: 'pridev — imenica — glagol — imenica' },
-  { tekst: 'Baka kuva toplu supu.', imenice: 2, glagoli: 1, pridevi: 1, redosled: 'imenica — glagol — pridev — imenica' },
-  { tekst: 'Vredni mravi nose hranu.', imenice: 2, glagoli: 1, pridevi: 1, redosled: 'pridev — imenica — glagol — imenica' },
-  { tekst: 'Milica crta šareni cvet.', imenice: 2, glagoli: 1, pridevi: 1, redosled: 'imenica — glagol — pridev — imenica' },
-  { tekst: 'Mlad dečak vozi bicikl.', imenice: 2, glagoli: 1, pridevi: 1, redosled: 'pridev — imenica — glagol — imenica' },
-  { tekst: 'Marko sluša glasnu muziku.', imenice: 2, glagoli: 1, pridevi: 1, redosled: 'imenica — glagol — pridev — imenica' },
-  { tekst: 'Visok toranj krasi grad.', imenice: 2, glagoli: 1, pridevi: 1, redosled: 'pridev — imenica — glagol — imenica' },
-  { tekst: 'Plavi kit roni.', imenice: 1, glagoli: 1, pridevi: 1, redosled: 'pridev — imenica — glagol' },
+  { tekst: 'Mala ptica peva.', imenice: 1, glagoli: 1, pridevi: 1 },
+  { tekst: 'Veseli pas trči.', imenice: 1, glagoli: 1, pridevi: 1 },
+  { tekst: 'Ana čita zanimljivu knjigu.', imenice: 2, glagoli: 1, pridevi: 1 },
+  { tekst: 'Stari hrast zaklanja kuću.', imenice: 2, glagoli: 1, pridevi: 1 },
+  { tekst: 'Hladan vetar njiše grane.', imenice: 2, glagoli: 1, pridevi: 1 },
+  { tekst: 'Miloš nosi težak ranac.', imenice: 2, glagoli: 1, pridevi: 1 },
+  { tekst: 'Crvena jabuka miriše.', imenice: 1, glagoli: 1, pridevi: 1 },
+  { tekst: 'Učenici pišu kratke priče.', imenice: 2, glagoli: 1, pridevi: 1 },
+  { tekst: 'Sunce greje zelenu livadu.', imenice: 2, glagoli: 1, pridevi: 1 },
+  { tekst: 'Spretna veverica skuplja orahe.', imenice: 2, glagoli: 1, pridevi: 1 },
+  { tekst: 'Hrabar vojnik brani zemlju.', imenice: 2, glagoli: 1, pridevi: 1 },
+  { tekst: 'Baka kuva toplu supu.', imenice: 2, glagoli: 1, pridevi: 1 },
+  { tekst: 'Vredni mravi nose hranu.', imenice: 2, glagoli: 1, pridevi: 1 },
+  { tekst: 'Milica crta šareni cvet.', imenice: 2, glagoli: 1, pridevi: 1 },
+  { tekst: 'Mlad dečak vozi bicikl.', imenice: 2, glagoli: 1, pridevi: 1 },
+  { tekst: 'Marko sluša glasnu muziku.', imenice: 2, glagoli: 1, pridevi: 1 },
+  { tekst: 'Visok toranj krasi grad.', imenice: 2, glagoli: 1, pridevi: 1 },
+  { tekst: 'Plavi kit roni.', imenice: 1, glagoli: 1, pridevi: 1 },
 ]
 
 const VRSTE = ['imenica', 'glagol', 'pridev', 'zamenica']
 
+// Genitivni oblik za pitanje „Koliko … ima…“
+const VRSTA_U_PITANJU = { imenice: 'imenica', glagoli: 'glagola', pridevi: 'prideva' } as const
+
 export const srpskiVrsteReci: TopicGenerator = {
   slug: 'srpski-vrste-reci',
-  supportedTypes: ['single', 'truefalse'],
+  supportedTypes: ['text', 'numeric', 'truefalse'],
   supportsWordProblems: false,
 
   generateOne(cfg: GeneratorConfig, rng: Rng, taken: Set<string>): GenerisanoPitanje | null {
-    if (cfg.difficulty <= 3) {
-      const primer = izaberi(rng, PRIMERI)
-      const uKontekstu = cfg.difficulty >= 2
-      const signature = `srpski-vrste-reci:${uKontekstu ? 'kontekst' : 'rec'}:${primer.rec}`
-      if (taken.has(signature)) return null
-      return upakujSrpskiIzbor(cfg, rng, {
-        pitanje: uKontekstu
-          ? `Kojoj vrsti reči pripada istaknuta reč u rečenici „${primer.recenica}“ — „${primer.rec}“?`
-          : `Kojoj vrsti reči pripada reč „${primer.rec}“?`,
-        tacan: primer.vrsta,
-        netacni: VRSTE.filter((vrsta) => vrsta !== primer.vrsta),
-        tvrdnja: (odgovor) => `Reč „${primer.rec}“ u rečenici „${primer.recenica}“ jeste ${odgovor}.`,
-        explanation: `Reč „${primer.rec}“ je ${primer.vrsta}.`,
-        hint: primer.vrsta === 'imenica'
-          ? 'Imenice imenuju bića, predmete i pojave.'
-          : primer.vrsta === 'glagol'
-            ? 'Glagoli označavaju radnju, stanje ili zbivanje.'
-            : 'Pridevi bliže opisuju imenice.',
-        signature,
-      })
-    }
-
-    const analiza = izaberi(rng, ANALIZE)
-    if (cfg.difficulty === 4) {
+    if (cfg.type === 'numeric' || (cfg.type === 'auto' && rng() < 0.3)) {
+      const analiza = izaberi(rng, ANALIZE)
       const vrsta = izaberi(rng, ['imenice', 'glagoli', 'pridevi'] as const)
-      const tacanBroj = String(analiza[vrsta])
+      const tacanBroj = analiza[vrsta]
       const signature = `srpski-vrste-reci:broj:${analiza.tekst}:${vrsta}`
       if (taken.has(signature)) return null
-      return upakujSrpskiIzbor(cfg, rng, {
-        pitanje: `Koliko ${vrsta} ima u rečenici „${analiza.tekst}“?`,
-        tacan: tacanBroj,
-        netacni: ['0', '1', '2', '3'].filter((broj) => broj !== tacanBroj),
-        tvrdnja: (odgovor) => `U rečenici „${analiza.tekst}“ ima ${odgovor} ${vrsta}.`,
-        explanation: `U rečenici ima ${tacanBroj} ${vrsta}.`,
+      return {
+        type: 'numeric',
+        text: `Koliko ${VRSTA_U_PITANJU[vrsta]} ima u rečenici „${analiza.tekst}“?`,
+        options: null,
+        correct: { value: tacanBroj },
+        explanation: `Tačan odgovor je ${tacanBroj}.`,
         hint: 'Najpre razvrstaj svaku reč, pa prebroj samo traženu vrstu.',
+        points: 5,
+        topicSlug: cfg.topicSlug,
+        difficulty: 5,
+        signature,
+      }
+    }
+
+    const primer = izaberi(rng, PRIMERI)
+    const signature = `srpski-vrste-reci:kontekst:${primer.rec}`
+    if (taken.has(signature)) return null
+
+    if (hoceTvrdnju(cfg, rng)) {
+      const pogresnaVrsta = izaberi(rng, VRSTE.filter((vrsta) => vrsta !== primer.vrsta))
+      return upakujSrpskiTvrdnju(cfg, rng, {
+        tvrdnjaTacna: `U rečenici „${primer.recenica}“ reč „${primer.rec}“ je ${primer.vrsta}.`,
+        tvrdnjaNetacna: `U rečenici „${primer.recenica}“ reč „${primer.rec}“ je ${pogresnaVrsta}.`,
+        explanation: `Reč „${primer.rec}“ je ${primer.vrsta}.`,
+        hint: null,
         signature,
       })
     }
 
-    const signature = `srpski-vrste-reci:redosled:${analiza.tekst}`
-    if (taken.has(signature)) return null
-    const netacni = [
-      'imenica — pridev — glagol',
-      'imenica — glagol — imenica — pridev',
-      'pridev — glagol — imenica',
-      'glagol — imenica — pridev — imenica',
-      'pridev — pridev — imenica — glagol',
-    ].filter((odgovor) => odgovor !== analiza.redosled)
-    return upakujSrpskiIzbor(cfg, rng, {
-      pitanje: `Koji niz pravilno opisuje vrste reči redom u rečenici „${analiza.tekst}“?`,
-      tacan: analiza.redosled,
-      netacni,
-      tvrdnja: (odgovor) => `Niz vrsta reči u rečenici „${analiza.tekst}“ glasi: ${odgovor}.`,
-      explanation: `Tačan redosled je: ${analiza.redosled}.`,
-      hint: 'Odredi vrstu svake reči redom, s leva nadesno.',
+    return upakujSrpskiTekst(cfg, {
+      pitanje: `Kojoj vrsti reči pripada reč „${primer.rec}“ u rečenici „${primer.recenica}“? (upiši vrstu)`,
+      tacan: primer.vrsta,
+      explanation: `Reč „${primer.rec}“ je ${primer.vrsta}.`,
+      hint: primer.vrsta === 'imenica'
+        ? 'Imenice imenuju bića, predmete i pojave.'
+        : primer.vrsta === 'glagol'
+          ? 'Glagoli označavaju radnju, stanje ili zbivanje.'
+          : 'Pridevi bliže opisuju imenice.',
       signature,
     })
   },

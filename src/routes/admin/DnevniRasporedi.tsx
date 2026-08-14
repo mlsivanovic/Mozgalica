@@ -45,8 +45,12 @@ function formaIzRasporeda(raspored: DnevniRasporedKviza): FormaRasporeda {
     grade: raspored.grade,
     source: raspored.source,
     topicIds: raspored.topic_ids,
-    difficulty: raspored.difficulty,
-    questionType: raspored.question_type,
+    // Srpski jezik nema težinu ni ponuđene odgovore — stari rasporedi koji
+    // su ih imali vraćaju se na neutralna podešavanja.
+    difficulty: raspored.subject === 'srpski' ? null : raspored.difficulty,
+    questionType: raspored.subject === 'srpski' && !['text', 'truefalse'].includes(raspored.question_type ?? '')
+      ? null
+      : raspored.question_type,
     questionCount: raspored.question_count,
     timeLimitSeconds: raspored.time_limit_seconds,
     timeLimitMinutes: raspored.time_limit_seconds == null ? '' : String(Math.round(raspored.time_limit_seconds / 60)),
@@ -131,10 +135,12 @@ export function DnevniRasporedi({
     if (source === 'generator' && generatorskeTeme.length === 0) source = 'bank'
     const teme = source === 'generator' ? generatorskeTeme : sveTeme
     const questionType = source !== 'bank' && subject === 'srpski'
-      && forma.questionType != null && !['single', 'truefalse'].includes(forma.questionType)
+      && forma.questionType != null && !['text', 'truefalse'].includes(forma.questionType)
       ? null
       : forma.questionType
-    setForma({ ...forma, ...izmene, subject, grade, source, questionType, topicIds: teme.map((oblast) => oblast.id) })
+    // Srpski jezik nema nivoe težine — sva pitanja idu na najtežem nivou
+    const difficulty = subject === 'srpski' ? null : forma.difficulty
+    setForma({ ...forma, ...izmene, subject, grade, source, questionType, difficulty, topicIds: teme.map((oblast) => oblast.id) })
   }
 
   function preklopiOblast(id: string) {
@@ -266,19 +272,22 @@ export function DnevniRasporedi({
               <label htmlFor="dr-broj">Broj pitanja</label>
               <input id="dr-broj" type="number" min={1} max={50} value={forma.questionCount} onChange={(e) => setForma({ ...forma, questionCount: Number(e.target.value) })} />
             </div>
-            <div className="polje">
-              <label htmlFor="dr-tezina">Težina</label>
-              <select id="dr-tezina" value={forma.difficulty ?? ''} onChange={(e) => setForma({ ...forma, difficulty: e.target.value ? Number(e.target.value) as Tezina : null })}>
-                <option value="">{forma.source !== 'bank' ? 'Podrazumevano (3)' : 'Sve težine'}</option>
-                {Object.entries(NAZIVI_TEZINA).map(([vrednost, naziv]) => <option key={vrednost} value={vrednost}>{naziv}</option>)}
-              </select>
-            </div>
+            {/* Srpski jezik nema nivoe težine — sva pitanja idu na najtežem nivou */}
+            {forma.subject !== 'srpski' && (
+              <div className="polje">
+                <label htmlFor="dr-tezina">Težina</label>
+                <select id="dr-tezina" value={forma.difficulty ?? ''} onChange={(e) => setForma({ ...forma, difficulty: e.target.value ? Number(e.target.value) as Tezina : null })}>
+                  <option value="">{forma.source !== 'bank' ? 'Podrazumevano (3)' : 'Sve težine'}</option>
+                  {Object.entries(NAZIVI_TEZINA).map(([vrednost, naziv]) => <option key={vrednost} value={vrednost}>{naziv}</option>)}
+                </select>
+              </div>
+            )}
             <div className="polje">
               <label htmlFor="dr-tip">Tip pitanja</label>
               <select id="dr-tip" value={forma.questionType ?? ''} onChange={(e) => setForma({ ...forma, questionType: e.target.value ? e.target.value as TipPitanja : null })}>
                 <option value="">Automatski / svi tipovi</option>
                 {Object.entries(NAZIVI_TIPOVA)
-                  .filter(([vrednost]) => forma.source === 'bank' || forma.subject !== 'srpski' || ['single', 'truefalse'].includes(vrednost))
+                  .filter(([vrednost]) => forma.source === 'bank' || forma.subject !== 'srpski' || ['text', 'truefalse'].includes(vrednost))
                   .map(([vrednost, naziv]) => <option key={vrednost} value={vrednost}>{naziv}</option>)}
               </select>
             </div>

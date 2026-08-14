@@ -157,6 +157,9 @@ describe('single-choice opcije i distraktori', () => {
         for (let seed = 0; seed < 15; seed++) {
           const r = generisi(cfg({ topicSlug: oblast, difficulty: tezina, seed, count: 4, type: 'single' }))
           for (const p of r.questions) {
+            // Srpski moduli svesno ignorišu 'single' (odgovor se ukucava) —
+            // proveravaju se samo pitanja koja zaista imaju ponuđene opcije
+            if (p.type !== 'single') continue
             const opcije = p.options as Opcija[]
             expect(opcije.length).toBeGreaterThanOrEqual(3) // poređenje ima 3 znaka, ostali 4
             const tekstovi = opcije.map((o) => o.text)
@@ -252,8 +255,8 @@ describe('tekstualni zadaci', () => {
 })
 
 describe('registar', () => {
-  it('svih 35 oblasti ima generator', () => {
-    expect(REGISTAR.size).toBe(35)
+  it('svih 33 oblasti ima generator', () => {
+    expect(REGISTAR.size).toBe(33)
     expect(podrzaneOblasti()).toContain('sabiranje')
     expect(podrzaneOblasti()).toContain('novac')
     expect(podrzaneOblasti()).toContain('rimski-brojevi')
@@ -261,7 +264,10 @@ describe('registar', () => {
     expect(podrzaneOblasti()).toContain('nejednacine')
     expect(podrzaneOblasti()).toContain('srpski-vrste-reci')
     expect(podrzaneOblasti()).toContain('srpski-gramatika')
-    expect(podrzaneOblasti()).toContain('srpski-pravopis')
+    // Pravopis je uklonjen: pitanja „koja rečenica je pravilno napisana" više
+    // se ne generišu (banka i istorijski kvizovi ostaju netaknuti).
+    expect(podrzaneOblasti()).not.toContain('srpski-pravopis')
+    expect(podrzaneOblasti()).not.toContain('srpski-pravopis-4')
     expect(podrzaneOblasti()).toContain('srpski-citanje')
     expect(podrzaneOblasti()).toContain('srpski-recnik')
   })

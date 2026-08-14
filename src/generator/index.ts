@@ -16,7 +16,6 @@ import { rimski } from './moduli/rimski.ts'
 import { sabiranje } from './moduli/sabiranje.ts'
 import { srpskiCitanje } from './moduli/srpskiCitanje.ts'
 import { srpskiGramatika } from './moduli/srpskiGramatika.ts'
-import { srpskiPravopis } from './moduli/srpskiPravopis.ts'
 import { srpskiRecnik } from './moduli/srpskiRecnik.ts'
 import { srpskiVrsteReci } from './moduli/srpskiVrsteReci.ts'
 import { sabiranje4 } from './moduli4/sabiranje4.ts'
@@ -33,7 +32,6 @@ import { razlomci4 } from './moduli4/razlomci4.ts'
 import { tela4 } from './moduli4/tela4.ts'
 import { decimal4 } from './moduli4/decimal4.ts'
 import { srpskiGramatika4 } from './moduli4/srpskiGramatika4.ts'
-import { srpskiPravopis4 } from './moduli4/srpskiPravopis4.ts'
 import { srpskiRecnik4 } from './moduli4/srpskiRecnik4.ts'
 import { srpskiCitanje4 } from './moduli4/srpskiCitanje4.ts'
 
@@ -44,9 +42,9 @@ const MODULI: TopicGenerator[] = [
   // 4. razred
   sabiranje4, oduzimanje4, mnozenje4, deljenje4, veliki4, kombinovane4,
   jednacine4, nejednacine4, povrsina4, zapremina4, razlomci4, tela4, decimal4,
-  srpskiGramatika4, srpskiPravopis4, srpskiRecnik4, srpskiCitanje4,
+  srpskiGramatika4, srpskiRecnik4, srpskiCitanje4,
   // Srpski jezik, 3. razred
-  srpskiVrsteReci, srpskiGramatika, srpskiPravopis, srpskiCitanje, srpskiRecnik,
+  srpskiVrsteReci, srpskiGramatika, srpskiCitanje, srpskiRecnik,
 ]
 
 export const REGISTAR = new Map<string, TopicGenerator>(MODULI.map((m) => [m.slug, m]))

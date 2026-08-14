@@ -1,199 +1,187 @@
-// Generator: rečnik 4. razred — složene reči, izvedene reči, homonimi (reči sa više značenja).
+// Generator: rečnik 4. razred — složene i izvedene reči se ukucaju;
+// značenja homonima se proveravaju tačno/netačno tvrdnjama.
 import { izaberi, type Rng } from '../random.ts'
 import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types.ts'
-import { upakujSrpskiIzbor } from '../moduli/srpskiZajednicko.ts'
+import { upakujSrpskiTekst, upakujSrpskiTvrdnju } from '../moduli/srpskiZajednicko.ts'
 
-const SLOZENE_RECI = [
-  { rec: 'Beograd', delovi: 'beo + grad', uljezi: ['beo + zgrada', 'beo + rad', 'bela + grad'] },
-  { rec: 'suncokret', delovi: 'sunce + okret', uljezi: ['sunce + cvet', 'sunce + kretanje', 'suncobran'] },
-  { rec: 'bubamara', delovi: 'buba + mara', uljezi: ['buba + švaba', 'buka + mara', 'buba + mrak'] },
-  { rec: 'čuvarkuća', delovi: 'čuvar + kuća', uljezi: ['čuvati + kućicu', 'čuvar + pas', 'čuvanje + kuće'] },
-  { rec: 'zemljotres', delovi: 'zemlja + tresati', uljezi: ['zemlja + kresati', 'zima + tresati', 'zemlja + plesti'] },
-  { rec: 'crvenkapa', delovi: 'crven + kapa', uljezi: ['crvena + kaput', 'crven + kapljica', 'crno + kapa'] },
-  { rec: 'vatrogasac', delovi: 'vatra + gasiti', uljezi: ['vatra + gajiti', 'vatra + pasti', 'voda + gasiti'] },
-  { rec: 'samouk', delovi: 'sam + učiti', uljezi: ['sam + igrati', 'sam + čuti', 'tvoj + učiti'] },
-  { rec: 'ledolomac', delovi: 'led + lomiti', uljezi: ['led + bojati', 'red + lomiti', 'led + topiti'] },
-  { rec: 'jednorog', delovi: 'jedan + rog', uljezi: ['jedan + noga', 'dva + rog', 'jedan + rov'] },
-  { rec: 'kratkotrajno', delovi: 'kratko + trajati', uljezi: ['kratko + crtati', 'slatko + trajati', 'kratko + tretati'] },
-  { rec: 'mnogobrojan', delovi: 'mnogo + broj', uljezi: ['mnogo + boj', 'malo + broj', 'mnogo + brod'] },
+interface SlozenaRec {
+  rec: string
+  deo1: string
+  deo2: string
+  // Prirodni oblici drugog dela (npr. glagolska imenica uz infinitiv)
+  deo2Prihvaceni?: string[]
+}
+
+const SLOZENE_RECI: SlozenaRec[] = [
+  { rec: 'Beograd', deo1: 'beo', deo2: 'grad' },
+  { rec: 'suncokret', deo1: 'sunce', deo2: 'okret', deo2Prihvaceni: ['okretati', 'okretanje'] },
+  { rec: 'bubamara', deo1: 'buba', deo2: 'mara' },
+  { rec: 'čuvarkuća', deo1: 'čuvar', deo2: 'kuća' },
+  { rec: 'zemljotres', deo1: 'zemlja', deo2: 'tresati', deo2Prihvaceni: ['tresti', 'tresanje'] },
+  { rec: 'crvenkapa', deo1: 'crven', deo2: 'kapa' },
+  { rec: 'vatrogasac', deo1: 'vatra', deo2: 'gasiti', deo2Prihvaceni: ['gasi', 'gašenje'] },
+  { rec: 'samouk', deo1: 'sam', deo2: 'učiti', deo2Prihvaceni: ['učenje'] },
+  { rec: 'ledolomac', deo1: 'led', deo2: 'lomiti', deo2Prihvaceni: ['lomi', 'lomljenje'] },
+  { rec: 'jednorog', deo1: 'jedan', deo2: 'rog' },
+  { rec: 'kratkotrajno', deo1: 'kratko', deo2: 'trajati', deo2Prihvaceni: ['trajanje'] },
+  { rec: 'mnogobrojan', deo1: 'mnogo', deo2: 'broj' },
 ]
 
 const IZVEDENE_RECI = [
-  { osnova: 'zid', izvedena: 'zidar', uljezi: ['zima', 'zmija', 'zmaj'] },
-  { osnova: 'riba', izvedena: 'ribar', uljezi: ['ribizla', 'rob', 'radnik'] },
-  { osnova: 'drvo', izvedena: 'drvar', uljezi: ['društvo', 'dva', 'držač'] },
-  { osnova: 'magla', izvedena: 'maglovit', uljezi: ['magma', 'magarac', 'marama'] },
-  { osnova: 'šum', izvedena: 'šumar', uljezi: ['šala', 'šunka', 'šah'] },
-  { osnova: 'voda', izvedena: 'vodeni', uljezi: ['vođa', 'voz', 'volja'] },
-  { osnova: 'kamen', izvedena: 'kamenit', uljezi: ['kamion', 'kamera', 'kamp'] },
-  { osnova: 'sneg', izvedena: 'snežan', uljezi: ['san', 'snop', 'sok'] },
-  { osnova: 'zlato', izvedena: 'zlatan', uljezi: ['zlo', 'zmaj', 'znak'] },
-  { osnova: 'vetar', izvedena: 'vetrovit', uljezi: ['vatra', 'vektor', 'večera'] },
-  { osnova: 'zima', izvedena: 'zimski', uljezi: ['zid', 'zig', 'zamak'] },
-  { osnova: 'cvet', izvedena: 'cvetni', uljezi: ['svet', 'vetar', 'cirkus'] },
-  { osnova: 'zvezda', izvedena: 'zvezdani', uljezi: ['znoj', 'zavoj', 'zamajac'] },
-  { osnova: 'račun', izvedena: 'računar', uljezi: ['račva', 'ručak', 'rečnik'] },
+  { osnova: 'zid', izvedena: 'zidar' },
+  { osnova: 'riba', izvedena: 'ribar' },
+  { osnova: 'drvo', izvedena: 'drvar' },
+  { osnova: 'magla', izvedena: 'maglovit' },
+  { osnova: 'šum', izvedena: 'šumar' },
+  { osnova: 'voda', izvedena: 'vodeni' },
+  { osnova: 'kamen', izvedena: 'kamenit' },
+  { osnova: 'sneg', izvedena: 'snežan' },
+  { osnova: 'zlato', izvedena: 'zlatan' },
+  { osnova: 'vetar', izvedena: 'vetrovit' },
+  { osnova: 'zima', izvedena: 'zimski' },
+  { osnova: 'cvet', izvedena: 'cvetni' },
+  { osnova: 'zvezda', izvedena: 'zvezdani' },
+  { osnova: 'račun', izvedena: 'računar' },
 ]
 
 interface HomonimZnacenje {
   kontekst: string
   znacenje: string
-  // Težina značenja: osnovna (4) ili ređa/prelazna (5)
-  nivo: 4 | 5
 }
 
 interface Homonim {
   rec: string
   znacenja: HomonimZnacenje[]
-  uljezi: string[]
 }
 
 const HOMONIMI: Homonim[] = [
   {
     rec: 'kosa',
     znacenja: [
-      { kontekst: 'Devojčica ima dugu plavu kosu.', znacenje: 'dlake na glavi', nivo: 4 },
-      { kontekst: 'Deda oštri kosu za travu.', znacenje: 'poljoprivredna alatka', nivo: 4 },
-      { kontekst: 'Spustili smo se niz planinsku kosu.', znacenje: 'nagnuta strana brda', nivo: 5 },
+      { kontekst: 'Devojčica ima dugu plavu kosu.', znacenje: 'dlake na glavi' },
+      { kontekst: 'Deda oštri kosu za travu.', znacenje: 'poljoprivredna alatka' },
+      { kontekst: 'Spustili smo se niz planinsku kosu.', znacenje: 'nagnuta strana brda' },
     ],
-    uljezi: ['ptica letačica', 'vrsta drveta', 'deo nameštaja'],
   },
   {
     rec: 'luk',
     znacenja: [
-      { kontekst: 'Za ručak smo jeli crni luk.', znacenje: 'vrsta povrća', nivo: 4 },
-      { kontekst: 'Strelac je zategao luk i strelu.', znacenje: 'oružje za gađanje', nivo: 4 },
-      { kontekst: 'Vojnici su ušli kroz slavoluk tvrđave.', znacenje: 'polukružni svod', nivo: 5 },
+      { kontekst: 'Za ručak smo jeli crni luk.', znacenje: 'vrsta povrća' },
+      { kontekst: 'Strelac je zategao luk i strelu.', znacenje: 'oružje za gađanje' },
+      { kontekst: 'Vojnici su ušli kroz slavoluk tvrđave.', znacenje: 'polukružni svod' },
     ],
-    uljezi: ['životinja', 'vrsta alata', 'vremenska pojava'],
   },
   {
     rec: 'grad',
     znacenja: [
-      { kontekst: 'Kupili smo stan u velikom gradu.', znacenje: 'naselje', nivo: 4 },
-      { kontekst: 'Snažan grad je uništio useve.', znacenje: 'vremenska nepogoda (led)', nivo: 5 },
+      { kontekst: 'Kupili smo stan u velikom gradu.', znacenje: 'naselje' },
+      { kontekst: 'Snažan grad je uništio useve.', znacenje: 'vremenska nepogoda (led)' },
     ],
-    uljezi: ['vrsta zgrade', 'životinja', 'poljoprivredna mašina'],
   },
   {
     rec: 'jezik',
     znacenja: [
-      { kontekst: 'Ugrizla sam se za jezik.', znacenje: 'deo tela (organ u usnoj duplji)', nivo: 4 },
-      { kontekst: 'Srpski jezik mi je maternji.', znacenje: 'sredstvo za sporazumevanje', nivo: 4 },
-      { kontekst: 'Jezik zvona se pokvario pa zvono ne zvoni.', znacenje: 'deo aparata koji udara', nivo: 5 },
+      { kontekst: 'Ugrizla sam se za jezik.', znacenje: 'deo tela (organ u usnoj duplji)' },
+      { kontekst: 'Srpski jezik mi je maternji.', znacenje: 'sredstvo za sporazumevanje' },
+      { kontekst: 'Jezik zvona se pokvario pa zvono ne zvoni.', znacenje: 'deo aparata koji udara' },
     ],
-    uljezi: ['vrsta obuće', 'životinja', 'vrsta hrane'],
   },
   {
     rec: 'list',
     znacenja: [
-      { kontekst: 'Jesenji list je pao sa drveta.', znacenje: 'deo biljke', nivo: 4 },
-      { kontekst: 'Otvorio je svesku na prvom listu.', znacenje: 'strana knjige ili sveske', nivo: 4 },
-      { kontekst: 'Riba je mahnula repom, a pas svojim listom.', znacenje: 'deo tela životinje', nivo: 5 },
+      { kontekst: 'Jesenji list je pao sa drveta.', znacenje: 'deo biljke' },
+      { kontekst: 'Otvorio je svesku na prvom listu.', znacenje: 'strana knjige ili sveske' },
+      { kontekst: 'Riba je mahnula repom, a pas svojim listom.', znacenje: 'deo tela životinje' },
     ],
-    uljezi: ['vrsta nameštaja', 'poljoprivredna alatka', 'vrsta hrane'],
   },
   {
     rec: 'glava',
     znacenja: [
-      { kontekst: 'Glava me boli od učenja.', znacenje: 'deo tela', nivo: 4 },
-      { kontekst: 'Glava sela je sazvala sastanak.', znacenje: 'predsednik, vođa', nivo: 5 },
-      { kontekst: 'Češalj je izgubio jednu glavu.', znacenje: 'gornji deo predmeta', nivo: 5 },
+      { kontekst: 'Glava me boli od učenja.', znacenje: 'deo tela' },
+      { kontekst: 'Glava sela je sazvala sastanak.', znacenje: 'predsednik, vođa' },
+      { kontekst: 'Češalj je izgubio jednu glavu.', znacenje: 'gornji deo predmeta' },
     ],
-    uljezi: ['vrsta odeće', 'životinja', 'vrsta alata'],
   },
   {
     rec: 'pero',
     znacenja: [
-      { kontekst: 'Upravio je domaći hemijskim perom.', znacenje: 'sredstvo za pisanje', nivo: 4 },
-      { kontekst: 'Paun je raširio svoja šarena pera.', znacenje: 'pokrovče na telu ptice', nivo: 4 },
-      { kontekst: 'Vetar je zaigrao perom drveta.', znacenje: 'list drveta (pesnički)', nivo: 5 },
+      { kontekst: 'Upravio je domaći hemijskim perom.', znacenje: 'sredstvo za pisanje' },
+      { kontekst: 'Paun je raširio svoja šarena pera.', znacenje: 'pokrovče na telu ptice' },
+      { kontekst: 'Vetar je zaigrao perom drveta.', znacenje: 'list drveta (pesnički)' },
     ],
-    uljezi: ['deo obuće', 'vrsta alata', 'vrsta hrane'],
   },
   {
     rec: 'noga',
     znacenja: [
-      { kontekst: 'Noga mi je zaspala od sedenja.', znacenje: 'deo tela', nivo: 4 },
-      { kontekst: 'Stolica se klati jer je jedna noga kratka.', znacenje: 'deo nameštaja', nivo: 5 },
+      { kontekst: 'Noga mi je zaspala od sedenja.', znacenje: 'deo tela' },
+      { kontekst: 'Stolica se klati jer je jedna noga kratka.', znacenje: 'deo nameštaja' },
     ],
-    uljezi: ['deo odeće', 'životinja', 'vrsta alata'],
   },
 ]
 
 export const srpskiRecnik4: TopicGenerator = {
   slug: 'srpski-recnik-4',
-  supportedTypes: ['single', 'truefalse'],
+  supportedTypes: ['text', 'truefalse'],
   supportsWordProblems: false,
 
   generateOne(cfg: GeneratorConfig, rng: Rng, taken: Set<string>): GenerisanoPitanje | null {
-    if (cfg.difficulty <= 2) {
-      // Složene reči
+    // Značenje homonima ne može da se ukuca kratkim odgovorom, pa je taj tip
+    // pitanja uvek tačno/netačno tvrdnja.
+    const kategorija = cfg.type === 'truefalse'
+      ? 'homonim'
+      : cfg.type === 'text'
+        ? izaberi(rng, ['slozena', 'izvedena'] as const)
+        : izaberi(rng, ['slozena', 'izvedena', 'homonim'] as const)
+
+    if (kategorija === 'slozena') {
       const slozena = izaberi(rng, SLOZENE_RECI)
-      const traziDelove = rng() < 0.5
-      const signature = `srpski-recnik-4:slozena:${slozena.rec}:${traziDelove ? 'delovi' : 'rec'}`
+      const traziPrvi = rng() < 0.5
+      const signature = `srpski-recnik-4:slozena:${slozena.rec}:${traziPrvi ? 'deo1' : 'deo2'}`
       if (taken.has(signature)) return null
 
-      if (traziDelove) {
-        return upakujSrpskiIzbor(cfg, rng, {
-          pitanje: `Od kojih reči je nastala složenica „${slozena.rec}“?`,
-          tacan: slozena.delovi,
-          netacni: slozena.uljezi,
-          tvrdnja: (odgovor) => `Složenica „${slozena.rec}“ nastala je od reči: ${odgovor}.`,
-          explanation: `Složenica „${slozena.rec}“ je spoj reči ${slozena.delovi}.`,
+      if (traziPrvi) {
+        return upakujSrpskiTekst(cfg, {
+          pitanje: `Složenica „${slozena.rec}“ nastala je od koje reči i reči „${slozena.deo2}“? (upiši prvi deo)`,
+          tacan: slozena.deo1,
+          explanation: `Složenica „${slozena.rec}“ je spoj reči „${slozena.deo1}“ i „${slozena.deo2}“.`,
           hint: 'Složene reči nastaju spajanjem dve posebne reči u jednu novu reč.',
           signature,
         })
-      } else {
-        return upakujSrpskiIzbor(cfg, rng, {
-          pitanje: `Koja složena reč nastaje spajanjem: ${slozena.delovi}?`,
-          tacan: slozena.rec,
-          netacni: SLOZENE_RECI.filter(s => s.rec !== slozena.rec).map(s => s.rec),
-          tvrdnja: (odgovor) => `Spajanjem ovih reči nastaje reč „${odgovor}“.`,
-          explanation: `Spajanjem dobijamo reč „${slozena.rec}“.`,
-          hint: 'Spoj ove dve reči u jednu.',
-          signature,
-        })
       }
+      return upakujSrpskiTekst(cfg, {
+        pitanje: `Složenica „${slozena.rec}“ nastala je od reči „${slozena.deo1}“ i koje reči još? (upiši drugi deo)`,
+        tacan: slozena.deo2,
+        prihvaceni: slozena.deo2Prihvaceni,
+        explanation: `Složenica „${slozena.rec}“ je spoj reči „${slozena.deo1}“ i „${slozena.deo2}“.`,
+        hint: 'Složene reči nastaju spajanjem dve posebne reči u jednu novu reč.',
+        signature,
+      })
     }
 
-    if (cfg.difficulty === 3) {
-      // Izvedene reči
+    if (kategorija === 'izvedena') {
       const izvedena = izaberi(rng, IZVEDENE_RECI)
       const signature = `srpski-recnik-4:izvedena:${izvedena.osnova}`
       if (taken.has(signature)) return null
-
-      return upakujSrpskiIzbor(cfg, rng, {
-        pitanje: `Koja od navedenih reči pripada porodici reči čija je osnova „${izvedena.osnova}“?`,
-        tacan: izvedena.izvedena,
-        netacni: izvedena.uljezi,
-        tvrdnja: (odgovor) => `Reč „${odgovor}“ pripada ovoj porodici reči.`,
-        explanation: `Reč „${izvedena.izvedena}“ izvedena je od osnove „${izvedena.osnova}“.`,
+      return upakujSrpskiTekst(cfg, {
+        pitanje: `Od koje reči je izvedena reč „${izvedena.izvedena}“? (upiši tu reč)`,
+        tacan: izvedena.osnova,
+        explanation: `Reč „${izvedena.izvedena}“ izvedena je od reči „${izvedena.osnova}“ dodavanjem nastavka.`,
         hint: 'Izvedene reči nastaju dodavanjem nastavaka na osnovnu reč.',
         signature,
       })
     }
 
-    // Nivo 4 i 5: Homonimi (reči sa više značenja) — osnovna, odnosno ređa značenja
-    const dostupnaZnacenja = HOMONIMI.map((homonim) => ({
-      homonim,
-      znacenja: homonim.znacenja.filter((znacenje) => znacenje.nivo === cfg.difficulty),
-    })).filter((red) => red.znacenja.length > 0)
-    const red = izaberi(rng, dostupnaZnacenja)
-    const homonim = red.homonim
-    const znacenje = izaberi(rng, red.znacenja)
-    const signature = `srpski-recnik-4:homonim:${homonim.rec}:${znacenje.znacenje}`
+    const homonim = izaberi(rng, HOMONIMI)
+    const znacenje = izaberi(rng, homonim.znacenja)
+    const signature = `srpski-recnik-4:homonim:${homonim.rec}:${znacenje.kontekst}`
     if (taken.has(signature)) return null
-
-    const svaOstalaZnacenja = homonim.znacenja.filter(z => z.znacenje !== znacenje.znacenje).map(z => z.znacenje)
-    const sviUljezi = [...svaOstalaZnacenja, ...homonim.uljezi]
-
-    return upakujSrpskiIzbor(cfg, rng, {
-      pitanje: `Šta znači reč „${homonim.rec}“ u sledećoj rečenici?\n„${znacenje.kontekst}“`,
-      tacan: znacenje.znacenje,
-      netacni: sviUljezi,
-      tvrdnja: (odgovor) => `U ovoj rečenici, reč „${homonim.rec}“ označava ${odgovor}.`,
-      explanation: `U ovom kontekstu, „${homonim.rec}“ znači ${znacenje.znacenje}.`,
+    // Pogrešno značenje uzimamo iz OSTALIH značenja iste reči — tako se
+    // proverava razumevanje konkretnog konteksta, ne tuđe reči.
+    const pogresno = izaberi(rng, homonim.znacenja.filter((zn) => zn.znacenje !== znacenje.znacenje))
+    return upakujSrpskiTvrdnju(cfg, rng, {
+      tvrdnjaTacna: `U rečenici „${znacenje.kontekst}“ reč „${homonim.rec}“ znači: ${znacenje.znacenje}.`,
+      tvrdnjaNetacna: `U rečenici „${znacenje.kontekst}“ reč „${homonim.rec}“ znači: ${pogresno.znacenje}.`,
+      explanation: `U ovom kontekstu „${homonim.rec}“ znači: ${znacenje.znacenje}.`,
       hint: 'Reči koje se isto pišu i izgovaraju mogu imati potpuno različita značenja zavisno od rečenice.',
       signature,
     })

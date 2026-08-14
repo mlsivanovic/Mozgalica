@@ -95,7 +95,8 @@ export function GeneratorPregled({ pocetnaPitanja, upozorenje, cfg, oblasti, onN
         source_question_id: null, topic_id: oblast.id, topic_name: oblast.name,
         type: s.pitanje.type, text: s.pitanje.text, options: s.pitanje.options,
         correct: s.pitanje.correct, explanation: s.pitanje.explanation,
-        hint: s.pitanje.hint, points: s.pitanje.points, manual_review: false,
+        hint: s.pitanje.hint, points: s.pitanje.points,
+        manual_review: s.pitanje.type === 'text',
       }
     })
   }
