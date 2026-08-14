@@ -64,6 +64,7 @@ export function AdminLayout() {
           <nav className="admin-nav" aria-label="Glavna navigacija">
             <NavLink to="/admin/pitanja">Pitanja</NavLink>
             <NavLink to="/admin/kvizovi">Kvizovi</NavLink>
+            <NavLink to="/admin/sah">Šah</NavLink>
             <NavLink to="/admin/rezultati">Rezultati</NavLink>
             <NavLink to="/admin/podesavanja">Podešavanja</NavLink>
           </nav>

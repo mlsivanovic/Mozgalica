@@ -103,6 +103,8 @@ export function ProfilDeteta() {
   const napredak = sledeca
     ? Math.max(0, Math.min(100, Math.round(100 * (ukupnoZvezdica - odPraga) / Math.max(1, doPraga - odPraga))))
     : 100
+  const brojAktivnih = (profil.activeQuizzes?.length ?? 0) + (profil.activeChessGames?.length ?? 0)
+  const brojIstorije = (profil.history?.length ?? 0) + (profil.chessHistory?.length ?? 0)
 
   return (
     <main className="profil-strana">
@@ -184,12 +186,12 @@ export function ProfilDeteta() {
           <div className="profil-sekcija-naslov">
             <div>
               <p className="profil-nadnaslov">Vreme je za vežbu</p>
-              <h2>Aktivni kvizovi</h2>
+              <h2>Aktivne aktivnosti</h2>
             </div>
-            <span className="bedz">{profil.activeQuizzes?.length ?? 0}</span>
+            <span className="bedz">{brojAktivnih}</span>
           </div>
 
-          {(profil.activeQuizzes?.length ?? 0) === 0 ? (
+          {brojAktivnih === 0 ? (
             <div className="kartica profil-prazno">
               <span aria-hidden="true">🌟</span>
               <div>
@@ -199,6 +201,24 @@ export function ProfilDeteta() {
             </div>
           ) : (
             <div className="profil-kvizovi">
+              {profil.activeChessGames?.map((partija) => (
+                <article className="kartica profil-kviz profil-kviz--sah" key={partija.playToken}>
+                  <div className="red red--razmak">
+                    <span className={`bedz ${partija.status === 'in_progress' ? 'bedz--upozorenje' : ''}`}>
+                      {partija.status === 'in_progress' ? 'Partija u toku' : 'Novi šah'}
+                    </span>
+                    <span className="malo blago">♟️ ELO {partija.approximateElo}</span>
+                  </div>
+                  <h3>Šah protiv računara</h3>
+                  <p className="malo">
+                    Igraš {partija.childColor === 'white' ? 'belim' : 'crnim'}
+                    {' · '}{partija.clockSeconds ? `${partija.clockSeconds / 60}+0` : 'bez sata'}
+                  </p>
+                  <Link className="dugme dugme--akcenat" to={`/sah/${partija.playToken}`}>
+                    {partija.status === 'in_progress' ? 'Nastavi partiju →' : 'Pokreni partiju ♟️'}
+                  </Link>
+                </article>
+              ))}
               {profil.activeQuizzes!.map((kviz) => (
                 <article className="kartica profil-kviz" key={kviz.quizToken}>
                   <div className="red red--razmak">
@@ -229,29 +249,45 @@ export function ProfilDeteta() {
         <details className="kartica profil-istorija">
           <summary>
             <span>Prethodni rezultati</span>
-            <span className="bedz">{profil.history?.length ?? 0}</span>
+            <span className="bedz">{brojIstorije}</span>
           </summary>
           <div className="profil-istorija-lista">
-            {(profil.history?.length ?? 0) === 0 ? (
-              <p className="blago">Još nema završenih kvizova.</p>
-            ) : profil.history!.map((rezultat) => (
-              <div className="profil-rezultat" key={rezultat.attemptId}>
-                <div>
-                  <strong>{rezultat.title}</strong>
-                  <p className="malo blago">{formatDatum(rezultat.submittedAt)}</p>
-                </div>
-                {rezultat.pendingReview ? (
-                  <span className="bedz bedz--upozorenje">Čeka pregled</span>
-                ) : (
-                  <div className="profil-rezultat-broj">
-                    <span aria-label={`${rezultat.starsAwarded ?? 0} zvezdica`}>
-                      {'⭐'.repeat(rezultat.starsAwarded ?? 0) || '☆'}
-                    </span>
-                    <strong>{formatProcenat(rezultat.scorePct)}</strong>
+            {brojIstorije === 0 ? (
+              <p className="blago">Još nema završenih aktivnosti.</p>
+            ) : <>
+              {profil.chessHistory?.map((rezultat) => (
+                <div className="profil-rezultat" key={rezultat.gameId}>
+                  <div>
+                    <strong>♟️ Šah protiv ELO {rezultat.approximateElo}</strong>
+                    <p className="malo blago">{formatDatum(rezultat.completedAt)}</p>
                   </div>
-                )}
-              </div>
-            ))}
+                  <div className="profil-rezultat-broj">
+                    <span aria-label={`${rezultat.starsAwarded} zvezdica`}>
+                      {'⭐'.repeat(rezultat.starsAwarded) || '☆'}
+                    </span>
+                    <strong>{rezultat.result === 'child_win' ? 'Pobeda' : rezultat.result === 'draw' ? 'Remi' : 'Poraz'}</strong>
+                  </div>
+                </div>
+              ))}
+              {profil.history!.map((rezultat) => (
+                <div className="profil-rezultat" key={rezultat.attemptId}>
+                  <div>
+                    <strong>{rezultat.title}</strong>
+                    <p className="malo blago">{formatDatum(rezultat.submittedAt)}</p>
+                  </div>
+                  {rezultat.pendingReview ? (
+                    <span className="bedz bedz--upozorenje">Čeka pregled</span>
+                  ) : (
+                    <div className="profil-rezultat-broj">
+                      <span aria-label={`${rezultat.starsAwarded ?? 0} zvezdica`}>
+                        {'⭐'.repeat(rezultat.starsAwarded ?? 0) || '☆'}
+                      </span>
+                      <strong>{formatProcenat(rezultat.scorePct)}</strong>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </>}
           </div>
         </details>
       </div>

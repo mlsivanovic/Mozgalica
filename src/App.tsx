@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react'
 import { HashRouter, Navigate, Route, Routes, useParams } from 'react-router-dom'
 import { AdminLayout } from './components/AdminLayout'
 import { PitanjaSekcija, RezultatiSekcija } from './components/AdminSekcijaTabovi'
@@ -21,12 +22,17 @@ import { NijePronadjeno } from './routes/NijePronadjeno'
 import { Prodavnica } from './routes/dete/Prodavnica'
 import { ProfilDeteta } from './routes/dete/ProfilDeteta'
 import { PwaPocetakDeteta } from './routes/dete/PwaPocetakDeteta'
+import { Loader } from './components/Zajednicke'
+
+const Sah = lazy(() => import('./routes/admin/Sah').then((modul) => ({ default: modul.Sah })))
+const SahPartija = lazy(() => import('./routes/sah/SahPartija').then((modul) => ({ default: modul.SahPartija })))
 
 function App() {
   return (
     <HashRouter>
       <AuthProvider>
-        <Routes>
+        <Suspense fallback={<Loader />}>
+          <Routes>
           <Route path="/" element={<Navigate to="/admin" replace />} />
           <Route path="/prijava" element={<Prijava />} />
 
@@ -40,6 +46,7 @@ function App() {
             <Route path="kvizovi" element={<KvizoviLista />} />
             <Route path="kvizovi/novi" element={<KvizForma />} />
             <Route path="kvizovi/:id" element={<KvizDetalj />} />
+            <Route path="sah" element={<Sah />} />
             <Route path="rezultati" element={<RezultatiSekcija />}>
               <Route index element={<Rezultati />} />
               <Route path="statistika" element={<StatistikaDece />} />
@@ -57,9 +64,11 @@ function App() {
           <Route path="/dete/pocetak" element={<PwaPocetakDeteta />} />
           <Route path="/dete/:profilToken" element={<ProfilDeteta />} />
           <Route path="/prodavnica/:profilToken" element={<Prodavnica />} />
+          <Route path="/sah/:token" element={<SahPartija />} />
 
           <Route path="*" element={<NijePronadjeno />} />
-        </Routes>
+          </Routes>
+        </Suspense>
       </AuthProvider>
     </HashRouter>
   )

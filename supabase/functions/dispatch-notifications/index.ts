@@ -24,10 +24,11 @@ interface Obavestenje {
   owner_id: string
   child_profile_id: string | null
   recipient_type: 'admin' | 'child'
-  event_type: 'new_quiz' | 'quiz_completed'
+  event_type: 'new_quiz' | 'quiz_completed' | 'new_chess_game' | 'chess_game_completed'
   quiz_id: string | null
   quiz_link_id: string | null
   attempt_id: string | null
+  chess_game_id: string | null
   title: string
   body: string
   target_url: string
@@ -230,7 +231,11 @@ async function posaljiMejl(
 
   const mejl = obavestenje.event_type === 'new_quiz'
     ? await napraviMejlZaNoviKviz(supabase, obavestenje, sacuvaniPrimalac)
-    : await napraviMejlZaRezultat(supabase, obavestenje)
+    : obavestenje.event_type === 'new_chess_game'
+      ? await napraviMejlZaNovuSahPartiju(supabase, obavestenje, sacuvaniPrimalac)
+      : obavestenje.event_type === 'chess_game_completed'
+        ? await napraviMejlZaSahRezultat(supabase, obavestenje)
+        : await napraviMejlZaRezultat(supabase, obavestenje)
 
   const odgovor = await fetch('https://api.brevo.com/v3/smtp/email', {
     method: 'POST',
@@ -340,6 +345,74 @@ async function napraviMejlZaRezultat(
     ${dugmeMejla(link, 'Pogledaj detaljan rezultat')}
   `)
   return { to: adminEmail, recipientName: 'Administrator', subject, text, html }
+}
+
+async function napraviMejlZaNovuSahPartiju(
+  supabase: ReturnType<typeof createClient>,
+  obavestenje: Obavestenje,
+  primalac: string | null,
+) {
+  if (!obavestenje.child_profile_id || !obavestenje.chess_game_id || !primalac) {
+    throw new GreskaIsporuke('Nedostaju podaci za šahovski mejl detetu.', false)
+  }
+  const [{ data: profil }, { data: partija }] = await Promise.all([
+    supabase.from('child_profiles').select('name, public_token').eq('id', obavestenje.child_profile_id).single(),
+    supabase.from('chess_games').select('approximate_elo, child_color, clock_seconds').eq('id', obavestenje.chess_game_id).single(),
+  ])
+  if (!profil || !partija) throw new GreskaIsporuke('Profil ili šahovska partija nisu pronađeni.', false)
+
+  const link = apsolutnaHashRuta(APP_BASE_URL, `/dete/${profil.public_token}`)
+  const boja = partija.child_color === 'white' ? 'belim' : 'crnim'
+  const sat = partija.clock_seconds ? `${partija.clock_seconds / 60}+0` : 'bez sata'
+  const subject = `Mozgalica: nova šahovska partija protiv ELO ${partija.approximate_elo}`
+  const text = `Zdravo ${profil.name}! Čeka te šahovska partija protiv računara ELO ${partija.approximate_elo}. `
+    + `Igraš ${boja}, ${sat}. Otvori svoj profil: ${link}`
+  const html = omotMejla(`
+    <h2>♟️ Čeka te nova šahovska partija!</h2>
+    <p>Zdravo <strong>${escapeHtml(profil.name)}</strong>!</p>
+    <p>Protivnik je računar približne jačine <strong>ELO ${partija.approximate_elo}</strong>.</p>
+    <p>Igraš ${escapeHtml(boja)} · ${escapeHtml(sat)}</p>
+    ${dugmeMejla(link, 'Otvori moj profil')}
+  `)
+  return { to: primalac, recipientName: profil.name, subject, text, html }
+}
+
+async function napraviMejlZaSahRezultat(
+  supabase: ReturnType<typeof createClient>,
+  obavestenje: Obavestenje,
+) {
+  if (!obavestenje.chess_game_id) {
+    throw new GreskaIsporuke('Nedostaju podaci za šahovski rezultat.', false)
+  }
+  const [{ data: partija }, { data: userData }] = await Promise.all([
+    supabase.from('chess_games')
+      .select('child_profile_id, approximate_elo, result, termination, stars_awarded, completed_at')
+      .eq('id', obavestenje.chess_game_id).single(),
+    supabase.auth.admin.getUserById(obavestenje.owner_id),
+  ])
+  if (!partija || !userData?.user?.email) {
+    throw new GreskaIsporuke('Šahovski rezultat ili administratorski mejl nisu pronađeni.', false)
+  }
+  const { data: profil } = await supabase.from('child_profiles').select('name')
+    .eq('id', partija.child_profile_id).single()
+  if (!profil) throw new GreskaIsporuke('Profil deteta nije pronađen.', false)
+
+  const rezultat = partija.result === 'child_win' ? 'pobeda' : partija.result === 'draw' ? 'remi' : 'poraz'
+  const link = apsolutnaHashRuta(APP_BASE_URL, '/admin/sah')
+  const subject = `Mozgalica: ${profil.name} — šahovski rezultat (${rezultat})`
+  const text = `${profil.name}: ${rezultat} protiv ELO ${partija.approximate_elo}, `
+    + `${partija.stars_awarded ?? 0}/5 zvezdica. Detalji: ${link}`
+  const html = omotMejla(`
+    <h2>♟️ Završena šahovska partija</h2>
+    <p><strong>${escapeHtml(profil.name)}</strong>: ${escapeHtml(rezultat)} protiv
+      računara ELO ${partija.approximate_elo}.</p>
+    <ul>
+      <li>Završetak: ${escapeHtml(partija.termination ?? '—')}</li>
+      <li>Osvojene zvezdice: ${partija.stars_awarded ?? 0} / 5</li>
+    </ul>
+    ${dugmeMejla(link, 'Pogledaj šahovske partije')}
+  `)
+  return { to: userData.user.email, recipientName: 'Administrator', subject, text, html }
 }
 
 function dugmeMejla(link: string, tekst: string): string {

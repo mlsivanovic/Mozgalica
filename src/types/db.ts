@@ -6,6 +6,12 @@ export type IzvorPitanja = 'manual' | 'generated'
 export type StatusPokusaja = 'in_progress' | 'submitted' | 'expired'
 export type Predmet = 'matematika' | 'srpski'
 export type Razred = 3 | 4
+export type SahBoja = 'white' | 'black'
+export type SahStatus = 'assigned' | 'in_progress' | 'completed' | 'cancelled'
+export type SahRezultat = 'child_win' | 'draw' | 'child_loss'
+export type SahZavrsetak =
+  | 'checkmate' | 'stalemate' | 'threefold_repetition' | 'fifty_move'
+  | 'insufficient_material' | 'timeout' | 'resignation' | 'draw'
 export type FiksnoImeDeteta = 'Andrej' | 'Filip'
 export type AvatarDeteta = '🧠' | '🚀' | '🦊' | '🦁' | '🤖' | '⭐'
 
@@ -193,6 +199,48 @@ export interface PokusajOdgovor {
   graded_by: 'auto' | 'manual' | 'pending'
 }
 
+export interface SahPartija {
+  id: string
+  owner_id: string
+  child_profile_id: string
+  play_token: string
+  assignment_request_id: string
+  approximate_elo: 700 | 900 | 1100 | 1300 | 1500
+  child_color: SahBoja
+  clock_seconds: 300 | 600 | 900 | 1800 | null
+  white_remaining_ms: number | null
+  black_remaining_ms: number | null
+  turn_color: 'white' | 'black'
+  turn_started_at: string | null
+  fen: string
+  status: SahStatus
+  result: SahRezultat | null
+  termination: SahZavrsetak | null
+  stars_awarded: number | null
+  revision: number
+  last_request_id: string | null
+  notify_child_email: boolean
+  engine_version: string
+  started_at: string | null
+  completed_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface SahPotez {
+  id: string
+  game_id: string
+  ply: number
+  player: 'child' | 'engine'
+  color: 'white' | 'black'
+  uci: string
+  san: string
+  fen_after: string
+  moved_at: string
+  white_remaining_ms: number | null
+  black_remaining_ms: number | null
+}
+
 export interface AdminPodesavanja {
   user_id: string
   email_notifications: boolean
@@ -259,7 +307,8 @@ export interface KupovinaProdavnice {
 }
 
 export type TipPrimaocaObavestenja = 'admin' | 'child'
-export type TipDogadjajaObavestenja = 'new_quiz' | 'quiz_completed'
+export type TipDogadjajaObavestenja =
+  | 'new_quiz' | 'quiz_completed' | 'new_chess_game' | 'chess_game_completed'
 
 export interface Obavestenje {
   id: string

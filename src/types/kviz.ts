@@ -164,6 +164,30 @@ export interface IstorijskiRezultatProfila {
   pendingReview: boolean
 }
 
+export interface AktivnaSahPartijaProfila {
+  playToken: string
+  approximateElo: 700 | 900 | 1100 | 1300 | 1500
+  childColor: 'white' | 'black'
+  clockSeconds: 300 | 600 | 900 | 1800 | null
+  status: 'assigned' | 'in_progress'
+  fen: string
+  whiteRemainingMs: number | null
+  blackRemainingMs: number | null
+  turnColor: 'white' | 'black'
+  createdAt: string
+}
+
+export interface IstorijskaSahPartijaProfila {
+  gameId: string
+  playToken: string
+  approximateElo: 700 | 900 | 1100 | 1300 | 1500
+  childColor: 'white' | 'black'
+  result: 'child_win' | 'draw' | 'child_loss'
+  termination: string
+  starsAwarded: number
+  completedAt: string
+}
+
 export interface JavniProfilPayload {
   ok: boolean
   error?: string
@@ -177,6 +201,44 @@ export interface JavniProfilPayload {
   nextTitle?: ProfilnaTitula | null
   activeQuizzes?: AktivniKvizProfila[]
   history?: IstorijskiRezultatProfila[]
+  activeChessGames?: AktivnaSahPartijaProfila[]
+  chessHistory?: IstorijskaSahPartijaProfila[]
+}
+
+export interface SahPotezPayload {
+  ply: number
+  player: 'child' | 'engine'
+  color: 'white' | 'black'
+  uci: string
+  san: string
+  fenAfter: string
+  movedAt: string
+  whiteRemainingMs: number | null
+  blackRemainingMs: number | null
+}
+
+export interface SahStanjePayload {
+  ok: boolean
+  error?: string
+  stale?: boolean
+  duplicate?: boolean
+  status?: 'assigned' | 'in_progress' | 'completed' | 'cancelled'
+  revision?: number
+  profileToken?: string
+  childName?: string
+  childColor?: 'white' | 'black'
+  approximateElo?: 700 | 900 | 1100 | 1300 | 1500
+  clockSeconds?: 300 | 600 | 900 | 1800 | null
+  fen?: string
+  turnColor?: 'white' | 'black'
+  turnStartedAt?: string | null
+  whiteRemainingMs?: number | null
+  blackRemainingMs?: number | null
+  serverNow?: string
+  result?: 'child_win' | 'draw' | 'child_loss' | null
+  termination?: string | null
+  starsAwarded?: number | null
+  moves?: SahPotezPayload[]
 }
 
 // ---------- Administratorska statistika po detetu ----------

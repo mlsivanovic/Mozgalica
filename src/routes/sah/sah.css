@@ -1,0 +1,27 @@
+.sah-strana { min-height: 100vh; background: var(--boja-pozadina); padding: 1rem; }
+.sah-omot { width: min(100%, 980px); margin: 0 auto; }
+.sah-igra { display: grid; grid-template-columns: minmax(280px, 620px) minmax(240px, 1fr); gap: 1.2rem; align-items: start; }
+.sah-tabla-omot { position: relative; width: 100%; }
+.sah-tabla-admin { width: min(100%, 500px); margin: 0 auto; }
+.sah-promocija {
+  position: absolute; inset: 50% auto auto 50%; transform: translate(-50%, -50%);
+  width: min(92%, 360px); padding: 1rem; border-radius: var(--radius);
+  background: var(--boja-kartica); box-shadow: var(--senka-jaka); z-index: 10;
+  display: flex; flex-direction: column; align-items: center; gap: 0.8rem;
+}
+.sah-panel { display: flex; flex-direction: column; gap: 1rem; }
+.sah-satovi { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem; }
+.sah-sat { padding: 0.8rem; border-radius: var(--radius-mali); background: var(--boja-neutral); text-align: center; }
+.sah-sat--aktivan { background: var(--boja-primarna-svetla); box-shadow: inset 0 0 0 2px var(--boja-primarna); }
+.sah-sat strong { display: block; font-size: 1.45rem; font-variant-numeric: tabular-nums; }
+.sah-potezi { max-height: 280px; overflow-y: auto; display: grid; grid-template-columns: 2.4rem 1fr 1fr; gap: 0.2rem 0.55rem; font-variant-numeric: tabular-nums; }
+.sah-potezi span { padding: 0.25rem 0.35rem; border-bottom: 1px solid var(--boja-ivica); }
+.sah-rezultat { text-align: center; padding: 1.1rem; border-radius: var(--radius); background: var(--boja-uspeh-svetla); }
+.sah-rezultat--poraz { background: var(--boja-greska-svetla); }
+.sah-pregled { width: min(100%, 520px); margin: 0 auto; }
+
+@media (max-width: 760px) {
+  .sah-strana { padding: 0.65rem; }
+  .sah-igra { grid-template-columns: 1fr; }
+  .sah-panel .kartica { padding: 0.8rem; }
+}

@@ -3,12 +3,12 @@ import type {
   AdminPodesavanja, AvatarDeteta, FiksnoImeDeteta, InboxObavestenja,
   Kviz, KvizLink, KvizPitanje, NivoTitule, Oblast, Obavestenje, OdgovorDeteta, Pitanje,
   DnevniRasporedKviza, IzvorDnevnogKviza, Pokusaj, PokusajOdgovor, Predmet, ProfilDeteta,
-  PushPretplata, Razred, StavkaProdavnice, Tezina, TipPitanja,
+  PushPretplata, Razred, SahBoja, SahPartija, SahPotez, StavkaProdavnice, Tezina, TipPitanja,
 } from '../types/db'
 import type {
   InboxDetetaPayload, JavniProfilPayload, KupovinaPayload, KvizMeta, NapredakTitule,
   PokusajPayload, PotvrdaTajmera, PregledStatistikeDecePayload, ProdavnicaPayload,
-  RezultatPayload, SavePotvrda, SavetPayload, StatistikaDetetaPayload,
+  RezultatPayload, SahStanjePayload, SavePotvrda, SavetPayload, StatistikaDetetaPayload,
 } from '../types/kviz'
 import { SEED_PITANJA } from '../data/seedPitanja'
 import { supabase } from './supabase'
@@ -438,6 +438,62 @@ export async function overrideOcene(answerId: string, isCorrect: boolean, awarde
 export async function obrisiPokusaj(id: string): Promise<void> {
   const { error } = await supabase().from('attempts').delete().eq('id', id)
   if (error) throw new Error(opisiGresku(error)!)
+}
+
+// ---------- Šah ----------
+export interface NovaSahPartija {
+  childProfileId: string
+  approximateElo: 700 | 900 | 1100 | 1300 | 1500
+  childColor: SahBoja
+  clockSeconds: 300 | 600 | 900 | 1800 | null
+  sendEmail: boolean
+  idempotencyKey?: string
+}
+
+export async function listajSahPartije(): Promise<SahPartija[]> {
+  const { data, error } = await supabase()
+    .from('chess_games').select('*').order('created_at', { ascending: false })
+  if (error) throw new Error(opisiGresku(error)!)
+  return data as SahPartija[]
+}
+
+export async function listajPotezeSahPartije(gameId: string): Promise<SahPotez[]> {
+  const { data, error } = await supabase()
+    .from('chess_moves').select('*').eq('game_id', gameId).order('ply')
+  if (error) throw new Error(opisiGresku(error)!)
+  return data as SahPotez[]
+}
+
+export async function dodeliSahPartiju(podaci: NovaSahPartija): Promise<SahPartija> {
+  const { data, error } = await supabase().rpc('assign_chess_game', {
+    p_child_profile_id: podaci.childProfileId,
+    p_approximate_elo: podaci.approximateElo,
+    p_child_color: podaci.childColor,
+    p_clock_seconds: podaci.clockSeconds,
+    p_send_email: podaci.sendEmail,
+    p_idempotency_key: podaci.idempotencyKey ?? crypto.randomUUID(),
+  })
+  if (error) throw new Error(opisiGresku(error)!)
+  return data as SahPartija
+}
+
+export async function otkaziSahPartiju(gameId: string): Promise<void> {
+  const { error } = await supabase().rpc('cancel_chess_game', { p_game_id: gameId })
+  if (error) throw new Error(opisiGresku(error)!)
+}
+
+export async function sahAkcija(
+  playToken: string,
+  action: 'state' | 'start' | 'move' | 'resign',
+  expectedRevision?: number,
+  move?: { from: string; to: string; promotion?: 'q' | 'r' | 'b' | 'n' },
+  requestId = crypto.randomUUID(),
+): Promise<SahStanjePayload> {
+  const { data, error } = await supabase().functions.invoke('play-chess', {
+    body: { playToken, action, expectedRevision, move, requestId },
+  })
+  if (error) throw new Error(opisiGresku(error)!)
+  return data as SahStanjePayload
 }
 
 export interface ZbirZvezdica {
