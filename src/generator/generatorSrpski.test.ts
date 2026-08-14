@@ -10,6 +10,9 @@ const OBLASTI = [
   'srpski-pravopis',
   'srpski-citanje',
   'srpski-recnik',
+  'srpski-gramatika-4',
+  'srpski-pravopis-4',
+  'srpski-recnik-4',
 ] as const
 
 function cfg(delimicno: Partial<GeneratorConfig>): GeneratorConfig {

@@ -29,6 +29,8 @@ const NAZIVI_OBLASTI: Record<string, string> = {
   // Srpski jezik
   'srpski-vrste-reci': 'Vrste reči', 'srpski-gramatika': 'Gramatika', 'srpski-pravopis': 'Pravopis',
   'srpski-citanje': 'Čitanje i razumevanje', 'srpski-recnik': 'Rečnik',
+  // Srpski 4. razred
+  'srpski-gramatika-4': 'Gramatika', 'srpski-pravopis-4': 'Pravopis', 'srpski-recnik-4': 'Rečnik',
 }
 
 const IKONE_OBLASTI: Record<string, string> = {
@@ -46,6 +48,8 @@ const IKONE_OBLASTI: Record<string, string> = {
   // Srpski jezik
   'srpski-vrste-reci': '🔤', 'srpski-gramatika': '📚', 'srpski-pravopis': '✍️',
   'srpski-citanje': '📖', 'srpski-recnik': '🗣️',
+  // Srpski 4. razred
+  'srpski-gramatika-4': '📚', 'srpski-pravopis-4': '✍️', 'srpski-recnik-4': '🗣️',
 }
 
 const PREDMETI: Predmet[] = ['matematika', 'srpski']
