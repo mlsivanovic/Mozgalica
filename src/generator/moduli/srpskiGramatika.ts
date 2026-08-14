@@ -12,18 +12,41 @@ interface Imenica {
 }
 
 const IMENICE: Imenica[] = [
+  // Muški rod
   { jednina: 'dečak', mnozina: 'dečaci', rod: 'muški rod' },
   { jednina: 'prozor', mnozina: 'prozori', rod: 'muški rod' },
   { jednina: 'leptir', mnozina: 'leptiri', rod: 'muški rod' },
   { jednina: 'most', mnozina: 'mostovi', rod: 'muški rod' },
+  { jednina: 'učenik', mnozina: 'učenici', rod: 'muški rod' },
+  { jednina: 'grad', mnozina: 'gradovi', rod: 'muški rod' },
+  { jednina: 'drugar', mnozina: 'drugari', rod: 'muški rod' },
+  { jednina: 'ranac', mnozina: 'rančevi', rod: 'muški rod' },
+  { jednina: 'korak', mnozina: 'koraci', rod: 'muški rod' },
+  { jednina: 'hrast', mnozina: 'hrastovi', rod: 'muški rod' },
+
+  // Ženski rod
   { jednina: 'devojčica', mnozina: 'devojčice', rod: 'ženski rod' },
   { jednina: 'sveska', mnozina: 'sveske', rod: 'ženski rod' },
   { jednina: 'lopta', mnozina: 'lopte', rod: 'ženski rod' },
   { jednina: 'noć', mnozina: 'noći', rod: 'ženski rod' },
+  { jednina: 'knjiga', mnozina: 'knjige', rod: 'ženski rod' },
+  { jednina: 'reka', mnozina: 'reke', rod: 'ženski rod' },
+  { jednina: 'pesma', mnozina: 'pesme', rod: 'ženski rod' },
+  { jednina: 'škola', mnozina: 'škole', rod: 'ženski rod' },
+  { jednina: 'zvezda', mnozina: 'zvezde', rod: 'ženski rod' },
+  { jednina: 'olovka', mnozina: 'olovke', rod: 'ženski rod' },
+
+  // Srednji rod
   { jednina: 'selo', mnozina: 'sela', rod: 'srednji rod' },
   { jednina: 'sunce', mnozina: 'sunca', rod: 'srednji rod' },
   { jednina: 'polje', mnozina: 'polja', rod: 'srednji rod' },
   { jednina: 'jezero', mnozina: 'jezera', rod: 'srednji rod' },
+  { jednina: 'stablo', mnozina: 'stabla', rod: 'srednji rod' },
+  { jednina: 'pismo', mnozina: 'pisma', rod: 'srednji rod' },
+  { jednina: 'brdo', mnozina: 'brda', rod: 'srednji rod' },
+  { jednina: 'pero', mnozina: 'pera', rod: 'srednji rod' },
+  { jednina: 'zvono', mnozina: 'zvona', rod: 'srednji rod' },
+  { jednina: 'jaje', mnozina: 'jaja', rod: 'srednji rod' },
 ]
 
 interface Recenica {
@@ -45,6 +68,20 @@ const RECENICE: Recenica[] = [
   { tekst: 'Jutarnje sunce greje livadu.', subjekat: 'sunce', predikat: 'greje' },
   { tekst: 'Učenici trećeg razreda pevaju.', subjekat: 'učenici', predikat: 'pevaju' },
   { tekst: 'Beli oblaci prekrivaju nebo.', subjekat: 'oblaci', predikat: 'prekrivaju' },
+  // Nove rečenice
+  { tekst: 'Hrabar vatrogasac gasi vatru.', subjekat: 'vatrogasac', predikat: 'gasi' },
+  { tekst: 'Vesela deca trče parkom.', subjekat: 'deca', predikat: 'trče' },
+  { tekst: 'Moja baka pravi pitu.', subjekat: 'baka', predikat: 'pravi' },
+  { tekst: 'Mina lepo svira violinu.', subjekat: 'Mina', predikat: 'svira' },
+  { tekst: 'Zelena žaba skače u baru.', subjekat: 'žaba', predikat: 'skače' },
+  { tekst: 'Stari ribar plete mrežu.', subjekat: 'ribar', predikat: 'plete' },
+  { tekst: 'Hladna kiša neprestano pada.', subjekat: 'kiša', predikat: 'pada' },
+  { tekst: 'Moj brat vozi bicikl.', subjekat: 'brat', predikat: 'vozi' },
+  { tekst: 'Luka i Ivan grade kulu.', subjekat: 'Luka i Ivan', predikat: 'grade' },
+  { tekst: 'Šareni leptir leti svuda.', subjekat: 'leptir', predikat: 'leti' },
+  { tekst: 'Drveni čamac plovi rekom.', subjekat: 'čamac', predikat: 'plovi' },
+  { tekst: 'Mali miš gricka sir.', subjekat: 'miš', predikat: 'gricka' },
+  { tekst: 'Zlatni ključ otvara vrata.', subjekat: 'ključ', predikat: 'otvara' },
 ]
 
 const RODOVI: Rod[] = ['muški rod', 'ženski rod', 'srednji rod']

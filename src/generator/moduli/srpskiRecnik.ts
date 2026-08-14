@@ -6,11 +6,19 @@ import { upakujSrpskiIzbor, type SrpskiIzborUlaz } from './srpskiZajednicko.ts'
 const ANTONIMI = [
   ['visok', 'nizak'], ['topao', 'hladan'], ['brz', 'spor'], ['svetao', 'taman'], ['širok', 'uzak'],
   ['veseo', 'tužan'], ['pun', 'prazan'], ['mek', 'tvrd'], ['blizu', 'daleko'], ['početak', 'kraj'],
+  ['jak', 'slab'], ['težak', 'lak'], ['hrabar', 'plašljiv'], ['nov', 'star'], ['čist', 'prljav'],
+  ['dobar', 'loš'], ['isti', 'različit'], ['dug', 'kratak'], ['jeftin', 'skup'], ['bogat', 'siromašan'],
+  ['zdrav', 'bolestan'], ['beo', 'crn'], ['istina', 'laž'], ['dan', 'noć'], ['prijatelj', 'neprijatelj'],
+  ['ljubav', 'mržnja'],
 ] as const
 
 const SINONIMI = [
   ['srećan', 'radostan'], ['brz', 'hitar'], ['pametan', 'mudar'], ['pričati', 'govoriti'], ['dom', 'kuća'],
   ['put', 'staza'], ['hrabar', 'odvažan'], ['čuvati', 'paziti'], ['ljut', 'srdit'], ['poklon', 'dar'],
+  ['đak', 'učenik'], ['tuga', 'žalost'], ['putovanje', 'put'], ['vrt', 'bašta'], ['doktor', 'lekar'],
+  ['pesma', 'stih'], ['prijatelj', 'drugar'], ['misliti', 'razmišljati'], ['rukovati', 'upravljati'], ['šuma', 'gora'],
+  ['lep', 'krasan'], ['briga', 'staranje'], ['jasan', 'očigledan'], ['buka', 'galama'], ['hladnoća', 'studen'],
+  ['igrač', 'takmičar'],
 ] as const
 
 const PORODICE = [
@@ -24,11 +32,29 @@ const PORODICE = [
   { osnova: 'list', clan: 'listić', uljezi: ['lisica', 'slika', 'pismo'] },
   { osnova: 'sunce', clan: 'sunčan', uljezi: ['sundjer', 'san', 'mesec'] },
   { osnova: 'more', clan: 'morski', uljezi: ['mora', 'most', 'barka'] },
+  { osnova: 'pis', clan: 'pisac', uljezi: ['pijac', 'pesak', 'pas'] },
+  { osnova: 'zub', clan: 'zubni', uljezi: ['zubor', 'zob', 'buba'] },
+  { osnova: 'šum', clan: 'šumski', uljezi: ['šala', 'šlem', 'šator'] },
+  { osnova: 'put', clan: 'putnik', uljezi: ['ptica', 'pauk', 'peta'] },
+  { osnova: 'led', clan: 'leden', uljezi: ['leđa', 'lepak', 'lep'] },
+  { osnova: 'drvo', clan: 'drveni', uljezi: ['društvo', 'dva', 'dugme'] },
+  { osnova: 'sol', clan: 'slan', uljezi: ['slon', 'sito', 'smer'] },
+  { osnova: 'glava', clan: 'glavni', uljezi: ['glina', 'glas', 'guma'] },
+  { osnova: 'oko', clan: 'očni', uljezi: ['osa', 'ovca', 'orac'] },
+  { osnova: 'vrt', clan: 'vrtlar', uljezi: ['vrat', 'vaza', 'vuk'] },
+  { osnova: 'kuća', clan: 'kućni', uljezi: ['kula', 'kum', 'kuka'] },
+  { osnova: 'noć', clan: 'noćni', uljezi: ['nos', 'nož', 'nokat'] },
+  { osnova: 'soli', clan: 'soljenka', uljezi: ['soko', 'sova', 'sveska'] },
+  { osnova: 'hleb', clan: 'hlebni', uljezi: ['hlađenje', 'hrana', 'hram'] },
+  { osnova: 'prijatelj', clan: 'prijateljski', uljezi: ['priča', 'prozor', 'ptica'] },
 ]
 
 const UMALJENICE = [
   ['kuća', 'kućica'], ['knjiga', 'knjižica'], ['kamen', 'kamenčić'], ['cvet', 'cvetić'], ['prozor', 'prozorčić'],
   ['ptica', 'ptičica'], ['zvezda', 'zvezdica'], ['riba', 'ribica'], ['stolica', 'stoličica'], ['torba', 'torbica'],
+  ['drvo', 'drvce'], ['reka', 'rečica'], ['mačka', 'mačkica'], ['dete', 'detence'], ['lopta', 'loptica'],
+  ['most', 'mostić'], ['sat', 'satić'], ['pas', 'psić'], ['leptir', 'leptirić'], ['olovka', 'olovčica'],
+  ['glava', 'glavica'], ['zub', 'zubić'], ['list', 'listić'], ['sunce', 'sunašce'], ['vetar', 'vetrić'],
 ] as const
 
 const IZRAZI = [
@@ -42,6 +68,21 @@ const IZRAZI = [
   { izraz: 'reč mu je zapela u grlu', znacenje: 'nije uspeo da progovori', netacni: ['bio je veoma gladan', 'glasno je pevao', 'naučio je novu reč'] },
   { izraz: 'leti od sreće', znacenje: 'veoma je srećan', netacni: ['putuje avionom', 'boji se visine', 'veoma je umoran'] },
   { izraz: 'spava kao top', znacenje: 'spava veoma čvrsto', netacni: ['spava veoma kratko', 'čuje svaki šum', 'spava pored igračke'] },
+  { izraz: 'mrtav umoran', znacenje: 'veoma iscrpljen', netacni: ['teško bolestan', 'veoma tužan', 'rano se probudio'] },
+  { izraz: 'soliti pamet', znacenje: 'deliti neželjene savete', netacni: ['kuvati jelo', 'učiti školu', 'biti veoma pametan'] },
+  { izraz: 'obećavati kule i gradove', znacenje: 'davati velika, nerealna obećanja', netacni: ['graditi kuće', 'crtati zgrade', 'putovati svetom'] },
+  { izraz: 'gvožđe se kuje dok je vruće', znacenje: 'treba raditi u pravo vreme', netacni: ['praviti metalne predmete', 'loš je kovač', 'čekati zimu'] },
+  { izraz: 'upala mu sekira u med', znacenje: 'imao je veliku sreću', netacni: ['izgubio je alat', 'traži pčele', 'radi u šumi'] },
+  { izraz: 'mlati praznu slamu', znacenje: 'govori ili radi bez koristi', netacni: ['skuplja seno', 'radi na njivi', 'veoma je umoran'] },
+  { izraz: 'preveo ga žedna preko vode', znacenje: 'nasamario ga je', netacni: ['pomogao mu je da pređe reku', 'doneo mu je čašu vode', 'putovao je sa njim'] },
+  { izraz: 'kao pas i mačka', znacenje: 'stalno se svađaju', netacni: ['veoma su bliski', 'vole da se igraju', 'trče zajedno'] },
+  { izraz: 'bije ga loš glas', znacenje: 'ima lošu reputaciju', netacni: ['glasno peva', 'boli ga grlo', 'neko ga tuče'] },
+  { izraz: 'trči pred rudu', znacenje: 'brza i donosi prerane odluke', netacni: ['brzo trči', 'bavi se sportom', 'vozi traktor'] },
+  { izraz: 'skida zvezde s neba', znacenje: 'čini sve za nekoga', netacni: ['leti u svemir', 'bavi se astronomijom', 'pravi ukrase'] },
+  { izraz: 'kupiti mačku u džaku', znacenje: 'uzeti nešto neprovereno', netacni: ['čuvati kućnog ljubimca', 'ići na pijacu', 'pronaći izgubljenu stvar'] },
+  { izraz: 'ide mu od ruke', znacenje: 'uspešan je u tome što radi', netacni: ['boli ga ruka', 'traži pomoć', 'igra se loptom'] },
+  { izraz: 'graditi kule u vazduhu', znacenje: 'maštati o nemogućim stvarima', netacni: ['graditi visoku zgradu', 'leteti avionom', 'duvati balone'] },
+  { izraz: 'pokazati zube', znacenje: 'suprotstaviti se i braniti se', netacni: ['nasmejati se', 'ići kod zubara', 'prati zube ujutru'] },
 ]
 
 function izborZa(cfg: GeneratorConfig, rng: Rng): SrpskiIzborUlaz {
