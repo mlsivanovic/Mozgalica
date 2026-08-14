@@ -36,7 +36,8 @@ export function upakujSrpskiIzbor(
       : 'single'
 
   if (tip === 'truefalse') {
-    const tvrdnjaJeTacna = rng() < 0.5
+    // Bez netačnih odgovora nema šta da se lažno tvrdi
+    const tvrdnjaJeTacna = netacni.length === 0 || rng() < 0.5
     const ponudjeni = tvrdnjaJeTacna ? ulaz.tacan : izaberi(rng, netacni)
     return {
       ...osnova,
@@ -47,7 +48,9 @@ export function upakujSrpskiIzbor(
     }
   }
 
-  const vrednosti = promesaj(rng, [ulaz.tacan, ...netacni.slice(0, 3)])
+  // Distraktori se promešaju pre odabira — bez toga bi svako pitanje nudilo
+  // ista tri odgovora s početka liste (npr. uvek ista imena iz prve priče).
+  const vrednosti = promesaj(rng, [ulaz.tacan, ...promesaj(rng, netacni).slice(0, 3)])
   const options: Opcija[] = vrednosti.map((tekst, indeks) => ({ id: `o${indeks + 1}`, text: tekst }))
   return {
     ...osnova,

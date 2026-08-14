@@ -72,7 +72,7 @@ export const srpskiPravopis: TopicGenerator = {
   supportsWordProblems: false,
 
   generateOne(cfg: GeneratorConfig, rng: Rng, taken: Set<string>): GenerisanoPitanje | null {
-    const najniziNivo = cfg.difficulty <= 2 ? 1 : cfg.difficulty === 3 ? 2 : 3
+    const najniziNivo = cfg.difficulty <= 2 ? 1 : cfg.difficulty === 3 ? 2 : cfg.difficulty === 4 ? 3 : 4
     const dostupni = PRIMERI.filter((primer) => primer.nivo >= najniziNivo && primer.nivo <= cfg.difficulty)
     const primer = izaberi(rng, dostupni)
     const signature = `srpski-pravopis:${primer.id}`

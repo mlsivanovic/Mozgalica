@@ -9,6 +9,8 @@ interface PravopisniPrimer {
   tacno: string
   pogresno: string[]
   pravilo: string
+  // Ime od kog se izvodi pridev (samo nivo 2) — navodi se u tekstu pitanja.
+  ime?: string
 }
 
 const PRIMERI: PravopisniPrimer[] = [
@@ -23,14 +25,18 @@ const PRIMERI: PravopisniPrimer[] = [
   { id: 'ug-m1-sestra', nivo: 1, tacno: 'Sestra pita: „Gde mi je lutka?“', pogresno: ['Sestra pita „Gde mi je lutka?“', 'Sestra pita: Gde mi je lutka?', 'Sestra pita: „gde mi je lutka?“'], pravilo: 'Pitanje unutar upravnog govora čuva svoj upitnik.' },
   
   // Nivo 2: Prisvojni pridevi (-ski, -ški, -čki)
-  { id: 'pridev-beograd', nivo: 2, tacno: 'beogradski', pogresno: ['Beogradski'], pravilo: 'Prisvojni pridevi nastali od vlastitih imena koji se završavaju na -ski, -ški, -čki pišu se malim slovom.' },
-  { id: 'pridev-srbija', nivo: 2, tacno: 'srpski', pogresno: ['Srpski'], pravilo: 'Prisvojni pridevi na -ski pišu se malim početnim slovom.' },
-  { id: 'pridev-kragujevac', nivo: 2, tacno: 'kragujevački', pogresno: ['Kragujevački'], pravilo: 'Prisvojni pridevi na -čki pišu se malim slovom.' },
-  { id: 'pridev-novi-sad', nivo: 2, tacno: 'novosadski', pogresno: ['Novosadski', 'novi sadski', 'Novi sadski'], pravilo: 'Prisvojni pridevi od višečlanih imena pišu se spojeno i malim slovom.' },
-  { id: 'pridev-vranje', nivo: 2, tacno: 'vranjski', pogresno: ['Vranjski'], pravilo: 'Prisvojni pridevi nastali od imena gradova pišu se malim slovom.' },
-  { id: 'pridev-pirot', nivo: 2, tacno: 'piroćanski', pogresno: ['Piroćanski'], pravilo: 'Pridevi na -ski i -ški uvek idu malim slovom.' },
-  { id: 'pridev-nis', nivo: 2, tacno: 'niški', pogresno: ['Niški'], pravilo: 'Prisvojni pridevi na -ški pišu se malim slovom.' },
-  { id: 'pridev-zlatibor', nivo: 2, tacno: 'zlatiborski', pogresno: ['Zlatiborski'], pravilo: 'Prisvojni pridevi od imena planina pišu se malim slovom.' },
+  { id: 'pridev-beograd', nivo: 2, ime: 'Beograd', tacno: 'beogradski', pogresno: ['Beogradski', 'beo gradski', 'beogradovski'], pravilo: 'Prisvojni pridevi nastali od vlastitih imena koji se završavaju na -ski, -ški, -čki pišu se malim slovom.' },
+  { id: 'pridev-srbija', nivo: 2, ime: 'Srbija', tacno: 'srpski', pogresno: ['Srpski', 'Srbijanski', 'srbijanski'], pravilo: 'Prisvojni pridevi na -ski pišu se malim početnim slovom.' },
+  { id: 'pridev-kragujevac', nivo: 2, ime: 'Kragujevac', tacno: 'kragujevački', pogresno: ['Kragujevački', 'kragujevacski', 'kragujevač ki'], pravilo: 'Prisvojni pridevi na -čki pišu se malim slovom.' },
+  { id: 'pridev-novi-sad', nivo: 2, ime: 'Novi Sad', tacno: 'novosadski', pogresno: ['Novosadski', 'novi sadski', 'Novi sadski'], pravilo: 'Prisvojni pridevi od višečlanih imena pišu se spojeno i malim slovom.' },
+  { id: 'pridev-vranje', nivo: 2, ime: 'Vranje', tacno: 'vranjski', pogresno: ['Vranjski', 'vranjeski', 'vranje ski'], pravilo: 'Prisvojni pridevi nastali od imena gradova pišu se malim slovom.' },
+  { id: 'pridev-pirot', nivo: 2, ime: 'Pirot', tacno: 'piroćanski', pogresno: ['Piroćanski', 'piroćaski', 'pirot ki'], pravilo: 'Pridevi na -ski i -ški uvek idu malim slovom.' },
+  { id: 'pridev-nis', nivo: 2, ime: 'Niš', tacno: 'niški', pogresno: ['Niški', 'nišavski', 'niš ki'], pravilo: 'Prisvojni pridevi na -ški pišu se malim slovom.' },
+  { id: 'pridev-zlatibor', nivo: 2, ime: 'Zlatibor', tacno: 'zlatiborski', pogresno: ['Zlatiborski', 'zlatiborovski', 'zlati borski'], pravilo: 'Prisvojni pridevi od imena planina pišu se malim slovom.' },
+  { id: 'pridev-subotica', nivo: 2, ime: 'Subotica', tacno: 'subotički', pogresno: ['Subotički', 'suboticki', 'subotič ki'], pravilo: 'Prisvojni pridevi na -čki pišu se malim slovom, bez obraćanja pažnje na veliko slovo u imenu grada.' },
+  { id: 'pridev-valjevo', nivo: 2, ime: 'Valjevo', tacno: 'valjevski', pogresno: ['Valjevski', 'valjevovski', 'valjevo ski'], pravilo: 'Prisvojni pridevi od imena gradova pišu se malim slovom.' },
+  { id: 'pridev-pancevo', nivo: 2, ime: 'Pančevo', tacno: 'pančevački', pogresno: ['Pančevački', 'pančevski', 'pančevač ki'], pravilo: 'Prisvojni pridevi na -čki pišu se malim slovom.' },
+  { id: 'pridev-sabac', nivo: 2, ime: 'Šabac', tacno: 'šabački', pogresno: ['Šabački', 'šabacski', 'šabač ki'], pravilo: 'Prisvojni pridevi na -čki pišu se malim slovom.' },
 
   // Nivo 3: Upravni govor (Model 2)
   { id: 'ug-m2-ana', nivo: 3, tacno: '„Danas je lep dan“, kaže Ana.', pogresno: ['„Danas je lep dan“ kaže Ana.', 'Danas je lep dan, kaže Ana.', '„Danas je lep dan,“ kaže Ana.'], pravilo: 'Kada je upravni govor na prvom mestu, posle navodnika ide zapeta, a pisčeva reč počinje malim slovom.' },
@@ -70,17 +76,14 @@ export const srpskiPravopis4: TopicGenerator = {
 
   generateOne(cfg: GeneratorConfig, rng: Rng, taken: Set<string>): GenerisanoPitanje | null {
     const dostupni = PRIMERI.filter((primer) => primer.nivo === cfg.difficulty || (cfg.difficulty === 1 && primer.nivo <= 2))
-    
-    // Ako nema dovoljno primera za tačan nivo, proširi pretragu
-    const izabraniNiz = dostupni.length > 0 ? dostupni : PRIMERI
-    const primer = izaberi(rng, izabraniNiz)
-    
+    const primer = izaberi(rng, dostupni)
+
     const signature = `srpski-pravopis-4:${primer.id}`
     if (taken.has(signature)) return null
-    
+
     return upakujSrpskiIzbor(cfg, rng, {
-      pitanje: primer.nivo === 2 && primer.id.startsWith('pridev') 
-        ? 'Kako se pravilno piše prisvojni pridev izveden od ovog imena?' 
+      pitanje: primer.nivo === 2
+        ? `Kako se pravilno piše prisvojni pridev izveden od imena „${primer.ime}“?`
         : 'Koja rečenica (ili reč) je pravilno napisana?',
       tacan: primer.tacno,
       netacni: primer.pogresno,

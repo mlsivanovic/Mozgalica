@@ -1,5 +1,5 @@
 // Generator: vrste reči — imenice, glagoli i pridevi u jasnom kontekstu.
-import { ceoBroj, izaberi, type Rng } from '../random.ts'
+import { izaberi, type Rng } from '../random.ts'
 import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types.ts'
 import { upakujSrpskiIzbor } from './srpskiZajednicko.ts'
 
@@ -89,8 +89,6 @@ const ANALIZE: AnalizaRecenice[] = [
   { tekst: 'Vredni mravi nose hranu.', imenice: 2, glagoli: 1, pridevi: 1, redosled: 'pridev — imenica — glagol — imenica' },
   { tekst: 'Milica crta šareni cvet.', imenice: 2, glagoli: 1, pridevi: 1, redosled: 'imenica — glagol — pridev — imenica' },
   { tekst: 'Mlad dečak vozi bicikl.', imenice: 2, glagoli: 1, pridevi: 1, redosled: 'pridev — imenica — glagol — imenica' },
-  { tekst: 'Mirna reka lagano teče.', imenice: 2, glagoli: 1, pridevi: 1, redosled: 'pridev — imenica — glagol' },
-  { tekst: 'Slatka kruška brzo truli.', imenice: 2, glagoli: 1, pridevi: 1, redosled: 'pridev — imenica — glagol' },
   { tekst: 'Marko sluša glasnu muziku.', imenice: 2, glagoli: 1, pridevi: 1, redosled: 'imenica — glagol — pridev — imenica' },
   { tekst: 'Visok toranj krasi grad.', imenice: 2, glagoli: 1, pridevi: 1, redosled: 'pridev — imenica — glagol — imenica' },
   { tekst: 'Plavi kit roni.', imenice: 1, glagoli: 1, pridevi: 1, redosled: 'pridev — imenica — glagol' },
@@ -150,8 +148,8 @@ export const srpskiVrsteReci: TopicGenerator = {
       'imenica — glagol — imenica — pridev',
       'pridev — glagol — imenica',
       'glagol — imenica — pridev — imenica',
+      'pridev — pridev — imenica — glagol',
     ].filter((odgovor) => odgovor !== analiza.redosled)
-    while (netacni.length < 3) netacni.push(`imenica — glagol — ${ceoBroj(rng, 2, 4)} prideva`)
     return upakujSrpskiIzbor(cfg, rng, {
       pitanje: `Koji niz pravilno opisuje vrste reči redom u rečenici „${analiza.tekst}“?`,
       tacan: analiza.redosled,

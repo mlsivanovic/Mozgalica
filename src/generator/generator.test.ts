@@ -252,8 +252,8 @@ describe('tekstualni zadaci', () => {
 })
 
 describe('registar', () => {
-  it('svih 31 oblasti ima generator', () => {
-    expect(REGISTAR.size).toBe(31)
+  it('svih 35 oblasti ima generator', () => {
+    expect(REGISTAR.size).toBe(35)
     expect(podrzaneOblasti()).toContain('sabiranje')
     expect(podrzaneOblasti()).toContain('novac')
     expect(podrzaneOblasti()).toContain('rimski-brojevi')

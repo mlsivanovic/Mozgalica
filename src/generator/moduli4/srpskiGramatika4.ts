@@ -4,16 +4,16 @@ import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../type
 import { upakujSrpskiIzbor } from '../moduli/srpskiZajednicko.ts'
 
 const ZAMENICE = [
-  { rec: 'ja', lice: '1. lice', broj: 'jednina' },
-  { rec: 'ti', lice: '2. lice', broj: 'jednina' },
-  { rec: 'on', lice: '3. lice muškog roda', broj: 'jednina' },
-  { rec: 'ona', lice: '3. lice ženskog roda', broj: 'jednina' },
-  { rec: 'ono', lice: '3. lice srednjeg roda', broj: 'jednina' },
-  { rec: 'mi', lice: '1. lice', broj: 'množina' },
-  { rec: 'vi', lice: '2. lice', broj: 'množina' },
-  { rec: 'oni', lice: '3. lice muškog roda', broj: 'množina' },
-  { rec: 'one', lice: '3. lice ženskog roda', broj: 'množina' },
-  { rec: 'ona', lice: '3. lice srednjeg roda', broj: 'množina' },
+  { rec: 'ja', lice: '1. lice', broj: 'jednina', primer: 'Ja svaki dan čitam knjigu.' },
+  { rec: 'ti', lice: '2. lice', broj: 'jednina', primer: 'Ti si odlično napisao zadatak.' },
+  { rec: 'on', lice: '3. lice muškog roda', broj: 'jednina', primer: 'Marko je stigao. On nosi novi ranac.' },
+  { rec: 'ona', lice: '3. lice ženskog roda', broj: 'jednina', primer: 'Ana je nazvala. Ona je vesela.' },
+  { rec: 'ono', lice: '3. lice srednjeg roda', broj: 'jednina', primer: 'Pismo je stiglo. Ono je za tebe.' },
+  { rec: 'mi', lice: '1. lice', broj: 'množina', primer: 'Mi smo četvrti razred.' },
+  { rec: 'vi', lice: '2. lice', broj: 'množina', primer: 'Vi ste lepo nacrtali plakat.' },
+  { rec: 'oni', lice: '3. lice muškog roda', broj: 'množina', primer: 'Dečaci igraju fudbal. Oni su brzi.' },
+  { rec: 'one', lice: '3. lice ženskog roda', broj: 'množina', primer: 'Devojčice vežbaju pesmu. One pevaju lepo.' },
+  { rec: 'ona', lice: '3. lice srednjeg roda', broj: 'množina', primer: 'Deca se igraju. Ona su vesela.' },
 ]
 
 const BROJEVI = [
@@ -38,6 +38,10 @@ const SLUZBA_RECI = [
   { recenica: 'Dobra mama kuva ukusan ručak.', subjekat: 'mama', predikat: 'kuva', pravi_objekat: 'ručak', atribut_uz_subjekat: 'Dobra', atribut_uz_objekat: 'ukusan' },
   { recenica: 'Mladi slikar slika predivnu sliku.', subjekat: 'slikar', predikat: 'slika', pravi_objekat: 'sliku', atribut_uz_subjekat: 'Mladi', atribut_uz_objekat: 'predivnu' },
   { recenica: 'Umoran radnik pije hladnu vodu.', subjekat: 'radnik', predikat: 'pije', pravi_objekat: 'vodu', atribut_uz_subjekat: 'Umoran', atribut_uz_objekat: 'hladnu' },
+  { recenica: 'Veseli turista fotografiše staru tvrđavu.', subjekat: 'turista', predikat: 'fotografiše', pravi_objekat: 'tvrđavu', atribut_uz_subjekat: 'Veseli', atribut_uz_objekat: 'staru' },
+  { recenica: 'Marljiva pčela sakuplja slatki nektar.', subjekat: 'pčela', predikat: 'sakuplja', pravi_objekat: 'nektar', atribut_uz_subjekat: 'Marljiva', atribut_uz_objekat: 'slatki' },
+  { recenica: 'Nasmijana prodavčica pokazuje toplu jaknu.', subjekat: 'prodavčica', predikat: 'pokazuje', pravi_objekat: 'jaknu', atribut_uz_subjekat: 'Nasmijana', atribut_uz_objekat: 'toplu' },
+  { recenica: 'Radoznalo dete posmatra živog mrava.', subjekat: 'dete', predikat: 'posmatra', pravi_objekat: 'mrava', atribut_uz_subjekat: 'Radoznalo', atribut_uz_objekat: 'živog' },
 ]
 
 const GLAGOLSKA_VREMENA = [
@@ -78,54 +82,66 @@ export const srpskiGramatika4: TopicGenerator = {
         })
       } else {
         const broj = izaberi(rng, BROJEVI)
-        const signature = `srpski-gramatika-4:broj:${broj.rec}`
+        const signature = `srpski-gramatika-4:broj-vrsta:${broj.rec}`
         if (taken.has(signature)) return null
+        // U programu 4. razreda su samo osnovni i redni brojevi, pa se pitanje
+        // postavlja preko reči umesto preko naziva vrsta poput „zbirni“.
+        const suprotnaVrsta = broj.vrsta === 'osnovni' ? 'redni' : 'osnovni'
         return upakujSrpskiIzbor(cfg, rng, {
-          pitanje: `Kakav je po vrsti broj „${broj.rec}“?`,
-          tacan: broj.vrsta,
-          netacni: broj.vrsta === 'osnovni' ? ['redni', 'zbirni', 'razlomački'] : ['osnovni', 'zbirni', 'razlomački'],
-          tvrdnja: (odgovor) => `Broj „${broj.rec}“ je ${odgovor} broj.`,
-          explanation: `Broj „${broj.rec}“ je ${broj.vrsta} broj.`,
-          hint: broj.vrsta === 'osnovni' ? 'Ovaj broj pokazuje koliko nečega ima (količinu).' : 'Ovaj broj pokazuje koje je nešto po redu.',
+          pitanje: `Koji od ponuđenih brojeva je ${broj.vrsta} broj?`,
+          tacan: broj.rec,
+          netacni: BROJEVI.filter((drugi) => drugi.vrsta === suprotnaVrsta).map((drugi) => drugi.rec),
+          tvrdnja: (odgovor) => `Broj „${odgovor}“ je ${broj.vrsta} broj.`,
+          explanation: `Broj „${broj.rec}“ je ${broj.vrsta} broj — ${broj.vrsta === 'osnovni' ? 'pokazuje koliko nečega ima' : 'pokazuje koje je nešto po redu'}.`,
+          hint: broj.vrsta === 'osnovni' ? 'Osnovni brojevi pokazuju količinu: jedan, dva, tri…' : 'Redni brojevi pokazuju redosled: prvi, drugi, treći…',
           signature,
         })
       }
     }
 
     if (cfg.difficulty === 2) {
-      // Zamenice (lice i broj) ili glagolska vremena (samo vreme)
+      // Zamenice: lice i broj — rečenica konteksta razrešava dvostruku „onu“
       const zamenica = izaberi(rng, ZAMENICE)
-      const signature = `srpski-gramatika-4:zamenica-lice-broj:${zamenica.rec}`
+      const signature = `srpski-gramatika-4:zamenica-lice-broj:${zamenica.rec}:${zamenica.lice}`
       if (taken.has(signature)) return null
-      
-      const netacni = ZAMENICE.filter(z => z.rec !== zamenica.rec).map(z => `${z.lice}, ${z.broj}`)
-      // remove duplicates from netacni
-      const uniqueNetacni = Array.from(new Set(netacni)).filter(n => n !== `${zamenica.lice}, ${zamenica.broj}`).slice(0, 3)
+
+      const netacni = ZAMENICE
+        .filter((druga) => druga.lice !== zamenica.lice || druga.broj !== zamenica.broj)
+        .map((druga) => `${druga.lice}, ${druga.broj}`)
 
       return upakujSrpskiIzbor(cfg, rng, {
-        pitanje: `Koje lice i broj označava lična zamenica „${zamenica.rec}“?`,
+        pitanje: `Koje lice i broj označava lična zamenica „${zamenica.rec}“ u rečenici „${zamenica.primer}“?`,
         tacan: `${zamenica.lice}, ${zamenica.broj}`,
-        netacni: uniqueNetacni,
-        tvrdnja: (odgovor) => `Lična zamenica „${zamenica.rec}“ označava ${odgovor}.`,
-        explanation: `Lična zamenica „${zamenica.rec}“ označava ${zamenica.lice}, ${zamenica.broj}.`,
-        hint: 'Razmisli da li se odnosi na tebe (1. lice), sagovornika (2. lice) ili nekog trećeg (3. lice), kao i da li je jedna osoba ili više njih.',
+        netacni,
+        tvrdnja: (odgovor) => `U ovoj rečenici zamenica „${zamenica.rec}“ označava ${odgovor}.`,
+        explanation: `Zamenica „${zamenica.rec}“ u rečenici „${zamenica.primer}“ označava ${zamenica.lice}, ${zamenica.broj}.`,
+        hint: 'Razmisli da li se odnosi na govornika (1. lice), sagovornika (2. lice) ili osobu o kojoj se govori (3. lice), kao i da li je jedna osoba ili više njih.',
         signature,
       })
     }
 
     if (cfg.difficulty === 3) {
-      // Glagolska vremena
+      // Glagolska vremena sa licem i brojem — bogatiji odgovor daje četiri opcije
       const glagol = izaberi(rng, GLAGOLSKA_VREMENA)
-      const signature = `srpski-gramatika-4:glagol-vreme:${glagol.rec}`
+      const signature = `srpski-gramatika-4:glagol-vreme-lice-broj:${glagol.rec}`
       if (taken.has(signature)) return null
 
-      const svaVremena = ['prošlo', 'sadašnje', 'buduće']
+      const tacan = `${glagol.vreme} vreme, ${glagol.lice}, ${glagol.broj}`
+      const ostalaVremena = ['prošlo', 'sadašnje', 'buduće'].filter((vreme) => vreme !== glagol.vreme)
+      const drugoLice = glagol.lice === '1. lice' ? '2. lice' : '1. lice'
+      const drugiBroj = glagol.broj === 'jednina' ? 'množina' : 'jednina'
+      const netacni = [
+        `${ostalaVremena[0]} vreme, ${glagol.lice}, ${glagol.broj}`,
+        `${ostalaVremena[1]} vreme, ${glagol.lice}, ${glagol.broj}`,
+        `${glagol.vreme} vreme, ${drugoLice}, ${drugiBroj}`,
+      ]
+
       return upakujSrpskiIzbor(cfg, rng, {
-        pitanje: `U kom vremenu je glagol „${glagol.rec}“?`,
-        tacan: glagol.vreme,
-        netacni: svaVremena.filter(v => v !== glagol.vreme),
-        tvrdnja: (odgovor) => `Glagol „${glagol.rec}“ je u ${odgovor}m vremenu.`,
-        explanation: `Glagol „${glagol.rec}“ označava radnju u ${glagol.vreme}m vremenu.`,
+        pitanje: `U kom vremenu, licu i broju je glagolski oblik „${glagol.rec}“?`,
+        tacan,
+        netacni,
+        tvrdnja: (odgovor) => `Glagolski oblik „${glagol.rec}“ je: ${odgovor}.`,
+        explanation: `Glagolski oblik „${glagol.rec}“ je u ${glagol.vreme}m vremenu, ${glagol.lice}, ${glagol.broj}.`,
         hint: glagol.vreme === 'prošlo' ? 'Radnja se već dogodila.' : glagol.vreme === 'sadašnje' ? 'Radnja se dešava sada.' : 'Radnja će se tek dogoditi.',
         signature,
       })
