@@ -221,10 +221,29 @@ export interface SahPartija {
   last_request_id: string | null
   notify_child_email: boolean
   engine_version: string
+  daily_schedule_id: string | null
+  daily_local_date: string | null
   started_at: string | null
   completed_at: string | null
   created_at: string
   updated_at: string
+}
+
+export interface DnevniRasporedSaha {
+  id: string
+  child_profile_id: string
+  child_name: string
+  child_avatar: string
+  approximate_elo: 700 | 900 | 1100 | 1300 | 1500
+  child_color: SahBoja
+  clock_seconds: 300 | 600 | 900 | 1800 | null
+  daily_time: string
+  timezone: 'Europe/Belgrade'
+  is_active: boolean
+  next_run_on: string
+  last_sent_at: string | null
+  last_game_id: string | null
+  last_error: string | null
 }
 
 export interface SahPotez {

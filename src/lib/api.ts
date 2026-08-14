@@ -1,6 +1,6 @@
 // Tipizirani pozivi ka Supabase-u: tabele za admina, RPC funkcije za dete
 import type {
-  AdminPodesavanja, AvatarDeteta, FiksnoImeDeteta, InboxObavestenja,
+  AdminPodesavanja, AvatarDeteta, DnevniRasporedSaha, FiksnoImeDeteta, InboxObavestenja,
   Kviz, KvizLink, KvizPitanje, NivoTitule, Oblast, Obavestenje, OdgovorDeteta, Pitanje,
   DnevniRasporedKviza, IzvorDnevnogKviza, Pokusaj, PokusajOdgovor, Predmet, ProfilDeteta,
   PushPretplata, Razred, SahBoja, SahPartija, SahPotez, StavkaProdavnice, Tezina, TipPitanja,
@@ -479,6 +479,52 @@ export async function dodeliSahPartiju(podaci: NovaSahPartija): Promise<SahParti
 
 export async function otkaziSahPartiju(gameId: string): Promise<void> {
   const { error } = await supabase().rpc('cancel_chess_game', { p_game_id: gameId })
+  if (error) throw new Error(opisiGresku(error)!)
+}
+
+export interface NoviDnevniRasporedSaha {
+  childProfileId: string
+  approximateElo: 700 | 900 | 1100 | 1300 | 1500
+  childColor: SahBoja
+  clockSeconds: 300 | 600 | 900 | 1800 | null
+  dailyTime: string
+}
+
+export async function listajDnevneRasporedeSaha(): Promise<DnevniRasporedSaha[]> {
+  const { data, error } = await supabase().rpc('list_daily_chess_schedules')
+  if (error) throw new Error(opisiGresku(error)!)
+  return data as DnevniRasporedSaha[]
+}
+
+export async function sacuvajDnevniRasporedSaha(
+  raspored: NoviDnevniRasporedSaha,
+  id?: string,
+): Promise<DnevniRasporedSaha> {
+  const { data, error } = await supabase().rpc('save_daily_chess_schedule', {
+    p_schedule_id: id ?? null,
+    p_child_profile_id: raspored.childProfileId,
+    p_approximate_elo: raspored.approximateElo,
+    p_child_color: raspored.childColor,
+    p_clock_seconds: raspored.clockSeconds,
+    p_daily_time: raspored.dailyTime,
+  })
+  if (error) throw new Error(opisiGresku(error)!)
+  return data as DnevniRasporedSaha
+}
+
+export async function postaviAktivnostDnevnogRasporedaSaha(
+  id: string,
+  aktivan: boolean,
+): Promise<void> {
+  const { error } = await supabase().rpc('set_daily_chess_schedule_active', {
+    p_schedule_id: id,
+    p_is_active: aktivan,
+  })
+  if (error) throw new Error(opisiGresku(error)!)
+}
+
+export async function obrisiDnevniRasporedSaha(id: string): Promise<void> {
+  const { error } = await supabase().rpc('delete_daily_chess_schedule', { p_schedule_id: id })
   if (error) throw new Error(opisiGresku(error)!)
 }
 

@@ -2,22 +2,17 @@ import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { SahTabla } from '../../components/SahTabla'
 import { Loader, Modal } from '../../components/Zajednicke'
 import {
-  dodeliSahPartiju, listajPotezeSahPartije, listajProfileDeteta, listajSahPartije,
-  otkaziSahPartiju,
+  dodeliSahPartiju, listajDnevneRasporedeSaha, listajPotezeSahPartije,
+  listajProfileDeteta, listajSahPartije, otkaziSahPartiju,
 } from '../../lib/api'
 import { podrazumevanoSlanjeMejla } from '../../lib/email'
 import { formatDatum } from '../../lib/format'
-import type { ProfilDeteta, SahBoja, SahPartija, SahPotez } from '../../types/db'
+import { SAH_ELO_NIVOI, SAH_SATOVI } from '../../sah/podesavanja'
+import type { DnevniRasporedSaha, ProfilDeteta, SahBoja, SahPartija, SahPotez } from '../../types/db'
+import { DnevniRasporediSaha } from './DnevniRasporediSaha'
 import '../sah/sah.css'
 
-const ELO_NIVOI = [700, 900, 1100, 1300, 1500] as const
-const SATOVI = [
-  { value: '', label: 'Bez sata' },
-  { value: '300', label: '5+0' },
-  { value: '600', label: '10+0' },
-  { value: '900', label: '15+0' },
-  { value: '1800', label: '30+0' },
-] as const
+type PrikazSaha = 'partije' | 'rasporedi'
 
 function statusTekst(partija: SahPartija): string {
   if (partija.status === 'assigned') return 'Nije započeta'
@@ -38,11 +33,13 @@ function statusKlasa(partija: SahPartija): string {
 export function Sah() {
   const [profili, setProfili] = useState<ProfilDeteta[]>([])
   const [partije, setPartije] = useState<SahPartija[]>([])
+  const [rasporedi, setRasporedi] = useState<DnevniRasporedSaha[]>([])
+  const [prikaz, setPrikaz] = useState<PrikazSaha>('partije')
   const [ucitava, setUcitava] = useState(true)
   const [radi, setRadi] = useState(false)
   const [greska, setGreska] = useState<string | null>(null)
   const [profilId, setProfilId] = useState('')
-  const [elo, setElo] = useState<(typeof ELO_NIVOI)[number]>(900)
+  const [elo, setElo] = useState<(typeof SAH_ELO_NIVOI)[number]>(900)
   const [boja, setBoja] = useState<SahBoja>('white')
   const [sat, setSat] = useState('600')
   const [posaljiEmail, setPosaljiEmail] = useState(false)
@@ -53,9 +50,12 @@ export function Sah() {
   async function ucitaj() {
     setGreska(null)
     try {
-      const [noviProfili, novePartije] = await Promise.all([listajProfileDeteta(), listajSahPartije()])
+      const [noviProfili, novePartije, noviRasporedi] = await Promise.all([
+        listajProfileDeteta(), listajSahPartije(), listajDnevneRasporedeSaha(),
+      ])
       setProfili(noviProfili)
       setPartije(novePartije)
+      setRasporedi(noviRasporedi)
     } catch (e) {
       setGreska(String((e as Error).message ?? e))
     } finally {
@@ -122,12 +122,33 @@ export function Sah() {
       <div className="zaglavlje-strane">
         <div>
           <h1>Šah</h1>
-          <p className="blago">Dodeli detetu jednu partiju protiv računara približne jačine.</p>
+          <p className="blago">Dodeli pojedinačnu partiju ili napravi dnevni raspored za dete.</p>
         </div>
       </div>
 
       {greska && <p className="poruka poruka--greska" role="alert">{greska}</p>}
 
+      <div className="red razmak-dole" role="group" aria-label="Prikaz šaha">
+        <button
+          type="button"
+          className={`dugme ${prikaz === 'partije' ? '' : 'dugme--senka'}`}
+          aria-pressed={prikaz === 'partije'}
+          onClick={() => setPrikaz('partije')}
+        >
+          Partije <span className="bedz">{partije.length}</span>
+        </button>
+        <button
+          type="button"
+          className={`dugme ${prikaz === 'rasporedi' ? '' : 'dugme--senka'}`}
+          aria-pressed={prikaz === 'rasporedi'}
+          onClick={() => setPrikaz('rasporedi')}
+        >
+          Dnevni rasporedi <span className="bedz">{rasporedi.length}</span>
+        </button>
+      </div>
+
+      {prikaz === 'partije' ? (
+        <>
       <form className="kartica razmak-dole" onSubmit={dodeli}>
         <h2>Nova partija</h2>
         <div className="red-polja razmak-gore">
@@ -151,7 +172,7 @@ export function Sah() {
           <div className="polje">
             <label htmlFor="sah-elo">Približni ELO</label>
             <select id="sah-elo" value={elo} onChange={(e) => setElo(Number(e.target.value) as typeof elo)}>
-              {ELO_NIVOI.map((nivo) => <option value={nivo} key={nivo}>{nivo}</option>)}
+              {SAH_ELO_NIVOI.map((nivo) => <option value={nivo} key={nivo}>{nivo}</option>)}
             </select>
           </div>
           <div className="polje">
@@ -164,7 +185,7 @@ export function Sah() {
           <div className="polje">
             <label htmlFor="sah-sat">Sat</label>
             <select id="sah-sat" value={sat} onChange={(e) => setSat(e.target.value)}>
-              {SATOVI.map((opcija) => <option value={opcija.value} key={opcija.label}>{opcija.label}</option>)}
+              {SAH_SATOVI.map((opcija) => <option value={opcija.value} key={opcija.label}>{opcija.label}</option>)}
             </select>
           </div>
         </div>
@@ -217,6 +238,10 @@ export function Sah() {
             </tbody>
           </table>
         </div>
+      )}
+        </>
+      ) : (
+        <DnevniRasporediSaha profili={profili} rasporedi={rasporedi} onPromena={ucitaj} />
       )}
 
       {pregled && (
