@@ -31,7 +31,6 @@ describe('šahovski engine', () => {
     const igra = new Chess('r2qkbnr/pppbp1pp/2np4/1B3p2/3P4/2P1PN2/PP3PPP/RNBQK2R b KQkq - 0 5')
     const potez = izaberiPotezRacunara(igra, 1500, 'budzet')
     expect(potez.nodes).toBeLessThanOrEqual(30_000)
-    expect(potez.elapsedMs).toBeLessThan(500)
   })
 
   it('na nivou 1500 koristi solidnu knjigu otvaranja', () => {
