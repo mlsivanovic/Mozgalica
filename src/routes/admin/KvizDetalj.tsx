@@ -14,7 +14,7 @@ import { Loader } from '../../components/Zajednicke'
 import {
   NAZIVI_PREDMETA, NAZIVI_TIPOVA, type Kviz, type KvizLink, type KvizPitanje,
   type Oblast, type Pitanje, type Pokusaj, type Predmet, type ProfilDeteta,
-  type StatusPokusaja,
+  type Razred, type StatusPokusaja,
 } from '../../types/db'
 
 const BAZA_URL = `${window.location.origin}${import.meta.env.BASE_URL}`
@@ -71,7 +71,7 @@ export function KvizDetalj() {
 
       <PitanjaKviza
         quizId={kviz.id} zakljucano={zakljucano} snapshot={snapshotPitanja} banka={bankaPitanja}
-        oblasti={oblasti} onSacuvano={ucitajSve}
+        oblasti={oblasti} razred={kviz.grade} onSacuvano={ucitajSve}
       />
 
       <RezultatiKviza pokusaji={pokusaji} />
@@ -177,10 +177,10 @@ function PodesavanjaKviza({
 // nikad nisu sačuvana u banku) tiho ispala iz kviza čim se sastav "sačuva" iz
 // ove liste, pošto se ona ne mogu prikazati kao štiklirana u tabeli banke.
 function PitanjaKviza({
-  quizId, zakljucano, snapshot, banka, oblasti, onSacuvano,
+  quizId, zakljucano, snapshot, banka, oblasti, razred, onSacuvano,
 }: {
   quizId: string; zakljucano: boolean; snapshot: KvizPitanje[]; banka: Pitanje[]
-  oblasti: Oblast[]; onSacuvano: () => void
+  oblasti: Oblast[]; razred: Razred | null; onSacuvano: () => void
 }) {
   const [pitanjaOtvoreno, setPitanjaOtvoreno] = useState(false)
   const [bankaOtvoreno, setBankaOtvoreno] = useState(false)
@@ -191,9 +191,12 @@ function PitanjaKviza({
   const [filterPredmet, setFilterPredmet] = useState<'' | Predmet>('')
   const mapaOblasti = new Map(oblasti.map((o) => [o.id, o.name]))
   const mapaPredmeta = mapaPredmetaPoTemi(oblasti)
+  const mapaRazreda = new Map(oblasti.map((o) => [o.id, o.grade]))
 
   const vecUKvizu = new Set(snapshot.map((s) => s.source_question_id).filter((x): x is string => !!x))
-  const dostupnaBanka = banka.filter((p) => !vecUKvizu.has(p.id))
+  const dostupnaBanka = banka.filter((p) =>
+    !vecUKvizu.has(p.id) && (razred === null || mapaRazreda.get(p.topic_id) === razred)
+  )
   const bankaFiltrirana = filterPredmet ? dostupnaBanka.filter((p) => mapaPredmeta.get(p.topic_id) === filterPredmet) : dostupnaBanka
 
   async function obrisiJedno(qqId: string) {

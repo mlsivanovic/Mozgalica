@@ -1,6 +1,6 @@
 // Kreiranje novog kviza — podržava Standardni (automatski generisani) i Slobodan (ručni unos) režim rada.
 // Podešavanja standardnog kviza čuvaju se zasebno za svaku kombinaciju predmeta i razreda u LocalStorage-u.
-import { useEffect, useState, useMemo } from 'react'
+import { useCallback, useEffect, useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { generisi, podrzaneOblasti } from '../../generator'
 import {
@@ -8,7 +8,9 @@ import {
   listajProfileDeteta, dodeliKvizProfilu,
   type FilterPitanja, type SnapshotUnos,
 } from '../../lib/api'
-import { napraviPlanOblastiKviza, type IzvorStandardnogKviza } from '../../lib/raspodelaKviza'
+import {
+  izaberiOblastiZaKviz, napraviPlanOblastiKviza, type IzvorStandardnogKviza,
+} from '../../lib/raspodelaKviza'
 import {
   NAZIVI_PREDMETA, NAZIVI_RAZREDA, NAZIVI_TEZINA, NAZIVI_TIPOVA,
   type Oblast, type Predmet, type Razred, type Tezina, type TipPitanja,
@@ -121,7 +123,7 @@ export function KvizForma() {
     && oblastiZaPrikaz.some((o) => !podrzaneSlugs.includes(o.slug))
 
   // Funkcija za generisanje inicijalnih default vrednosti
-  const getDefaults = (p: Predmet, r: Razred, sveOblasti: Oblast[]): StandardQuizConfig => {
+  const getDefaults = useCallback((p: Predmet, r: Razred, sveOblasti: Oblast[]): StandardQuizConfig => {
     const filtrirane = sveOblasti.filter((o) => o.subject === p && o.grade === r)
     const generatorSlugs = filtrirane.filter((o) => podrzaneSlugs.includes(o.slug)).map((o) => o.slug)
     const koristiGenerator = generatorSlugs.length > 0
@@ -139,58 +141,73 @@ export function KvizForma() {
       shuffleAnswers: true,
       passThreshold: 90,
     }
-  }
+  }, [podrzaneSlugs])
+
+  const ucitajKonfiguraciju = useCallback((p: Predmet, r: Razred): StandardQuizConfig => {
+    const oblastiKonteksta = oblasti.filter((o) => o.subject === p && o.grade === r)
+    const defaults = getDefaults(p, r, oblasti)
+    const kombinovaniKontekst = p === 'srpski'
+      && oblastiKonteksta.some((o) => podrzaneSlugs.includes(o.slug))
+      && oblastiKonteksta.some((o) => !podrzaneSlugs.includes(o.slug))
+    const saved = localStorage.getItem(`standard_quiz_settings_${p}_${r}`)
+    if (!saved) return defaults
+
+    try {
+      const parsed = JSON.parse(saved) as Partial<StandardQuizConfig>
+      const ispravniSlugovi = parsed.selectedTopics?.filter((slug) =>
+        oblastiKonteksta.some((o) => o.slug === slug)
+      ) ?? defaults.selectedTopics
+
+      let noviIzvor = parsed.source ?? defaults.source
+      if (noviIzvor === 'generator' && !oblastiKonteksta.some((o) => podrzaneSlugs.includes(o.slug))) {
+        noviIzvor = 'bank'
+      }
+      if (noviIzvor === 'combined' && !kombinovaniKontekst) {
+        noviIzvor = defaults.source
+      }
+
+      let konacneTeme = ispravniSlugovi.length > 0 ? ispravniSlugovi : defaults.selectedTopics
+      if (noviIzvor === 'generator') {
+        konacneTeme = konacneTeme.filter((slug) => podrzaneSlugs.includes(slug))
+      }
+      const konacniTip = noviIzvor !== 'bank' && p === 'srpski'
+        && !['auto', 'single', 'truefalse'].includes(parsed.type ?? defaults.type)
+        ? 'auto'
+        : (parsed.type ?? defaults.type)
+
+      return {
+        ...defaults,
+        ...parsed,
+        source: noviIzvor,
+        type: konacniTip,
+        selectedTopics: konacneTeme,
+      }
+    } catch (e) {
+      console.error('Greška pri parsiranju sačuvanih podešavanja:', e)
+      return defaults
+    }
+  }, [oblasti, getDefaults, podrzaneSlugs])
 
   // Učitavanje podešavanja iz LocalStorage-a za predmet i razred
   useEffect(() => {
     if (oblasti.length === 0) return
-
-    const key = `standard_quiz_settings_${predmet}_${razred}`
-    const saved = localStorage.getItem(key)
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved) as Partial<StandardQuizConfig>
-        const defaults = getDefaults(predmet, razred, oblasti)
-        
-        // Spajanje sa sačuvanim vrednostima i validacija oblasti
-        const ispravniSlugovi = parsed.selectedTopics?.filter((slug) =>
-          oblastiZaPrikaz.some((o) => o.slug === slug)
-        ) ?? defaults.selectedTopics
-
-        let noviIzvor = parsed.source ?? defaults.source
-        if (noviIzvor === 'generator' && !oblastiZaPrikaz.some((o) => podrzaneSlugs.includes(o.slug))) {
-          noviIzvor = 'bank'
-        }
-        if (noviIzvor === 'combined' && !kombinovaniDostupan) {
-          noviIzvor = defaults.source
-        }
-
-        // Ako je izvor generator, filtriraj samo teme koje imaju generator
-        let konacneTeme = ispravniSlugovi.length > 0 ? ispravniSlugovi : defaults.selectedTopics
-        if (noviIzvor === 'generator') {
-          konacneTeme = konacneTeme.filter((slug) => podrzaneSlugs.includes(slug))
-        }
-        const konacniTip = noviIzvor !== 'bank' && predmet === 'srpski'
-          && !['auto', 'single', 'truefalse'].includes(parsed.type ?? defaults.type)
-          ? 'auto'
-          : (parsed.type ?? defaults.type)
-
-        setCfg({
-          ...defaults,
-          ...parsed,
-          source: noviIzvor,
-          type: konacniTip,
-          selectedTopics: konacneTeme,
-        })
-      } catch (e) {
-        console.error('Greška pri parsiranju sačuvanih podešavanja:', e)
-        setCfg(getDefaults(predmet, razred, oblasti))
-      }
-    } else {
-      setCfg(getDefaults(predmet, razred, oblasti))
-    }
+    setCfg(ucitajKonfiguraciju(predmet, razred))
     setGreska(null)
-  }, [predmet, razred, oblasti, oblastiZaPrikaz, podrzaneSlugs, kombinovaniDostupan])
+  }, [predmet, razred, oblasti.length, ucitajKonfiguraciju])
+
+  function promeniPredmet(noviPredmet: Predmet) {
+    if (noviPredmet === predmet) return
+    if (oblasti.length > 0) setCfg(ucitajKonfiguraciju(noviPredmet, razred))
+    setPredmet(noviPredmet)
+    setGreska(null)
+  }
+
+  function promeniRazred(noviRazred: Razred) {
+    if (noviRazred === razred) return
+    if (oblasti.length > 0) setCfg(ucitajKonfiguraciju(predmet, noviRazred))
+    setRazred(noviRazred)
+    setGreska(null)
+  }
 
   // Čuvanje izmena u state-u i LocalStorage-u
   const azurirajCfg = (updates: Partial<StandardQuizConfig>) => {
@@ -281,7 +298,10 @@ export function KvizForma() {
       setGreska('Unesi naziv kviza.')
       return
     }
-    if (cfg.selectedTopics.length === 0) {
+    const izabraneOblasti = izaberiOblastiZaKviz(
+      oblasti, predmet, razred, cfg.selectedTopics,
+    )
+    if (izabraneOblasti.length === 0) {
       setGreska('Moraš izabrati barem jednu oblast za kviz.')
       return
     }
@@ -320,7 +340,10 @@ export function KvizForma() {
       // kombinovanog izvora svaka oblast bira generator ili banku.
       if (cfg.source === 'generator' || cfg.source === 'combined') {
         const plan = napraviPlanOblastiKviza(
-          cfg.selectedTopics, cfg.count, new Set(podrzaneSlugs), cfg.source,
+          izabraneOblasti.map((oblast) => oblast.slug),
+          cfg.count,
+          new Set(podrzaneSlugs),
+          cfg.source,
         )
 
         if (plan.length === 0) {
@@ -328,7 +351,7 @@ export function KvizForma() {
         }
 
         const planBanke = plan.filter((stavka) => stavka.source === 'bank')
-        const oblastiBanke = planBanke.map((stavka) => oblasti.find((o) => o.slug === stavka.topicSlug))
+        const oblastiBanke = planBanke.map((stavka) => izabraneOblasti.find((o) => o.slug === stavka.topicSlug))
         if (oblastiBanke.some((oblast) => !oblast)) {
           throw new Error('Jedna od izabranih oblasti nije pronađena.')
         }
@@ -341,7 +364,7 @@ export function KvizForma() {
         const svaPitanjaIzBanke = planBanke.length > 0 ? await listajPitanja(filterBanke) : []
 
         for (const stavka of plan) {
-          const oblast = oblasti.find((o) => o.slug === stavka.topicSlug)
+          const oblast = izabraneOblasti.find((o) => o.slug === stavka.topicSlug)
           if (!oblast) throw new Error(`Oblast „${stavka.topicSlug}“ nije pronađena.`)
 
           if (stavka.source === 'generator') {
@@ -402,12 +425,8 @@ export function KvizForma() {
       } 
       // 2b. Ako je izvor banka pitanja (bilo koji predmet)
       else {
-        const izabraneOblastiIds = oblasti
-          .filter((o) => cfg.selectedTopics.includes(o.slug))
-          .map((o) => o.id)
-
         const filter: FilterPitanja = {
-          topicIds: izabraneOblastiIds,
+          topicIds: izabraneOblasti.map((oblast) => oblast.id),
         }
 
         if (cfg.difficulty) {
@@ -536,7 +555,7 @@ export function KvizForma() {
                   <button
                     key={r} type="button"
                     className={`segment-dugme ${razred === r ? 'segment-dugme--izabran' : ''}`}
-                    onClick={() => setRazred(r)}
+                    onClick={() => promeniRazred(r)}
                   >
                     {NAZIVI_RAZREDA[r]}
                   </button>
@@ -633,7 +652,7 @@ export function KvizForma() {
                       <button
                         key={p} type="button"
                         className={`segment-dugme ${predmet === p ? 'segment-dugme--izabran' : ''}`}
-                        onClick={() => setPredmet(p)}
+                        onClick={() => promeniPredmet(p)}
                       >
                         {NAZIVI_PREDMETA[p]}
                       </button>
@@ -648,7 +667,7 @@ export function KvizForma() {
                       <button
                         key={r} type="button"
                         className={`segment-dugme ${razred === r ? 'segment-dugme--izabran' : ''}`}
-                        onClick={() => setRazred(r)}
+                        onClick={() => promeniRazred(r)}
                       >
                         {NAZIVI_RAZREDA[r]}
                       </button>

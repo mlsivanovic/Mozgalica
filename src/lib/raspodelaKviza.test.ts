@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { napraviPlanOblastiKviza } from './raspodelaKviza.ts'
+import type { Oblast } from '../types/db.ts'
+import { izaberiOblastiZaKviz, napraviPlanOblastiKviza } from './raspodelaKviza.ts'
 
 const PODRZANI = new Set(['gramatika', 'pravopis'])
 
@@ -30,5 +31,26 @@ describe('raspodela kombinovanog kviza', () => {
     )).toEqual([
       { topicSlug: 'gramatika', questionCount: 1, source: 'generator' },
     ])
+  })
+})
+
+describe('izbor oblasti standardnog kviza', () => {
+  const oblasti: Oblast[] = [
+    { id: 's3', slug: 'srpski-gramatika', name: 'Gramatika', sort_order: 1, subject: 'srpski', grade: 3 },
+    { id: 's4', slug: 'srpski-gramatika-4', name: 'Gramatika', sort_order: 2, subject: 'srpski', grade: 4 },
+    { id: 'm3', slug: 'sabiranje', name: 'Sabiranje', sort_order: 3, subject: 'matematika', grade: 3 },
+  ]
+
+  it('izbacuje zaostale oblasti drugog razreda i predmeta', () => {
+    expect(izaberiOblastiZaKviz(
+      oblasti,
+      'srpski',
+      3,
+      ['srpski-gramatika-4', 'sabiranje', 'srpski-gramatika'],
+    )).toEqual([oblasti[0]])
+  })
+
+  it('posle promene sa četvrtog na treći razred ne vraća oblast četvrtog', () => {
+    expect(izaberiOblastiZaKviz(oblasti, 'srpski', 3, ['srpski-gramatika-4'])).toEqual([])
   })
 })
