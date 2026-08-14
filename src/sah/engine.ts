@@ -6,6 +6,9 @@ interface KonfiguracijaNivoa {
   maxDepth: number
   rootCandidates: number
   tacticalDepth: number
+  safetyDepth: number
+  materialTolerance: number
+  bookPlies: number
   tolerance: number
   maxNodes: number
   maxMs: number
@@ -35,11 +38,11 @@ const VREDNOSTI: Record<PieceSymbol, number> = {
 }
 
 const KONFIGURACIJE: Record<SahElo, KonfiguracijaNivoa> = {
-  700: { maxDepth: 2, rootCandidates: 18, tacticalDepth: 1, tolerance: 260, maxNodes: 4_000, maxMs: 65, quiescence: false },
-  900: { maxDepth: 3, rootCandidates: 16, tacticalDepth: 1, tolerance: 130, maxNodes: 8_000, maxMs: 85, quiescence: false },
-  1100: { maxDepth: 4, rootCandidates: 10, tacticalDepth: 1, tolerance: 55, maxNodes: 14_000, maxMs: 130, quiescence: true },
-  1300: { maxDepth: 5, rootCandidates: 12, tacticalDepth: 1, tolerance: 20, maxNodes: 22_000, maxMs: 135, quiescence: true },
-  1500: { maxDepth: 6, rootCandidates: 8, tacticalDepth: 3, tolerance: 5, maxNodes: 30_000, maxMs: 160, quiescence: true },
+  700: { maxDepth: 2, rootCandidates: 18, tacticalDepth: 1, safetyDepth: 1, materialTolerance: 260, bookPlies: 0, tolerance: 260, maxNodes: 4_000, maxMs: 65, quiescence: false },
+  900: { maxDepth: 3, rootCandidates: 16, tacticalDepth: 1, safetyDepth: 1, materialTolerance: 110, bookPlies: 4, tolerance: 100, maxNodes: 10_000, maxMs: 105, quiescence: false },
+  1100: { maxDepth: 4, rootCandidates: 12, tacticalDepth: 2, safetyDepth: 2, materialTolerance: 80, bookPlies: 6, tolerance: 45, maxNodes: 18_000, maxMs: 145, quiescence: true },
+  1300: { maxDepth: 5, rootCandidates: 10, tacticalDepth: 3, safetyDepth: 2, materialTolerance: 40, bookPlies: 8, tolerance: 15, maxNodes: 26_000, maxMs: 160, quiescence: true },
+  1500: { maxDepth: 6, rootCandidates: 8, tacticalDepth: 3, safetyDepth: 2, materialTolerance: 20, bookPlies: 10, tolerance: 5, maxNodes: 30_000, maxMs: 160, quiescence: true },
 }
 
 interface KontekstPretrage {
@@ -60,6 +63,11 @@ interface PotezIzKnjige {
 
 function kljucPozicije(game: Chess): string {
   return game.fen().split(' ').slice(0, 4).join(' ')
+}
+
+function brojPolupoteza(game: Chess): number {
+  const [, potez, , , , punPotez] = game.fen().split(' ')
+  return (Number(punPotez) - 1) * 2 + (potez === 'b' ? 1 : 0)
 }
 
 function napraviKnjiguOtvaranja(): Map<string, PotezIzKnjige> {
@@ -148,6 +156,20 @@ function evaluiraj(game: Chess, engineColor: Color): number {
   return score
 }
 
+function evaluirajMaterijal(game: Chess, engineColor: Color): number {
+  if (game.isCheckmate()) return game.turn() === engineColor ? -MAT_VREDNOST : MAT_VREDNOST
+  if (game.isGameOver()) return 0
+
+  let score = 0
+  for (const red of game.board()) {
+    for (const polje of red) {
+      if (!polje) continue
+      score += polje.color === engineColor ? VREDNOSTI[polje.type] : -VREDNOSTI[polje.type]
+    }
+  }
+  return score
+}
+
 function potezPrioritet(potez: Move): number {
   return (potez.captured ? VREDNOSTI[potez.captured] * 10 - VREDNOSTI[potez.piece] : 0)
     + (potez.promotion ? VREDNOSTI[potez.promotion] : 0)
@@ -167,9 +189,10 @@ function pretraziTakticki(
   kontekst: KontekstPretrage,
   alphaPocetni = -Infinity,
   betaPocetni = Infinity,
+  proceni = evaluiraj,
 ): number {
   kontekst.nodes++
-  if (game.isGameOver() || depth <= 0) return evaluiraj(game, engineColor)
+  if (game.isGameOver() || depth <= 0) return proceni(game, engineColor)
 
   const uSahu = game.inCheck()
   let potezi = game.moves({ verbose: true })
@@ -178,7 +201,7 @@ function pretraziTakticki(
       potez.captured || potez.promotion || potez.san.includes('+') || potez.san.includes('#')
     ))
   }
-  if (potezi.length === 0) return evaluiraj(game, engineColor)
+  if (potezi.length === 0) return proceni(game, engineColor)
   potezi.sort((a, b) => potezPrioritet(b) - potezPrioritet(a))
 
   const maksimizuje = game.turn() === engineColor
@@ -186,13 +209,13 @@ function pretraziTakticki(
   let beta = betaPocetni
   // Van šaha strana može da ne nastavi forsiranu razmenu; statička procena
   // predstavlja tu mogućnost. U šahu mora da odigra jedan od legalnih odgovora.
-  let najbolji = uSahu ? (maksimizuje ? -Infinity : Infinity) : evaluiraj(game, engineColor)
+  let najbolji = uSahu ? (maksimizuje ? -Infinity : Infinity) : proceni(game, engineColor)
   if (maksimizuje) alpha = Math.max(alpha, najbolji)
   else beta = Math.min(beta, najbolji)
 
   for (const potez of potezi) {
     game.move(potez)
-    const score = pretraziTakticki(game, depth - 1, engineColor, kontekst, alpha, beta)
+    const score = pretraziTakticki(game, depth - 1, engineColor, kontekst, alpha, beta, proceni)
     game.undo()
     if (maksimizuje) {
       najbolji = Math.max(najbolji, score)
@@ -254,7 +277,9 @@ export function izaberiPotezRacunara(game: Chess, elo: SahElo, seed: string): Iz
   if (game.isGameOver()) throw new Error('Partija je već završena.')
 
   const pocetak = performance.now()
-  const potezIzKnjige = elo === 1500 ? KNJIGA_OTVARANJA.get(kljucPozicije(game)) : undefined
+  const potezIzKnjige = brojPolupoteza(game) < konfiguracija.bookPlies
+    ? KNJIGA_OTVARANJA.get(kljucPozicije(game))
+    : undefined
   if (potezIzKnjige) {
     return {
       ...potezIzKnjige,
@@ -273,9 +298,9 @@ export function izaberiPotezRacunara(game: Chess, elo: SahElo, seed: string): Iz
     prekinuto: false,
   }
 
-  // Svaki kandidat se prvo proverava na sva neposredna uzimanja, promocije i
-  // šahove. Prethodna verzija je prekidala listu usred pune pretrage, pa je
-  // neproveren potez mogao izgledati bolji iako odmah gubi damu.
+  // Statička procena samo određuje redosled. Materijalna zaštita ispod se radi
+  // nad svim legalnim potezima, da prividno dobro uzimanje ne potisne mirnu
+  // odbranu pre nego što se proveri odgovor protivnika.
   const grubiKandidati = game.moves({ verbose: true })
     .sort((a, b) => potezPrioritet(b) - potezPrioritet(a))
     .map((potez) => {
@@ -286,14 +311,43 @@ export function izaberiPotezRacunara(game: Chess, elo: SahElo, seed: string): Iz
       return { potez, score }
     })
     .sort((a, b) => b.score - a.score)
-  const najboljiGrubiScore = grubiKandidati[0].score
-  // Na najjačem nivou uzimanje može privremeno izgledati odlično, a da
-  // dublja forsirana sekvenca pokaže gubitak figure. Zato se mirni kandidati
-  // ne odbacuju uskim statičkim prozorom pre taktičke provere.
-  const prozorKandidata = elo === 1500 ? 1_000 : Math.max(200, konfiguracija.tolerance + 120)
-  let kandidati = grubiKandidati
+  // Nivoi se razlikuju po dubini i pozicionoj preciznosti, ali nijedan od 900
+  // naviše ne treba da bira potez koji je materijalno mnogo gori od dostupne
+  // alternative u kratkoj forsiranoj sekvenci.
+  const pocetniMaterijalniScore = evaluirajMaterijal(game, osnovniKontekst.engineColor)
+  const materijalnoProvereni = grubiKandidati.map((kandidat) => {
+    game.move(kandidat.potez)
+    const materialScore = pretraziTakticki(
+      game,
+      konfiguracija.safetyDepth,
+      osnovniKontekst.engineColor,
+      osnovniKontekst,
+      -Infinity,
+      Infinity,
+      evaluirajMaterijal,
+    )
+    game.undo()
+    return { ...kandidat, materialScore }
+  })
+  const najboljiMaterijalniScore = Math.max(...materijalnoProvereni.map((kandidat) => kandidat.materialScore))
+  // Materijalna zaštita je pod, a ne obaveza da se uzme prividno besplatna
+  // figura. U suprotnom bi kratka linija forsirala upravo poteze poput Nxd4,
+  // pre nego što dublja taktička provera vidi kasniji gubitak skakača.
+  const referentniMaterijalniScore = Math.min(pocetniMaterijalniScore, najboljiMaterijalniScore)
+  const bezbedniKandidati = materijalnoProvereni.filter(
+    (kandidat) => kandidat.materialScore >= referentniMaterijalniScore - konfiguracija.materialTolerance,
+  )
+  const najboljiGrubiScore = Math.max(...bezbedniKandidati.map((kandidat) => kandidat.score))
+  // Na višim nivoima uzimanje može privremeno izgledati odlično, a da dublja
+  // forsirana sekvenca pokaže gubitak figure. Zato se mirni kandidati ne
+  // odbacuju uskim statičkim prozorom pre taktičke provere.
+  const prozorKandidata = elo >= 1300
+    ? 1_000
+    : elo === 1100 ? 500 : Math.max(200, konfiguracija.tolerance + 120)
+  const dodatniKandidati = elo >= 1300 ? 4 : elo === 1100 ? 2 : 0
+  let kandidati = bezbedniKandidati
     .filter((kandidat) => kandidat.score >= najboljiGrubiScore - prozorKandidata)
-    .slice(0, elo === 1500 ? konfiguracija.rootCandidates + 4 : konfiguracija.rootCandidates)
+    .slice(0, konfiguracija.rootCandidates + dodatniKandidati)
     .map((kandidat) => {
       game.move(kandidat.potez)
       const score = pretraziTakticki(
@@ -320,15 +374,16 @@ export function izaberiPotezRacunara(game: Chess, elo: SahElo, seed: string): Iz
     kontekst.quiescence = dubina >= 4 && konfiguracija.quiescence
     const sledeci: typeof kandidati = []
     const redosled = [...kandidati].sort((a, b) => b.score - a.score)
-    let alphaKoren = -Infinity
     for (const kandidat of redosled) {
       if (isteklo(kontekst)) break
       game.move(kandidat.potez)
-      const score = pretrazi(game, dubina - 1, alphaKoren, Infinity, kontekst)
+      // Ocene korenskih poteza koriste se za konačan izbor, pa svaka mora biti
+      // tačna. Alpha prethodnog kandidata bi ovde dao samo gornju granicu za
+      // lošiji potez, koju ne smemo kasnije tretirati kao punu ocenu.
+      const score = pretrazi(game, dubina - 1, -Infinity, Infinity, kontekst)
       game.undo()
       if (kontekst.prekinuto) break
       sledeci.push({ potez: kandidat.potez, score })
-      alphaKoren = Math.max(alphaKoren, score)
     }
     // Rezultati nezavršene dubine se odbacuju u celini.
     if (kontekst.prekinuto || sledeci.length !== kandidati.length) break

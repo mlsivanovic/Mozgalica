@@ -12,8 +12,9 @@ describe('šahovski engine', () => {
   })
 
   it('isti seed i pozicija daju isti potez', () => {
-    const prvi = izaberiPotezRacunara(new Chess(), 1100, 'stabilan-seed')
-    const drugi = izaberiPotezRacunara(new Chess(), 1100, 'stabilan-seed')
+    const pozicija = 'rnbqkbnr/1ppppppp/p7/8/8/P7/1PPPPPPP/RNBQKBNR w KQkq - 0 2'
+    const prvi = izaberiPotezRacunara(new Chess(pozicija), 1100, 'stabilan-seed')
+    const drugi = izaberiPotezRacunara(new Chess(pozicija), 1100, 'stabilan-seed')
     expect({ from: prvi.from, to: prvi.to, promotion: prvi.promotion }).toEqual({
       from: drugi.from, to: drugi.to, promotion: drugi.promotion,
     })
@@ -42,6 +43,16 @@ describe('šahovski engine', () => {
     const crni = izaberiPotezRacunara(igra, 1500, 'knjiga-crni')
     expect(`${crni.from}${crni.to}`).toBe('d7d5')
   })
+
+  it.each<SahElo>([900, 1100, 1300])(
+    'na nivou %i odgovara solidno na prvi potez',
+    (elo) => {
+      const igra = new Chess()
+      igra.move('e4')
+      const odgovor = izaberiPotezRacunara(igra, elo, `knjiga-${elo}`)
+      expect(`${odgovor.from}${odgovor.to}`).toBe('e7e5')
+    },
+  )
 
   it('na nivou 1100 zaustavlja slobodnog pešaka pred promocijom', () => {
     const igra = new Chess()
@@ -75,4 +86,22 @@ describe('šahovski engine', () => {
     const izbor = izaberiPotezRacunara(igra, 1500, '9a0e50fc-2b67-44a3-8c48-66900cbbddb3:21')
     expect(`${izbor.from}${izbor.to}`).not.toBe('e6e5')
   })
+
+  it.each<SahElo>([900, 1100, 1300])(
+    'na nivou %i ne daje skakača za dva pešaka',
+    (elo) => {
+      const igra = new Chess('rnbqkb1r/pppppppp/8/1B6/4n1Q1/8/PPPP1PPP/RNB1K1NR b KQkq - 1 3')
+      const izbor = izaberiPotezRacunara(igra, elo, '0dbb51a4-188a-43b7-9e49-bb8496e2edeb:5')
+      expect(`${izbor.from}${izbor.to}`).not.toBe('e4f2')
+    },
+  )
+
+  it.each<SahElo>([900, 1100, 1300])(
+    'na nivou %i ne ostavlja damu na direktno uzimanje',
+    (elo) => {
+      const igra = new Chess('rnbqkb1r/p1pp1p1p/1p2p3/1B4N1/6Q1/8/PPPP1KPP/RNB1R3 b kq - 1 7')
+      const izbor = izaberiPotezRacunara(igra, elo, '0dbb51a4-188a-43b7-9e49-bb8496e2edeb:13')
+      expect(`${izbor.from}${izbor.to}`).not.toBe('d8g5')
+    },
+  )
 })
