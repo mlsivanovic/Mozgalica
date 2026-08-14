@@ -5,6 +5,7 @@ export type SahElo = 700 | 900 | 1100 | 1300 | 1500
 interface KonfiguracijaNivoa {
   maxDepth: number
   rootCandidates: number
+  tacticalDepth: number
   tolerance: number
   maxNodes: number
   maxMs: number
@@ -34,11 +35,11 @@ const VREDNOSTI: Record<PieceSymbol, number> = {
 }
 
 const KONFIGURACIJE: Record<SahElo, KonfiguracijaNivoa> = {
-  700: { maxDepth: 2, rootCandidates: 18, tolerance: 260, maxNodes: 4_000, maxMs: 65, quiescence: false },
-  900: { maxDepth: 3, rootCandidates: 16, tolerance: 130, maxNodes: 8_000, maxMs: 85, quiescence: false },
-  1100: { maxDepth: 4, rootCandidates: 10, tolerance: 55, maxNodes: 14_000, maxMs: 130, quiescence: true },
-  1300: { maxDepth: 5, rootCandidates: 12, tolerance: 20, maxNodes: 22_000, maxMs: 135, quiescence: true },
-  1500: { maxDepth: 6, rootCandidates: 12, tolerance: 5, maxNodes: 30_000, maxMs: 160, quiescence: true },
+  700: { maxDepth: 2, rootCandidates: 18, tacticalDepth: 1, tolerance: 260, maxNodes: 4_000, maxMs: 65, quiescence: false },
+  900: { maxDepth: 3, rootCandidates: 16, tacticalDepth: 1, tolerance: 130, maxNodes: 8_000, maxMs: 85, quiescence: false },
+  1100: { maxDepth: 4, rootCandidates: 10, tacticalDepth: 1, tolerance: 55, maxNodes: 14_000, maxMs: 130, quiescence: true },
+  1300: { maxDepth: 5, rootCandidates: 12, tacticalDepth: 1, tolerance: 20, maxNodes: 22_000, maxMs: 135, quiescence: true },
+  1500: { maxDepth: 6, rootCandidates: 8, tacticalDepth: 3, tolerance: 5, maxNodes: 30_000, maxMs: 160, quiescence: true },
 }
 
 interface KontekstPretrage {
@@ -49,6 +50,52 @@ interface KontekstPretrage {
   quiescence: boolean
   prekinuto: boolean
 }
+
+interface PotezIzKnjige {
+  from: Square
+  to: Square
+  promotion?: PieceSymbol
+  san: string
+}
+
+function kljucPozicije(game: Chess): string {
+  return game.fen().split(' ').slice(0, 4).join(' ')
+}
+
+function napraviKnjiguOtvaranja(): Map<string, PotezIzKnjige> {
+  const knjiga = new Map<string, PotezIzKnjige>()
+  const linije = [
+    ['e4', 'e5', 'Nf3', 'Nc6', 'Bb5', 'a6', 'Ba4', 'Nf6', 'O-O', 'Be7'],
+    ['e4', 'c5', 'Nf3', 'd6', 'd4', 'cxd4', 'Nxd4', 'Nf6', 'Nc3'],
+    ['e4', 'e6', 'd4', 'd5', 'Nc3', 'Nf6'],
+    ['e4', 'c6', 'd4', 'd5', 'Nc3', 'dxe4', 'Nxe4'],
+    ['e4', 'd5', 'exd5', 'Qxd5', 'Nc3'],
+    ['d4', 'd5', 'c4', 'e6', 'Nc3', 'Nf6', 'Nf3', 'Be7'],
+    ['d4', 'd5', 'Nf3', 'Nf6', 'Bf4', 'e6', 'e3', 'Bd6'],
+    ['d4', 'd5', 'e3', 'Nf6', 'Nf3', 'e6', 'Bd3', 'Bd6'],
+    ['c4', 'e5', 'Nc3', 'Nf6', 'Nf3', 'Nc6'],
+    ['Nf3', 'd5', 'd4', 'Nf6', 'c4', 'e6'],
+  ]
+
+  for (const linija of linije) {
+    const igra = new Chess()
+    for (const san of linija) {
+      const kljuc = kljucPozicije(igra)
+      const potez = igra.move(san)
+      if (!knjiga.has(kljuc)) {
+        knjiga.set(kljuc, {
+          from: potez.from,
+          to: potez.to,
+          promotion: potez.promotion,
+          san: potez.san,
+        })
+      }
+    }
+  }
+  return knjiga
+}
+
+const KNJIGA_OTVARANJA = napraviKnjiguOtvaranja()
 
 function napraviRng(seed: string): () => number {
   let stanje = 2166136261
@@ -113,30 +160,50 @@ function isteklo(kontekst: KontekstPretrage): boolean {
   return kraj
 }
 
-function oceniNeposrednePretnje(
+function pretraziTakticki(
   game: Chess,
+  depth: number,
   engineColor: Color,
   kontekst: KontekstPretrage,
+  alphaPocetni = -Infinity,
+  betaPocetni = Infinity,
 ): number {
-  if (game.isGameOver()) return evaluiraj(game, engineColor)
-  let najgori = evaluiraj(game, engineColor)
-  const odgovoriProtivnika = game.moves({ verbose: true }).filter((potez) => (
-    potez.captured || potez.promotion || potez.san.includes('+') || potez.san.includes('#')
-  ))
+  kontekst.nodes++
+  if (game.isGameOver() || depth <= 0) return evaluiraj(game, engineColor)
 
-  for (const odgovor of odgovoriProtivnika) {
-    game.move(odgovor)
-    kontekst.nodes++
-    let score = evaluiraj(game, engineColor)
-    // Brza aproksimacija neposrednog vraćanja izbegava da korektna razmena
-    // izgleda kao poklonjena figura, bez generisanja još jednog punog sloja.
-    if (!game.isGameOver() && game.isAttacked(odgovor.to, engineColor)) {
-      score += VREDNOSTI[odgovor.promotion ?? odgovor.piece]
-    }
-    game.undo()
-    najgori = Math.min(najgori, score)
+  const uSahu = game.inCheck()
+  let potezi = game.moves({ verbose: true })
+  if (!uSahu) {
+    potezi = potezi.filter((potez) => (
+      potez.captured || potez.promotion || potez.san.includes('+') || potez.san.includes('#')
+    ))
   }
-  return najgori
+  if (potezi.length === 0) return evaluiraj(game, engineColor)
+  potezi.sort((a, b) => potezPrioritet(b) - potezPrioritet(a))
+
+  const maksimizuje = game.turn() === engineColor
+  let alpha = alphaPocetni
+  let beta = betaPocetni
+  // Van šaha strana može da ne nastavi forsiranu razmenu; statička procena
+  // predstavlja tu mogućnost. U šahu mora da odigra jedan od legalnih odgovora.
+  let najbolji = uSahu ? (maksimizuje ? -Infinity : Infinity) : evaluiraj(game, engineColor)
+  if (maksimizuje) alpha = Math.max(alpha, najbolji)
+  else beta = Math.min(beta, najbolji)
+
+  for (const potez of potezi) {
+    game.move(potez)
+    const score = pretraziTakticki(game, depth - 1, engineColor, kontekst, alpha, beta)
+    game.undo()
+    if (maksimizuje) {
+      najbolji = Math.max(najbolji, score)
+      alpha = Math.max(alpha, najbolji)
+    } else {
+      najbolji = Math.min(najbolji, score)
+      beta = Math.min(beta, najbolji)
+    }
+    if (beta <= alpha) break
+  }
+  return najbolji
 }
 
 function pretrazi(
@@ -187,6 +254,16 @@ export function izaberiPotezRacunara(game: Chess, elo: SahElo, seed: string): Iz
   if (game.isGameOver()) throw new Error('Partija je već završena.')
 
   const pocetak = performance.now()
+  const potezIzKnjige = elo === 1500 ? KNJIGA_OTVARANJA.get(kljucPozicije(game)) : undefined
+  if (potezIzKnjige) {
+    return {
+      ...potezIzKnjige,
+      score: 0,
+      nodes: 0,
+      depth: 0,
+      elapsedMs: performance.now() - pocetak,
+    }
+  }
   const osnovniKontekst: KontekstPretrage = {
     engineColor: game.turn(),
     nodes: 0,
@@ -210,15 +287,23 @@ export function izaberiPotezRacunara(game: Chess, elo: SahElo, seed: string): Iz
     })
     .sort((a, b) => b.score - a.score)
   const najboljiGrubiScore = grubiKandidati[0].score
+  // Na najjačem nivou uzimanje može privremeno izgledati odlično, a da
+  // dublja forsirana sekvenca pokaže gubitak figure. Zato se mirni kandidati
+  // ne odbacuju uskim statičkim prozorom pre taktičke provere.
+  const prozorKandidata = elo === 1500 ? 1_000 : Math.max(200, konfiguracija.tolerance + 120)
   let kandidati = grubiKandidati
-    .filter((kandidat) => kandidat.score >= najboljiGrubiScore - Math.max(200, konfiguracija.tolerance + 120))
-    .slice(0, konfiguracija.rootCandidates)
+    .filter((kandidat) => kandidat.score >= najboljiGrubiScore - prozorKandidata)
+    .slice(0, elo === 1500 ? konfiguracija.rootCandidates + 4 : konfiguracija.rootCandidates)
     .map((kandidat) => {
       game.move(kandidat.potez)
-      const score = oceniNeposrednePretnje(game, osnovniKontekst.engineColor, osnovniKontekst)
+      const score = pretraziTakticki(
+        game, konfiguracija.tacticalDepth, osnovniKontekst.engineColor, osnovniKontekst,
+      )
       game.undo()
       return { potez: kandidat.potez, score }
     })
+    .sort((a, b) => b.score - a.score)
+    .slice(0, konfiguracija.rootCandidates)
 
   const kontekst: KontekstPretrage = {
     engineColor: osnovniKontekst.engineColor,

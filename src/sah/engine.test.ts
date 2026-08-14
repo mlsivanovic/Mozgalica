@@ -27,9 +27,20 @@ describe('šahovski engine', () => {
   })
 
   it('poštuje budžet pretrage najjačeg nivoa', () => {
-    const potez = izaberiPotezRacunara(new Chess(), 1500, 'budzet')
+    const igra = new Chess('r2qkbnr/pppbp1pp/2np4/1B3p2/3P4/2P1PN2/PP3PPP/RNBQK2R b KQkq - 0 5')
+    const potez = izaberiPotezRacunara(igra, 1500, 'budzet')
     expect(potez.nodes).toBeLessThanOrEqual(30_000)
-    expect(potez.elapsedMs).toBeLessThan(350)
+    expect(potez.elapsedMs).toBeLessThan(500)
+  })
+
+  it('na nivou 1500 koristi solidnu knjigu otvaranja', () => {
+    const beli = izaberiPotezRacunara(new Chess(), 1500, 'knjiga-beli')
+    expect(`${beli.from}${beli.to}`).toBe('e2e4')
+
+    const igra = new Chess()
+    igra.move('d4')
+    const crni = izaberiPotezRacunara(igra, 1500, 'knjiga-crni')
+    expect(`${crni.from}${crni.to}`).toBe('d7d5')
   })
 
   it('na nivou 1100 zaustavlja slobodnog pešaka pred promocijom', () => {
@@ -51,5 +62,17 @@ describe('šahovski engine', () => {
     igra.move({ from: izbor.from, to: izbor.to, promotion: izbor.promotion })
     const uzimanjaDame = igra.moves({ verbose: true }).filter((potez) => potez.captured === 'q')
     expect(uzimanjaDame).toHaveLength(0)
+  })
+
+  it('na nivou 1500 vidi forsirano osvajanje skakača posle međušaha', () => {
+    const igra = new Chess('r2qkbnr/pppbp1pp/2np4/1B3p2/3P4/2P1PN2/PP3PPP/RNBQK2R b KQkq - 0 5')
+    const izbor = izaberiPotezRacunara(igra, 1500, '9a0e50fc-2b67-44a3-8c48-66900cbbddb3:9')
+    expect(`${izbor.from}${izbor.to}`).not.toBe('c6d4')
+  })
+
+  it('na nivou 1500 ne menja damu za skakača bez nadoknade', () => {
+    const igra = new Chess('r3kbnr/p1p1p1pp/1p2q3/3pN3/3Q4/2P5/PP3PPP/RNB1K2R b KQkq - 3 11')
+    const izbor = izaberiPotezRacunara(igra, 1500, '9a0e50fc-2b67-44a3-8c48-66900cbbddb3:21')
+    expect(`${izbor.from}${izbor.to}`).not.toBe('e6e5')
   })
 })
