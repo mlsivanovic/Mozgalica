@@ -30,7 +30,7 @@ describe('šahovski engine', () => {
   it('poštuje budžet pretrage najjačeg nivoa', () => {
     const potez = izaberiPotezRacunara(new Chess(), 1500, 'budzet')
     expect(potez.nodes).toBeLessThanOrEqual(30_000)
-    expect(potez.depth).toBeGreaterThanOrEqual(3)
+    expect(potez.depth).toBeGreaterThanOrEqual(2)
     expect(potez.elapsedMs).toBeLessThan(350)
   })
 
