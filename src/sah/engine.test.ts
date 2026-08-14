@@ -9,6 +9,7 @@ describe('šahovski engine', () => {
     const legalni = new Set(igra.moves({ verbose: true }).map((p) => `${p.from}${p.to}${p.promotion ?? ''}`))
     const potez = izaberiPotezRacunara(igra, elo, 'partija:1')
     expect(legalni.has(`${potez.from}${potez.to}${potez.promotion ?? ''}`)).toBe(true)
+    if (elo >= 1100) expect(potez.depth).toBeGreaterThanOrEqual(2)
   })
 
   it('isti seed i pozicija daju isti potez', () => {
@@ -28,7 +29,29 @@ describe('šahovski engine', () => {
 
   it('poštuje budžet pretrage najjačeg nivoa', () => {
     const potez = izaberiPotezRacunara(new Chess(), 1500, 'budzet')
-    expect(potez.nodes).toBeLessThanOrEqual(20_000)
+    expect(potez.nodes).toBeLessThanOrEqual(30_000)
+    expect(potez.depth).toBeGreaterThanOrEqual(3)
     expect(potez.elapsedMs).toBeLessThan(350)
+  })
+
+  it('na nivou 1100 zaustavlja slobodnog pešaka pred promocijom', () => {
+    const igra = new Chess()
+    for (const potez of ['d4', 'c6', 'e3', 'f5', 'Nc3', 'd5', 'f3', 'g6', 'e4', 'h5', 'exd5', 'Rh6', 'dxc6', 'Nf6', 'cxb7']) {
+      igra.move(potez)
+    }
+    const izbor = izaberiPotezRacunara(igra, 1100, '53ade5ef-b887-4fa3-b854-044cf588272d:15')
+    igra.move({ from: izbor.from, to: izbor.to, promotion: izbor.promotion })
+    expect(igra.moves()).not.toContain('bxa8=Q')
+  })
+
+  it('na nivou 1300 ne ostavlja damu pešaku bez nadoknade', () => {
+    const igra = new Chess()
+    for (const potez of ['d4', 'f5', 'f3', 'd6', 'e4', 'Nc6', 'Bg5', 'fxe4', 'fxe4', 'Na5', 'Bb5+', 'c6', 'Ba4', 'Qb6', 'b3']) {
+      igra.move(potez)
+    }
+    const izbor = izaberiPotezRacunara(igra, 1300, '367284f3-c313-4fa4-b52e-cd4d96a6076b:15')
+    igra.move({ from: izbor.from, to: izbor.to, promotion: izbor.promotion })
+    const uzimanjaDame = igra.moves({ verbose: true }).filter((potez) => potez.captured === 'q')
+    expect(uzimanjaDame).toHaveLength(0)
   })
 })

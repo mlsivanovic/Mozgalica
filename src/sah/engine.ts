@@ -3,7 +3,8 @@ import { Chess, type Color, type Move, type PieceSymbol, type Square } from 'che
 export type SahElo = 700 | 900 | 1100 | 1300 | 1500
 
 interface KonfiguracijaNivoa {
-  depth: number
+  maxDepth: number
+  rootCandidates: number
   tolerance: number
   maxNodes: number
   maxMs: number
@@ -17,6 +18,7 @@ export interface IzborPotezaRacunara {
   san: string
   score: number
   nodes: number
+  depth: number
   elapsedMs: number
 }
 
@@ -32,11 +34,11 @@ const VREDNOSTI: Record<PieceSymbol, number> = {
 }
 
 const KONFIGURACIJE: Record<SahElo, KonfiguracijaNivoa> = {
-  700: { depth: 1, tolerance: 320, maxNodes: 800, maxMs: 45, quiescence: false },
-  900: { depth: 1, tolerance: 190, maxNodes: 1_200, maxMs: 55, quiescence: false },
-  1100: { depth: 2, tolerance: 120, maxNodes: 3_500, maxMs: 80, quiescence: false },
-  1300: { depth: 2, tolerance: 65, maxNodes: 8_000, maxMs: 105, quiescence: true },
-  1500: { depth: 3, tolerance: 30, maxNodes: 20_000, maxMs: 140, quiescence: true },
+  700: { maxDepth: 2, rootCandidates: 18, tolerance: 260, maxNodes: 4_000, maxMs: 65, quiescence: false },
+  900: { maxDepth: 3, rootCandidates: 16, tolerance: 130, maxNodes: 8_000, maxMs: 85, quiescence: false },
+  1100: { maxDepth: 4, rootCandidates: 10, tolerance: 55, maxNodes: 14_000, maxMs: 130, quiescence: true },
+  1300: { maxDepth: 5, rootCandidates: 12, tolerance: 20, maxNodes: 22_000, maxMs: 135, quiescence: true },
+  1500: { maxDepth: 6, rootCandidates: 12, tolerance: 5, maxNodes: 30_000, maxMs: 160, quiescence: true },
 }
 
 interface KontekstPretrage {
@@ -45,6 +47,7 @@ interface KontekstPretrage {
   deadline: number
   maxNodes: number
   quiescence: boolean
+  prekinuto: boolean
 }
 
 function napraviRng(seed: string): () => number {
@@ -105,7 +108,35 @@ function potezPrioritet(potez: Move): number {
 }
 
 function isteklo(kontekst: KontekstPretrage): boolean {
-  return kontekst.nodes >= kontekst.maxNodes || performance.now() >= kontekst.deadline
+  const kraj = kontekst.nodes >= kontekst.maxNodes || performance.now() >= kontekst.deadline
+  if (kraj) kontekst.prekinuto = true
+  return kraj
+}
+
+function oceniNeposrednePretnje(
+  game: Chess,
+  engineColor: Color,
+  kontekst: KontekstPretrage,
+): number {
+  if (game.isGameOver()) return evaluiraj(game, engineColor)
+  let najgori = evaluiraj(game, engineColor)
+  const odgovoriProtivnika = game.moves({ verbose: true }).filter((potez) => (
+    potez.captured || potez.promotion || potez.san.includes('+') || potez.san.includes('#')
+  ))
+
+  for (const odgovor of odgovoriProtivnika) {
+    game.move(odgovor)
+    kontekst.nodes++
+    let score = evaluiraj(game, engineColor)
+    // Brza aproksimacija neposrednog vraćanja izbegava da korektna razmena
+    // izgleda kao poklonjena figura, bez generisanja još jednog punog sloja.
+    if (!game.isGameOver() && game.isAttacked(odgovor.to, engineColor)) {
+      score += VREDNOSTI[odgovor.promotion ?? odgovor.piece]
+    }
+    game.undo()
+    najgori = Math.min(najgori, score)
+  }
+  return najgori
 }
 
 function pretrazi(
@@ -156,21 +187,69 @@ export function izaberiPotezRacunara(game: Chess, elo: SahElo, seed: string): Iz
   if (game.isGameOver()) throw new Error('Partija je već završena.')
 
   const pocetak = performance.now()
-  const kontekst: KontekstPretrage = {
+  const osnovniKontekst: KontekstPretrage = {
     engineColor: game.turn(),
     nodes: 0,
-    deadline: pocetak + konfiguracija.maxMs,
-    maxNodes: konfiguracija.maxNodes,
-    quiescence: konfiguracija.quiescence,
+    deadline: Infinity,
+    maxNodes: Infinity,
+    quiescence: false,
+    prekinuto: false,
   }
-  const kandidati = game.moves({ verbose: true })
+
+  // Svaki kandidat se prvo proverava na sva neposredna uzimanja, promocije i
+  // šahove. Prethodna verzija je prekidala listu usred pune pretrage, pa je
+  // neproveren potez mogao izgledati bolji iako odmah gubi damu.
+  const grubiKandidati = game.moves({ verbose: true })
     .sort((a, b) => potezPrioritet(b) - potezPrioritet(a))
     .map((potez) => {
       game.move(potez)
-      const score = pretrazi(game, konfiguracija.depth - 1, -Infinity, Infinity, kontekst)
+      osnovniKontekst.nodes++
+      const score = evaluiraj(game, osnovniKontekst.engineColor)
       game.undo()
       return { potez, score }
     })
+    .sort((a, b) => b.score - a.score)
+  const najboljiGrubiScore = grubiKandidati[0].score
+  let kandidati = grubiKandidati
+    .filter((kandidat) => kandidat.score >= najboljiGrubiScore - Math.max(200, konfiguracija.tolerance + 120))
+    .slice(0, konfiguracija.rootCandidates)
+    .map((kandidat) => {
+      game.move(kandidat.potez)
+      const score = oceniNeposrednePretnje(game, osnovniKontekst.engineColor, osnovniKontekst)
+      game.undo()
+      return { potez: kandidat.potez, score }
+    })
+
+  const kontekst: KontekstPretrage = {
+    engineColor: osnovniKontekst.engineColor,
+    nodes: osnovniKontekst.nodes,
+    deadline: pocetak + konfiguracija.maxMs,
+    maxNodes: Math.max(konfiguracija.maxNodes, osnovniKontekst.nodes),
+    quiescence: konfiguracija.quiescence,
+    prekinuto: false,
+  }
+  let zavrsenaDubina = 1
+
+  for (let dubina = 2; dubina <= konfiguracija.maxDepth; dubina++) {
+    kontekst.prekinuto = false
+    kontekst.quiescence = dubina >= 4 && konfiguracija.quiescence
+    const sledeci: typeof kandidati = []
+    const redosled = [...kandidati].sort((a, b) => b.score - a.score)
+    let alphaKoren = -Infinity
+    for (const kandidat of redosled) {
+      if (isteklo(kontekst)) break
+      game.move(kandidat.potez)
+      const score = pretrazi(game, dubina - 1, alphaKoren, Infinity, kontekst)
+      game.undo()
+      if (kontekst.prekinuto) break
+      sledeci.push({ potez: kandidat.potez, score })
+      alphaKoren = Math.max(alphaKoren, score)
+    }
+    // Rezultati nezavršene dubine se odbacuju u celini.
+    if (kontekst.prekinuto || sledeci.length !== kandidati.length) break
+    kandidati = sledeci
+    zavrsenaDubina = dubina
+  }
 
   const najboljiScore = Math.max(...kandidati.map((kandidat) => kandidat.score))
   const prihvatljivi = kandidati.filter((kandidat) => kandidat.score >= najboljiScore - konfiguracija.tolerance)
@@ -197,6 +276,7 @@ export function izaberiPotezRacunara(game: Chess, elo: SahElo, seed: string): Iz
     san: izabrani.potez.san,
     score: izabrani.score,
     nodes: kontekst.nodes,
+    depth: zavrsenaDubina,
     elapsedMs: performance.now() - pocetak,
   }
 }
