@@ -50,6 +50,65 @@
   border-top: 1px solid var(--boja-ivica);
 }
 
+.sah-nagrade-napomena {
+  background: var(--boja-primarna-svetla);
+  color: var(--boja-tekst);
+}
+
+.sah-nagrade {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.sah-nagrade-red {
+  display: grid;
+  grid-template-columns: minmax(150px, 1fr) minmax(130px, 0.7fr) minmax(130px, 0.7fr);
+  gap: 0.8rem;
+  align-items: center;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--boja-ivica);
+  border-radius: var(--radius-mali);
+  background: var(--boja-polje);
+}
+
+.sah-nagrade-zaglavlje {
+  padding-block: 0.45rem;
+  border: 0;
+  background: transparent;
+  color: var(--boja-tekst-blagi);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.sah-nagrade-elo {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.sah-nagrada-polje {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.sah-nagrada-unos {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.sah-nagrada-unos input {
+  width: 72px;
+  padding: 0.45rem 0.5rem;
+  text-align: center;
+  font-weight: 800;
+}
+
 .profil-admin-kartica {
   border: 1px solid var(--boja-ivica);
   box-shadow: none;
@@ -102,6 +161,17 @@
   }
 
   .profil-admin-rezultat {
+    align-items: flex-start;
+  }
+
+  .sah-nagrade-zaglavlje { display: none; }
+  .sah-nagrade-red {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.65rem;
+  }
+  .sah-nagrade-elo { grid-column: 1 / -1; }
+  .sah-nagrada-polje {
+    flex-direction: column;
     align-items: flex-start;
   }
 }

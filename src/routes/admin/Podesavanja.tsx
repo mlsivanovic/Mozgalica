@@ -1,4 +1,4 @@
-// Administratorska podešavanja: profili dece, titule, prodavnica nagrada i mejl obaveštenja.
+// Administratorska podešavanja: profili dece, šah, titule, prodavnica i obaveštenja.
 import { useEffect, useState } from 'react'
 import { PushKontrole } from '../../components/PushKontrole'
 import { Loader } from '../../components/Zajednicke'
@@ -7,14 +7,16 @@ import { OznakaRangaTitule, TitleAvatar } from '../../components/TitleAvatar'
 import {
   listajKupovineProdavnice, listajNivoeTitula, listajProfileDeteta, listajStavkeProdavnice,
   oznaciKupovinuKonzumiranom, otkaziKupovinu, postaviEmailObavestenja,
-  sacuvajNivoeTitula, sacuvajProfilDeteta, sacuvajStavkeProdavnice, ucitajJavniProfil,
-  ucitajPodesavanja, type KupovinaAdminPrikaz,
+  sacuvajNivoeTitula, sacuvajProfilDeteta, sacuvajSahNagrade, sacuvajStavkeProdavnice,
+  ucitajJavniProfil, ucitajPodesavanja, ucitajSahNagrade, type KupovinaAdminPrikaz,
 } from '../../lib/api'
 import { useAuth } from '../../lib/auth'
 import { emailJeIspravan, normalizujEmail } from '../../lib/email'
 import { formatDatum, formatProcenat } from '../../lib/format'
+import { validirajSahNagrade } from '../../sah/nagrade'
 import {
-  AVATARI_DECE, type AvatarDeteta, type NivoTitule, type ProfilDeteta, type StavkaProdavnice,
+  AVATARI_DECE, type AvatarDeteta, type NivoTitule, type ProfilDeteta,
+  type SahNagradaPodesavanje, type StavkaProdavnice,
 } from '../../types/db'
 import type { JavniProfilPayload } from '../../types/kviz'
 import './podesavanja.css'
@@ -186,7 +188,7 @@ export function validateTitleGroups(groups: TitleGroup[]): string | null {
   return null
 }
 
-type TabPodesavanja = 'profili' | 'titule' | 'prodavnica' | 'obavestenja'
+type TabPodesavanja = 'profili' | 'sah' | 'titule' | 'prodavnica' | 'obavestenja'
 
 // Lokalna (ne-sačuvana) stavka kataloga — privremeni id se koristi samo za React key.
 interface StavkaForma {
@@ -254,6 +256,7 @@ function validirajStavke(stavke: StavkaForma[]): string | null {
 
 const TABOVI: Array<{ id: TabPodesavanja, naziv: string, ikona: string }> = [
   { id: 'profili', naziv: 'Profili dece', ikona: '👥' },
+  { id: 'sah', naziv: 'Šah', ikona: '♟️' },
   { id: 'titule', naziv: 'Titule', ikona: '🏆' },
   { id: 'prodavnica', naziv: 'Prodavnica', ikona: '🛒' },
   { id: 'obavestenja', naziv: 'Obaveštenja', ikona: '🔔' },
@@ -272,6 +275,8 @@ export function Podesavanja() {
   const [poruka, setPoruka] = useState<string | null>(null)
   const [cuvaProfil, setCuvaProfil] = useState(false)
   const [cuvaTitule, setCuvaTitule] = useState(false)
+  const [sahNagrade, setSahNagrade] = useState<SahNagradaPodesavanje[]>([])
+  const [cuvaSahNagrade, setCuvaSahNagrade] = useState(false)
 
   // Prodavnica — katalog i kupovine
   const [stavkeProdavnice, setStavkeProdavnice] = useState<StavkaForma[]>([])
@@ -283,14 +288,15 @@ export function Podesavanja() {
   async function ucitajSve() {
     setUcitava(true)
     try {
-      const [podesavanja, ucitaniProfili, ucitaniNivoi, stavke, ucitaneKupovine] = await Promise.all([
-        ucitajPodesavanja(), listajProfileDeteta(), listajNivoeTitula(),
+      const [podesavanja, ucitaniProfili, ucitaniNivoi, nagrade, stavke, ucitaneKupovine] = await Promise.all([
+        ucitajPodesavanja(), listajProfileDeteta(), listajNivoeTitula(), ucitajSahNagrade(),
         listajStavkeProdavnice().catch(() => [] as StavkaProdavnice[]),
         listajKupovineProdavnice().catch(() => [] as KupovinaAdminPrikaz[]),
       ])
       setUkljucena(podesavanja?.email_notifications ?? true)
       setProfili(ucitaniProfili)
       setTitleGroups(groupTitleLevels(ucitaniNivoi))
+      setSahNagrade(nagrade)
       setStavkeProdavnice(stavke.map(stavkaUFormu))
       setKupovine(ucitaneKupovine)
       const pregledi = await Promise.all(ucitaniProfili.map(async (profil) => (
@@ -471,6 +477,44 @@ export function Podesavanja() {
       setGreska(String((e as Error).message ?? e))
     } finally {
       setCuvaTitule(false)
+    }
+  }
+
+  function izmeniSahNagradu(
+    elo: SahNagradaPodesavanje['approximate_elo'],
+    polje: 'win_stars' | 'draw_stars',
+    vrednost: number,
+  ) {
+    setSahNagrade((prethodne) => prethodne.map((nagrada) => (
+      nagrada.approximate_elo === elo ? { ...nagrada, [polje]: vrednost } : nagrada
+    )))
+    setPoruka(null)
+    setGreska(null)
+  }
+
+  async function sacuvajNagradeZaSah() {
+    const zaCuvanje = sahNagrade.map((nagrada) => ({
+      approximate_elo: nagrada.approximate_elo,
+      win_stars: nagrada.win_stars,
+      draw_stars: nagrada.draw_stars,
+    }))
+    const greskaValidacije = validirajSahNagrade(zaCuvanje)
+    if (greskaValidacije) {
+      setGreska(greskaValidacije)
+      return
+    }
+
+    setCuvaSahNagrade(true)
+    setGreska(null)
+    setPoruka(null)
+    try {
+      await sacuvajSahNagrade(zaCuvanje)
+      await ucitajSve()
+      setPoruka('Šahovske nagrade su sačuvane.')
+    } catch (e) {
+      setGreska(String((e as Error).message ?? e))
+    } finally {
+      setCuvaSahNagrade(false)
     }
   }
 
@@ -780,6 +824,70 @@ export function Podesavanja() {
             </div>
           </div>
         )}
+      </section>
+      )}
+
+      {aktivanTab === 'sah' && (
+      <section
+        id="podesavanja-panel-sah" className="kartica podesavanja-panel"
+        role="tabpanel" aria-labelledby="podesavanja-tab-sah"
+      >
+        <h2>Nagrade za šah</h2>
+        <p className="blago">
+          Odredi koliko zvezdica dete dobija kada pobedi ili odigra remi protiv svakog ELO nivoa.
+          Izmene važe za partije završene nakon čuvanja; raniji rezultati ostaju nepromenjeni.
+        </p>
+        <p className="poruka sah-nagrade-napomena razmak-gore">
+          Pobeda može doneti 0–10 ⭐, remi 0–5 ⭐, a poraz uvek donosi 0 zvezdica.
+        </p>
+
+        <div className="sah-nagrade razmak-gore" role="table" aria-label="Šahovske nagrade po ELO nivou">
+          <div className="sah-nagrade-red sah-nagrade-zaglavlje" role="row">
+            <span role="columnheader">Težina</span>
+            <span role="columnheader">Pobeda</span>
+            <span role="columnheader">Remi</span>
+          </div>
+          {sahNagrade.map((nagrada) => (
+            <div className="sah-nagrade-red" role="row" key={nagrada.approximate_elo}>
+              <div className="sah-nagrade-elo" role="cell">
+                <span className="malo blago">Nivo računara</span>
+                <strong>ELO {nagrada.approximate_elo}</strong>
+              </div>
+              <label className="sah-nagrada-polje" role="cell">
+                <span>Pobeda</span>
+                <span className="sah-nagrada-unos">
+                  <input
+                    type="number" min={0} max={10} step={1} inputMode="numeric"
+                    aria-label={`Zvezdice za pobedu na ELO ${nagrada.approximate_elo}`}
+                    value={nagrada.win_stars}
+                    onChange={(e) => izmeniSahNagradu(nagrada.approximate_elo, 'win_stars', Number(e.target.value))}
+                  />
+                  <span aria-hidden="true">⭐</span>
+                </span>
+              </label>
+              <label className="sah-nagrada-polje" role="cell">
+                <span>Remi</span>
+                <span className="sah-nagrada-unos">
+                  <input
+                    type="number" min={0} max={5} step={1} inputMode="numeric"
+                    aria-label={`Zvezdice za remi na ELO ${nagrada.approximate_elo}`}
+                    value={nagrada.draw_stars}
+                    onChange={(e) => izmeniSahNagradu(nagrada.approximate_elo, 'draw_stars', Number(e.target.value))}
+                  />
+                  <span aria-hidden="true">⭐</span>
+                </span>
+              </label>
+            </div>
+          ))}
+        </div>
+
+        <button
+          type="button" className="dugme razmak-gore"
+          disabled={cuvaSahNagrade || sahNagrade.length === 0}
+          onClick={() => void sacuvajNagradeZaSah()}
+        >
+          {cuvaSahNagrade ? 'Čuvam…' : 'Sačuvaj šahovske nagrade'}
+        </button>
       </section>
       )}
 

@@ -3,7 +3,8 @@ import type {
   AdminPodesavanja, AvatarDeteta, DnevniRasporedSaha, FiksnoImeDeteta, InboxObavestenja,
   Kviz, KvizLink, KvizPitanje, NivoTitule, Oblast, Obavestenje, OdgovorDeteta, Pitanje,
   DnevniRasporedKviza, IzvorDnevnogKviza, Pokusaj, PokusajOdgovor, Predmet, ProfilDeteta,
-  PushPretplata, Razred, SahBoja, SahPartija, SahPotez, StavkaProdavnice, Tezina, TipPitanja,
+  PushPretplata, Razred, SahBoja, SahNagradaPodesavanje, SahPartija, SahPotez,
+  StavkaProdavnice, Tezina, TipPitanja,
 } from '../types/db'
 import type {
   InboxDetetaPayload, JavniProfilPayload, KupovinaPayload, KvizMeta, NapredakTitule,
@@ -669,6 +670,22 @@ export async function postaviEmailObavestenja(userId: string, ukljucena: boolean
   const { error } = await supabase()
     .from('admin_settings').update({ email_notifications: ukljucena }).eq('user_id', userId)
   if (error) throw new Error(opisiGresku(error)!)
+}
+
+export async function ucitajSahNagrade(): Promise<SahNagradaPodesavanje[]> {
+  const { data, error } = await supabase()
+    .from('chess_reward_settings').select('*').order('approximate_elo')
+  if (error) throw new Error(opisiGresku(error)!)
+  return data as SahNagradaPodesavanje[]
+}
+
+export async function sacuvajSahNagrade(
+  nagrade: Array<Pick<SahNagradaPodesavanje, 'approximate_elo' | 'win_stars' | 'draw_stars'>>,
+): Promise<void> {
+  const { data, error } = await supabase().rpc('save_chess_reward_settings', { p_rewards: nagrade })
+  if (error) throw new Error(opisiGresku(error)!)
+  const odgovor = data as { ok: boolean; error?: string }
+  if (!odgovor.ok) throw new Error('Šahovske nagrade nisu ispravne. Proveri sve ELO nivoe i broj zvezdica.')
 }
 
 // ---------- Profili dece i titule ----------

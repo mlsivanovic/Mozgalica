@@ -261,6 +261,14 @@ export interface SahPotez {
   black_remaining_ms: number | null
 }
 
+export interface SahNagradaPodesavanje {
+  owner_id: string
+  approximate_elo: 700 | 900 | 1100 | 1300 | 1500
+  win_stars: number
+  draw_stars: number
+  updated_at: string
+}
+
 export interface AdminPodesavanja {
   user_id: string
   email_notifications: boolean
