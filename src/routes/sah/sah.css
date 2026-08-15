@@ -19,6 +19,13 @@
 .sah-rezultat { text-align: center; padding: 1.1rem; border-radius: var(--radius); background: var(--boja-uspeh-svetla); }
 .sah-rezultat--poraz { background: var(--boja-greska-svetla); }
 .sah-pregled { width: min(100%, 520px); margin: 0 auto; }
+.sah-ponisti { width: 100%; }
+.sah-pauza-tekst { margin-top: 0.65rem; color: var(--boja-tekst-blagi); }
+
+@keyframes sah-cilj-puls {
+  0%, 100% { background-size: 82% 82%; }
+  50% { background-size: 100% 100%; }
+}
 
 @media (max-width: 760px) {
   .sah-strana { padding: 0.65rem; }

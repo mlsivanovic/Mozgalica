@@ -1,5 +1,5 @@
 import { Chess } from 'chess.js'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { SahTabla } from '../../components/SahTabla'
 import { Konfete, Loader, TemaDugme } from '../../components/Zajednicke'
@@ -13,10 +13,28 @@ const GRESKE: Record<string, string> = {
   invalid_request: 'Zahtev nije ispravan.',
   not_in_progress: 'Partija nije u toku.',
   not_child_turn: 'Sačekaj potez računara.',
+  not_engine_turn: 'Računar sada nije na potezu.',
   invalid_move: 'Izaberi početno i završno polje.',
   invalid_promotion: 'Izbor figure za promociju nije ispravan.',
   illegal_move: 'Taj potez nije dozvoljen.',
+  undo_unavailable: 'Ovaj potez više nije moguće poništiti.',
   server_error: 'Partija trenutno nije dostupna. Pokušaj ponovo.',
+}
+
+const PAUZA_PRE_RACUNARA_MS = 2800
+const NAJAVA_POTEZA_MS = 800
+const ANIMACIJA_RACUNARA_MS = 1000
+const PODRAZUMEVANA_ANIMACIJA_MS = 180
+
+type SahPotez = { from: string; to: string; promotion?: 'q' | 'r' | 'b' | 'n' }
+type FazaPoteza = 'miruje' | 'cuvanje' | 'razmisljanje' | 'najava' | 'animacija' | 'ponistavanje'
+
+function poljaPoteza(uci?: string | null): { from: string; to: string } | null {
+  return uci ? { from: uci.slice(0, 2), to: uci.slice(2, 4) } : null
+}
+
+function sačekaj(ms: number): Promise<void> {
+  return new Promise((resolve) => window.setTimeout(resolve, ms))
 }
 
 function formatSat(ms: number | null | undefined): string {
@@ -50,12 +68,29 @@ export function SahPartija() {
   const [greska, setGreska] = useState<string | null>(null)
   const [primljenoAt, setPrimljenoAt] = useState(Date.now())
   const [sada, setSada] = useState(Date.now())
+  const [prikazaniFen, setPrikazaniFen] = useState<string | null>(null)
+  const [prikazaniPoslednji, setPrikazaniPoslednji] = useState<{ from: string; to: string } | null>(null)
+  const [najavljeniPotez, setNajavljeniPotez] = useState<{ from: string; to: string } | null>(null)
+  const [trajanjeAnimacije, setTrajanjeAnimacije] = useState(PODRAZUMEVANA_ANIMACIJA_MS)
+  const [faza, setFaza] = useState<FazaPoteza>('miruje')
+  const [obavestenje, setObavestenje] = useState<string | null>(null)
+  const tajmerRacunara = useRef<number | null>(null)
+  const tokAkcije = useRef(0)
+  const radiRef = useRef(false)
+  const izvrsiPotezRacunaraRef = useRef<(revision: number, brojPoteza: number) => void>(() => undefined)
 
-  const postavi = useCallback((novo: SahStanjePayload) => {
-    setStanje(novo)
-    setPrimljenoAt(Date.now())
-    if (!novo.ok) setGreska(GRESKE[novo.error ?? ''] ?? novo.error ?? 'Partija nije dostupna.')
-    else setGreska(null)
+  const postavi = useCallback((novo: SahStanjePayload, prikaziOdmah = true) => {
+    if (novo.ok) {
+      setStanje(novo)
+      setPrimljenoAt(Date.now())
+      if (prikaziOdmah && novo.fen) {
+        setPrikazaniFen(novo.fen)
+        setPrikazaniPoslednji(poljaPoteza(novo.moves?.at(-1)?.uci))
+      }
+      setGreska(null)
+    } else {
+      setGreska(GRESKE[novo.error ?? ''] ?? novo.error ?? 'Partija nije dostupna.')
+    }
   }, [])
 
   const osvezi = useCallback(async () => {
@@ -75,8 +110,19 @@ export function SahPartija() {
   }, [osvezi])
 
   useEffect(() => {
+    radiRef.current = radi
+  }, [radi])
+
+  useEffect(() => () => {
+    if (tajmerRacunara.current != null) window.clearTimeout(tajmerRacunara.current)
+    tokAkcije.current += 1
+  }, [])
+
+  useEffect(() => {
     const interval = window.setInterval(() => setSada(Date.now()), 250)
-    const priFokusu = () => void osvezi()
+    const priFokusu = () => {
+      if (!radiRef.current) void osvezi()
+    }
     window.addEventListener('focus', priFokusu)
     document.addEventListener('visibilitychange', priFokusu)
     return () => {
@@ -90,7 +136,10 @@ export function SahPartija() {
     let white = stanje?.whiteRemainingMs ?? null
     let black = stanje?.blackRemainingMs ?? null
     if (stanje?.status === 'in_progress' && stanje.clockSeconds != null) {
-      const proteklo = sada - primljenoAt
+      const odlaganjeStarta = stanje.turnStartedAt && stanje.serverNow
+        ? Math.max(0, new Date(stanje.turnStartedAt).getTime() - new Date(stanje.serverNow).getTime())
+        : 0
+      const proteklo = Math.max(0, sada - primljenoAt - odlaganjeStarta)
       if (stanje.turnColor === 'white' && white != null) white = Math.max(0, white - proteklo)
       if (stanje.turnColor === 'black' && black != null) black = Math.max(0, black - proteklo)
     }
@@ -103,20 +152,166 @@ export function SahPartija() {
     if (aktivan === 0) void osvezi()
   }, [osvezi, radi, satovi.black, satovi.white, stanje?.clockSeconds, stanje?.status, stanje?.turnColor])
 
-  async function izvrsi(
-    action: 'start' | 'move' | 'resign',
-    move?: { from: string; to: string; promotion?: 'q' | 'r' | 'b' | 'n' },
+  const racunarNaPotezu = stanje?.status === 'in_progress'
+    && !!stanje.childColor
+    && stanje.turnColor !== stanje.childColor
+  izvrsiPotezRacunaraRef.current = (revision, brojPoteza) => {
+    void izvrsiPotezRacunara(revision, brojPoteza)
+  }
+
+  useEffect(() => {
+    if (tajmerRacunara.current != null) {
+      window.clearTimeout(tajmerRacunara.current)
+      tajmerRacunara.current = null
+    }
+    if (!racunarNaPotezu || radi || stanje?.revision == null) return
+
+    const revision = stanje.revision
+    const brojPoteza = stanje.moves?.length ?? 0
+    tajmerRacunara.current = window.setTimeout(() => {
+      tajmerRacunara.current = null
+      izvrsiPotezRacunaraRef.current(revision, brojPoteza)
+    }, PAUZA_PRE_RACUNARA_MS)
+
+    return () => {
+      if (tajmerRacunara.current != null) {
+        window.clearTimeout(tajmerRacunara.current)
+        tajmerRacunara.current = null
+      }
+    }
+  }, [racunarNaPotezu, radi, stanje?.moves?.length, stanje?.revision])
+
+  async function prikaziPotezRacunara(
+    novo: SahStanjePayload,
+    prethodniBrojPoteza: number,
+    tok: number,
   ) {
-    if (!stanje?.ok || stanje.revision == null) return
+    const potezi = novo.moves ?? []
+    const poslednji = potezi.at(-1)
+    if (!novo.ok || !novo.fen || !poslednji || poslednji.player !== 'engine' || potezi.length <= prethodniBrojPoteza) {
+      postavi(novo)
+      return
+    }
+
+    const polja = poljaPoteza(poslednji.uci)
+    postavi(novo, false)
+    setNajavljeniPotez(polja)
+    setFaza('najava')
+    await sačekaj(NAJAVA_POTEZA_MS)
+    if (tokAkcije.current !== tok) return
+
+    setNajavljeniPotez(null)
+    setPrikazaniPoslednji(polja)
+    setTrajanjeAnimacije(ANIMACIJA_RACUNARA_MS)
+    setPrikazaniFen(novo.fen)
+    setFaza('animacija')
+    await sačekaj(ANIMACIJA_RACUNARA_MS)
+    if (tokAkcije.current !== tok) return
+
+    setTrajanjeAnimacije(PODRAZUMEVANA_ANIMACIJA_MS)
+    setFaza('miruje')
+  }
+
+  async function izvrsiPotezRacunara(expectedRevision: number, prethodniBrojPoteza: number) {
+    const tok = ++tokAkcije.current
     setRadi(true)
+    setFaza('razmisljanje')
     setGreska(null)
     try {
-      postavi(await sahAkcija(token, action, stanje.revision, move))
+      const novo = await sahAkcija(token, 'engine', expectedRevision)
+      await prikaziPotezRacunara(novo, prethodniBrojPoteza, tok)
+      if (!novo.ok) await osvezi()
     } catch (e) {
       setGreska(String((e as Error).message ?? e))
       await osvezi()
     } finally {
-      setRadi(false)
+      if (tokAkcije.current === tok) {
+        setRadi(false)
+        setFaza('miruje')
+      }
+    }
+  }
+
+  async function izvrsi(
+    action: 'start' | 'resign',
+  ) {
+    if (!stanje?.ok || stanje.revision == null) return
+    const tok = ++tokAkcije.current
+    const prethodniBrojPoteza = stanje.moves?.length ?? 0
+    setRadi(true)
+    setFaza(action === 'start' ? 'razmisljanje' : 'cuvanje')
+    setGreska(null)
+    try {
+      const novo = await sahAkcija(token, action, stanje.revision)
+      if (action === 'start') await prikaziPotezRacunara(novo, prethodniBrojPoteza, tok)
+      else postavi(novo)
+    } catch (e) {
+      setGreska(String((e as Error).message ?? e))
+      await osvezi()
+    } finally {
+      if (tokAkcije.current === tok) {
+        setRadi(false)
+        setFaza('miruje')
+      }
+    }
+  }
+
+  async function odigrajPotezDeteta(move: SahPotez) {
+    if (!stanje?.ok || !stanje.fen || stanje.revision == null) return
+    const tok = ++tokAkcije.current
+    const kopija = new Chess(stanje.fen)
+    try {
+      kopija.move(move)
+    } catch {
+      return
+    }
+
+    setPrikazaniFen(kopija.fen())
+    setPrikazaniPoslednji(move)
+    setObavestenje(null)
+    setRadi(true)
+    setFaza('cuvanje')
+    setGreska(null)
+    try {
+      const novo = await sahAkcija(token, 'child_move', stanje.revision, move)
+      postavi(novo)
+      if (!novo.ok) await osvezi()
+    } catch (e) {
+      setGreska(String((e as Error).message ?? e))
+      await osvezi()
+    } finally {
+      if (tokAkcije.current === tok) {
+        setRadi(false)
+        setFaza('miruje')
+      }
+    }
+  }
+
+  async function poništiPoslednjiPotez() {
+    if (!stanje?.ok || !stanje.undoAvailable || stanje.revision == null) return
+    if (tajmerRacunara.current != null) {
+      window.clearTimeout(tajmerRacunara.current)
+      tajmerRacunara.current = null
+    }
+    const tok = ++tokAkcije.current
+    setRadi(true)
+    setFaza('ponistavanje')
+    setGreska(null)
+    try {
+      const novo = await sahAkcija(token, 'undo', stanje.revision)
+      setTrajanjeAnimacije(360)
+      postavi(novo)
+      if (novo.ok) setObavestenje('Potez je poništen. Sada ponovo izaberi potez pažljivo.')
+      else await osvezi()
+    } catch (e) {
+      setGreska(String((e as Error).message ?? e))
+      await osvezi()
+    } finally {
+      if (tokAkcije.current === tok) {
+        window.setTimeout(() => setTrajanjeAnimacije(PODRAZUMEVANA_ANIMACIJA_MS), 360)
+        setRadi(false)
+        setFaza('miruje')
+      }
     }
   }
 
@@ -132,9 +327,9 @@ export function SahPartija() {
     )
   }
 
-  const igra = new Chess(stanje.fen)
+  const igra = new Chess(prikazaniFen ?? stanje.fen)
   const deteNaPotezu = stanje.status === 'in_progress' && stanje.turnColor === stanje.childColor
-  const poslednji = stanje.moves?.at(-1)
+  const prikazujeRezultat = stanje.status === 'completed' && faza === 'miruje'
   const redoviPoteza = Array.from({ length: Math.ceil((stanje.moves?.length ?? 0) / 2) }, (_, i) => ({
     broj: i + 1,
     beli: stanje.moves?.[i * 2]?.san ?? '',
@@ -143,7 +338,7 @@ export function SahPartija() {
 
   return (
     <main className="sah-strana">
-      {stanje.status === 'completed' && (stanje.starsAwarded ?? 0) > 0 && <Konfete />}
+      {prikazujeRezultat && (stanje.starsAwarded ?? 0) > 0 && <Konfete />}
       <div className="sah-omot">
         <div className="red red--razmak razmak-dole">
           <div>
@@ -154,6 +349,7 @@ export function SahPartija() {
         </div>
 
         {greska && <p className="poruka poruka--greska" role="alert">{greska}</p>}
+        {obavestenje && <p className="poruka poruka--uspeh" role="status">{obavestenje}</p>}
 
         {stanje.status === 'assigned' ? (
           <section className="kartica centar sadrzaj--usko" style={{ margin: '2rem auto' }}>
@@ -172,12 +368,14 @@ export function SahPartija() {
           <div className="sah-igra">
             <section>
               <SahTabla
-                fen={stanje.fen}
+                fen={prikazaniFen ?? stanje.fen}
                 orientation={stanje.childColor}
                 playerColor={stanje.childColor}
                 disabled={!deteNaPotezu || radi || stanje.status !== 'in_progress'}
-                lastMove={poslednji ? { from: poslednji.uci.slice(0, 2), to: poslednji.uci.slice(2, 4) } : null}
-                onMove={(move) => void izvrsi('move', move)}
+                lastMove={prikazaniPoslednji}
+                announcedMove={najavljeniPotez}
+                animationDurationInMs={trajanjeAnimacije}
+                onMove={(move) => void odigrajPotezDeteta(move)}
               />
             </section>
 
@@ -194,7 +392,7 @@ export function SahPartija() {
               )}
 
               <section className="kartica">
-                {stanje.status === 'completed' ? (
+                {prikazujeRezultat ? (
                   <div className={`sah-rezultat ${stanje.result === 'child_loss' ? 'sah-rezultat--poraz' : ''}`}>
                     <h2>{rezultatTekst(stanje)}</h2>
                     <p className="blago">{razlogTekst(stanje.termination)}</p>
@@ -203,13 +401,33 @@ export function SahPartija() {
                   </div>
                 ) : (
                   <>
-                    <h2>{radi ? 'Računar razmišlja…' : deteNaPotezu ? 'Tvoj potez' : 'Potez računara'}</h2>
+                    <h2>{
+                      faza === 'cuvanje' ? 'Čuvam potez…'
+                        : faza === 'ponistavanje' ? 'Poništavam potez…'
+                          : faza === 'najava' ? 'Računar će odigrati…'
+                            : faza === 'animacija' ? 'Računar igra…'
+                              : faza === 'razmisljanje' ? 'Računar razmišlja…'
+                                : deteNaPotezu ? 'Tvoj potez' : 'Kratka pauza'
+                    }</h2>
                     <p className="blago malo">
                       {igra.inCheck() ? 'Šah! ' : ''}Pomeraj figure prevlačenjem ili dodirom na dva polja.
                     </p>
+                    {racunarNaPotezu && !radi && (
+                      <p className="sah-pauza-tekst malo" role="status">
+                        Računar će odigrati za oko 3 sekunde.
+                      </p>
+                    )}
+                    {stanje.undoAvailable && racunarNaPotezu && !radi && (
+                      <button
+                        type="button" className="dugme dugme--senka dugme--malo sah-ponisti razmak-gore"
+                        onClick={() => void poništiPoslednjiPotez()}
+                      >
+                        ↶ Poništi moj potez
+                      </button>
+                    )}
                     <button
                       type="button" className="dugme dugme--opasno dugme--malo razmak-gore"
-                      disabled={radi} onClick={() => {
+                      disabled={radi || !deteNaPotezu} onClick={() => {
                         if (confirm('Predati partiju? Ovo se računa kao poraz i donosi 0 zvezdica.')) void izvrsi('resign')
                       }}
                     >

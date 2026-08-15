@@ -219,6 +219,7 @@ export interface SahPartija {
   stars_awarded: number | null
   revision: number
   last_request_id: string | null
+  undo_used: boolean
   notify_child_email: boolean
   engine_version: string
   daily_schedule_id: string | null

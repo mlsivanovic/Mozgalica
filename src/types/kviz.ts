@@ -238,6 +238,7 @@ export interface SahStanjePayload {
   result?: 'child_win' | 'draw' | 'child_loss' | null
   termination?: string | null
   starsAwarded?: number | null
+  undoAvailable?: boolean
   moves?: SahPotezPayload[]
 }
 

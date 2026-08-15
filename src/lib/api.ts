@@ -530,7 +530,7 @@ export async function obrisiDnevniRasporedSaha(id: string): Promise<void> {
 
 export async function sahAkcija(
   playToken: string,
-  action: 'state' | 'start' | 'move' | 'resign',
+  action: 'state' | 'start' | 'move' | 'child_move' | 'engine' | 'undo' | 'resign',
   expectedRevision?: number,
   move?: { from: string; to: string; promotion?: 'q' | 'r' | 'b' | 'n' },
   requestId = crypto.randomUUID(),

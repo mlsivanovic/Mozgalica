@@ -9,7 +9,7 @@ const CORS = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-type Akcija = 'state' | 'start' | 'move' | 'resign'
+type Akcija = 'state' | 'start' | 'move' | 'child_move' | 'engine' | 'undo' | 'resign'
 type Boja = 'white' | 'black'
 type Rezultat = 'child_win' | 'draw' | 'child_loss'
 type Zavrsetak =
@@ -42,6 +42,7 @@ interface PartijaRed {
   stars_awarded: number | null
   revision: number
   last_request_id: string | null
+  undo_used: boolean
   started_at: string | null
 }
 
@@ -143,6 +144,10 @@ function stanjePayload(
     result: partija.result,
     termination: partija.termination,
     starsAwarded: partija.stars_awarded,
+    undoAvailable: partija.status === 'in_progress'
+      && !partija.undo_used
+      && partija.turn_color !== partija.child_color
+      && potezi.at(-1)?.player === 'child',
     moves: potezi.map((potez) => ({
       ply: potez.ply,
       player: potez.player,
@@ -303,7 +308,9 @@ async function pokreni(
     termination: null,
     white,
     black,
-    turnStartedAt: new Date().toISOString(),
+    turnStartedAt: partija.child_color === 'black'
+      ? new Date(Date.now() + 1800).toISOString()
+      : new Date().toISOString(),
     startedAt: startIso,
     moves: novi,
   })
@@ -350,6 +357,71 @@ async function odigraj(
   const sada = new Date().toISOString()
   const novi: NoviPotez[] = [noviPotez(
     igra, childMove, 'child', potezi.length + 1, white, black, sada,
+  )]
+  const termination = zavrsetakIgre(igra)
+  if (termination) {
+    const ishod = await commit(supabase, partija, requestId, {
+      igra, status: 'completed', result: rezultatZavršeneIgre(igra, partija.child_color),
+      termination, white, black, turnStartedAt: null, startedAt: partija.started_at, moves: novi,
+    })
+    if (!ishod.ok) return svežeStanje(supabase, token, { stale: ishod.error === 'stale' })
+    return svežeStanje(supabase, token)
+  }
+  const ishod = await commit(supabase, partija, requestId, {
+    igra,
+    status: 'in_progress',
+    result: null,
+    termination: null,
+    white,
+    black,
+    turnStartedAt: new Date().toISOString(),
+    startedAt: partija.started_at,
+    moves: novi,
+  })
+  if (!ishod.ok) return svežeStanje(supabase, token, { stale: ishod.error === 'stale' })
+  return svežeStanje(supabase, token, { duplicate: ishod.duplicate === true })
+}
+
+// Stari PWA klijenti očekuju oba poteza u jednom odgovoru. Ovaj tok ostaje
+// dostupan dok se servisni radnik ne osveži na svim uređajima.
+async function odigrajKompletno(
+  supabase: SupabaseServis,
+  token: string,
+  ucitano: NonNullable<Awaited<ReturnType<typeof ucitajPartiju>>>,
+  requestId: string,
+  zahtev: Zahtev,
+) {
+  const { partija, potezi } = ucitano
+  if (partija.status !== 'in_progress') return { ok: false, error: 'not_in_progress' }
+  if (partija.turn_color !== partija.child_color) return { ok: false, error: 'not_child_turn' }
+
+  const sat = efektivniSat(partija)
+  const childRemaining = partija.child_color === 'white' ? sat.white : sat.black
+  if (childRemaining != null && childRemaining <= 0) {
+    return proveriIstek(supabase, token, ucitano, requestId)
+  }
+
+  const from = zahtev.move?.from
+  const to = zahtev.move?.to
+  const promotion = zahtev.move?.promotion
+  if (!from || !to || !/^[a-h][1-8]$/.test(from) || !/^[a-h][1-8]$/.test(to)) {
+    return { ok: false, error: 'invalid_move' }
+  }
+  if (promotion && !/^[qrbn]$/.test(promotion)) return { ok: false, error: 'invalid_promotion' }
+
+  const igra = rekonstruiši(potezi)
+  if (igra.fen() !== partija.fen) throw new Error('Sačuvani potezi i pozicija se ne poklapaju.')
+  let childMove: Move
+  try {
+    childMove = igra.move({ from: from as Square, to: to as Square, promotion: promotion as PieceSymbol | undefined })
+  } catch {
+    return { ok: false, error: 'illegal_move' }
+  }
+
+  let white = sat.white
+  let black = sat.black
+  const novi: NoviPotez[] = [noviPotez(
+    igra, childMove, 'child', potezi.length + 1, white, black, new Date().toISOString(),
   )]
   let termination = zavrsetakIgre(igra)
   if (termination) {
@@ -399,6 +471,82 @@ async function odigraj(
   return svežeStanje(supabase, token, { duplicate: ishod.duplicate === true })
 }
 
+async function odigrajRacunar(
+  supabase: SupabaseServis,
+  token: string,
+  ucitano: NonNullable<Awaited<ReturnType<typeof ucitajPartiju>>>,
+  requestId: string,
+) {
+  const { partija, potezi } = ucitano
+  if (partija.status !== 'in_progress') return { ok: false, error: 'not_in_progress' }
+  if (partija.turn_color === partija.child_color) return { ok: false, error: 'not_engine_turn' }
+
+  const igra = rekonstruiši(potezi)
+  if (igra.fen() !== partija.fen) throw new Error('Sačuvani potezi i pozicija se ne poklapaju.')
+
+  let { white, black } = efektivniSat(partija)
+  const engineColor = suprotna(partija.child_color)
+  const engineRemaining = engineColor === 'white' ? white : black
+  if (engineRemaining != null && engineRemaining <= 0) {
+    return proveriIstek(supabase, token, ucitano, requestId)
+  }
+
+  const engineStartMs = Date.now()
+  const izbor = izaberiPotezRacunara(
+    igra, partija.approximate_elo as SahElo, `${partija.id}:${potezi.length}`,
+  )
+  const engineElapsed = Date.now() - engineStartMs
+  if (engineColor === 'white' && white != null) white = Math.max(0, white - engineElapsed)
+  if (engineColor === 'black' && black != null) black = Math.max(0, black - engineElapsed)
+
+  const remainingAfterSearch = engineColor === 'white' ? white : black
+  if (remainingAfterSearch != null && remainingAfterSearch <= 0) {
+    const ishod = await commit(supabase, partija, requestId, {
+      igra, status: 'completed', result: 'child_win', termination: 'timeout',
+      white, black, turnStartedAt: null, startedAt: partija.started_at, moves: [],
+    })
+    if (!ishod.ok) return svežeStanje(supabase, token, { stale: ishod.error === 'stale' })
+    return svežeStanje(supabase, token)
+  }
+
+  const engineMove = igra.move({ from: izbor.from, to: izbor.to, promotion: izbor.promotion })
+  const novi = [noviPotez(
+    igra, engineMove, 'engine', potezi.length + 1, white, black, new Date().toISOString(),
+  )]
+  const termination = zavrsetakIgre(igra)
+  const ishod = await commit(supabase, partija, requestId, {
+    igra,
+    status: termination ? 'completed' : 'in_progress',
+    result: termination ? rezultatZavršeneIgre(igra, partija.child_color) : null,
+    termination,
+    white,
+    black,
+    // Dečji sat kreće tek kada se u interfejsu završi najava i animacija poteza.
+    turnStartedAt: termination ? null : new Date(Date.now() + 1800).toISOString(),
+    startedAt: partija.started_at,
+    moves: novi,
+  })
+  if (!ishod.ok) return svežeStanje(supabase, token, { stale: ishod.error === 'stale' })
+  return svežeStanje(supabase, token, { duplicate: ishod.duplicate === true })
+}
+
+async function poništiPotez(
+  supabase: SupabaseServis,
+  token: string,
+  ucitano: NonNullable<Awaited<ReturnType<typeof ucitajPartiju>>>,
+  requestId: string,
+) {
+  const { data, error } = await supabase.rpc('undo_last_child_chess_move', {
+    p_game_id: ucitano.partija.id,
+    p_expected_revision: ucitano.partija.revision,
+    p_request_id: requestId,
+  })
+  if (error) throw new Error(error.message)
+  const ishod = data as { ok: boolean; error?: string; duplicate?: boolean }
+  if (!ishod.ok) return { ok: false, error: ishod.error ?? 'undo_unavailable' }
+  return svežeStanje(supabase, token, { duplicate: ishod.duplicate === true })
+}
+
 async function predaj(
   supabase: SupabaseServis,
   token: string,
@@ -426,7 +574,7 @@ Deno.serve(async (req: Request) => {
     const zahtev = await req.json() as Zahtev
     const action = zahtev.action ?? 'state'
     const token = zahtev.playToken?.trim()
-    if (!token || token.length < 20 || !['state', 'start', 'move', 'resign'].includes(action)) {
+    if (!token || token.length < 20 || !['state', 'start', 'move', 'child_move', 'engine', 'undo', 'resign'].includes(action)) {
       return json({ ok: false, error: 'invalid_request' }, 400)
     }
     const requestId = jeUuid(zahtev.requestId) ? zahtev.requestId : crypto.randomUUID()
@@ -445,8 +593,11 @@ Deno.serve(async (req: Request) => {
     if (istek) return json(istek)
     if (action === 'state') return json(stanjePayload(ucitano.partija, ucitano.potezi, ucitano.profil))
     if (action === 'start') return json(await pokreni(supabase, token, ucitano, requestId))
+    if (action === 'engine') return json(await odigrajRacunar(supabase, token, ucitano, requestId))
+    if (action === 'undo') return json(await poništiPotez(supabase, token, ucitano, requestId))
     if (action === 'resign') return json(await predaj(supabase, token, ucitano, requestId))
-    return json(await odigraj(supabase, token, ucitano, requestId, zahtev))
+    if (action === 'child_move') return json(await odigraj(supabase, token, ucitano, requestId, zahtev))
+    return json(await odigrajKompletno(supabase, token, ucitano, requestId, zahtev))
   } catch (greska) {
     console.error(greska)
     return json({ ok: false, error: 'server_error' }, 500)
