@@ -66,6 +66,21 @@
 }
 .kviz-saveti-bedz { background: var(--boja-upozorenje-svetla); color: var(--boja-upozorenje); }
 
+/* ---------- Objašnjenja netačnih + ponovni pokušaj ---------- */
+.kviz-objasnjenja { scroll-margin-top: 1.2rem; }
+.kviz-ponovni-lista { display: grid; gap: 1rem; }
+/* Sentinel na dnu objašnjenja — vidljiv tek kad dete skroluje do kraja */
+.kviz-ponovni-dno { height: 2px; }
+.kviz-objasnjenje-tacan {
+  margin: 0.6rem 0 0; color: var(--boja-uspeh); font-weight: 800;
+}
+.kviz-objasnjenje-tekst {
+  background: var(--boja-primarna-svetla); padding: 0.5rem 0.7rem; border-radius: 8px;
+}
+.kviz-ponovni-uspeh {
+  border: 2px solid var(--boja-zvezda);
+}
+
 /* ---------- Rezultat ---------- */
 .kviz-zvezde { font-size: 2.6rem; }
 .kviz-zvezde span {

@@ -2,13 +2,15 @@
 import type {
   AdminPodesavanja, AvatarDeteta, DnevniRasporedSaha, FiksnoImeDeteta, InboxObavestenja,
   Kviz, KvizLink, KvizPitanje, NivoTitule, Oblast, Obavestenje, OdgovorDeteta, Pitanje,
-  DnevniRasporedKviza, IzvorDnevnogKviza, Pokusaj, PokusajOdgovor, Predmet, ProfilDeteta,
+  DnevniRasporedKviza, IzvorDnevnogKviza, Pokusaj, PokusajOdgovor, PonovniOdgovorPokusaja,
+  Predmet, ProfilDeteta,
   PushPretplata, Razred, SahBoja, SahNagradaPodesavanje, SahPartija, SahPotez,
   StavkaProdavnice, Tezina, TipPitanja,
 } from '../types/db'
 import type {
   InboxDetetaPayload, JavniProfilPayload, KupovinaPayload, KvizMeta, NapredakTitule,
-  PokusajPayload, PotvrdaTajmera, PregledStatistikeDecePayload, ProdavnicaPayload,
+  ObjasnjenjePayload, PokusajPayload, PonovniPayload, PonovnoPitanjeUnos, PotvrdaTajmera,
+  PregledStatistikeDecePayload, ProdavnicaPayload,
   RezultatPayload, SahStanjePayload, SavePotvrda, SavetPayload, StatistikaDetetaPayload,
 } from '../types/kviz'
 import { SEED_PITANJA } from '../data/seedPitanja'
@@ -425,6 +427,14 @@ export async function listajOdgovorePokusaja(attemptId: string): Promise<Pokusaj
     .from('attempt_answers').select('*').eq('attempt_id', attemptId)
   if (error) throw new Error(opisiGresku(error)!)
   return data as PokusajOdgovor[]
+}
+
+// Pitanja i odgovori ponovnog pokušaja netačnih zadataka (prazno ako nije korišćen)
+export async function listajPonovneOdgovorePokusaja(attemptId: string): Promise<PonovniOdgovorPokusaja[]> {
+  const { data, error } = await supabase()
+    .from('attempt_retry_questions').select('*').eq('attempt_id', attemptId).order('position')
+  if (error) throw new Error(opisiGresku(error)!)
+  return data as PonovniOdgovorPokusaja[]
 }
 
 export async function overrideOcene(answerId: string, isCorrect: boolean, awardedPoints: number): Promise<void> {
@@ -850,6 +860,50 @@ export async function iskoristiSavet(attemptToken: string, quizQuestionId: strin
   })
   if (error) return { ok: false, error: opisiGresku(error)! }
   return data as SavetPayload
+}
+
+// ---------- RPC za dete — ponovni pokušaj netačnih zadataka ----------
+
+// Dete je otvorilo objašnjenja netačnih zadataka (otključava ponovni pokušaj)
+export async function otvoriObjasnjenja(attemptToken: string): Promise<ObjasnjenjePayload> {
+  const { data, error } = await supabase().rpc('mark_explanations_seen', {
+    p_attempt_token: attemptToken,
+  })
+  if (error) return { ok: false, error: opisiGresku(error)! }
+  return data as ObjasnjenjePayload
+}
+
+// Upisuje nove (klijentski generisane) verzije netačnih zadataka na server
+export async function pokreniPonovniPokusaj(
+  attemptToken: string,
+  pitanja: PonovnoPitanjeUnos[],
+): Promise<PonovniPayload> {
+  const { data, error } = await supabase().rpc('start_retry', {
+    p_attempt_token: attemptToken, p_questions: pitanja,
+  })
+  if (error) return { ok: false, error: opisiGresku(error)! } as PonovniPayload
+  return data as PonovniPayload
+}
+
+// Oporavak ponovnog pokušaja posle osvežavanja stranice
+export async function nastaviPonovniPokusaj(attemptToken: string): Promise<PonovniPayload> {
+  const { data, error } = await supabase().rpc('resume_retry', {
+    p_attempt_token: attemptToken,
+  })
+  if (error) return { ok: false, error: opisiGresku(error)! } as PonovniPayload
+  return data as PonovniPayload
+}
+
+// Predaja ponovnog pokušaja — server ocenjuje i po potrebi dopuni zvezdice
+export async function predajPonovniPokusaj(
+  attemptToken: string,
+  answers: Record<string, OdgovorDeteta>,
+): Promise<PonovniPayload> {
+  const { data, error } = await supabase().rpc('submit_retry', {
+    p_attempt_token: attemptToken, p_answers: answers,
+  })
+  if (error) return { ok: false, error: opisiGresku(error)! } as PonovniPayload
+  return data as PonovniPayload
 }
 
 export async function ucitajJavniProfil(profileToken: string): Promise<JavniProfilPayload> {

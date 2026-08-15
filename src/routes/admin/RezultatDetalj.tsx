@@ -4,10 +4,11 @@ import { useParams } from 'react-router-dom'
 import { PitanjeRenderer } from '../../components/pitanja/PitanjeRenderer'
 import { Loader } from '../../components/Zajednicke'
 import {
-  listajOdgovorePokusaja, listajPitanjaKviza, overrideOcene, ucitajPokusaj,
+  listajOdgovorePokusaja, listajPitanjaKviza, listajPonovneOdgovorePokusaja,
+  overrideOcene, ucitajPokusaj,
 } from '../../lib/api'
 import { formatDatum, formatProcenat, formatTrajanje } from '../../lib/format'
-import type { KvizPitanje, Pokusaj, PokusajOdgovor } from '../../types/db'
+import type { KvizPitanje, Pokusaj, PokusajOdgovor, PonovniOdgovorPokusaja } from '../../types/db'
 
 export function RezultatDetalj() {
   const { id } = useParams<{ id: string }>()
@@ -16,14 +17,17 @@ export function RezultatDetalj() {
   const [pokusaj, setPokusaj] = useState<Pokusaj | null>(null)
   const [pitanja, setPitanja] = useState<KvizPitanje[]>([])
   const [odgovori, setOdgovori] = useState<PokusajOdgovor[]>([])
+  const [ponovni, setPonovni] = useState<PonovniOdgovorPokusaja[]>([])
 
   async function ucitaj() {
     if (!id) return
     setUcitava(true)
     try {
       const p = await ucitajPokusaj(id)
-      const [qq, ans] = await Promise.all([listajPitanjaKviza(p.quiz_id), listajOdgovorePokusaja(id)])
-      setPokusaj(p); setPitanja(qq); setOdgovori(ans)
+      const [qq, ans, ret] = await Promise.all([
+        listajPitanjaKviza(p.quiz_id), listajOdgovorePokusaja(id), listajPonovneOdgovorePokusaja(id),
+      ])
+      setPokusaj(p); setPitanja(qq); setOdgovori(ans); setPonovni(ret)
     } catch (e) {
       setGreska(String((e as Error).message ?? e))
     } finally {
@@ -37,8 +41,10 @@ export function RezultatDetalj() {
     if (!id) return
     try {
       const p = await ucitajPokusaj(id)
-      const [qq, ans] = await Promise.all([listajPitanjaKviza(p.quiz_id), listajOdgovorePokusaja(id)])
-      setPokusaj(p); setPitanja(qq); setOdgovori(ans)
+      const [qq, ans, ret] = await Promise.all([
+        listajPitanjaKviza(p.quiz_id), listajOdgovorePokusaja(id), listajPonovneOdgovorePokusaja(id),
+      ])
+      setPokusaj(p); setPitanja(qq); setOdgovori(ans); setPonovni(ret)
     } catch (e) {
       setGreska(String((e as Error).message ?? e))
     }
@@ -59,6 +65,8 @@ export function RezultatDetalj() {
   if (!pokusaj) return <p className="poruka poruka--greska">{greska ?? 'Pokušaj nije pronađen.'}</p>
 
   const mapaOdgovora = new Map(odgovori.map((o) => [o.quiz_question_id, o]))
+  const ponovniPredato = ponovni.length > 0 && ponovni.every((r) => r.is_correct !== null)
+  const ponovniSveTacno = ponovniPredato && ponovni.every((r) => r.is_correct === true)
 
   return (
     <div>
@@ -132,6 +140,44 @@ export function RezultatDetalj() {
           )
         })}
       </div>
+
+      {ponovni.length > 0 && (
+        <div className="razmak-gore">
+          <h2>Ponovni pokušaj netačnih zadataka</h2>
+          {ponovniSveTacno ? (
+            <p className="poruka poruka--uspeh razmak-gore">
+              🎉 Dete je rešilo sve zadatke ponovnog pokušaja tačno — zvezdice su dopunjene na 5.
+            </p>
+          ) : ponovniPredato ? (
+            <p className="blago razmak-gore">
+              Nisu svi zadaci ponovnog pokušaja tačni — zvezdice ostaju iz prvog pokušaja.
+            </p>
+          ) : (
+            <p className="blago razmak-gore">Ponovni pokušaj je u toku — odgovori još nisu predati.</p>
+          )}
+          <div className="mreza-kartica razmak-gore">
+            {ponovni.map((r, i) => {
+              const boja = r.is_correct == null
+                ? 'var(--boja-ivica)'
+                : r.is_correct ? 'var(--boja-uspeh)' : 'var(--boja-greska)'
+              const labela = r.is_correct == null ? '⏳ U toku' : r.is_correct ? '✓ Tačno' : '✗ Netačno'
+              return (
+                <div key={r.id} className="kartica" style={{ borderLeft: `5px solid ${boja}` }}>
+                  <p className="malo blago">
+                    <span style={{ fontWeight: 700, color: boja }}>{labela}</span>
+                    {' · '}Nova verzija zadatka {i + 1} · {r.points} poena
+                  </p>
+                  <p style={{ fontWeight: 700 }}>{r.text}</p>
+                  <div className="razmak-gore">
+                    <PitanjeRenderer pitanje={r} value={r.answer ?? null} onChange={() => {}} disabled />
+                  </div>
+                  {r.explanation && <p className="malo razmak-gore blago">💡 {r.explanation}</p>}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

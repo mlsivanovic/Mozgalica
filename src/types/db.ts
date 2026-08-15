@@ -199,6 +199,24 @@ export interface PokusajOdgovor {
   graded_by: 'auto' | 'manual' | 'pending'
 }
 
+// Red tabele attempt_retry_questions — nova verzija netačnog zadatka
+// generisana za ponovni pokušaj (vidi migraciju 20260815160000)
+export interface PonovniOdgovorPokusaja {
+  id: string
+  attempt_id: string
+  position: number
+  source_quiz_question_id: string | null
+  type: TipPitanja
+  text: string
+  options: OpcijeJson
+  correct: TacanOdgovor
+  explanation: string | null
+  points: number
+  answer: OdgovorDeteta
+  is_correct: boolean | null
+  answered_at: string | null
+}
+
 export interface SahPartija {
   id: string
   owner_id: string

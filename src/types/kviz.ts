@@ -100,6 +100,20 @@ export interface RezultatPitanja {
   // correct i explanation stižu SAMO ako kviz dozvoljava prikaz tačnih odgovora
   correct?: TacanOdgovor
   explanation?: string | null
+  // slug oblasti iz tabele topics — null ako je oblast obrisana; treba generatoru
+  // za pravljenje nove verzije zadatka u ponovnom pokušaju
+  topicSlug?: string | null
+}
+
+// Stanje toka „objašnjenja + ponovni pokušaj netačnih zadataka" za pokušaj
+export interface RetryInfo {
+  // true samo kad kviz dozvoljava prikaz tačnih odgovora, rezultat ne čeka ručnu
+  // ocenu, postoje netačni zadaci i ponovni pokušaj još nije predat (zaključan)
+  available: boolean
+  explanationsSeen: boolean
+  started: boolean
+  submitted: boolean
+  allCorrect: boolean | null
 }
 
 // submit_attempt — rezultat filtriran po show_* podešavanjima kviza
@@ -128,7 +142,72 @@ export interface RezultatPayload {
   pendingReview?: boolean
   starsAwarded?: number | null
   questions?: RezultatPitanja[]
+  retry?: RetryInfo
 }
+
+// ---------- Ponovni pokušaj netačnih zadataka ----------
+
+// Novo pitanje koje frontend generiše i šalje RPC-u start_retry
+export interface PonovnoPitanjeUnos {
+  // id originalnog quiz_questions reda koji je bio netačan
+  sourceId: string
+  type: TipPitanja
+  text: string
+  options: OpcijeJson
+  correct: TacanOdgovor
+  explanation: string | null
+  points: number
+}
+
+// Pitanje ponovnog pokušaja kako ga vidi dete dok rešava (bez tačnog odgovora)
+export interface PonovnoPitanjeZaDete {
+  id: string
+  position: number
+  type: TipPitanja
+  text: string
+  options: OpcijeJson
+  points: number
+}
+
+// Pitanje ponovnog pokušaja u pregledu ishoda (posle predaje)
+export interface RezultatPonovnogPitanja {
+  id: string
+  position: number
+  type: TipPitanja
+  text: string
+  options: OpcijeJson
+  points: number
+  answer: OdgovorDeteta | null
+  isCorrect: boolean | null
+  correct?: TacanOdgovor | null
+  explanation?: string | null
+}
+
+export interface ObjasnjenjePayload {
+  ok: boolean
+  error?: string
+}
+
+// start_retry / resume_retry dok ponovni pokušaj traje
+export interface PonovniPayloadUtoku {
+  ok: boolean
+  error?: string
+  submitted: false
+  questions?: PonovnoPitanjeZaDete[]
+}
+
+// resume_retry / submit_retry posle predaje (kviz je zaključan)
+export interface PonovniPayloadPredat {
+  ok: boolean
+  error?: string
+  submitted: true
+  alreadySubmitted?: boolean
+  allCorrect?: boolean | null
+  starsAwarded?: number | null
+  questions?: RezultatPonovnogPitanja[]
+}
+
+export type PonovniPayload = PonovniPayloadUtoku | PonovniPayloadPredat
 
 export interface PotvrdaTajmera {
   ok: boolean
