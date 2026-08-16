@@ -18,6 +18,12 @@
 .sah-potezi span { padding: 0.25rem 0.35rem; border-bottom: 1px solid var(--boja-ivica); }
 .sah-rezultat { text-align: center; padding: 1.1rem; border-radius: var(--radius); background: var(--boja-uspeh-svetla); }
 .sah-rezultat--poraz { background: var(--boja-greska-svetla); }
+.sah-pokusaj { margin-top: 0.9rem; display: flex; flex-direction: column; align-items: center; gap: 0.55rem; }
+.sah-pokusaj__opcije { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.45rem; }
+.sah-pokusaj__otkazi {
+  border: none; background: none; padding: 0.2rem; cursor: pointer;
+  color: var(--boja-tekst-blagi); text-decoration: underline;
+}
 .sah-pregled { width: min(100%, 520px); margin: 0 auto; }
 .sah-ponisti { width: 100%; }
 .sah-pauza-tekst { margin-top: 0.65rem; color: var(--boja-tekst-blagi); }

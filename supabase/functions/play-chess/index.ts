@@ -9,7 +9,7 @@ const CORS = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-type Akcija = 'state' | 'start' | 'move' | 'child_move' | 'engine' | 'undo' | 'resign'
+type Akcija = 'state' | 'start' | 'move' | 'child_move' | 'engine' | 'undo' | 'resign' | 'retry'
 type Boja = 'white' | 'black'
 type Rezultat = 'child_win' | 'draw' | 'child_loss'
 type Zavrsetak =
@@ -22,6 +22,7 @@ interface Zahtev {
   expectedRevision?: number
   requestId?: string
   move?: { from?: string; to?: string; promotion?: string }
+  elo?: number
 }
 
 interface PartijaRed {
@@ -60,6 +61,13 @@ interface PotezRed {
 
 interface NoviPotez extends PotezRed {}
 
+interface Ucitano {
+  partija: PartijaRed
+  potezi: PotezRed[]
+  profil: { name: string; public_token: string }
+  retryInfo: { retriesUsed: number; available: boolean }
+}
+
 type SupabaseServis = ReturnType<typeof createClient>
 
 function json(telo: unknown, status = 200): Response {
@@ -90,19 +98,21 @@ function efektivniSat(partija: PartijaRed, sadaMs = Date.now()) {
   return { white, black }
 }
 
-async function ucitajPartiju(supabase: SupabaseServis, token: string) {
+async function ucitajPartiju(supabase: SupabaseServis, token: string): Promise<Ucitano | null> {
   const { data: partija, error } = await supabase
     .from('chess_games').select('*').eq('play_token', token).single()
   if (error || !partija) return null
-  const [{ data: potezi, error: greskaPoteza }, { data: profil, error: greskaProfila }] = await Promise.all([
+  const [{ data: potezi, error: greskaPoteza }, { data: profil, error: greskaProfila }, { data: retryInfo, error: greskaRetry }] = await Promise.all([
     supabase.from('chess_moves').select('*').eq('game_id', partija.id).order('ply'),
     supabase.from('child_profiles').select('name, public_token').eq('id', partija.child_profile_id).single(),
+    supabase.rpc('fn_chess_retry_state', { p_game_id: partija.id }),
   ])
-  if (greskaPoteza || greskaProfila || !profil) throw new Error('Stanje partije nije potpuno.')
+  if (greskaPoteza || greskaProfila || greskaRetry || !profil) throw new Error('Stanje partije nije potpuno.')
   return {
     partija: partija as PartijaRed,
     potezi: (potezi ?? []) as PotezRed[],
     profil: profil as { name: string; public_token: string },
+    retryInfo: retryInfo as { retriesUsed: number; available: boolean },
   }
 }
 
@@ -120,16 +130,16 @@ function rekonstruiši(potezi: PotezRed[]): Chess {
 }
 
 function stanjePayload(
-  partija: PartijaRed,
-  potezi: PotezRed[],
-  profil: { name: string; public_token: string },
+  ucitano: Ucitano,
   dodatno: Record<string, unknown> = {},
 ) {
+  const { partija, potezi, profil, retryInfo } = ucitano
   const sat = efektivniSat(partija)
   return {
     ok: true,
     status: partija.status,
     revision: partija.revision,
+    playToken: partija.play_token,
     profileToken: profil.public_token,
     childName: profil.name,
     childColor: partija.child_color,
@@ -144,6 +154,8 @@ function stanjePayload(
     result: partija.result,
     termination: partija.termination,
     starsAwarded: partija.stars_awarded,
+    retriesUsed: retryInfo.retriesUsed,
+    retryAvailable: retryInfo.available,
     undoAvailable: partija.status === 'in_progress'
       && !partija.undo_used
       && partija.turn_color !== partija.child_color
@@ -246,13 +258,13 @@ async function svežeStanje(
 ) {
   const ucitano = await ucitajPartiju(supabase, token)
   if (!ucitano) return { ok: false, error: 'not_found' }
-  return stanjePayload(ucitano.partija, ucitano.potezi, ucitano.profil, dodatno)
+  return stanjePayload(ucitano, dodatno)
 }
 
 async function proveriIstek(
   supabase: SupabaseServis,
   token: string,
-  ucitano: NonNullable<Awaited<ReturnType<typeof ucitajPartiju>>>,
+  ucitano: Ucitano,
   requestId: string,
 ) {
   const { partija, potezi } = ucitano
@@ -280,11 +292,11 @@ async function proveriIstek(
 async function pokreni(
   supabase: SupabaseServis,
   token: string,
-  ucitano: NonNullable<Awaited<ReturnType<typeof ucitajPartiju>>>,
+  ucitano: Ucitano,
   requestId: string,
 ) {
-  const { partija, potezi } = ucitano
-  if (partija.status !== 'assigned') return stanjePayload(partija, potezi, ucitano.profil)
+  const { partija } = ucitano
+  if (partija.status !== 'assigned') return stanjePayload(ucitano)
   const igra = new Chess()
   const startMs = Date.now()
   const startIso = new Date(startMs).toISOString()
@@ -321,7 +333,7 @@ async function pokreni(
 async function odigraj(
   supabase: SupabaseServis,
   token: string,
-  ucitano: NonNullable<Awaited<ReturnType<typeof ucitajPartiju>>>,
+  ucitano: Ucitano,
   requestId: string,
   zahtev: Zahtev,
 ) {
@@ -387,7 +399,7 @@ async function odigraj(
 async function odigrajKompletno(
   supabase: SupabaseServis,
   token: string,
-  ucitano: NonNullable<Awaited<ReturnType<typeof ucitajPartiju>>>,
+  ucitano: Ucitano,
   requestId: string,
   zahtev: Zahtev,
 ) {
@@ -474,7 +486,7 @@ async function odigrajKompletno(
 async function odigrajRacunar(
   supabase: SupabaseServis,
   token: string,
-  ucitano: NonNullable<Awaited<ReturnType<typeof ucitajPartiju>>>,
+  ucitano: Ucitano,
   requestId: string,
 ) {
   const { partija, potezi } = ucitano
@@ -533,7 +545,7 @@ async function odigrajRacunar(
 async function poništiPotez(
   supabase: SupabaseServis,
   token: string,
-  ucitano: NonNullable<Awaited<ReturnType<typeof ucitajPartiju>>>,
+  ucitano: Ucitano,
   requestId: string,
 ) {
   const { data, error } = await supabase.rpc('undo_last_child_chess_move', {
@@ -550,7 +562,7 @@ async function poništiPotez(
 async function predaj(
   supabase: SupabaseServis,
   token: string,
-  ucitano: NonNullable<Awaited<ReturnType<typeof ucitajPartiju>>>,
+  ucitano: Ucitano,
   requestId: string,
 ) {
   const { partija, potezi } = ucitano
@@ -566,6 +578,29 @@ async function predaj(
   return svežeStanje(supabase, token)
 }
 
+// Ponovni pokušaj poražene partije: kreira novu partiju sa istim detetom,
+// bojom i satom, protiv izabranog ELO nivoa (jednak ili slabiji server-side).
+async function pokusajPonovo(
+  supabase: SupabaseServis,
+  ucitano: Ucitano,
+  requestId: string,
+  zahtev: Zahtev,
+) {
+  const elo = zahtev.elo
+  if (elo == null || ![700, 900, 1100, 1300, 1500].includes(elo)) {
+    return { ok: false, error: 'invalid_elo' }
+  }
+  const { data, error } = await supabase.rpc('retry_chess_game', {
+    p_play_token: ucitano.partija.play_token,
+    p_elo: elo,
+    p_request_id: requestId,
+  })
+  if (error) throw new Error(error.message)
+  const ishod = data as { ok: boolean; error?: string; duplicate?: boolean; playToken?: string }
+  if (!ishod.ok) return { ok: false, error: ishod.error ?? 'retry_not_allowed' }
+  return svežeStanje(supabase, ishod.playToken!, { duplicate: ishod.duplicate === true })
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
   if (req.method !== 'POST') return json({ ok: false, error: 'method_not_allowed' }, 405)
@@ -574,7 +609,7 @@ Deno.serve(async (req: Request) => {
     const zahtev = await req.json() as Zahtev
     const action = zahtev.action ?? 'state'
     const token = zahtev.playToken?.trim()
-    if (!token || token.length < 20 || !['state', 'start', 'move', 'child_move', 'engine', 'undo', 'resign'].includes(action)) {
+    if (!token || token.length < 20 || !['state', 'start', 'move', 'child_move', 'engine', 'undo', 'resign', 'retry'].includes(action)) {
       return json({ ok: false, error: 'invalid_request' }, 400)
     }
     const requestId = jeUuid(zahtev.requestId) ? zahtev.requestId : crypto.randomUUID()
@@ -583,19 +618,20 @@ Deno.serve(async (req: Request) => {
     if (!ucitano) return json({ ok: false, error: 'not_found' }, 404)
 
     if (ucitano.partija.last_request_id === requestId) {
-      return json(stanjePayload(ucitano.partija, ucitano.potezi, ucitano.profil, { duplicate: true }))
+      return json(stanjePayload(ucitano, { duplicate: true }))
     }
     if (action !== 'state' && zahtev.expectedRevision !== ucitano.partija.revision) {
-      return json(stanjePayload(ucitano.partija, ucitano.potezi, ucitano.profil, { stale: true }))
+      return json(stanjePayload(ucitano, { stale: true }))
     }
 
     const istek = await proveriIstek(supabase, token, ucitano, requestId)
     if (istek) return json(istek)
-    if (action === 'state') return json(stanjePayload(ucitano.partija, ucitano.potezi, ucitano.profil))
+    if (action === 'state') return json(stanjePayload(ucitano))
     if (action === 'start') return json(await pokreni(supabase, token, ucitano, requestId))
     if (action === 'engine') return json(await odigrajRacunar(supabase, token, ucitano, requestId))
     if (action === 'undo') return json(await poništiPotez(supabase, token, ucitano, requestId))
     if (action === 'resign') return json(await predaj(supabase, token, ucitano, requestId))
+    if (action === 'retry') return json(await pokusajPonovo(supabase, ucitano, requestId, zahtev))
     if (action === 'child_move') return json(await odigraj(supabase, token, ucitano, requestId, zahtev))
     return json(await odigrajKompletno(supabase, token, ucitano, requestId, zahtev))
   } catch (greska) {

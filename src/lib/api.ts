@@ -541,13 +541,14 @@ export async function obrisiDnevniRasporedSaha(id: string): Promise<void> {
 
 export async function sahAkcija(
   playToken: string,
-  action: 'state' | 'start' | 'move' | 'child_move' | 'engine' | 'undo' | 'resign',
+  action: 'state' | 'start' | 'move' | 'child_move' | 'engine' | 'undo' | 'resign' | 'retry',
   expectedRevision?: number,
   move?: { from: string; to: string; promotion?: 'q' | 'r' | 'b' | 'n' },
   requestId = crypto.randomUUID(),
+  elo?: number,
 ): Promise<SahStanjePayload> {
   const { data, error } = await supabase().functions.invoke('play-chess', {
-    body: { playToken, action, expectedRevision, move, requestId },
+    body: { playToken, action, expectedRevision, move, requestId, elo },
   })
   if (error) throw new Error(opisiGresku(error)!)
   return data as SahStanjePayload

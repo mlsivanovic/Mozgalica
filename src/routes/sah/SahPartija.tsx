@@ -1,10 +1,11 @@
 import { Chess } from 'chess.js'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { SahTabla } from '../../components/SahTabla'
 import { Konfete, Loader, TemaDugme } from '../../components/Zajednicke'
 import { sahAkcija } from '../../lib/api'
 import { postaviDecjiManifest } from '../../pwa'
+import { dozvoljeniEloZaPokusaj, preostaloPokusaja } from '../../sah/pokusaj'
 import type { SahStanjePayload } from '../../types/kviz'
 import './sah.css'
 
@@ -18,6 +19,10 @@ const GRESKE: Record<string, string> = {
   invalid_promotion: 'Izbor figure za promociju nije ispravan.',
   illegal_move: 'Taj potez nije dozvoljen.',
   undo_unavailable: 'Ovaj potez više nije moguće poništiti.',
+  retry_not_allowed: 'Ovu partiju više nije moguće ponoviti.',
+  invalid_elo: 'Izabrana jačina protivnika nije ispravna.',
+  elo_too_high: 'Možeš izabrati samo istu ili slabiju jačinu protivnika.',
+  retries_exhausted: 'Nemaš više pravo na ponovni pokušaj.',
   server_error: 'Partija trenutno nije dostupna. Pokušaj ponovo.',
 }
 
@@ -62,10 +67,12 @@ function razlogTekst(razlog?: string | null): string {
 
 export function SahPartija() {
   const { token = '' } = useParams<{ token: string }>()
+  const navigate = useNavigate()
   const [stanje, setStanje] = useState<SahStanjePayload | null>(null)
   const [ucitava, setUcitava] = useState(true)
   const [radi, setRadi] = useState(false)
   const [greska, setGreska] = useState<string | null>(null)
+  const [biraElo, setBiraElo] = useState(false)
   const [primljenoAt, setPrimljenoAt] = useState(Date.now())
   const [sada, setSada] = useState(Date.now())
   const [prikazaniFen, setPrikazaniFen] = useState<string | null>(null)
@@ -108,6 +115,10 @@ export function SahPartija() {
     postaviDecjiManifest()
     void osvezi()
   }, [osvezi])
+
+  useEffect(() => {
+    setBiraElo(false)
+  }, [token])
 
   useEffect(() => {
     radiRef.current = radi
@@ -315,6 +326,32 @@ export function SahPartija() {
     }
   }
 
+  async function pokusajPonovo(elo: number) {
+    if (!stanje?.ok || stanje.revision == null) return
+    const tok = ++tokAkcije.current
+    setRadi(true)
+    setFaza('cuvanje')
+    setGreska(null)
+    try {
+      const novo = await sahAkcija(token, 'retry', stanje.revision, undefined, crypto.randomUUID(), elo)
+      if (novo.ok && novo.playToken) {
+        setUcitava(true)
+        navigate(`/sah/${novo.playToken}`)
+        return
+      }
+      setGreska(GRESKE[novo.error ?? ''] ?? novo.error ?? 'Pokušaj ponovo nije uspeo.')
+      await osvezi()
+    } catch (e) {
+      setGreska(String((e as Error).message ?? e))
+      await osvezi()
+    } finally {
+      if (tokAkcije.current === tok) {
+        setRadi(false)
+        setFaza('miruje')
+      }
+    }
+  }
+
   if (ucitava) return <Loader tekst="Postavljam figure…" />
   if (!stanje?.ok || !stanje.fen || !stanje.childColor) {
     return (
@@ -398,6 +435,48 @@ export function SahPartija() {
                     <p className="blago">{razlogTekst(stanje.termination)}</p>
                     <p style={{ fontSize: '1.5rem' }}>{'⭐'.repeat(stanje.starsAwarded ?? 0) || '☆'}</p>
                     <strong>{stanje.starsAwarded ?? 0} zvezdica</strong>
+                    {stanje.result === 'child_loss' && (
+                      <div className="sah-pokusaj">
+                        {stanje.retryAvailable ? (
+                          biraElo ? (
+                            <>
+                              <p className="blago malo">Izaberi jačinu protivnika:</p>
+                              <div className="sah-pokusaj__opcije">
+                                {dozvoljeniEloZaPokusaj(stanje.approximateElo ?? 700).map((nivo) => (
+                                  <button
+                                    key={nivo} type="button" className="dugme dugme--senka dugme--malo"
+                                    disabled={radi} onClick={() => void pokusajPonovo(nivo)}
+                                  >
+                                    ELO {nivo}{nivo === stanje.approximateElo ? ' · ista jačina' : ' · lakše'}
+                                  </button>
+                                ))}
+                              </div>
+                              <button type="button" className="sah-pokusaj__otkazi malo" disabled={radi} onClick={() => setBiraElo(false)}>
+                                Odustani od izbora
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <button
+                                type="button" className="dugme dugme--akcenat"
+                                disabled={radi} onClick={() => setBiraElo(true)}
+                              >
+                                ↻ Pokušaj ponovo
+                              </button>
+                              <p className="malo blago">
+                                {radi
+                                  ? 'Pravim novu partiju…'
+                                  : preostaloPokusaja(stanje.retriesUsed) === 1
+                                    ? 'Preostao ti je još 1 pokušaj, protiv istog ili slabijeg protivnika.'
+                                    : `Preostalo ti je još ${preostaloPokusaja(stanje.retriesUsed)} pokušaja, protiv istog ili slabijeg protivnika.`}
+                              </p>
+                            </>
+                          )
+                        ) : stanje.retriesUsed != null && stanje.retriesUsed >= 3 ? (
+                          <p className="malo blago">Za ovu partiju više nemaš pravo na ponovni pokušaj.</p>
+                        ) : null}
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <>

@@ -303,6 +303,7 @@ export interface SahStanjePayload {
   duplicate?: boolean
   status?: 'assigned' | 'in_progress' | 'completed' | 'cancelled'
   revision?: number
+  playToken?: string
   profileToken?: string
   childName?: string
   childColor?: 'white' | 'black'
@@ -317,6 +318,8 @@ export interface SahStanjePayload {
   result?: 'child_win' | 'draw' | 'child_loss' | null
   termination?: string | null
   starsAwarded?: number | null
+  retriesUsed?: number
+  retryAvailable?: boolean
   undoAvailable?: boolean
   moves?: SahPotezPayload[]
 }
