@@ -57,11 +57,15 @@ netaknut), ali brisanje pada. Pre brisanja uvek proveri:
 - **Bez nepotrebnih komentara.** Piši komentar samo kad objašnjava NEOČIGLEDNO
   (zašto, ne šta) — skriveno ograničenje, suptilan bag koji je izbegnut, workaround.
 - **Nema hardkodovanih tajni.** Supabase anon ključ ide u `VITE_*` env promenljive
-  (javan po dizajnu). Service role ključ, Resend API ključ i hook secret žive
+  (javan po dizajnu). Service role ključ, Brevo API ključ i hook secret žive
   ISKLJUČIVO u Supabase Edge Function secrets — nikad u frontend kodu ili gitu.
 - **Ocenjivanje odgovora je isključivo server-side** (SQL funkcije u
   `supabase/migrations/`). Frontend nikad ne odlučuje da li je odgovor tačan —
   samo prikazuje ono što RPC vrati.
+- **Šahovska logika je autoritativna server-side** — potezi, sat, nagrade,
+  poništavanje i granice ponovnih pokušaja žive u `play-chess` Edge funkciji i
+  SQL RPC funkcijama (`commit_chess_state`, `retry_chess_game` i sl.). Frontend
+  samo prikazuje stanje koje server vrati.
 - **Snapshot pitanja u kvizu je nepromenjiv** čim kviz ima bar jedan pokušaj
   (garantovano `trg_quiz_questions_guard` trigger-om). Izmena banke pitanja
   nikad ne sme retroaktivno da promeni već poslat kviz.
@@ -69,12 +73,16 @@ netaknut), ali brisanje pada. Pre brisanja uvek proveri:
 ## Arhitektura (kratko)
 
 ```
-supabase/migrations/   SQL: šema, RLS, SECURITY DEFINER RPC funkcije, ocenjivanje
-supabase/functions/    Deno Edge Function za slanje mejlova (Resend)
-src/generator/         Deterministički generator matematičkih pitanja (bez AI)
-src/lib/                Supabase klijent, tipizirani API pozivi, offline red
+supabase/migrations/   SQL: šema, RLS, SECURITY DEFINER RPC funkcije, ocenjivanje, cron
+supabase/functions/    Deno Edge funkcije: play-chess (šahovska partija),
+                       dispatch-notifications (mejlovi/push, Brevo),
+                       process-daily-quizzes (dnevni kvizovi i šahovske partije)
+src/generator/         Deterministički generator pitanja — matematika i srpski jezik (bez AI)
+src/sah/               Šahovski engine, nagrade, ELO nivoi, ponovni pokušaji
+src/lib/               Supabase klijent, tipizirani API pozivi, offline red
 src/routes/admin/      Administratorski panel (zaštićen AuthContext-om)
-src/routes/kviz/       Dečji tok bez naloga: ulaz → rešavanje → rezultat
+src/routes/kviz/       Dečji tok kviza bez naloga: ulaz → rešavanje → rezultat
+src/routes/sah/        Dečja šahovska partija bez naloga (preko play tokena)
 ```
 
 Detaljan opis modela baze, bezbednosnog modela i faza razvoja: videti plan
@@ -83,7 +91,7 @@ projekta (`Context`/`Arhitektura` odeljci pisani pre implementacije).
 ## Testiranje
 
 ```bash
-npx vitest run    # generator pitanja, offline red, seed podaci
+npx vitest run    # generator pitanja, šahovski engine, offline red, seed podaci
 npm run build     # tsc -b && vite build — hvata tipske greške
 ```
 

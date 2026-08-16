@@ -1,19 +1,24 @@
 # 🧠 Mozgalica
 
-PWA aplikacija za kreiranje i rešavanje matematičkih kvizova, namenjena deci koja su
-završila 3. ili 4. razred osnovne škole. Cilj je da tokom letnjeg raspusta na zabavan način
-obnove gradivo iz matematike.
+PWA aplikacija za kvizove iz matematike i srpskog jezika, uz partije šaha protiv
+računara, namenjena deci koja su završila 3. ili 4. razred osnovne škole. Cilj je
+da tokom letnjeg raspusta na zabavan način obnove gradivo.
 
 Živa verzija: **https://mlsivanovic.github.io/Mozgalica/**
 
 ## Kako radi
 
 - **Administrator** (roditelj/nastavnik) se prijavljuje lozinkom ili magic linkom, kreira
-  pitanja i kvizove, uređuje profile dece i dodeljuje im aktivne kvizove. Po potrebi
-  može da napravi i generički link sa više pokušaja.
-- **Dete** ne otvara nalog — preko stalnog profilnog linka vidi aktivne kvizove,
+  pitanja i kvizove, dodeljuje šahovske partije, dnevne rasporede i aktivne kvizove,
+  uređuje profile dece. Po potrebi može da napravi i generički link sa više pokušaja.
+- **Dete** ne otvara nalog — preko stalnog profilnog linka vidi aktivne kvizove i partije,
   zvezdice, titulu i prethodne rezultate. Započeti profilni kviz nastavlja tamo gde je
   prekinut, uključujući povratak sa drugog uređaja.
+- **Šah protiv računara:** dete igra na jednom od pet ELO nivoa, sa satom ili bez njega.
+  Posle poraza ili predaje može najviše tri puta da ponovi partiju — protiv istog ili
+  slabijeg protivnika.
+- Netačni zadaci imaju objašnjenje, a dete može jednom da ih reši ponovo — sa novim,
+  istovrsnim zadacima; ako tada sve bude tačno, zvezdice se dopune do pune kvote.
 - Odgovori se čuvaju i offline, a predaja je moguća tek kad server potvrdi da su sačuvani.
 - Kada dete završi kviz, administrator dobija mejl sa rezultatom.
 
@@ -30,7 +35,8 @@ obnove gradivo iz matematike.
   offline shell, obaveštenje o novoj verziji).
 - **Hosting:** GitHub Pages, automatski deploy preko GitHub Actions pri svakom
   push-u na `main`.
-- **Testovi:** Vitest (generator pitanja, offline red, seed podaci).
+- **Testovi:** Vitest (generator pitanja, šahovski engine, offline red, seed podaci
+  i pomoćni moduli).
 
 Kompletan spisak arhitekturnih odluka i faza razvoja nalazi se u planu projekta;
 koraci za povezivanje Supabase/Brevo naloga i Web Push-a su u [SETUP.md](./SETUP.md).
@@ -55,14 +61,18 @@ npx vitest run
 ## Struktura projekta
 
 ```
-supabase/migrations/   SQL migracije (šema, RLS, RPC funkcije za dete, ocenjivanje)
-supabase/functions/    Edge funkcija za slanje mejlova
-src/generator/         Deterministički generator matematičkih pitanja (bez AI)
-src/routes/admin/      Administratorski panel
-src/routes/dete/       Javni profil deteta: napredovanje, aktivni kvizovi i istorija
-src/routes/kviz/       Dečji tok: ulaz, rešavanje, rezultat
+supabase/migrations/   SQL migracije (šema, RLS, RPC funkcije, ocenjivanje, cron zakazivanja)
+supabase/functions/    Edge funkcije: play-chess (šahovska partija),
+                       dispatch-notifications (mejlovi/push), process-daily-quizzes
+                       (dnevni kvizovi i šahovske partije)
+src/generator/         Deterministički generator pitanja — matematika i srpski jezik (bez AI)
+src/sah/               Šahovski engine, nagrade, ELO nivoi, ponovni pokušaji
+src/routes/admin/      Administratorski panel (kvizovi, šah, podešavanja, statistika)
+src/routes/dete/       Javni profil deteta: napredovanje, aktivni kvizovi i partije, istorija
+src/routes/kviz/       Dečji tok kviza: ulaz, rešavanje, rezultat
+src/routes/sah/        Dečja stranica šahovske partije
 src/lib/               Supabase klijent, tipizirani API pozivi, offline red, pomoćne funkcije
-src/data/               Početni skup od 30 primera pitanja
+src/data/              Početni skup od 30 primera pitanja
 ```
 
 ## Deployment
