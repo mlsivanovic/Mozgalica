@@ -2,7 +2,7 @@
   "id": "mozgalica-dete",
   "name": "Mozgalica za dete",
   "short_name": "Moja Mozgalica",
-  "description": "Kvizovi, zvezdice i rezultati deteta",
+  "description": "Kvizovi, šah, zvezdice i rezultati deteta",
   "lang": "sr",
   "start_url": "./#/dete/pocetak",
   "scope": "./",

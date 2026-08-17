@@ -27,7 +27,8 @@ const GRESKE: Record<string, string> = {
   server_error: 'Partija trenutno nije dostupna. Pokušaj ponovo.',
 }
 
-const PAUZA_PRE_RACUNARA_MS = 2800
+const PAUZA_PRE_RACUNARA_MS = 6000
+const PAUZA_PRE_RACUNARA_SEKUNDI = PAUZA_PRE_RACUNARA_MS / 1000
 const NAJAVA_POTEZA_MS = 800
 const ANIMACIJA_RACUNARA_MS = 1000
 const PODRAZUMEVANA_ANIMACIJA_MS = 180
@@ -535,7 +536,9 @@ export function SahPartija() {
                     </p>
                     {racunarNaPotezu && !radi && (
                       <p className="sah-pauza-tekst malo" role="status">
-                        Računar će odigrati za oko 3 sekunde.
+                        {stanje.undoAvailable
+                          ? `Imaš ${PAUZA_PRE_RACUNARA_SEKUNDI} sekundi da vratiš potez.`
+                          : `Računar će odigrati za ${PAUZA_PRE_RACUNARA_SEKUNDI} sekundi.`}
                       </p>
                     )}
                     {stanje.undoAvailable && racunarNaPotezu && !radi && (
