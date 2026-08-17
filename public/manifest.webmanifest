@@ -2,7 +2,7 @@
   "id": "mozgalica",
   "name": "Mozgalica — kvizovi i šah",
   "short_name": "Mozgalica",
-  "description": "Kvizovi iz matematike i srpskog i šah protiv računara, za decu posle 3. i 4. razreda.",
+  "description": "Kvizovi iz matematike, srpskog i šaha - za decu 3. i 4. razred",
   "lang": "sr",
   "start_url": "./",
   "scope": "./",
