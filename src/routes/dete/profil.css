@@ -55,6 +55,8 @@
 .profil-istorija summary { display: flex; align-items: center; justify-content: space-between; cursor: pointer; font-size: 1.15rem; font-weight: 800; }
 .profil-istorija-lista { display: grid; gap: 0.15rem; margin-top: 1rem; }
 .profil-rezultat { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.8rem 0; border-top: 1px solid var(--boja-ivica); }
+a.profil-rezultat { color: inherit; text-decoration: none; border-radius: var(--radius-mali); }
+a.profil-rezultat:hover { background: var(--boja-hover-red); }
 .profil-rezultat-broj { display: grid; justify-items: end; gap: 0.2rem; white-space: nowrap; }
 
 .profil-pwa-instalacija { margin-top: 1rem; }

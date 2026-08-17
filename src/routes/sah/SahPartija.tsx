@@ -6,6 +6,7 @@ import { Konfete, Loader, TemaDugme } from '../../components/Zajednicke'
 import { sahAkcija } from '../../lib/api'
 import { postaviDecjiManifest } from '../../pwa'
 import { dozvoljeniEloZaPokusaj, preostaloPokusaja } from '../../sah/pokusaj'
+import { ogranicenPlyPregleda, plyZaBrojPoteza, pozicijaPregleda } from '../../sah/pregled'
 import type { SahStanjePayload } from '../../types/kviz'
 import './sah.css'
 
@@ -81,6 +82,7 @@ export function SahPartija() {
   const [trajanjeAnimacije, setTrajanjeAnimacije] = useState(PODRAZUMEVANA_ANIMACIJA_MS)
   const [faza, setFaza] = useState<FazaPoteza>('miruje')
   const [obavestenje, setObavestenje] = useState<string | null>(null)
+  const [pregledPly, setPregledPly] = useState<number | null>(null)
   const tajmerRacunara = useRef<number | null>(null)
   const tokAkcije = useRef(0)
   const radiRef = useRef(false)
@@ -118,6 +120,7 @@ export function SahPartija() {
 
   useEffect(() => {
     setBiraElo(false)
+    setPregledPly(null)
   }, [token])
 
   useEffect(() => {
@@ -162,6 +165,44 @@ export function SahPartija() {
     const aktivan = stanje.turnColor === 'white' ? satovi.white : satovi.black
     if (aktivan === 0) void osvezi()
   }, [osvezi, radi, satovi.black, satovi.white, stanje?.clockSeconds, stanje?.status, stanje?.turnColor])
+
+  const uPregledu = stanje?.ok === true && stanje.status === 'completed' && faza === 'miruje'
+  const potezi = stanje?.ok ? stanje.moves ?? [] : []
+  const aktivniPly = uPregledu
+    ? ogranicenPlyPregleda(pregledPly ?? potezi.length, potezi.length)
+    : potezi.length
+  const pregled = uPregledu ? pozicijaPregleda(potezi, aktivniPly) : null
+
+  const idiNa = useCallback((ply: number) => {
+    if (!uPregledu) return
+    setPregledPly(ogranicenPlyPregleda(ply, potezi.length))
+  }, [potezi.length, uPregledu])
+
+  useEffect(() => {
+    if (!uPregledu) return
+    function naTaster(e: KeyboardEvent) {
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault()
+        setPregledPly((trenutni) => ogranicenPlyPregleda((trenutni ?? potezi.length) - 1, potezi.length))
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault()
+        setPregledPly((trenutni) => ogranicenPlyPregleda((trenutni ?? potezi.length) + 1, potezi.length))
+      } else if (e.key === 'Home') {
+        e.preventDefault()
+        setPregledPly(0)
+      } else if (e.key === 'End') {
+        e.preventDefault()
+        setPregledPly(potezi.length)
+      }
+    }
+    window.addEventListener('keydown', naTaster)
+    return () => window.removeEventListener('keydown', naTaster)
+  }, [potezi.length, uPregledu])
+
+  useEffect(() => {
+    if (!uPregledu) return
+    document.querySelector('.sah-potez--aktivan')?.scrollIntoView({ block: 'nearest' })
+  }, [aktivniPly, uPregledu])
 
   const racunarNaPotezu = stanje?.status === 'in_progress'
     && !!stanje.childColor
@@ -364,13 +405,14 @@ export function SahPartija() {
     )
   }
 
-  const igra = new Chess(prikazaniFen ?? stanje.fen)
+  const tablaFen = pregled?.fen ?? prikazaniFen ?? stanje.fen
+  const igra = new Chess(tablaFen)
   const deteNaPotezu = stanje.status === 'in_progress' && stanje.turnColor === stanje.childColor
-  const prikazujeRezultat = stanje.status === 'completed' && faza === 'miruje'
-  const redoviPoteza = Array.from({ length: Math.ceil((stanje.moves?.length ?? 0) / 2) }, (_, i) => ({
+  const prikazujeRezultat = uPregledu
+  const redoviPoteza = Array.from({ length: Math.ceil(potezi.length / 2) }, (_, i) => ({
     broj: i + 1,
-    beli: stanje.moves?.[i * 2]?.san ?? '',
-    crni: stanje.moves?.[i * 2 + 1]?.san ?? '',
+    beli: potezi[i * 2]?.san ?? '',
+    crni: potezi[i * 2 + 1]?.san ?? '',
   }))
 
   return (
@@ -405,13 +447,13 @@ export function SahPartija() {
           <div className="sah-igra">
             <section>
               <SahTabla
-                fen={prikazaniFen ?? stanje.fen}
+                fen={tablaFen}
                 orientation={stanje.childColor}
                 playerColor={stanje.childColor}
                 disabled={!deteNaPotezu || radi || stanje.status !== 'in_progress'}
-                lastMove={prikazaniPoslednji}
-                announcedMove={najavljeniPotez}
-                animationDurationInMs={trajanjeAnimacije}
+                lastMove={pregled?.lastMove ?? prikazaniPoslednji}
+                announcedMove={uPregledu ? null : najavljeniPotez}
+                animationDurationInMs={uPregledu ? PODRAZUMEVANA_ANIMACIJA_MS : trajanjeAnimacije}
                 onMove={(move) => void odigrajPotezDeteta(move)}
               />
             </section>
@@ -518,13 +560,86 @@ export function SahPartija() {
 
               <section className="kartica">
                 <h2>Potezi</h2>
+                {uPregledu && potezi.length > 0 && (
+                  <p className="blago malo razmak-gore">
+                    Pregled partije — idi nazad i napred ili dodirni potez.
+                  </p>
+                )}
                 {redoviPoteza.length === 0 ? <p className="blago">Još nema poteza.</p> : (
-                  <div className="sah-potezi razmak-gore">
-                    {redoviPoteza.map((red) => (
-                      <span key={red.broj} style={{ display: 'contents' }}>
-                        <span>{red.broj}.</span><span>{red.beli}</span><span>{red.crni}</span>
-                      </span>
-                    ))}
+                  <div className="sah-potezi razmak-gore" aria-label="Lista poteza">
+                    {redoviPoteza.map((red) => {
+                      const beliPly = red.broj * 2 - 1
+                      const crniPly = red.broj * 2
+                      if (!uPregledu) {
+                        return (
+                          <span key={red.broj} style={{ display: 'contents' }}>
+                            <span>{red.broj}.</span><span>{red.beli}</span><span>{red.crni}</span>
+                          </span>
+                        )
+                      }
+                      return (
+                        <span key={red.broj} style={{ display: 'contents' }}>
+                          <button
+                            type="button"
+                            className={aktivniPly === plyZaBrojPoteza(red.broj, potezi.length) ? 'sah-potez--aktivan' : undefined}
+                            aria-label={`Potez ${red.broj}`}
+                            onClick={() => idiNa(plyZaBrojPoteza(red.broj, potezi.length))}
+                          >
+                            {red.broj}.
+                          </button>
+                          <button
+                            type="button"
+                            className={aktivniPly === beliPly ? 'sah-potez--aktivan' : undefined}
+                            aria-current={aktivniPly === beliPly ? 'step' : undefined}
+                            onClick={() => idiNa(beliPly)}
+                          >
+                            {red.beli}
+                          </button>
+                          {red.crni ? (
+                            <button
+                              type="button"
+                              className={aktivniPly === crniPly ? 'sah-potez--aktivan' : undefined}
+                              aria-current={aktivniPly === crniPly ? 'step' : undefined}
+                              onClick={() => idiNa(crniPly)}
+                            >
+                              {red.crni}
+                            </button>
+                          ) : <span />}
+                        </span>
+                      )
+                    })}
+                  </div>
+                )}
+                {uPregledu && potezi.length > 0 && (
+                  <div className="sah-pregled-nav" role="group" aria-label="Pregled poteza">
+                    <button
+                      type="button" className="dugme dugme--senka dugme--malo"
+                      disabled={aktivniPly <= 0} onClick={() => idiNa(0)} aria-label="Početak partije"
+                    >
+                      ⏮
+                    </button>
+                    <button
+                      type="button" className="dugme dugme--senka dugme--malo"
+                      disabled={aktivniPly <= 0} onClick={() => idiNa(aktivniPly - 1)} aria-label="Prethodni potez"
+                    >
+                      ←
+                    </button>
+                    <div className="sah-pregled-nav-info">
+                      <strong>{aktivniPly} / {potezi.length}</strong>
+                      <span className="malo blago">{aktivniPly === 0 ? 'Početak' : pregled?.san}</span>
+                    </div>
+                    <button
+                      type="button" className="dugme dugme--senka dugme--malo"
+                      disabled={aktivniPly >= potezi.length} onClick={() => idiNa(aktivniPly + 1)} aria-label="Sledeći potez"
+                    >
+                      →
+                    </button>
+                    <button
+                      type="button" className="dugme dugme--senka dugme--malo"
+                      disabled={aktivniPly >= potezi.length} onClick={() => idiNa(potezi.length)} aria-label="Kraj partije"
+                    >
+                      ⏭
+                    </button>
                   </div>
                 )}
               </section>

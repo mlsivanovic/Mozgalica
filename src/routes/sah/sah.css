@@ -14,8 +14,46 @@
 .sah-sat { padding: 0.8rem; border-radius: var(--radius-mali); background: var(--boja-neutral); text-align: center; }
 .sah-sat--aktivan { background: var(--boja-primarna-svetla); box-shadow: inset 0 0 0 2px var(--boja-primarna); }
 .sah-sat strong { display: block; font-size: 1.45rem; font-variant-numeric: tabular-nums; }
-.sah-potezi { max-height: 280px; overflow-y: auto; display: grid; grid-template-columns: 2.4rem 1fr 1fr; gap: 0.2rem 0.55rem; font-variant-numeric: tabular-nums; }
-.sah-potezi span { padding: 0.25rem 0.35rem; border-bottom: 1px solid var(--boja-ivica); }
+.sah-potezi { max-height: 280px; overflow-y: auto; display: grid; grid-template-columns: 2.6rem 1fr 1fr; gap: 0.2rem 0.4rem; font-variant-numeric: tabular-nums; }
+.sah-potezi span,
+.sah-potezi button {
+  padding: 0.25rem 0.35rem;
+  border-bottom: 1px solid var(--boja-ivica);
+  min-width: 0;
+  text-align: left;
+}
+.sah-potezi button {
+  appearance: none;
+  border: none;
+  border-bottom: 1px solid var(--boja-ivica);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  border-radius: var(--radius-mali);
+  min-height: 38px;
+}
+.sah-potezi button:hover { background: var(--boja-hover-red); }
+.sah-potezi button.sah-potez--aktivan {
+  background: var(--boja-primarna-svetla);
+  box-shadow: inset 0 0 0 2px var(--boja-primarna);
+  font-weight: 800;
+}
+.sah-pregled-nav {
+  display: grid;
+  grid-template-columns: auto auto 1fr auto auto;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.85rem;
+}
+.sah-pregled-nav .dugme { min-width: 44px; padding-inline: 0.65rem; }
+.sah-pregled-nav-info {
+  display: grid;
+  justify-items: center;
+  min-width: 0;
+  font-variant-numeric: tabular-nums;
+}
 .sah-rezultat { text-align: center; padding: 1.1rem; border-radius: var(--radius); background: var(--boja-uspeh-svetla); }
 .sah-rezultat--poraz { background: var(--boja-greska-svetla); }
 .sah-pokusaj { margin-top: 0.9rem; display: flex; flex-direction: column; align-items: center; gap: 0.55rem; }
@@ -37,4 +75,5 @@
   .sah-strana { padding: 0.65rem; }
   .sah-igra { grid-template-columns: 1fr; }
   .sah-panel .kartica { padding: 0.8rem; }
+  .sah-potezi button { min-height: 44px; }
 }

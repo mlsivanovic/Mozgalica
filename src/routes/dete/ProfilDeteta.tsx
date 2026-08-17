@@ -256,7 +256,7 @@ export function ProfilDeteta() {
               <p className="blago">Još nema završenih aktivnosti.</p>
             ) : <>
               {profil.chessHistory?.map((rezultat) => (
-                <div className="profil-rezultat" key={rezultat.gameId}>
+                <Link className="profil-rezultat" key={rezultat.gameId} to={`/sah/${rezultat.playToken}`}>
                   <div>
                     <strong>♟️ Šah protiv ELO {rezultat.approximateElo}</strong>
                     <p className="malo blago">{formatDatum(rezultat.completedAt)}</p>
@@ -266,8 +266,9 @@ export function ProfilDeteta() {
                       {'⭐'.repeat(rezultat.starsAwarded) || '☆'}
                     </span>
                     <strong>{rezultat.result === 'child_win' ? 'Pobeda' : rezultat.result === 'draw' ? 'Remi' : 'Poraz'}</strong>
+                    <span className="malo blago">Pogledaj poteze →</span>
                   </div>
-                </div>
+                </Link>
               ))}
               {profil.history!.map((rezultat) => (
                 <div className="profil-rezultat" key={rezultat.attemptId}>
