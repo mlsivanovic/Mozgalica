@@ -1,6 +1,6 @@
 // Generator: čitanje i razumevanje — kratki originalni tekstovi.
-// Odgovor se UVEK ukucava: ime lika, mesto i predmet iz priče, sa
-// varijantama prihvatanja (padeži, kraći oblici) jer se ocenjuje na serveru.
+// Odgovor se uvek ukucava; pored podataka iz teksta proveravaju se tema,
+// redosled događaja, uzrok i posledica i osobine likova.
 import { izaberi, type Rng } from '../random.ts'
 import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types.ts'
 import { upakujSrpskiTekst } from './srpskiZajednicko.ts'
@@ -18,7 +18,7 @@ interface Prica {
 
 const PRICE: Prica[] = [
   { id: 'mina-biblioteka', tekst: 'Mina je posle škole otišla u biblioteku. Vratila je pročitanu knjigu i izabrala atlas o životinjama jer priprema plakat. Bibliotekarka joj je pokazala policu sa enciklopedijama. Mina je pronašla sve potrebne podatke.', ko: 'Mina', gde: ['u biblioteci', 'biblioteci', 'biblioteka'], predmetPitanje: 'Koju je knjigu Mina izabrala za plakat?', predmet: ['atlas', 'atlas o životinjama'] },
-  { id: 'luka-kisa', tekst: 'Luka je krenuo na trening kada je počela jaka kiša. Setio se da u rancu ima sklopivi kišobran. Otvorio ga je i nastavio putem, pa je u salu stigao suv i na vreme.', ko: 'Luka', gde: ['na putu do treninga', 'na putu', 'putu do treninga'], predmetPitanje: 'Šta je Luka izvadio iz rancu?', predmet: ['kišobran', 'sklopivi kišobran'] },
+  { id: 'luka-kisa', tekst: 'Luka je krenuo na trening kada je počela jaka kiša. Setio se da u rancu ima sklopivi kišobran. Otvorio ga je i nastavio putem, pa je u salu stigao suv i na vreme.', ko: 'Luka', gde: ['na putu do treninga', 'na putu', 'putu do treninga'], predmetPitanje: 'Šta je Luka izvadio iz ranca?', predmet: ['kišobran', 'sklopivi kišobran'] },
   { id: 'ana-sadnica', tekst: 'Ana je u školskom dvorištu primetila mladu sadnicu nagnutu od vetra. Donela je drveni štap i mekom trakom pažljivo vezala stablo. Sledećeg jutra sadnica je stajala uspravno.', ko: 'Ana', gde: ['u školskom dvorištu', 'školskom dvorištu', 'u dvorištu', 'dvorištu'], predmetPitanje: 'Čime je Ana vezala sadnicu za štap?', predmet: ['mekom trakom', 'trakom', 'traka', 'štapom i trakom'] },
   { id: 'vuk-pas', tekst: 'Vuk je ispred prodavnice ugledao psa sa crvenom ogrlicom. Na ogrlici je pročitao broj telefona i pozvao vlasnicu. Sačekao je pored psa dok ona nije stigla, a zatim se zadovoljan vratio kući.', ko: 'Vuk', gde: ['ispred prodavnice', 'prodavnice', 'pred prodavnicom'], predmetPitanje: 'Na čemu je Vuk pročitao broj telefona?', predmet: ['na ogrlici', 'ogrlici', 'na crvenoj ogrlici', 'ogrlica'] },
   { id: 'iva-kolac', tekst: 'Iva je želela da iznenadi baku voćnim kolačem. Pažljivo je pročitala recept, odmerila sastojke i zamolila tatu da uključi rernu. Kada je baka stigla, kuća je mirisala na jabuke i cimet.', ko: 'Iva', gde: ['u kuhinji', 'kuhinji', 'kuhinja'], predmetPitanje: 'Šta je Iva pažljivo pročitala pre pravljenja kolača?', predmet: ['recept', 'recept za kolač'] },
@@ -44,6 +44,27 @@ const PRICE: Prica[] = [
   { id: 'nadja-predstava', tekst: 'Nadja je za školsku predstavu učila ulogu vilenjače. Na samoj probi je zaboravila repliku, pa je zamolila učiteljicu da vežbaju zajedno. Vežbale su svaki odmor cele nedelje i predstava je prošla bez greške, a publika je dugo pljeskala.', ko: 'Nadja', gde: ['u školi', 'školi', 'škola'], predmetPitanje: 'Koga je Nadja igrala u školskoj predstavi?', predmet: ['vilenjaču', 'vilenjače', 'ulogu vilenjače'] },
 ]
 
+interface Tumacenje {
+  id: string
+  pitanje: string
+  tacan: string
+  prihvaceni?: string[]
+  objasnjenje: string
+}
+
+const TUMACENJA: Record<string, Tumacenje[]> = {
+  'mina-biblioteka': [{ id: 'tema', pitanje: 'Koja je tema teksta?', tacan: 'prikupljanje podataka za plakat', prihvaceni: ['Minina priprema plakata', 'traženje podataka u biblioteci'], objasnjenje: 'Tekst govori o tome kako Mina u biblioteci prikuplja podatke za plakat.' }],
+  'luka-kisa': [{ id: 'uzrok', pitanje: 'Zašto je Luka otvorio kišobran?', tacan: 'zbog jake kiše', prihvaceni: ['jer je počela jaka kiša', 'počela je kiša'], objasnjenje: 'Luka je otvorio kišobran zato što je počela jaka kiša.' }],
+  'ana-sadnica': [{ id: 'posledica', pitanje: 'Šta se dogodilo pošto je Ana vezala sadnicu?', tacan: 'sadnica je stajala uspravno', prihvaceni: ['sadnica se uspravila', 'stajala je uspravno'], objasnjenje: 'Vezivanje za štap pomoglo je sadnici da stoji uspravno.' }],
+  'vuk-pas': [{ id: 'osobina', pitanje: 'Koju osobinu je Vuk pokazao?', tacan: 'odgovornost', prihvaceni: ['brižnost', 'odgovoran', 'brižan'], objasnjenje: 'Vuk je pozvao vlasnicu i sačekao uz psa, pa je postupio odgovorno i brižno.' }],
+  'filip-most': [{ id: 'redosled', pitanje: 'Šta je Filip uradio nakon što se prvi most srušio?', tacan: 'dodao je trouglaste oslonce', prihvaceni: ['dodao trouglaste oslonce', 'napravio je trouglaste oslonce'], objasnjenje: 'Posle neuspelog pokušaja Filip je dodao trouglaste oslonce.' }],
+  'sara-park': [{ id: 'sporedni-lik', pitanje: 'Ko je pomogao Sari da očisti travnjak?', tacan: 'drugarica', prihvaceni: ['njena drugarica', 'Sarina drugarica'], objasnjenje: 'Sarina drugarica je sakupila još dve plastične čaše.' }],
+  'ognjen-sat': [{ id: 'uzrok', pitanje: 'Zašto budilnik nije zazvonio?', tacan: 'ispraznila se baterija', prihvaceni: ['jer se baterija ispraznila', 'zbog prazne baterije'], objasnjenje: 'U tekstu piše da se baterija budilnika ispraznila.' }],
+  'tara-slika': [{ id: 'osobina', pitanje: 'Koju osobinu je Tara pokazala kada se boja razlila?', tacan: 'snalažljivost', prihvaceni: ['snalažljiva', 'domišljatost', 'domišljata'], objasnjenje: 'Tara je pronašla način da mrlju pretvori u jezero, pa je bila snalažljiva.' }],
+  'aleksandar-avion': [{ id: 'posledica', pitanje: 'Šta se dogodilo pošto je Aleksandar ponovo presavio krila?', tacan: 'avion je leteo pravo', prihvaceni: ['novi let je bio ravan', 'avion je imao dug i ravan let'], objasnjenje: 'Jednako presavijena krila omogućila su dug i ravan let.' }],
+  'nadja-predstava': [{ id: 'tema', pitanje: 'Koja je tema teksta?', tacan: 'vežbom do uspešne predstave', prihvaceni: ['upornost i vežbanje', 'Nađino vežbanje za predstavu'], objasnjenje: 'Nađa je vežbanjem savladala repliku i uspešno odigrala predstavu.' }],
+}
+
 type PoljePrice = 'ko' | 'gde' | 'predmet'
 
 function pitanjeZa(prica: Prica, polje: PoljePrice): string {
@@ -65,6 +86,17 @@ export const srpskiCitanje: TopicGenerator = {
 
   generateOne(cfg: GeneratorConfig, rng: Rng, taken: Set<string>): GenerisanoPitanje | null {
     const prica = izaberi(rng, PRICE)
+    const tumacenja = TUMACENJA[prica.id] ?? []
+    if (tumacenja.length > 0 && rng() < 0.5) {
+      const zadatak = izaberi(rng, tumacenja)
+      const signature = `srpski-citanje:${prica.id}:${zadatak.id}`
+      if (taken.has(signature)) return null
+      return upakujSrpskiTekst(cfg, {
+        pitanje: `Pročitaj tekst:\n\n${prica.tekst}\n\n${zadatak.pitanje}`,
+        tacan: zadatak.tacan, prihvaceni: zadatak.prihvaceni, explanation: zadatak.objasnjenje,
+        hint: 'Odgovor potkrepi događajima i postupcima iz teksta.', signature,
+      })
+    }
     const polje = izaberi(rng, ['ko', 'gde', 'predmet'] as const)
     const signature = `srpski-citanje:${prica.id}:${polje}`
     if (taken.has(signature)) return null

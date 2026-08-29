@@ -1,176 +1,108 @@
-// Generator: gramatika — rod i broj imenica, subjekat i predikat.
-// Odgovori se ukucaju; povremeno se umesto toga ponudi tačno/netačno tvrdnja.
+// Generator: gramatičke kategorije imenica, prideva, glagola i ličnih zamenica za 3. razred.
 import { izaberi, type Rng } from '../random.ts'
 import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types.ts'
 import { hoceTvrdnju, upakujSrpskiTekst, upakujSrpskiTvrdnju } from './srpskiZajednicko.ts'
 
-type Rod = 'muški rod' | 'ženski rod' | 'srednji rod'
+type Rod = 'muški' | 'ženski' | 'srednji'
+type Broj = 'jednina' | 'množina'
+type Lice = 'prvo' | 'drugo' | 'treće'
 
-interface Imenica {
-  jednina: string
-  mnozina: string
-  rod: Rod
-}
+const IMENICE = [
+  { jednina: 'dečak', mnozina: 'dečaci', rod: 'muški' }, { jednina: 'prozor', mnozina: 'prozori', rod: 'muški' },
+  { jednina: 'devojčica', mnozina: 'devojčice', rod: 'ženski' }, { jednina: 'knjiga', mnozina: 'knjige', rod: 'ženski' },
+  { jednina: 'selo', mnozina: 'sela', rod: 'srednji' }, { jednina: 'jezero', mnozina: 'jezera', rod: 'srednji' },
+] as const
+const PRIDEVI = [
+  { oblik: 'veseo', recenica: 'Veseo dečak se igra.', rod: 'muški', drugiBroj: 'veseli' },
+  { oblik: 'visoka', recenica: 'Visoka zgrada se vidi izdaleka.', rod: 'ženski', drugiBroj: 'visoke' },
+  { oblik: 'plavo', recenica: 'Plavo nebo je vedro.', rod: 'srednji', drugiBroj: 'plava' },
+  { oblik: 'vredni', recenica: 'Vredni učenici rade.', rod: 'muški', drugiBroj: 'vredan' },
+  { oblik: 'mirisne', recenica: 'Mirisne ruže cvetaju.', rod: 'ženski', drugiBroj: 'mirisna' },
+  { oblik: 'zelena', recenica: 'Zelena polja se prostiru.', rod: 'srednji', drugiBroj: 'zeleno' },
+] as const
+const GLAGOLI = [
+  { oblik: 'čitam', lice: 'prvo', broj: 'jednina' }, { oblik: 'čitaš', lice: 'drugo', broj: 'jednina' },
+  { oblik: 'čita', lice: 'treće', broj: 'jednina' }, { oblik: 'čitamo', lice: 'prvo', broj: 'množina' },
+  { oblik: 'pevate', lice: 'drugo', broj: 'množina' }, { oblik: 'rade', lice: 'treće', broj: 'množina' },
+] as const
+const ZAMENICE = [
+  { rec: 'ja', lice: 'prvo', broj: 'jednina' }, { rec: 'ti', lice: 'drugo', broj: 'jednina' },
+  { rec: 'on', lice: 'treće', broj: 'jednina' }, { rec: 'ona', lice: 'treće', broj: 'jednina' },
+  { rec: 'mi', lice: 'prvo', broj: 'množina' }, { rec: 'vi', lice: 'drugo', broj: 'množina' },
+  { rec: 'oni', lice: 'treće', broj: 'množina' }, { rec: 'one', lice: 'treće', broj: 'množina' },
+] as const
 
-const IMENICE: Imenica[] = [
-  // Muški rod
-  { jednina: 'dečak', mnozina: 'dečaci', rod: 'muški rod' },
-  { jednina: 'prozor', mnozina: 'prozori', rod: 'muški rod' },
-  { jednina: 'leptir', mnozina: 'leptiri', rod: 'muški rod' },
-  { jednina: 'most', mnozina: 'mostovi', rod: 'muški rod' },
-  { jednina: 'učenik', mnozina: 'učenici', rod: 'muški rod' },
-  { jednina: 'grad', mnozina: 'gradovi', rod: 'muški rod' },
-  { jednina: 'drugar', mnozina: 'drugari', rod: 'muški rod' },
-  { jednina: 'ranac', mnozina: 'rančevi', rod: 'muški rod' },
-  { jednina: 'korak', mnozina: 'koraci', rod: 'muški rod' },
-  { jednina: 'hrast', mnozina: 'hrastovi', rod: 'muški rod' },
+const RODOVI: Rod[] = ['muški', 'ženski', 'srednji']
+const BROJEVI: Broj[] = ['jednina', 'množina']
+const LICA: Lice[] = ['prvo', 'drugo', 'treće']
 
-  // Ženski rod
-  { jednina: 'devojčica', mnozina: 'devojčice', rod: 'ženski rod' },
-  { jednina: 'sveska', mnozina: 'sveske', rod: 'ženski rod' },
-  { jednina: 'lopta', mnozina: 'lopte', rod: 'ženski rod' },
-  { jednina: 'noć', mnozina: 'noći', rod: 'ženski rod' },
-  { jednina: 'knjiga', mnozina: 'knjige', rod: 'ženski rod' },
-  { jednina: 'reka', mnozina: 'reke', rod: 'ženski rod' },
-  { jednina: 'pesma', mnozina: 'pesme', rod: 'ženski rod' },
-  { jednina: 'škola', mnozina: 'škole', rod: 'ženski rod' },
-  { jednina: 'zvezda', mnozina: 'zvezde', rod: 'ženski rod' },
-  { jednina: 'olovka', mnozina: 'olovke', rod: 'ženski rod' },
-
-  // Srednji rod
-  { jednina: 'selo', mnozina: 'sela', rod: 'srednji rod' },
-  { jednina: 'sunce', mnozina: 'sunca', rod: 'srednji rod' },
-  { jednina: 'polje', mnozina: 'polja', rod: 'srednji rod' },
-  { jednina: 'jezero', mnozina: 'jezera', rod: 'srednji rod' },
-  { jednina: 'stablo', mnozina: 'stabla', rod: 'srednji rod' },
-  { jednina: 'pismo', mnozina: 'pisma', rod: 'srednji rod' },
-  { jednina: 'brdo', mnozina: 'brda', rod: 'srednji rod' },
-  { jednina: 'pero', mnozina: 'pera', rod: 'srednji rod' },
-  { jednina: 'zvono', mnozina: 'zvona', rod: 'srednji rod' },
-  { jednina: 'jaje', mnozina: 'jaja', rod: 'srednji rod' },
-]
-
-interface Recenica {
-  tekst: string
-  subjekat: string
-  predikat: string
-}
-
-const RECENICE: Recenica[] = [
-  { tekst: 'Mala ptica peva na grani.', subjekat: 'ptica', predikat: 'peva' },
-  { tekst: 'Marko pažljivo čita knjigu.', subjekat: 'Marko', predikat: 'čita' },
-  { tekst: 'Visoki bor šumi na vetru.', subjekat: 'bor', predikat: 'šumi' },
-  { tekst: 'Vredne pčele skupljaju polen.', subjekat: 'pčele', predikat: 'skupljaju' },
-  { tekst: 'Stari sat glasno otkucava.', subjekat: 'sat', predikat: 'otkucava' },
-  { tekst: 'Ana i Iva uređuju pano.', subjekat: 'Ana i Iva', predikat: 'uređuju' },
-  { tekst: 'Žuto lišće pada na stazu.', subjekat: 'lišće', predikat: 'pada' },
-  { tekst: 'Naš pas čuva dvorište.', subjekat: 'pas', predikat: 'čuva' },
-  { tekst: 'Brzi voz prolazi kroz tunel.', subjekat: 'voz', predikat: 'prolazi' },
-  { tekst: 'Jutarnje sunce greje livadu.', subjekat: 'sunce', predikat: 'greje' },
-  { tekst: 'Učenici trećeg razreda pevaju.', subjekat: 'učenici', predikat: 'pevaju' },
-  { tekst: 'Beli oblaci prekrivaju nebo.', subjekat: 'oblaci', predikat: 'prekrivaju' },
-  { tekst: 'Hrabar vatrogasac gasi vatru.', subjekat: 'vatrogasac', predikat: 'gasi' },
-  { tekst: 'Vesela deca trče parkom.', subjekat: 'deca', predikat: 'trče' },
-  { tekst: 'Moja baka pravi pitu.', subjekat: 'baka', predikat: 'pravi' },
-  { tekst: 'Mina lepo svira violinu.', subjekat: 'Mina', predikat: 'svira' },
-  { tekst: 'Zelena žaba skače u baru.', subjekat: 'žaba', predikat: 'skače' },
-  { tekst: 'Stari ribar plete mrežu.', subjekat: 'ribar', predikat: 'plete' },
-  { tekst: 'Hladna kiša neprestano pada.', subjekat: 'kiša', predikat: 'pada' },
-  { tekst: 'Moj brat vozi bicikl.', subjekat: 'brat', predikat: 'vozi' },
-  { tekst: 'Luka i Ivan grade kulu.', subjekat: 'Luka i Ivan', predikat: 'grade' },
-  { tekst: 'Šareni leptir leti svuda.', subjekat: 'leptir', predikat: 'leti' },
-  { tekst: 'Drveni čamac plovi rekom.', subjekat: 'čamac', predikat: 'plovi' },
-  { tekst: 'Mali miš gricka sir.', subjekat: 'miš', predikat: 'gricka' },
-  { tekst: 'Zlatni ključ otvara vrata.', subjekat: 'ključ', predikat: 'otvara' },
-]
-
-const RODOVI: Rod[] = ['muški rod', 'ženski rod', 'srednji rod']
-
-function rodULokativu(rod: Rod): string {
-  if (rod === 'muški rod') return 'muškom rodu'
-  if (rod === 'ženski rod') return 'ženskom rodu'
-  return 'srednjem rodu'
-}
-
-// Kratki oblik roda za ukucavanje („ženski“), sa prirodnijim varijantama
-const ROD_ODGOVORI: Record<Rod, { tacan: string; prihvaceni: string[] }> = {
-  'muški rod': { tacan: 'muški', prihvaceni: ['muški rod', 'muškog'] },
-  'ženski rod': { tacan: 'ženski', prihvaceni: ['ženski rod', 'ženskog'] },
-  'srednji rod': { tacan: 'srednji', prihvaceni: ['srednji rod', 'srednjeg'] },
+function pitanjeKategorije(cfg: GeneratorConfig, rng: Rng, ulaz: {
+  pitanje: string; tacan: string; prihvaceni?: string[]; objasnjenje: string
+  hint: string; signature: string; moguci: string[]; tvrdnja: (odgovor: string) => string
+}): GenerisanoPitanje {
+  if (hoceTvrdnju(cfg, rng)) {
+    const pogresan = izaberi(rng, ulaz.moguci.filter((v) => v !== ulaz.tacan))
+    return upakujSrpskiTvrdnju(cfg, rng, {
+      tvrdnjaTacna: ulaz.tvrdnja(ulaz.tacan),
+      tvrdnjaNetacna: ulaz.tvrdnja(pogresan),
+      explanation: ulaz.objasnjenje, hint: null, signature: ulaz.signature,
+    })
+  }
+  return upakujSrpskiTekst(cfg, { pitanje: ulaz.pitanje, tacan: ulaz.tacan, prihvaceni: ulaz.prihvaceni,
+    explanation: ulaz.objasnjenje, hint: ulaz.hint, signature: ulaz.signature })
 }
 
 export const srpskiGramatika: TopicGenerator = {
-  slug: 'srpski-gramatika',
-  supportedTypes: ['text', 'truefalse'],
-  supportsWordProblems: false,
-
+  slug: 'srpski-gramatika', supportedTypes: ['text', 'truefalse'], supportsWordProblems: false,
   generateOne(cfg: GeneratorConfig, rng: Rng, taken: Set<string>): GenerisanoPitanje | null {
-    const vrsta = izaberi(rng, ['rod', 'broj', 'clan-subjekat', 'clan-predikat'] as const)
-
-    if (vrsta === 'rod') {
-      const imenica = izaberi(rng, IMENICE)
-      const signature = `srpski-gramatika:rod:${imenica.jednina}`
-      if (taken.has(signature)) return null
-      if (hoceTvrdnju(cfg, rng)) {
-        const pogresanRod = izaberi(rng, RODOVI.filter((rod) => rod !== imenica.rod))
-        return upakujSrpskiTvrdnju(cfg, rng, {
-          tvrdnjaTacna: `Imenica „${imenica.jednina}“ je ${rodULokativu(imenica.rod)}.`,
-          tvrdnjaNetacna: `Imenica „${imenica.jednina}“ je ${rodULokativu(pogresanRod)}.`,
-          explanation: `Imenica „${imenica.jednina}“ pripada ${rodULokativu(imenica.rod)} (pomozi se rečju: taj, ta, to).`,
-          hint: null,
-          signature,
-        })
+    const vrsta = izaberi(rng, ['imenica-rod', 'imenica-broj', 'pridev-rod', 'pridev-broj', 'glagol-lice', 'glagol-broj', 'zamenica-lice', 'zamenica-broj'] as const)
+    if (vrsta === 'imenica-rod' || vrsta === 'imenica-broj') {
+      const p = izaberi(rng, IMENICE)
+      if (vrsta === 'imenica-rod') {
+        const signature = `srpski-gramatika:imenica-rod:${p.jednina}`
+        if (taken.has(signature)) return null
+        return pitanjeKategorije(cfg, rng, { pitanje: `Kog je roda imenica „${p.jednina}“?`, tacan: p.rod, prihvaceni: [`${p.rod} rod`],
+          objasnjenje: `Imenica „${p.jednina}“ je ${p.rod} rod.`, hint: 'Pomozi se rečima taj, ta, to.', signature,
+          moguci: RODOVI, tvrdnja: (odgovor) => `Imenica „${p.jednina}“ je ${odgovor} rod.` })
       }
-      const { tacan, prihvaceni } = ROD_ODGOVORI[imenica.rod]
-      return upakujSrpskiTekst(cfg, {
-        pitanje: `Kog je roda imenica „${imenica.jednina}“? (upiši: muški, ženski ili srednji)`,
-        tacan,
-        prihvaceni,
-        explanation: `Imenica „${imenica.jednina}“ je ${imenica.rod}.`,
-        hint: 'Pomozi sebi rečima: taj, ta, to.',
-        signature,
-      })
-    }
-
-    if (vrsta === 'broj') {
-      const imenica = izaberi(rng, IMENICE)
-      const traziMnozinu = rng() < 0.5
-      const polazna = traziMnozinu ? imenica.jednina : imenica.mnozina
-      const tacan = traziMnozinu ? imenica.mnozina : imenica.jednina
-      const signature = `srpski-gramatika:broj:${traziMnozinu ? 'j-m' : 'm-j'}:${polazna}`
+      const kaMnozini = rng() < 0.5
+      const polazni = kaMnozini ? p.jednina : p.mnozina
+      const tacan = kaMnozini ? p.mnozina : p.jednina
+      const signature = `srpski-gramatika:imenica-broj:${polazni}:${tacan}`
       if (taken.has(signature)) return null
-      return upakujSrpskiTekst(cfg, {
-        pitanje: `Napiši ${traziMnozinu ? 'množinu' : 'jedninu'} imenice „${polazna}“.`,
-        tacan,
-        explanation: `${polazna} → ${tacan}.`,
-        hint: traziMnozinu ? 'Množina označava više bića, predmeta ili pojava.' : 'Jednina označava jedno biće, predmet ili pojavu.',
-        signature,
-      })
+      return upakujSrpskiTekst(cfg, { pitanje: `Napiši ${kaMnozini ? 'množinu' : 'jedninu'} imenice „${polazni}“.`, tacan,
+        explanation: `${polazni} → ${tacan}.`, hint: 'Obrati pažnju da li se govori o jednom ili o više bića ili predmeta.', signature })
     }
-
-    const recenica = izaberi(rng, RECENICE)
-    const traziSubjekat = vrsta === 'clan-subjekat'
-    const tacan = traziSubjekat ? recenica.subjekat : recenica.predikat
-    const signature = `srpski-gramatika:${traziSubjekat ? 'subjekat' : 'predikat'}:${recenica.tekst}`
+    if (vrsta === 'pridev-rod' || vrsta === 'pridev-broj') {
+      const p = izaberi(rng, PRIDEVI)
+      if (vrsta === 'pridev-rod') {
+        const signature = `srpski-gramatika:pridev-rod:${p.oblik}:${p.recenica}`
+        if (taken.has(signature)) return null
+        return pitanjeKategorije(cfg, rng, { pitanje: `Kog je roda pridev „${p.oblik}“ u rečenici „${p.recenica}“?`, tacan: p.rod,
+          prihvaceni: [`${p.rod} rod`], objasnjenje: `Pridev se slaže sa imenicom i ovde je ${p.rod} rod.`,
+          hint: 'Pogledaj uz koju imenicu stoji pridev.', signature, moguci: RODOVI,
+          tvrdnja: (odgovor) => `Pridev „${p.oblik}“ u rečenici „${p.recenica}“ je ${odgovor} rod.` })
+      }
+      const signature = `srpski-gramatika:pridev-broj:${p.oblik}`
+      if (taken.has(signature)) return null
+      return upakujSrpskiTekst(cfg, { pitanje: `Napiši pridev „${p.oblik}“ u drugom gramatičkom broju.`, tacan: p.drugiBroj,
+        explanation: `Drugi broj prideva „${p.oblik}“ glasi „${p.drugiBroj}“.`, hint: 'Promeni jedninu u množinu ili množinu u jedninu.', signature })
+    }
+    const p = vrsta.startsWith('glagol') ? izaberi(rng, GLAGOLI) : izaberi(rng, ZAMENICE)
+    const traziLice = vrsta.endsWith('lice')
+    const tacan = traziLice ? p.lice : p.broj
+    const rec = 'oblik' in p ? p.oblik : p.rec
+    const signature = `srpski-gramatika:${vrsta}:${rec}`
     if (taken.has(signature)) return null
-
-    if (hoceTvrdnju(cfg, rng)) {
-      const pogresan = traziSubjekat ? recenica.predikat : recenica.subjekat
-      return upakujSrpskiTvrdnju(cfg, rng, {
-        tvrdnjaTacna: `U rečenici „${recenica.tekst}“ ${traziSubjekat ? 'subjekat' : 'predikat'} je „${tacan}“.`,
-        tvrdnjaNetacna: `U rečenici „${recenica.tekst}“ ${traziSubjekat ? 'subjekat' : 'predikat'} je „${pogresan}“.`,
-        explanation: `Subjekat je „${recenica.subjekat}“, a predikat „${recenica.predikat}“.`,
-        hint: null,
-        signature,
-      })
-    }
-
-    return upakujSrpskiTekst(cfg, {
-      pitanje: `Šta je ${traziSubjekat ? 'subjekat' : 'predikat'} u rečenici „${recenica.tekst}“? (upiši tu reč)`,
-      tacan,
-      explanation: `Subjekat je „${recenica.subjekat}“, a predikat „${recenica.predikat}“.`,
-      hint: traziSubjekat ? 'Subjekat kazuje ko vrši radnju.' : 'Predikat kazuje šta subjekat radi.',
-      signature,
+    return pitanjeKategorije(cfg, rng, {
+      pitanje: `${traziLice ? 'Koje lice' : 'Koji gramatički broj'} ima ${'oblik' in p ? 'glagol' : 'lična zamenica'} „${rec}“?`,
+      tacan, prihvaceni: traziLice ? [`${tacan} lice`] : [`u ${tacan === 'jednina' ? 'jednini' : 'množini'}`],
+      objasnjenje: `„${rec}“ je ${p.lice} lice, ${p.broj}.`,
+      hint: traziLice ? 'Prvo lice govori, drugo sluša, a o trećem se govori.' : 'Odredi da li oblik označava jednu ili više osoba.',
+      signature, moguci: traziLice ? LICA : BROJEVI,
+      tvrdnja: (odgovor) => traziLice
+        ? `${'oblik' in p ? 'Glagol' : 'Lična zamenica'} „${rec}“ je ${odgovor} lice.`
+        : `${'oblik' in p ? 'Glagol' : 'Lična zamenica'} „${rec}“ je u ${odgovor === 'jednina' ? 'jednini' : 'množini'}.`,
     })
   },
 }

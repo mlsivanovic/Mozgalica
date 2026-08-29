@@ -1,7 +1,8 @@
 // Testovi generatora srpskog jezika: ukucani odgovori, samostalne tvrdnje,
 // fiksan najteži nivo (težina je uklonjena) i determinizam.
 import { describe, expect, it } from 'vitest'
-import { generisi } from './index.ts'
+import { generisi, podrzaneOblasti } from './index.ts'
+import { napraviPlanOblastiKviza } from '../lib/raspodelaKviza.ts'
 import type { GeneratorConfig, GenerisanoPitanje } from './types.ts'
 
 const OBLASTI = [
@@ -31,12 +32,6 @@ function cfg(delimicno: Partial<GeneratorConfig>): GeneratorConfig {
 
 function accept(pitanje: GenerisanoPitanje): string[] {
   return (pitanje.correct as { accept: string[] }).accept
-}
-
-// Potpis bez teksta primera — „ona“ se javlja u dva konteksta pa se porede
-// same kombinacije kategorija (lice/broj/rod), ne ceo tekst primera
-function potpisBezPrimer(pitanje: GenerisanoPitanje): string {
-  return pitanje.signature.split(':').slice(0, 3).join(':')
 }
 
 describe('generatori srpskog jezika', () => {
@@ -124,9 +119,9 @@ describe('generatori srpskog jezika', () => {
     for (const pitanje of pitanja) {
       expect(pitanje.type).toBe('numeric')
       const vrednost = (pitanje.correct as { value: number }).value
-      expect(vrednost).toBeGreaterThanOrEqual(1)
+      expect(vrednost).toBeGreaterThanOrEqual(0)
       expect(vrednost).toBeLessThanOrEqual(3)
-      expect(pitanje.text).toMatch(/Koliko (imenica|glagola|prideva) ima/)
+      expect(pitanje.text).toMatch(/Koliko (imenica|glagola|prideva|ličnih zamenica) ima/)
     }
   })
 
@@ -138,24 +133,88 @@ describe('generatori srpskog jezika', () => {
     }
   })
 
-  it('zamenica „ona“ daje različite potpise za ženski rod jednine i srednji rod množine', () => {
+  it('3. razred pokriva program i ne generiše gradivo 4. razreda', () => {
     const potpisi = new Set<string>()
-    for (let seed = 1; seed <= 40; seed++) {
-      const pitanja = generisi(cfg({ topicSlug: 'srpski-gramatika-4', count: 10, seed })).questions
-      for (const pitanje of pitanja) {
-        if (pitanje.signature.includes(':ona:')) potpisi.add(potpisBezPrimer(pitanje))
+    const tekstovi: string[] = []
+    for (const oblast of ['srpski-vrste-reci', 'srpski-gramatika', 'srpski-recnik'] as const) {
+      for (let seed = 1; seed <= 60; seed++) {
+        for (const pitanje of generisi(cfg({ topicSlug: oblast, count: 8, seed })).questions) {
+          potpisi.add(pitanje.signature)
+          tekstovi.push(pitanje.text)
+        }
       }
     }
-    // „ona“ (jednina, ženski rod) i „ona“ (množina, srednji rod) su dva zadatka
-    expect(potpisi.size).toBeGreaterThanOrEqual(2)
+    for (const prefiks of [
+      'srpski-vrste-reci:podvrsta:', 'srpski-gramatika:imenica-rod:', 'srpski-gramatika:pridev-rod:',
+      'srpski-gramatika:glagol-lice:', 'srpski-gramatika:zamenica-broj:', 'srpski-recnik:umanjenica:',
+      'srpski-recnik:uvecanica:', 'srpski-recnik:znacenje-reci:',
+    ]) expect([...potpisi].some((potpis) => potpis.startsWith(prefiks)), prefiks).toBe(true)
+    expect([...potpisi].join('\n')).not.toMatch(/:(subjekat|predikat|porodica|izvedena|slozena|ustaljeni-izraz):/)
+    expect(tekstovi.join('\n').toLowerCase()).not.toMatch(/\b(subjekat|predikat|objekat|atribut|priloška odredba)\b/)
   })
 
-  it('bez ponavljanja vraća najviše onoliko pitanja koliko ima različitih zadataka', () => {
-    // Složenice (12×2) + izvedene reči (14) = 38 ukucanih zadataka rečnika 4. razreda
+  it('4. razred pokriva rečenične članove, promenljivost i odgovarajući rečnik', () => {
+    const potpisi = new Set<string>()
+    for (const oblast of ['srpski-gramatika-4', 'srpski-recnik-4'] as const) {
+      for (let seed = 1; seed <= 100; seed++) {
+        for (const pitanje of generisi(cfg({ topicSlug: oblast, count: 10, seed })).questions) potpisi.add(pitanje.signature)
+      }
+    }
+    for (const prefiks of [
+      'srpski-gramatika-4:promenljivost:', 'srpski-gramatika-4:vrsta-sluzba:',
+      'srpski-gramatika-4:izostavljeni-subjekat:', 'srpski-gramatika-4:vreme-predikata:',
+      'srpski-recnik-4:sinonim:', 'srpski-recnik-4:homonim:', 'srpski-recnik-4:ustaljeni-izraz:',
+    ]) expect([...potpisi].some((potpis) => potpis.startsWith(prefiks)), prefiks).toBe(true)
+    for (const clan of ['subjekat', 'predikat', 'objekat', 'atribut', 'mesto', 'vreme', 'nacin']) {
+      expect([...potpisi].some((potpis) => potpis.startsWith(`srpski-gramatika-4:sluzba:${clan}:`)), clan).toBe(true)
+    }
+    expect([...potpisi].join('\n')).not.toMatch(/:(slozena|izvedena|broj-zamenice|broj-vrsta):/)
+  })
+
+  it('čitanje obuhvata programske ishode oba razreda', () => {
+    const potpisi = new Set<string>()
+    for (const oblast of ['srpski-citanje', 'srpski-citanje-4'] as const) {
+      for (let seed = 1; seed <= 120; seed++) {
+        for (const pitanje of generisi(cfg({ topicSlug: oblast, count: 8, seed })).questions) potpisi.add(pitanje.signature)
+      }
+    }
+    for (const zavrsetak of [':tema', ':uzrok', ':posledica', ':osobina', ':redosled', ':sporedni-lik']) {
+      expect([...potpisi].some((potpis) => potpis.endsWith(zavrsetak)), zavrsetak).toBe(true)
+    }
+    for (const zavrsetak of [':pripovedac', ':odnos', ':poruka', ':personifikacija', ':opis']) {
+      expect([...potpisi].some((potpis) => potpis.endsWith(zavrsetak) && potpis.startsWith('srpski-citanje-4:')), zavrsetak).toBe(true)
+    }
+  })
+
+  it('ugrađeni tekstovi ne sadrže pronađene jezičke greške', () => {
+    const tekstovi: string[] = []
+    for (const oblast of OBLASTI) {
+      for (let seed = 1; seed <= 100; seed++) {
+        for (const pitanje of generisi(cfg({ topicSlug: oblast, count: 8, seed })).questions) {
+          tekstovi.push(pitanje.text, pitanje.explanation)
+        }
+      }
+    }
+    expect(tekstovi.join('\n')).not.toMatch(/uzka|radostna|\bmenji\b|Nasmijana|pola terene|košarkaškoj tereni|plutu se|mamain|Upravio je domaći|pokrovče/)
+  })
+
+  it('kombinovani dnevni kviz ravnomerno raspoređuje svih 20 pitanja', () => {
+    const oblasti = [
+      'srpski-vrste-reci', 'srpski-gramatika', 'srpski-pravopis', 'srpski-citanje',
+      'srpski-recnik', 'srpski-knjizevnost', 'srpski-jezicka-kultura',
+    ]
+    const plan = napraviPlanOblastiKviza(oblasti, 20, new Set(podrzaneOblasti()), 'combined')
+    expect(plan.reduce((zbir, stavka) => zbir + stavka.questionCount, 0)).toBe(20)
+    expect(plan.map((stavka) => stavka.topicSlug)).toEqual(oblasti)
+    expect(plan.find((stavka) => stavka.topicSlug === 'srpski-pravopis')?.source).toBe('bank')
+    expect(plan.find((stavka) => stavka.topicSlug === 'srpski-gramatika')?.source).toBe('generator')
+  })
+
+  it('bez ponavljanja zaustavlja se kada iscrpi tekstualne sinonime 4. razreda', () => {
     const rezultat = generisi(cfg({ topicSlug: 'srpski-recnik-4', count: 50, type: 'text', seed: 7 }))
-    expect(rezultat.questions).toHaveLength(38)
+    expect(rezultat.questions).toHaveLength(16)
     expect(rezultat.warning).not.toBeNull()
-    expect(new Set(rezultat.questions.map((pitanje) => pitanje.signature)).size).toBe(38)
+    expect(new Set(rezultat.questions.map((pitanje) => pitanje.signature)).size).toBe(16)
   })
 
   it('isti seed daje potpuno isti skup pitanja', () => {
