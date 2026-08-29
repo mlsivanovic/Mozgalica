@@ -5,56 +5,17 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { podrzaneOblasti } from '../../generator'
 import { generisi } from '../../generator'
+import { IKONE_GENERISANIH_OBLASTI, NAZIVI_GENERISANIH_OBLASTI } from '../../generator/oblasti'
 import type { GeneratorConfig, GenerisanoPitanje } from '../../generator/types'
 import { listajOblasti } from '../../lib/api'
 import {
-  NAZIVI_PREDMETA, NAZIVI_RAZREDA, NAZIVI_TEZINA,
+  NAZIVI_PREDMETA, NAZIVI_RAZREDA, NAZIVI_TEZINA, RAZREDI,
   type Oblast, type Predmet, type Razred, type Tezina, type TipPitanja,
 } from '../../types/db'
 import { GeneratorPregled } from './GeneratorPregled'
 import './generator.css'
 
-const NAZIVI_OBLASTI: Record<string, string> = {
-  'sabiranje': 'Sabiranje', 'oduzimanje': 'Oduzimanje', 'mnozenje': 'Množenje', 'deljenje': 'Deljenje',
-  'kombinovane-operacije': 'Kombinovane računske operacije', 'poredjenje-brojeva': 'Poređenje brojeva',
-  'nizovi-i-obrasci': 'Nizovi i obrasci', 'obim-i-merenje': 'Obim i merenje dužine',
-  'merne-jedinice': 'Merne jedinice', 'novac': 'Novac',
-  'rimski-brojevi': 'Rimski brojevi', 'jednacine': 'Jednačine', 'nejednacine': 'Nejednačine',
-  // 4. razred
-  'veliki-brojevi-4': 'Veliki brojevi', 'sabiranje-4': 'Sabiranje', 'oduzimanje-4': 'Oduzimanje',
-  'mnozenje-4': 'Množenje', 'deljenje-4': 'Deljenje',
-  'kombinovane-operacije-4': 'Kombinovane računske operacije', 'jednacine-4': 'Jednačine',
-  'nejednacine-4': 'Nejednačine', 'povrsina-4': 'Površina', 'zapremina-4': 'Zapremina',
-  'geometrijska-tela-4': 'Geometrijska tela', 'razlomci-4': 'Razlomci', 'decimalni-brojevi-4': 'Decimalni brojevi',
-  // Srpski jezik
-  'srpski-vrste-reci': 'Vrste reči', 'srpski-gramatika': 'Gramatika',
-  'srpski-citanje': 'Čitanje i razumevanje', 'srpski-recnik': 'Rečnik',
-  // Srpski 4. razred
-  'srpski-gramatika-4': 'Gramatika', 'srpski-recnik-4': 'Rečnik',
-  'srpski-citanje-4': 'Čitanje i razumevanje',
-}
-
-const IKONE_OBLASTI: Record<string, string> = {
-  'sabiranje': '➕', 'oduzimanje': '➖', 'mnozenje': '✖️', 'deljenje': '➗',
-  'kombinovane-operacije': '🧮', 'poredjenje-brojeva': '⚖️',
-  'nizovi-i-obrasci': '🔁', 'obim-i-merenje': '📐',
-  'merne-jedinice': '📏', 'novac': '💰',
-  'rimski-brojevi': '🏛️', 'jednacine': '🟰', 'nejednacine': '≠',
-  // 4. razred
-  'veliki-brojevi-4': '🔢', 'sabiranje-4': '➕', 'oduzimanje-4': '➖',
-  'mnozenje-4': '✖️', 'deljenje-4': '➗',
-  'kombinovane-operacije-4': '🧮', 'jednacine-4': '🟰', 'nejednacine-4': '≠',
-  'povrsina-4': '▦', 'zapremina-4': '📦', 'geometrijska-tela-4': '🧊',
-  'razlomci-4': '🍕', 'decimalni-brojevi-4': '🔟',
-  // Srpski jezik
-  'srpski-vrste-reci': '🔤', 'srpski-gramatika': '📚',
-  'srpski-citanje': '📖', 'srpski-recnik': '🗣️',
-  // Srpski 4. razred
-  'srpski-gramatika-4': '📚', 'srpski-recnik-4': '🗣️', 'srpski-citanje-4': '📖',
-}
-
 const PREDMETI: Predmet[] = ['matematika', 'srpski']
-const RAZREDI: Razred[] = [3, 4]
 
 const TIPOVI_MATEMATIKA: { vrednost: TipPitanja | 'auto'; naziv: string }[] = [
   { vrednost: 'auto', naziv: 'Automatski izbor' },
@@ -219,8 +180,8 @@ export function Generator() {
               return (
                 <label key={s} className={`gen-oblast ${izabrano ? 'gen-oblast--izabrana' : ''}`}>
                   <input type="checkbox" checked={izabrano} onChange={() => preklopiOblast(s)} />
-                  <span className="gen-oblast-ikona" aria-hidden="true">{IKONE_OBLASTI[s] ?? '📚'}</span>
-                  <span className="gen-oblast-tekst">{NAZIVI_OBLASTI[s] ?? s}</span>
+                  <span className="gen-oblast-ikona" aria-hidden="true">{IKONE_GENERISANIH_OBLASTI[s] ?? '📚'}</span>
+                  <span className="gen-oblast-tekst">{NAZIVI_GENERISANIH_OBLASTI[s] ?? s}</span>
                 </label>
               )
             })}

@@ -7,7 +7,7 @@ import {
 } from '../../lib/api'
 import { Loader, Modal } from '../../components/Zajednicke'
 import {
-  NAZIVI_PREDMETA, NAZIVI_RAZREDA, NAZIVI_TEZINA, NAZIVI_TIPOVA,
+  NAZIVI_PREDMETA, NAZIVI_RAZREDA, NAZIVI_TEZINA, NAZIVI_TIPOVA, RAZREDI,
   type Kviz, type Oblast, type Pitanje, type Predmet, type Razred,
   type Tezina,
 } from '../../types/db'
@@ -31,7 +31,7 @@ export function PitanjaLista() {
   // Predmet je uvek aktivan tab — matematika i srpski se nikad ne prikazuju zajedno,
   // ni u filterima ni u listi ni u formi, da se pitanja iz dva predmeta ne bi mešala.
   const [predmet, setPredmet] = useState<Predmet>('matematika')
-  // Razred je isti princip, jedan nivo dublje — samo unutar matematike (srpski ga nema).
+  // Razred je isti princip, jedan nivo dublje, unutar aktivnog predmeta.
   const [razred, setRazred] = useState<Razred>(3)
   const [filterOblast, setFilterOblast] = useState('')
   const [filterTip, setFilterTip] = useState('')
@@ -291,7 +291,7 @@ export function PitanjaLista() {
       </div>
 
       <div className="red razred-tabovi razmak-dole">
-        {([3, 4] as const).map((r) => (
+        {RAZREDI.map((r) => (
           <button
             key={r} type="button"
             className={`dugme dugme--malo ${razred === r ? '' : 'dugme--senka'}`}

@@ -34,6 +34,7 @@ import { decimal4 } from './moduli4/decimal4.ts'
 import { srpskiGramatika4 } from './moduli4/srpskiGramatika4.ts'
 import { srpskiRecnik4 } from './moduli4/srpskiRecnik4.ts'
 import { srpskiCitanje4 } from './moduli4/srpskiCitanje4.ts'
+import { MODULI5 } from './moduli5/index.ts'
 
 const MODULI: TopicGenerator[] = [
   sabiranje, oduzimanje, mnozenje, deljenje, kombinovane,
@@ -43,6 +44,8 @@ const MODULI: TopicGenerator[] = [
   sabiranje4, oduzimanje4, mnozenje4, deljenje4, veliki4, kombinovane4,
   jednacine4, nejednacine4, povrsina4, zapremina4, razlomci4, tela4, decimal4,
   srpskiGramatika4, srpskiRecnik4, srpskiCitanje4,
+  // Matematika, 5. razred
+  ...MODULI5,
   // Srpski jezik, 3. razred
   srpskiVrsteReci, srpskiGramatika, srpskiCitanje, srpskiRecnik,
 ]

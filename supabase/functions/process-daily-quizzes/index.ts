@@ -19,7 +19,7 @@ interface DnevniRad {
   child_profile_id: string
   child_name: string
   subject: 'matematika' | 'srpski'
-  grade: 3 | 4
+  grade: 3 | 4 | 5
   source: Izvor
   topic_ids: string[]
   topic_slugs: string[]

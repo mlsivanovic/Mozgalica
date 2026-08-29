@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { generisi, podrzaneOblasti } from '../../generator'
+import { IKONE_GENERISANIH_OBLASTI, NAZIVI_GENERISANIH_OBLASTI } from '../../generator/oblasti'
 import {
   listajOblasti, listajPitanja, sacuvajKviz, postaviPitanjaKviza,
   listajProfileDeteta, dodeliKvizProfilu,
@@ -12,45 +13,11 @@ import {
   izaberiOblastiZaKviz, napraviPlanOblastiKviza, type IzvorStandardnogKviza,
 } from '../../lib/raspodelaKviza'
 import {
-  NAZIVI_PREDMETA, NAZIVI_RAZREDA, NAZIVI_TEZINA, NAZIVI_TIPOVA,
+  NAZIVI_PREDMETA, NAZIVI_RAZREDA, NAZIVI_TEZINA, NAZIVI_TIPOVA, RAZREDI,
   type Oblast, type Predmet, type Razred, type Tezina, type TipPitanja,
   type ProfilDeteta,
 } from '../../types/db'
 import './generator.css'
-
-const NAZIVI_OBLASTI: Record<string, string> = {
-  'sabiranje': 'Sabiranje', 'oduzimanje': 'Oduzimanje', 'mnozenje': 'Množenje', 'deljenje': 'Deljenje',
-  'kombinovane-operacije': 'Kombinovane računske operacije', 'poredjenje-brojeva': 'Poređenje brojeva',
-  'nizovi-i-obrasci': 'Nizovi i obrasci', 'obim-i-merenje': 'Obim i merenje dužine',
-  'merne-jedinice': 'Merne jedinice', 'novac': 'Novac',
-  'rimski-brojevi': 'Rimski brojevi', 'jednacine': 'Jednačine', 'nejednacine': 'Nejednačine',
-  // 4. razred
-  'veliki-brojevi-4': 'Veliki brojevi', 'sabiranje-4': 'Sabiranje', 'oduzimanje-4': 'Oduzimanje',
-  'mnozenje-4': 'Množenje', 'deljenje-4': 'Deljenje',
-  'kombinovane-operacije-4': 'Kombinovane računske operacije', 'jednacine-4': 'Jednačine',
-  'nejednacine-4': 'Nejednačine', 'povrsina-4': 'Površina', 'zapremina-4': 'Zapremina',
-  'geometrijska-tela-4': 'Geometrijska tela', 'razlomci-4': 'Razlomci', 'decimalni-brojevi-4': 'Decimalni brojevi',
-  // Srpski jezik
-  'srpski-vrste-reci': 'Vrste reči', 'srpski-gramatika': 'Gramatika', 'srpski-pravopis': 'Pravopis',
-  'srpski-citanje': 'Čitanje i razumevanje', 'srpski-recnik': 'Rečnik',
-}
-
-const IKONE_OBLASTI: Record<string, string> = {
-  'sabiranje': '➕', 'oduzimanje': '➖', 'mnozenje': '✖️', 'deljenje': '➗',
-  'kombinovane-operacije': '🧮', 'poredjenje-brojeva': '⚖️',
-  'nizovi-i-obrasci': '🔁', 'obim-i-merenje': '📐',
-  'merne-jedinice': '📏', 'novac': '💰',
-  'rimski-brojevi': '🏛️', 'jednacine': '🟰', 'nejednacine': '≠',
-  // 4. razred
-  'veliki-brojevi-4': '🔢', 'sabiranje-4': '➕', 'oduzimanje-4': '➖',
-  'mnozenje-4': '✖️', 'deljenje-4': '➗',
-  'kombinovane-operacije-4': '🧮', 'jednacine-4': '🟰', 'nejednacine-4': '≠',
-  'povrsina-4': '▦', 'zapremina-4': '📦', 'geometrijska-tela-4': '🧊',
-  'razlomci-4': '🍕', 'decimalni-brojevi-4': '🔟',
-  // Srpski jezik
-  'srpski-vrste-reci': '🔤', 'srpski-gramatika': '📚', 'srpski-pravopis': '✍️',
-  'srpski-citanje': '📖', 'srpski-recnik': '🗣️',
-}
 
 interface StandardQuizConfig {
   title: string
@@ -551,7 +518,7 @@ export function KvizForma() {
             <div className="polje">
               <label htmlFor="kv-razred-manual">Razred</label>
               <div className="segment">
-                {([3, 4] as const).map((r) => (
+                {RAZREDI.map((r) => (
                   <button
                     key={r} type="button"
                     className={`segment-dugme ${razred === r ? 'segment-dugme--izabran' : ''}`}
@@ -624,10 +591,10 @@ export function KvizForma() {
                         onChange={() => preklopiOblast(o.slug)}
                       />
                       <span className="gen-oblast-ikona">
-                        {IKONE_OBLASTI[o.slug] ?? '❓'}
+                        {IKONE_GENERISANIH_OBLASTI[o.slug] ?? '❓'}
                       </span>
                       <span className="gen-oblast-tekst">
-                        {NAZIVI_OBLASTI[o.slug] ?? o.name}
+                        {NAZIVI_GENERISANIH_OBLASTI[o.slug] ?? o.name}
                         {cfg.source === 'combined' && (
                           <small className="blago"> · {o.imaGenerator ? 'generator' : 'banka'}</small>
                         )}
@@ -663,7 +630,7 @@ export function KvizForma() {
                 <div className="polje">
                   <label htmlFor="f-razred">Razred</label>
                   <div className="segment">
-                    {([3, 4] as const).map((r) => (
+                    {RAZREDI.map((r) => (
                       <button
                         key={r} type="button"
                         className={`segment-dugme ${razred === r ? 'segment-dugme--izabran' : ''}`}

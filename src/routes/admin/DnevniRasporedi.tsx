@@ -8,7 +8,7 @@ import {
 } from '../../lib/api'
 import { formatDatum } from '../../lib/format'
 import {
-  NAZIVI_PREDMETA, NAZIVI_RAZREDA, NAZIVI_TEZINA, NAZIVI_TIPOVA,
+  NAZIVI_PREDMETA, NAZIVI_RAZREDA, NAZIVI_TEZINA, NAZIVI_TIPOVA, RAZREDI,
   type DnevniRasporedKviza, type IzvorDnevnogKviza, type Oblast, type ProfilDeteta, type Tezina, type TipPitanja,
 } from '../../types/db'
 import './generator.css'
@@ -282,7 +282,7 @@ export function DnevniRasporedi({
             <div className="polje">
               <label>Razred</label>
               <div className="segment">
-                {([3, 4] as const).map((razred) => (
+                {RAZREDI.map((razred) => (
                   <button key={razred} type="button" className={`segment-dugme ${forma.grade === razred ? 'segment-dugme--izabran' : ''}`} onClick={() => promeniKontekst({ grade: razred })}>
                     {NAZIVI_RAZREDA[razred]}
                   </button>

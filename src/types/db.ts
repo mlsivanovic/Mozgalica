@@ -5,7 +5,7 @@ export type Tezina = 1 | 2 | 3 | 4 | 5
 export type IzvorPitanja = 'manual' | 'generated'
 export type StatusPokusaja = 'in_progress' | 'submitted' | 'expired'
 export type Predmet = 'matematika' | 'srpski'
-export type Razred = 3 | 4
+export type Razred = 3 | 4 | 5
 export type SahBoja = 'white' | 'black'
 export type SahStatus = 'assigned' | 'in_progress' | 'completed' | 'cancelled'
 export type SahRezultat = 'child_win' | 'draw' | 'child_loss'
@@ -419,6 +419,9 @@ export const NAZIVI_PREDMETA: Record<Predmet, string> = {
 export const NAZIVI_RAZREDA: Record<Razred, string> = {
   3: '3. razred',
   4: '4. razred',
+  5: '5. razred',
 }
+
+export const RAZREDI: readonly Razred[] = [3, 4, 5]
 
 export const AVATARI_DECE: AvatarDeteta[] = ['🧠', '🚀', '🦊', '🦁', '🤖', '⭐']

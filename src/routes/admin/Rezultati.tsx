@@ -11,7 +11,7 @@ import { formatDatum, formatDatumZaInput, formatProcenat, formatTrajanje } from 
 import { Loader } from '../../components/Zajednicke'
 import {
   NAZIVI_RAZREDA,
-  type Kviz, type Pokusaj, type Predmet, type ProfilDeteta, type Razred, type StatusPokusaja,
+  RAZREDI, type Kviz, type Pokusaj, type Predmet, type ProfilDeteta, type Razred, type StatusPokusaja,
 } from '../../types/db'
 
 const NAZIVI_STATUSA: Record<StatusPokusaja, string> = {
@@ -158,7 +158,7 @@ export function Rezultati() {
               onChange={(e) => setFilterRazred(e.target.value ? Number(e.target.value) as Razred : '')}
             >
               <option value="">Svi razredi</option>
-              {([3, 4] as const).map((razred) => (
+              {RAZREDI.map((razred) => (
                 <option key={razred} value={razred}>{NAZIVI_RAZREDA[razred]}</option>
               ))}
             </select>
