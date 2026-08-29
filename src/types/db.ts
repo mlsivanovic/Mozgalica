@@ -125,10 +125,13 @@ export interface DnevniRasporedKviza {
   daily_time: string
   timezone: 'Europe/Belgrade'
   is_active: boolean
+  smart_mode: boolean
+  weekly_report_enabled: boolean
   next_run_on: string
   last_sent_at: string | null
   last_quiz_id: string | null
   last_error: string | null
+  last_weekly_report_at: string | null
 }
 
 // Snapshot pitanja unutar kviza (kopija u trenutku dodavanja)
@@ -354,7 +357,7 @@ export interface KupovinaProdavnice {
 
 export type TipPrimaocaObavestenja = 'admin' | 'child'
 export type TipDogadjajaObavestenja =
-  | 'new_quiz' | 'quiz_completed' | 'new_chess_game' | 'chess_game_completed'
+  | 'new_quiz' | 'quiz_completed' | 'new_chess_game' | 'chess_game_completed' | 'weekly_report'
 
 export interface Obavestenje {
   id: string

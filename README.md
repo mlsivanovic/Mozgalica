@@ -19,6 +19,9 @@ da tokom letnjeg raspusta na zabavan način obnove gradivo.
   slabijeg protivnika.
 - Netačni zadaci imaju objašnjenje, a dete može jednom da ih reši ponovo — sa novim,
   istovrsnim zadacima; ako tada sve bude tačno, zvezdice se dopune do pune kvote.
+- **Pametna dnevna vežba** automatski raspoređuje pitanja: oko 60% iz slabijih
+  oblasti, 25% za redovno ponavljanje i 15% kao teži izazov. Roditelj ponedeljkom
+  dobija mejl sa aktivnim danima, prosekom, trendom i jakim/slabim oblastima.
 - Odgovori se čuvaju i offline, a predaja je moguća tek kad server potvrdi da su sačuvani.
 - Kada dete završi kviz, administrator dobija mejl sa rezultatom.
 
@@ -64,7 +67,7 @@ npx vitest run
 supabase/migrations/   SQL migracije (šema, RLS, RPC funkcije, ocenjivanje, cron zakazivanja)
 supabase/functions/    Edge funkcije: play-chess (šahovska partija),
                        dispatch-notifications (mejlovi/push), process-daily-quizzes
-                       (dnevni kvizovi i šahovske partije)
+                       (dnevni kvizovi, pametne vežbe i nedeljni izveštaji)
 src/generator/         Deterministički generator pitanja — matematika i srpski jezik (bez AI)
 src/sah/               Šahovski engine, nagrade, ELO nivoi, ponovni pokušaji
 src/routes/admin/      Administratorski panel (kvizovi, šah, podešavanja, statistika)

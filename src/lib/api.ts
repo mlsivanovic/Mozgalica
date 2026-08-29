@@ -208,6 +208,8 @@ export interface NoviDnevniRasporedKviza {
   shuffleAnswers: boolean
   passThresholdPct: number
   dailyTime: string
+  smartMode: boolean
+  weeklyReportEnabled: boolean
 }
 
 export async function listajDnevneRasporedeKvizova(): Promise<DnevniRasporedKviza[]> {
@@ -235,6 +237,8 @@ export async function sacuvajDnevniRasporedKviza(
     p_shuffle_answers: raspored.shuffleAnswers,
     p_pass_threshold_pct: raspored.passThresholdPct,
     p_daily_time: raspored.dailyTime,
+    p_smart_mode: raspored.smartMode,
+    p_weekly_report_enabled: raspored.weeklyReportEnabled,
   })
   if (error) throw new Error(opisiGresku(error)!)
   return data as DnevniRasporedKviza

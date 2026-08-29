@@ -113,7 +113,11 @@ export function ObavestenjaZvonce({ inbox, onOznaciProcitanim, nazivPrimaoca }: 
                 onClick={() => void otvoriObavestenje(obavestenje)}
               >
                 <span className="obavestenja-ikona" aria-hidden="true">
-                  {obavestenje.event_type === 'new_quiz' ? '📝' : '✅'}
+                  {obavestenje.event_type === 'new_quiz'
+                    ? '📝'
+                    : obavestenje.event_type === 'weekly_report'
+                      ? '📊'
+                      : obavestenje.event_type.includes('chess') ? '♟️' : '✅'}
                 </span>
                 <span>
                   <strong>{obavestenje.title}</strong>

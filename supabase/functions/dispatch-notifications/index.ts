@@ -24,11 +24,12 @@ interface Obavestenje {
   owner_id: string
   child_profile_id: string | null
   recipient_type: 'admin' | 'child'
-  event_type: 'new_quiz' | 'quiz_completed' | 'new_chess_game' | 'chess_game_completed'
+  event_type: 'new_quiz' | 'quiz_completed' | 'new_chess_game' | 'chess_game_completed' | 'weekly_report'
   quiz_id: string | null
   quiz_link_id: string | null
   attempt_id: string | null
   chess_game_id: string | null
+  weekly_report_id: string | null
   title: string
   body: string
   target_url: string
@@ -231,11 +232,13 @@ async function posaljiMejl(
 
   const mejl = obavestenje.event_type === 'new_quiz'
     ? await napraviMejlZaNoviKviz(supabase, obavestenje, sacuvaniPrimalac)
-    : obavestenje.event_type === 'new_chess_game'
-      ? await napraviMejlZaNovuSahPartiju(supabase, obavestenje, sacuvaniPrimalac)
-      : obavestenje.event_type === 'chess_game_completed'
-        ? await napraviMejlZaSahRezultat(supabase, obavestenje)
-        : await napraviMejlZaRezultat(supabase, obavestenje)
+    : obavestenje.event_type === 'weekly_report'
+      ? await napraviMejlZaNedeljniIzvestaj(supabase, obavestenje)
+      : obavestenje.event_type === 'new_chess_game'
+        ? await napraviMejlZaNovuSahPartiju(supabase, obavestenje, sacuvaniPrimalac)
+        : obavestenje.event_type === 'chess_game_completed'
+          ? await napraviMejlZaSahRezultat(supabase, obavestenje)
+          : await napraviMejlZaRezultat(supabase, obavestenje)
 
   const odgovor = await fetch('https://api.brevo.com/v3/smtp/email', {
     method: 'POST',
@@ -263,6 +266,101 @@ async function posaljiMejl(
 
   const telo = await odgovor.json().catch(() => ({})) as { messageId?: string }
   return telo.messageId ?? null
+}
+
+interface TemaNedeljnogIzvestaja {
+  topicName: string
+  questionCount: number
+  successPct: number | null
+}
+
+interface SazetakNedeljnogIzvestaja {
+  completedAttempts: number
+  activeDays: number
+  avgScorePct: number | null
+  previousAvgScorePct: number | null
+  trendPct: number | null
+  questionCount: number
+  correctCount: number
+  practiceTopics: TemaNedeljnogIzvestaja[]
+  strongTopics: TemaNedeljnogIzvestaja[]
+}
+
+async function napraviMejlZaNedeljniIzvestaj(
+  supabase: ReturnType<typeof createClient>,
+  obavestenje: Obavestenje,
+) {
+  if (!obavestenje.weekly_report_id) {
+    throw new GreskaIsporuke('Nedostaje nedeljni izveštaj.', false)
+  }
+  const [{ data: izvestaj }, { data: userData }] = await Promise.all([
+    supabase.from('smart_weekly_reports')
+      .select('child_profile_id, week_start, week_end, summary')
+      .eq('id', obavestenje.weekly_report_id).single(),
+    supabase.auth.admin.getUserById(obavestenje.owner_id),
+  ])
+  const adminEmail = userData?.user?.email
+  if (!izvestaj || !adminEmail) {
+    throw new GreskaIsporuke('Nedeljni izveštaj ili administratorski mejl nisu pronađeni.', false)
+  }
+  const { data: profil } = await supabase.from('child_profiles').select('name')
+    .eq('id', izvestaj.child_profile_id).single()
+  if (!profil) throw new GreskaIsporuke('Profil deteta nije pronađen.', false)
+
+  const sazetak = izvestaj.summary as SazetakNedeljnogIzvestaja
+  const link = apsolutnaHashRuta(APP_BASE_URL, `/admin/rezultati/statistika/${izvestaj.child_profile_id}`)
+  const period = `${formatirajDatumIzvestaja(izvestaj.week_start)}–${formatirajDatumIzvestaja(izvestaj.week_end)}`
+  const trend = sazetak.trendPct == null
+    ? 'Još nema prethodne sedmice za poređenje.'
+    : sazetak.trendPct > 0
+      ? `Rezultat je bolji za ${sazetak.trendPct} procentnih poena.`
+      : sazetak.trendPct < 0
+        ? `Rezultat je slabiji za ${Math.abs(sazetak.trendPct)} procentnih poena.`
+        : 'Rezultat je isti kao prethodne sedmice.'
+  const zaVezbu = formatirajTemeIzvestaja(sazetak.practiceTopics)
+  const jake = formatirajTemeIzvestaja(sazetak.strongTopics)
+  const subject = `Mozgalica: nedeljni izveštaj za ${profil.name}`
+
+  if (sazetak.completedAttempts === 0) {
+    const text = `${profil.name} prethodne nedelje (${period}) nije završio/la nijednu pametnu vežbu. Detalji: ${link}`
+    const html = omotMejla(`
+      <h2>📊 Nedeljni izveštaj</h2>
+      <p><strong>${escapeHtml(profil.name)}</strong> prethodne nedelje (${escapeHtml(period)})
+        nije završio/la nijednu pametnu vežbu.</p>
+      <p>Sledeća vežba će i dalje dati prednost oblastima kojima je potrebno najviše rada.</p>
+      ${dugmeMejla(link, 'Otvori statistiku')}
+    `)
+    return { to: adminEmail, recipientName: 'Administrator', subject, text, html }
+  }
+
+  const text = `${profil.name}: ${sazetak.completedAttempts} vežbi tokom ${sazetak.activeDays} dana, `
+    + `${sazetak.correctCount}/${sazetak.questionCount} tačnih odgovora, prosek ${sazetak.avgScorePct ?? 0}%. `
+    + `${trend} Za vežbu: ${zaVezbu || 'nema izdvojenih oblasti'}. Jake oblasti: ${jake || 'još nema dovoljno podataka'}. ${link}`
+  const html = omotMejla(`
+    <h2>📊 Nedeljni izveštaj za ${escapeHtml(profil.name)}</h2>
+    <p class="blago">${escapeHtml(period)}</p>
+    <ul>
+      <li>Završene vežbe: ${sazetak.completedAttempts}</li>
+      <li>Aktivni dani: ${sazetak.activeDays}</li>
+      <li>Tačni odgovori: ${sazetak.correctCount} / ${sazetak.questionCount}</li>
+      <li>Prosečan rezultat: ${sazetak.avgScorePct ?? 0}%</li>
+    </ul>
+    <p><strong>${escapeHtml(trend)}</strong></p>
+    <p>🎯 Za dodatnu vežbu: ${escapeHtml(zaVezbu || 'nema izdvojenih oblasti')}</p>
+    <p>🌟 Jake oblasti: ${escapeHtml(jake || 'još nema dovoljno podataka')}</p>
+    ${dugmeMejla(link, 'Pogledaj detaljnu statistiku')}
+  `)
+  return { to: adminEmail, recipientName: 'Administrator', subject, text, html }
+}
+
+function formatirajDatumIzvestaja(datum: string): string {
+  return new Date(`${datum}T12:00:00`).toLocaleDateString('sr-Latn-RS', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+  })
+}
+
+function formatirajTemeIzvestaja(teme: TemaNedeljnogIzvestaja[] | null | undefined): string {
+  return (teme ?? []).map((tema) => `${tema.topicName} (${tema.successPct ?? 0}%)`).join(', ')
 }
 
 async function napraviMejlZaNoviKviz(

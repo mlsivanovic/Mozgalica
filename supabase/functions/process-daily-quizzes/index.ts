@@ -2,6 +2,9 @@ import { createClient } from 'jsr:@supabase/supabase-js@2'
 import { generisi, podrzaneOblasti } from '../../../src/generator/index.ts'
 import { napraviRng, promesaj } from '../../../src/generator/random.ts'
 import type { GenerisanoPitanje } from '../../../src/generator/types.ts'
+import {
+  napraviPametniPlan, type StavkaPametneVezbe, type TemaPametneVezbe,
+} from '../../../src/lib/pametnaVezba.ts'
 import { napraviPlanOblastiKviza } from '../../../src/lib/raspodelaKviza.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
@@ -27,8 +30,18 @@ interface DnevniRad {
   shuffle_questions: boolean
   shuffle_answers: boolean
   pass_threshold_pct: number
+  smart_mode: boolean
   local_date: string
   used_question_keys: string[]
+}
+
+interface TemaPametneVezbeIzBaze {
+  topic_id: string
+  topic_slug: string
+  topic_name: string
+  answers_count: number
+  success_pct: number | null
+  last_answered_at: string | null
 }
 
 interface PitanjeIzBanke {
@@ -103,7 +116,7 @@ async function ucitajPitanjaIzBanke(
   }
 
   return sva.filter((pitanje) =>
-    (rad.difficulty == null || pitanje.difficulty === rad.difficulty)
+    (rad.smart_mode || rad.difficulty == null || pitanje.difficulty === rad.difficulty)
     && (rad.question_type == null || pitanje.type === rad.question_type),
   )
 }
@@ -136,10 +149,11 @@ function generisiZaOblast(
   seed: number,
   indeks: number,
   prethodni: Set<string>,
+  difficulty = rad.difficulty ?? 3,
 ): GenerisanoPitanje[] {
   const konfiguracija = {
     topicSlug,
-    difficulty: (rad.difficulty ?? 3) as 1 | 2 | 3 | 4 | 5,
+    difficulty: difficulty as 1 | 2 | 3 | 4 | 5,
     count,
     type: (rad.question_type ?? 'auto') as 'auto' | 'single' | 'multi' | 'numeric' | 'text' | 'truefalse' | 'matching',
     wordProblems: false,
@@ -160,15 +174,71 @@ function generisiZaOblast(
   return pitanja
 }
 
-function generisiPitanja(rad: DnevniRad, seed: number): GenerisanoPitanje[] {
+function generisiPitanja(
+  rad: DnevniRad,
+  seed: number,
+  pametniPlan: StavkaPametneVezbe[] | null,
+): GenerisanoPitanje[] {
   const prethodni = new Set(rad.used_question_keys)
-  const plan = napraviPlanOblastiKviza(
+  const plan = pametniPlan ?? napraviPlanOblastiKviza(
     rad.topic_slugs, rad.question_count, PODRZANI_GENERATORI, 'generator',
-  )
+  ).map((stavka) => ({ ...stavka, difficulty: rad.difficulty ?? 3 }))
   const sva = plan.flatMap((stavka, indeks) => generisiZaOblast(
-    rad, stavka.topicSlug, stavka.questionCount, seed, indeks, prethodni,
+    rad, stavka.topicSlug, stavka.questionCount, seed, indeks, prethodni, stavka.difficulty,
   ))
   return promesaj(napraviRng(seed + 2000), sva)
+}
+
+async function ucitajPametniPlan(
+  supabase: ReturnType<typeof createClient>,
+  rad: DnevniRad,
+): Promise<StavkaPametneVezbe[] | null> {
+  if (!rad.smart_mode) return null
+  const { data, error } = await supabase.rpc('get_smart_daily_quiz_topics', {
+    p_schedule_id: rad.schedule_id,
+  })
+  if (error) throw new Error(error.message)
+  const teme = ((data ?? []) as TemaPametneVezbeIzBaze[]).map((tema): TemaPametneVezbe => ({
+    topicId: tema.topic_id,
+    topicSlug: tema.topic_slug,
+    topicName: tema.topic_name,
+    answersCount: tema.answers_count,
+    successPct: tema.success_pct,
+    lastAnsweredAt: tema.last_answered_at,
+  }))
+  const plan = napraviPametniPlan(teme, rad.question_count, rad.difficulty)
+  if (plan.length === 0) throw new Error('Pametna vežba nema dostupne oblasti.')
+  return plan
+}
+
+function izaberiPametnaPitanjaIzBanke(
+  pitanja: PitanjeIzBanke[],
+  plan: StavkaPametneVezbe[],
+  prethodniKljucevi: readonly string[],
+  seed: number,
+): PitanjeIzBanke[] {
+  const izabrana: PitanjeIzBanke[] = []
+  for (let indeks = 0; indeks < plan.length; indeks++) {
+    const stavka = plan[indeks]
+    const kandidati = pitanja.filter((pitanje) => pitanje.topic_id === stavka.topicId)
+    const tacnaTezina = kandidati.filter((pitanje) => pitanje.difficulty === stavka.difficulty)
+    const prethodni = [...prethodniKljucevi, ...izabrana.map((pitanje) => pitanje.id)]
+    const prvo = izaberiIzBanke(tacnaTezina, prethodni, stavka.questionCount, seed + indeks)
+    const nedostaje = stavka.questionCount - prvo.length
+    if (nedostaje <= 0) {
+      izabrana.push(...prvo)
+      continue
+    }
+    const vecIzabrani = new Set([...izabrana, ...prvo].map((pitanje) => pitanje.id))
+    const dopuna = izaberiIzBanke(
+      kandidati.filter((pitanje) => !vecIzabrani.has(pitanje.id)),
+      [...prethodni, ...prvo.map((pitanje) => pitanje.id)],
+      nedostaje,
+      seed + 1000 + indeks,
+    )
+    izabrana.push(...prvo, ...dopuna)
+  }
+  return izabrana
 }
 
 function snapshotIzBanke(pitanje: PitanjeIzBanke, tema: Tema): SnapshotBezPozicije {
@@ -205,6 +275,7 @@ function snapshotIzGeneratora(pitanje: GenerisanoPitanje, tema: Tema): SnapshotB
 
 async function obradi(rad: DnevniRad, supabase: ReturnType<typeof createClient>) {
   const seed = await seedZa(rad)
+  const pametniPlan = await ucitajPametniPlan(supabase, rad)
   let snapshot: SnapshotPitanje[]
   let kljucevi: string[]
   const { data: teme, error: greskaTema } = await supabase
@@ -216,11 +287,15 @@ async function obradi(rad: DnevniRad, supabase: ReturnType<typeof createClient>)
   const mapaPoSlugu = new Map((teme ?? []).map((tema) => [tema.slug as string, tema as Tema]))
 
   if (rad.source === 'bank') {
-    const izabrana = izaberiIzBanke(
-      await ucitajPitanjaIzBanke(supabase, rad), rad.used_question_keys, rad.question_count, seed,
-    )
+    const pitanjaIzBanke = await ucitajPitanjaIzBanke(supabase, rad)
+    const izabrana = pametniPlan
+      ? izaberiPametnaPitanjaIzBanke(pitanjaIzBanke, pametniPlan, rad.used_question_keys, seed)
+      : izaberiIzBanke(pitanjaIzBanke, rad.used_question_keys, rad.question_count, seed)
     if (izabrana.length === 0) {
       throw new Error('Nema pitanja u banci za izabrane oblasti, težinu i tip.')
+    }
+    if (pametniPlan && izabrana.length < rad.question_count) {
+      throw new Error(`Pametna vežba je pronašla ${izabrana.length} od potrebnih ${rad.question_count} pitanja u banci.`)
     }
     snapshot = izabrana.map((pitanje, position) => ({
       ...snapshotIzBanke(pitanje, mapaPoId.get(pitanje.topic_id) ?? {
@@ -230,7 +305,7 @@ async function obradi(rad: DnevniRad, supabase: ReturnType<typeof createClient>)
     }))
     kljucevi = izabrana.map((pitanje) => pitanje.id)
   } else if (rad.source === 'generator') {
-    const generisana = generisiPitanja(rad, seed)
+    const generisana = generisiPitanja(rad, seed, pametniPlan)
     if (generisana.length < rad.question_count) {
       throw new Error(`Generator je napravio ${generisana.length} od potrebnih ${rad.question_count} pitanja.`)
     }
@@ -241,9 +316,14 @@ async function obradi(rad: DnevniRad, supabase: ReturnType<typeof createClient>)
     })
     kljucevi = generisana.map((pitanje) => pitanje.signature)
   } else {
-    const plan = napraviPlanOblastiKviza(
-      rad.topic_slugs, rad.question_count, PODRZANI_GENERATORI, 'combined',
-    )
+    const plan = pametniPlan
+      ? pametniPlan.map((stavka) => ({
+        ...stavka,
+        source: PODRZANI_GENERATORI.has(stavka.topicSlug) ? 'generator' as const : 'bank' as const,
+      }))
+      : napraviPlanOblastiKviza(
+        rad.topic_slugs, rad.question_count, PODRZANI_GENERATORI, 'combined',
+      ).map((stavka) => ({ ...stavka, difficulty: rad.difficulty ?? 3 }))
     const pitanjaIzBanke = await ucitajPitanjaIzBanke(supabase, rad)
     const prethodni = new Set(rad.used_question_keys)
     const stavke: Array<{ snapshot: SnapshotBezPozicije; key: string }> = []
@@ -256,6 +336,7 @@ async function obradi(rad: DnevniRad, supabase: ReturnType<typeof createClient>)
       if (planirana.source === 'generator') {
         const pitanja = generisiZaOblast(
           rad, planirana.topicSlug, planirana.questionCount, seed, indeks, prethodni,
+          planirana.difficulty,
         )
         if (pitanja.length < planirana.questionCount) {
           throw new Error(`Generator za oblast „${tema.name}“ napravio je ${pitanja.length} od potrebnih ${planirana.questionCount} pitanja.`)
@@ -266,9 +347,12 @@ async function obradi(rad: DnevniRad, supabase: ReturnType<typeof createClient>)
         continue
       }
 
-      const kandidati = pitanjaIzBanke.filter((pitanje) => pitanje.topic_id === tema.id)
+      const kandidatiZaTemu = pitanjaIzBanke.filter((pitanje) => pitanje.topic_id === tema.id)
+      const kandidatiTacneTezine = kandidatiZaTemu.filter((pitanje) => pitanje.difficulty === planirana.difficulty)
       const izabrana = izaberiIzBanke(
-        kandidati, rad.used_question_keys, planirana.questionCount, seed + indeks,
+        kandidatiTacneTezine.length >= planirana.questionCount ? kandidatiTacneTezine : kandidatiZaTemu,
+        [...rad.used_question_keys, ...stavke.map((stavka) => stavka.key)],
+        planirana.questionCount, seed + indeks,
       )
       if (izabrana.length < planirana.questionCount) {
         throw new Error(`U banci za oblast „${tema.name}“ pronađeno je ${izabrana.length} od potrebnih ${planirana.questionCount} pitanja.`)
@@ -313,5 +397,13 @@ Deno.serve(async (req: Request) => {
       if (greskaUpisa) console.error('Nije upisana greška dnevnog kviza:', greskaUpisa.message)
     }
   }
-  return Response.json({ obradjeno: ishodi.length, ishodi })
+  const { data: izvestaji, error: greskaIzvestaja } = await supabase.rpc(
+    'process_due_smart_weekly_reports', { p_limit: 50 },
+  )
+  return Response.json({
+    obradjeno: ishodi.length,
+    ishodi,
+    nedeljniIzvestaji: izvestaji ?? 0,
+    greskaIzvestaja: greskaIzvestaja?.message ?? null,
+  })
 })
