@@ -132,7 +132,7 @@ export function Generator() {
       </p>
 
       <div className="kartica razmak-dole gen-forma">
-        <div className="gen-sekcija gen-sekcija--razred">
+        <div className="gen-sekcija gen-sekcija--predmet">
           <p className="gen-naslov razmak-dole">Predmet</p>
           <div className="segment" role="radiogroup" aria-label="Predmet">
             {PREDMETI.map((p) => (

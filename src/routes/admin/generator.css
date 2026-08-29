@@ -61,18 +61,19 @@
 
   .gen-sekcija--oblasti {
     grid-column: 1;
-    grid-row: 1 / span 4;
+    grid-row: 1 / span 5;
     min-width: 0;
     margin-bottom: 0;
     padding-right: 1.5rem;
     border-right: 1px solid var(--boja-ivica);
   }
-  .gen-sekcija--razred { grid-column: 2; grid-row: 1; }
-  .gen-sekcija--tezina { grid-column: 2; grid-row: 2; }
-  .gen-sekcija--podesavanje { grid-column: 2; grid-row: 3; }
-  .gen-sekcija--opcije { grid-column: 2; grid-row: 4; }
-  .gen-sekcija--rezime { grid-column: 1 / -1; grid-row: 5; margin-top: 1.5rem; }
-  .gen-dugme { grid-column: 1 / -1; grid-row: 6; }
+  .gen-sekcija--predmet { grid-column: 2; grid-row: 1; }
+  .gen-sekcija--razred { grid-column: 2; grid-row: 2; }
+  .gen-sekcija--tezina { grid-column: 2; grid-row: 3; }
+  .gen-sekcija--podesavanje { grid-column: 2; grid-row: 4; }
+  .gen-sekcija--opcije { grid-column: 2; grid-row: 5; }
+  .gen-sekcija--rezime { grid-column: 1 / -1; grid-row: 6; margin-top: 1.5rem; }
+  .gen-dugme { grid-column: 1 / -1; grid-row: 7; }
 
   .gen-sekcija--podesavanje .red-polja > .polje { min-width: 100%; }
   .gen-oblasti { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
