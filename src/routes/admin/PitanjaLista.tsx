@@ -7,10 +7,11 @@ import {
 } from '../../lib/api'
 import { Loader, Modal } from '../../components/Zajednicke'
 import {
-  NAZIVI_PREDMETA, NAZIVI_RAZREDA, NAZIVI_TEZINA, NAZIVI_TIPOVA, RAZREDI,
+  NAZIVI_PREDMETA, NAZIVI_RAZREDA, NAZIVI_TEZINA, NAZIVI_TIPOVA, PREDMETI,
   type Kviz, type Oblast, type Pitanje, type Predmet, type Razred,
   type Tezina,
 } from '../../types/db'
+import { predmetImaTezinu, razrediPredmeta, tezinaZaPredmet } from '../../lib/predmet'
 import { napraviCsv, preuzmiCsv } from '../../lib/csv'
 import { PitanjeForma } from './PitanjeForma'
 import { UvozCsv } from './UvozCsv'
@@ -28,8 +29,7 @@ export function PitanjaLista() {
   const [oblasti, setOblasti] = useState<Oblast[]>([])
   const [pitanja, setPitanja] = useState<Pitanje[]>([])
   const [kvizovi, setKvizovi] = useState<Kviz[]>([])
-  // Predmet je uvek aktivan tab — matematika i srpski se nikad ne prikazuju zajedno,
-  // ni u filterima ni u listi ni u formi, da se pitanja iz dva predmeta ne bi mešala.
+  // Predmet je uvek aktivan tab, pa se pitanja različitih predmeta ne mešaju.
   const [predmet, setPredmet] = useState<Predmet>('matematika')
   // Razred je isti princip, jedan nivo dublje, unutar aktivnog predmeta.
   const [razred, setRazred] = useState<Razred>(3)
@@ -56,7 +56,9 @@ export function PitanjaLista() {
           topicId: filterOblast || undefined,
           topicIds: filterOblast ? undefined : oblastiPredmeta.map((t) => t.id),
           type: filterTip || undefined,
-          difficulty: filterTezina ? Number(filterTezina) : undefined,
+          difficulty: filterTezina
+            ? Number(filterTezina)
+            : predmetImaTezinu(predmet) ? undefined : tezinaZaPredmet(predmet),
           source: filterIzvor || undefined,
           pretraga: pretraga || undefined,
         }),
@@ -77,7 +79,9 @@ export function PitanjaLista() {
 
   function promeniPredmet(p: Predmet) {
     setPredmet(p)
+    if (!razrediPredmeta(p).includes(razred)) setRazred(razrediPredmeta(p)[0])
     setFilterOblast('') // tema iz drugog predmeta više ne bi bila validna
+    setFilterTezina('')
   }
 
   function promeniRazred(r: Razred) {
@@ -278,7 +282,7 @@ export function PitanjaLista() {
   return (
     <div>
       <div className="red predmet-tabovi razmak-dole">
-        {(['matematika', 'srpski'] as const).map((p) => (
+        {PREDMETI.map((p) => (
           <button
             key={p} type="button"
             className={`dugme ${predmet === p ? '' : 'dugme--senka'}`}
@@ -291,7 +295,7 @@ export function PitanjaLista() {
       </div>
 
       <div className="red razred-tabovi razmak-dole">
-        {RAZREDI.map((r) => (
+        {razrediPredmeta(predmet).map((r) => (
           <button
             key={r} type="button"
             className={`dugme dugme--malo ${razred === r ? '' : 'dugme--senka'}`}
@@ -342,16 +346,21 @@ export function PitanjaLista() {
             <label htmlFor="f-tip">Tip pitanja</label>
             <select id="f-tip" value={filterTip} onChange={(e) => setFilterTip(e.target.value)}>
               <option value="">Svi tipovi</option>
-              {Object.entries(NAZIVI_TIPOVA).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+              {Object.entries(NAZIVI_TIPOVA)
+                .filter(([k]) => predmet !== 'priroda_drustvo'
+                  || ['single', 'truefalse', 'matching'].includes(k))
+                .map(([k, v]) => <option key={k} value={k}>{v}</option>)}
             </select>
           </div>
-          <div className="polje">
-            <label htmlFor="f-tezina">Težina</label>
-            <select id="f-tezina" value={filterTezina} onChange={(e) => setFilterTezina(e.target.value)}>
-              <option value="">Sve težine</option>
-              {Object.entries(NAZIVI_TEZINA).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-            </select>
-          </div>
+          {predmetImaTezinu(predmet) && (
+            <div className="polje">
+              <label htmlFor="f-tezina">Težina</label>
+              <select id="f-tezina" value={filterTezina} onChange={(e) => setFilterTezina(e.target.value)}>
+                <option value="">Sve težine</option>
+                {Object.entries(NAZIVI_TEZINA).map(([k, v]) => <option key={k} value={k}>{v}</option>) }
+              </select>
+            </div>
+          )}
           <div className="polje">
             <label htmlFor="f-izvor">Izvor</label>
             <select id="f-izvor" value={filterIzvor} onChange={(e) => setFilterIzvor(e.target.value)}>
@@ -436,7 +445,7 @@ export function PitanjaLista() {
                     aria-label="Izaberi sva vidljiva pitanja"
                   />
                 </th>
-                <th>Pitanje</th><th>Oblast</th><th>Tip</th><th>Težina</th><th>Poeni</th><th>Izvor</th><th></th>
+                <th>Pitanje</th><th>Oblast</th><th>Tip</th>{predmetImaTezinu(predmet) && <th>Težina</th>}<th>Poeni</th><th>Izvor</th><th></th>
               </tr>
             </thead>
             <tbody>
@@ -446,7 +455,7 @@ export function PitanjaLista() {
                   <td data-naslov="Pitanje" style={{ maxWidth: 340 }}>{p.text}</td>
                   <td data-naslov="Oblast">{mapaOblasti.get(p.topic_id) ?? '—'}</td>
                   <td data-naslov="Tip">{NAZIVI_TIPOVA[p.type]}</td>
-                  <td data-naslov="Težina">{NAZIVI_TEZINA[p.difficulty]}</td>
+                  {predmetImaTezinu(predmet) && <td data-naslov="Težina">{NAZIVI_TEZINA[p.difficulty]}</td>}
                   <td data-naslov="Poeni">{p.points}</td>
                   <td data-naslov="Izvor">
                     <span className={`bedz ${p.source === 'generated' ? 'bedz--upozorenje' : 'bedz--neutral'}`}>
@@ -464,7 +473,7 @@ export function PitanjaLista() {
                 </tr>
               ))}
               {pitanja.length === 0 && (
-                <tr><td colSpan={8} className="centar blago" style={{ padding: '2rem' }}>Nema pitanja za izabrane filtere.</td></tr>
+                <tr><td colSpan={predmetImaTezinu(predmet) ? 8 : 7} className="centar blago" style={{ padding: '2rem' }}>Nema pitanja za izabrane filtere.</td></tr>
               )}
             </tbody>
           </table>

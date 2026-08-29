@@ -1,9 +1,9 @@
 // Forma za ručno kreiranje/izmenu pitanja — polja zavise od izabranog tipa
 import { useState } from 'react'
 import { sacuvajPitanje, type NovoPitanje } from '../../lib/api'
-import { grupisiOblastiPoPredmetu } from '../../lib/predmet'
+import { grupisiOblastiPoPredmetu, predmetImaTezinu, tezinaZaPredmet } from '../../lib/predmet'
 import type { MatchingOpcije, Oblast, Opcija, Pitanje, Predmet, Tezina, TipPitanja } from '../../types/db'
-import { NAZIVI_PREDMETA, NAZIVI_TEZINA, NAZIVI_TIPOVA } from '../../types/db'
+import { KONFIGURACIJA_PREDMETA, NAZIVI_PREDMETA, NAZIVI_TEZINA, NAZIVI_TIPOVA } from '../../types/db'
 
 interface Props {
   oblasti: Oblast[]
@@ -17,17 +17,20 @@ let brojac = 0
 function noviId() { return `o${++brojac}_${Date.now()}` }
 
 export function PitanjeForma({ oblasti, predmet, pitanje, onSacuvano, onOtkazano }: Props) {
-  // Kad je predmet poznat (aktivan tab u banci), prikazuju se samo njegove teme —
-  // matematika i srpski se nikad ne mešaju u istoj formi. Bez predmeta (npr. buduća
-  // upotreba forme van tabova) padaju sve teme grupisane po predmetu.
+  // Kad je predmet poznat, prikazuju se samo njegove teme. Bez predmeta se teme
+  // grupišu, što čuva formu upotrebljivom i van tabova banke.
   const vidljiveOblasti = predmet ? oblasti.filter((o) => o.subject === predmet) : oblasti
   const [type, setType] = useState<TipPitanja>(pitanje?.type ?? 'single')
   const [topicId, setTopicId] = useState(pitanje?.topic_id ?? vidljiveOblasti[0]?.id ?? '')
-  const [difficulty, setDifficulty] = useState<Tezina>(pitanje?.difficulty ?? 3)
+  const [difficulty, setDifficulty] = useState<Tezina>(
+    predmet ? tezinaZaPredmet(predmet, pitanje?.difficulty as Tezina | undefined) : pitanje?.difficulty ?? 3,
+  )
   const [text, setText] = useState(pitanje?.text ?? '')
   const [explanation, setExplanation] = useState(pitanje?.explanation ?? '')
   const [hint, setHint] = useState(pitanje?.hint ?? '')
-  const [points, setPoints] = useState(pitanje?.points ?? 1)
+  const [points, setPoints] = useState(
+    predmet && !predmetImaTezinu(predmet) ? 5 : pitanje?.points ?? 1,
+  )
   const [rucnoOcenjivanje, setRucnoOcenjivanje] = useState(pitanje?.manual_review ?? false)
 
   // single/multi
@@ -117,8 +120,11 @@ export function PitanjeForma({ oblasti, predmet, pitanje, onSacuvano, onOtkazano
       }
 
       const novo: NovoPitanje = {
-        topic_id: topicId, type, difficulty, text: text.trim(), options, correct,
-        explanation: explanation.trim() || null, hint: hint.trim() || null, points,
+        topic_id: topicId, type,
+        difficulty: predmet ? tezinaZaPredmet(predmet, difficulty) : difficulty,
+        text: text.trim(), options, correct,
+        explanation: explanation.trim() || null, hint: hint.trim() || null,
+        points: predmet && !predmetImaTezinu(predmet) ? 5 : points,
         source: pitanje?.source ?? 'manual', gen_signature: pitanje?.gen_signature ?? null,
         // Tačno/netačno se uvek ocenjuje automatski, bez obzira na stanje čekboksa
         manual_review: type === 'truefalse' ? false : rucnoOcenjivanje,
@@ -138,7 +144,10 @@ export function PitanjeForma({ oblasti, predmet, pitanje, onSacuvano, onOtkazano
         <div className="polje">
           <label htmlFor="pf-tip">Tip pitanja</label>
           <select id="pf-tip" value={type} onChange={(e) => setType(e.target.value as TipPitanja)}>
-            {Object.entries(NAZIVI_TIPOVA).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+            {(predmet === 'priroda_drustvo'
+              ? KONFIGURACIJA_PREDMETA[predmet].tipoviGeneratora.map((k) => [k, NAZIVI_TIPOVA[k]] as const)
+              : Object.entries(NAZIVI_TIPOVA)
+            ).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
           </select>
         </div>
         <div className="polje">
@@ -153,12 +162,14 @@ export function PitanjeForma({ oblasti, predmet, pitanje, onSacuvano, onOtkazano
               ))}
           </select>
         </div>
-        <div className="polje">
-          <label htmlFor="pf-tezina">Težina</label>
-          <select id="pf-tezina" value={difficulty} onChange={(e) => setDifficulty(Number(e.target.value) as Tezina)}>
-            {Object.entries(NAZIVI_TEZINA).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-          </select>
-        </div>
+        {(!predmet || predmetImaTezinu(predmet)) && (
+          <div className="polje">
+            <label htmlFor="pf-tezina">Težina</label>
+            <select id="pf-tezina" value={difficulty} onChange={(e) => setDifficulty(Number(e.target.value) as Tezina)}>
+              {Object.entries(NAZIVI_TEZINA).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+            </select>
+          </div>
+        )}
       </div>
 
       <div className="polje">
@@ -277,12 +288,14 @@ export function PitanjeForma({ oblasti, predmet, pitanje, onSacuvano, onOtkazano
         </div>
       )}
 
-      <div className="red-polja">
-        <div className="polje">
-          <label htmlFor="pf-poeni">Poeni</label>
-          <input id="pf-poeni" type="number" min={1} max={100} value={points} onChange={(e) => setPoints(Number(e.target.value))} />
+      {(!predmet || predmetImaTezinu(predmet)) ? (
+        <div className="red-polja">
+          <div className="polje">
+            <label htmlFor="pf-poeni">Poeni</label>
+            <input id="pf-poeni" type="number" min={1} max={100} value={points} onChange={(e) => setPoints(Number(e.target.value))} />
+          </div>
         </div>
-      </div>
+      ) : <p className="blago malo razmak-dole">Težina i broj poena su fiksno 5.</p>}
 
       <div className="polje">
         <label htmlFor="pf-objasnjenje">Objašnjenje tačnog rešenja</label>

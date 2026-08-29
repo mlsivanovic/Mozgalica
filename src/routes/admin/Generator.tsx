@@ -8,28 +8,13 @@ import { generisi } from '../../generator'
 import { IKONE_GENERISANIH_OBLASTI, NAZIVI_GENERISANIH_OBLASTI } from '../../generator/oblasti'
 import type { GeneratorConfig, GenerisanoPitanje } from '../../generator/types'
 import { listajOblasti } from '../../lib/api'
+import { predmetImaTezinu, razrediPredmeta, tezinaZaPredmet } from '../../lib/predmet'
 import {
-  NAZIVI_PREDMETA, NAZIVI_RAZREDA, NAZIVI_TEZINA, RAZREDI,
-  type Oblast, type Predmet, type Razred, type Tezina, type TipPitanja,
+  KONFIGURACIJA_PREDMETA, NAZIVI_PREDMETA, NAZIVI_RAZREDA, NAZIVI_TEZINA,
+  NAZIVI_TIPOVA, PREDMETI, type Oblast, type Predmet, type Razred, type Tezina, type TipPitanja,
 } from '../../types/db'
 import { GeneratorPregled } from './GeneratorPregled'
 import './generator.css'
-
-const PREDMETI: Predmet[] = ['matematika', 'srpski']
-
-const TIPOVI_MATEMATIKA: { vrednost: TipPitanja | 'auto'; naziv: string }[] = [
-  { vrednost: 'auto', naziv: 'Automatski izbor' },
-  { vrednost: 'numeric', naziv: 'Unos broja' },
-  { vrednost: 'single', naziv: 'Ponuđeni odgovori' },
-]
-
-// Srpski jezik nema ponuđene odgovore — odgovor se ukucava, uz povremenu
-// tačno/netačno tvrdnju.
-const TIPOVI_SRPSKI: { vrednost: TipPitanja | 'auto'; naziv: string }[] = [
-  { vrednost: 'auto', naziv: 'Automatski izbor' },
-  { vrednost: 'text', naziv: 'Unos teksta' },
-  { vrednost: 'truefalse', naziv: 'Tačno / netačno' },
-]
 
 export function Generator() {
   const navigate = useNavigate()
@@ -57,14 +42,8 @@ export function Generator() {
     setPredmet(p)
     setType('auto')
     setWordProblems(false)
-    const trenutniRazredJePodrzan = podrzane.some((s) => oblasti.some(
-      (o) => o.slug === s && o.subject === p && o.grade === razred,
-    ))
-    const ciljniRazred = trenutniRazredJePodrzan
-      ? razred
-      : (RAZREDI.find((r) => podrzane.some((s) => oblasti.some(
-          (o) => o.slug === s && o.subject === p && o.grade === r,
-        ))) ?? razred)
+    const dozvoljeniRazredi = razrediPredmeta(p)
+    const ciljniRazred = dozvoljeniRazredi.includes(razred) ? razred : dozvoljeniRazredi[0]
     setRazred(ciljniRazred)
     const vazeci = podrzane.filter((s) => oblasti.some(
       (o) => o.slug === s && o.subject === p && o.grade === ciljniRazred,
@@ -100,7 +79,10 @@ export function Generator() {
       // Ravnomerna raspodela: ostatak ide prvim izabranim oblastima
       const brojZaOblast = Math.floor(count / n) + (i < count % n ? 1 : 0)
       if (brojZaOblast === 0) return
-      const cfg: GeneratorConfig = { topicSlug, difficulty, count: brojZaOblast, type, wordProblems, allowRepeats }
+      const cfg: GeneratorConfig = {
+        topicSlug, difficulty: tezinaZaPredmet(predmet, difficulty), count: brojZaOblast,
+        type, wordProblems, allowRepeats,
+      }
       const r = generisi(cfg)
       svaPitanja.push(...r.questions)
       if (r.warning) upozorenja.push(r.warning)
@@ -115,7 +97,7 @@ export function Generator() {
       <GeneratorPregled
         pocetnaPitanja={rezultat}
         upozorenje={upozorenje}
-        cfg={{ topicSlug: topicSlugovi[0], difficulty, count, type, wordProblems, allowRepeats }}
+        cfg={{ topicSlug: topicSlugovi[0], difficulty: tezinaZaPredmet(predmet, difficulty), count, type, wordProblems, allowRepeats }}
         oblasti={izabraneOblasti}
         onNazad={() => setRezultat(null)}
         onZavrseno={(kvizId) => kvizId ? navigate(`/admin/kvizovi/${kvizId}`) : navigate('/admin/pitanja')}
@@ -150,7 +132,7 @@ export function Generator() {
         <div className="gen-sekcija gen-sekcija--razred">
           <p className="gen-naslov razmak-dole">Razred</p>
           <div className="segment" role="radiogroup" aria-label="Razred">
-            {RAZREDI.map((r) => (
+            {razrediPredmeta(predmet).map((r) => (
               <button
                 key={r} type="button" role="radio" aria-checked={razred === r}
                 className={`segment-dugme ${razred === r ? 'segment-dugme--izabran' : ''}`}
@@ -188,8 +170,7 @@ export function Generator() {
           </div>
         </div>
 
-        {/* Srpski jezik nema nivoe težine — sva pitanja idu na najtežem nivou */}
-        {predmet === 'matematika' && (
+        {predmetImaTezinu(predmet) && (
           <div className="gen-sekcija gen-sekcija--tezina">
             <p className="gen-naslov razmak-dole">Nivo težine</p>
             <div className="segment" role="radiogroup" aria-label="Nivo težine">
@@ -215,7 +196,12 @@ export function Generator() {
             <div className="polje" style={{ flex: 2 }}>
               <label>Tip pitanja</label>
               <div className="segment" role="radiogroup" aria-label="Tip pitanja">
-                {(predmet === 'srpski' ? TIPOVI_SRPSKI : TIPOVI_MATEMATIKA).map((t) => (
+                {([
+                  { vrednost: 'auto' as const, naziv: 'Automatski izbor' },
+                  ...KONFIGURACIJA_PREDMETA[predmet].tipoviGeneratora.map((vrednost) => ({
+                    vrednost, naziv: NAZIVI_TIPOVA[vrednost],
+                  })),
+                ]).map((t) => (
                   <button
                     key={t.vrednost} type="button" role="radio" aria-checked={type === t.vrednost}
                     className={`segment-dugme ${type === t.vrednost ? 'segment-dugme--izabran' : ''}`}
@@ -244,7 +230,7 @@ export function Generator() {
 
         {topicSlugovi.length > 0 && (
           <p className="gen-rezime gen-sekcija gen-sekcija--rezime">
-            📋 {count} pitanja{predmet === 'matematika' ? ` · ${NAZIVI_TEZINA[difficulty]}` : ''} · {topicSlugovi.length} {topicSlugovi.length === 1 ? 'oblast izabrana' : 'oblasti izabrano'}
+            📋 {count} pitanja{predmetImaTezinu(predmet) ? ` · ${NAZIVI_TEZINA[difficulty]}` : ''} · {topicSlugovi.length} {topicSlugovi.length === 1 ? 'oblast izabrana' : 'oblasti izabrano'}
           </p>
         )}
 

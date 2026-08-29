@@ -21,6 +21,10 @@ export const NAZIVI_GENERISANIH_OBLASTI: Record<string, string> = {
   'srpski-vrste-reci': 'Vrste reči', 'srpski-gramatika': 'Gramatika', 'srpski-pravopis': 'Pravopis',
   'srpski-citanje': 'Čitanje i razumevanje', 'srpski-recnik': 'Rečnik',
   'srpski-gramatika-4': 'Gramatika', 'srpski-recnik-4': 'Rečnik', 'srpski-citanje-4': 'Čitanje i razumevanje',
+  'pid-priroda-covek-drustvo-3': 'Priroda, čovek i društvo', 'pid-orijentacija-3': 'Orijentacija',
+  'pid-proslost-3': 'Prošlost', 'pid-kretanje-3': 'Kretanje', 'pid-materijali-3': 'Materijali',
+  'pid-odlike-srbije-4': 'Odlike Srbije', 'pid-covek-4': 'Čovek',
+  'pid-materijali-4': 'Materijali', 'pid-proslost-srbije-4': 'Prošlost Srbije',
 }
 
 export const IKONE_GENERISANIH_OBLASTI: Record<string, string> = {
@@ -40,4 +44,7 @@ export const IKONE_GENERISANIH_OBLASTI: Record<string, string> = {
   'srpski-vrste-reci': '🔤', 'srpski-gramatika': '📚', 'srpski-pravopis': '✍️',
   'srpski-citanje': '📖', 'srpski-recnik': '🗣️', 'srpski-gramatika-4': '📚',
   'srpski-recnik-4': '🗣️', 'srpski-citanje-4': '📖',
+  'pid-priroda-covek-drustvo-3': '🌿', 'pid-orijentacija-3': '🧭', 'pid-proslost-3': '⌛',
+  'pid-kretanje-3': '🏃', 'pid-materijali-3': '🧪', 'pid-odlike-srbije-4': '🇷🇸',
+  'pid-covek-4': '🧑', 'pid-materijali-4': '🧲', 'pid-proslost-srbije-4': '🏛️',
 }

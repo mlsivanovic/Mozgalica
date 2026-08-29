@@ -4,7 +4,7 @@ export type TipPitanja = 'single' | 'multi' | 'numeric' | 'text' | 'truefalse' |
 export type Tezina = 1 | 2 | 3 | 4 | 5
 export type IzvorPitanja = 'manual' | 'generated'
 export type StatusPokusaja = 'in_progress' | 'submitted' | 'expired'
-export type Predmet = 'matematika' | 'srpski'
+export type Predmet = 'matematika' | 'srpski' | 'priroda_drustvo'
 export type Razred = 3 | 4 | 5
 export type SahBoja = 'white' | 'black'
 export type SahStatus = 'assigned' | 'in_progress' | 'completed' | 'cancelled'
@@ -414,6 +414,7 @@ export const NAZIVI_TEZINA: Record<Tezina, string> = {
 export const NAZIVI_PREDMETA: Record<Predmet, string> = {
   matematika: 'Matematika',
   srpski: 'Srpski jezik',
+  priroda_drustvo: 'Priroda i društvo',
 }
 
 export const NAZIVI_RAZREDA: Record<Razred, string> = {
@@ -423,5 +424,29 @@ export const NAZIVI_RAZREDA: Record<Razred, string> = {
 }
 
 export const RAZREDI: readonly Razred[] = [3, 4, 5]
+
+export interface KonfiguracijaPredmeta {
+  razredi: readonly Razred[]
+  imaTezinu: boolean
+  fiksnaTezina: Tezina
+  tipoviGeneratora: readonly TipPitanja[]
+}
+
+export const PREDMETI: readonly Predmet[] = ['matematika', 'srpski', 'priroda_drustvo']
+
+export const KONFIGURACIJA_PREDMETA: Record<Predmet, KonfiguracijaPredmeta> = {
+  matematika: {
+    razredi: [3, 4, 5], imaTezinu: true, fiksnaTezina: 3,
+    tipoviGeneratora: ['numeric', 'single'],
+  },
+  srpski: {
+    razredi: [3, 4], imaTezinu: false, fiksnaTezina: 5,
+    tipoviGeneratora: ['text', 'truefalse'],
+  },
+  priroda_drustvo: {
+    razredi: [3, 4], imaTezinu: false, fiksnaTezina: 5,
+    tipoviGeneratora: ['single', 'truefalse', 'matching'],
+  },
+}
 
 export const AVATARI_DECE: AvatarDeteta[] = ['🧠', '🚀', '🦊', '🦁', '🤖', '⭐']

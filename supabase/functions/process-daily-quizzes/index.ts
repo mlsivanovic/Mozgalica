@@ -6,6 +6,9 @@ import {
   napraviPametniPlan, type StavkaPametneVezbe, type TemaPametneVezbe,
 } from '../../../src/lib/pametnaVezba.ts'
 import { napraviPlanOblastiKviza } from '../../../src/lib/raspodelaKviza.ts'
+import {
+  KONFIGURACIJA_PREDMETA, type Predmet,
+} from '../../../src/types/db.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -18,7 +21,7 @@ interface DnevniRad {
   owner_id: string
   child_profile_id: string
   child_name: string
-  subject: 'matematika' | 'srpski'
+  subject: Predmet
   grade: 3 | 4 | 5
   source: Izvor
   topic_ids: string[]
@@ -83,6 +86,13 @@ type SnapshotBezPozicije = Omit<SnapshotPitanje, 'position'>
 
 const PODRZANI_GENERATORI = new Set(podrzaneOblasti())
 
+function tezinaDnevnogRada(rad: DnevniRad): 1 | 2 | 3 | 4 | 5 {
+  const konfiguracija = KONFIGURACIJA_PREDMETA[rad.subject]
+  return konfiguracija.imaTezinu && rad.difficulty != null
+    ? rad.difficulty as 1 | 2 | 3 | 4 | 5
+    : konfiguracija.fiksnaTezina
+}
+
 function odgovor(tekst: string, status = 200) {
   return new Response(JSON.stringify(tekst), {
     status,
@@ -115,8 +125,11 @@ async function ucitajPitanjaIzBanke(
     if (strana.length < velicinaStrane) break
   }
 
+  const konfiguracija = KONFIGURACIJA_PREDMETA[rad.subject]
   return sva.filter((pitanje) =>
-    (rad.smart_mode || rad.difficulty == null || pitanje.difficulty === rad.difficulty)
+    (konfiguracija.imaTezinu
+      ? rad.smart_mode || rad.difficulty == null || pitanje.difficulty === rad.difficulty
+      : pitanje.difficulty === konfiguracija.fiksnaTezina)
     && (rad.question_type == null || pitanje.type === rad.question_type),
   )
 }
@@ -149,7 +162,7 @@ function generisiZaOblast(
   seed: number,
   indeks: number,
   prethodni: Set<string>,
-  difficulty = rad.difficulty ?? 3,
+  difficulty = tezinaDnevnogRada(rad),
 ): GenerisanoPitanje[] {
   const konfiguracija = {
     topicSlug,
@@ -182,7 +195,7 @@ function generisiPitanja(
   const prethodni = new Set(rad.used_question_keys)
   const plan = pametniPlan ?? napraviPlanOblastiKviza(
     rad.topic_slugs, rad.question_count, PODRZANI_GENERATORI, 'generator',
-  ).map((stavka) => ({ ...stavka, difficulty: rad.difficulty ?? 3 }))
+  ).map((stavka) => ({ ...stavka, difficulty: tezinaDnevnogRada(rad) }))
   const sva = plan.flatMap((stavka, indeks) => generisiZaOblast(
     rad, stavka.topicSlug, stavka.questionCount, seed, indeks, prethodni, stavka.difficulty,
   ))
@@ -206,7 +219,11 @@ async function ucitajPametniPlan(
     successPct: tema.success_pct,
     lastAnsweredAt: tema.last_answered_at,
   }))
-  const plan = napraviPametniPlan(teme, rad.question_count, rad.difficulty)
+  const konfiguracija = KONFIGURACIJA_PREDMETA[rad.subject]
+  const plan = napraviPametniPlan(
+    teme, rad.question_count, rad.difficulty,
+    konfiguracija.imaTezinu ? undefined : konfiguracija.fiksnaTezina,
+  )
   if (plan.length === 0) throw new Error('Pametna vežba nema dostupne oblasti.')
   return plan
 }
@@ -323,7 +340,7 @@ async function obradi(rad: DnevniRad, supabase: ReturnType<typeof createClient>)
       }))
       : napraviPlanOblastiKviza(
         rad.topic_slugs, rad.question_count, PODRZANI_GENERATORI, 'combined',
-      ).map((stavka) => ({ ...stavka, difficulty: rad.difficulty ?? 3 }))
+      ).map((stavka) => ({ ...stavka, difficulty: tezinaDnevnogRada(rad) }))
     const pitanjaIzBanke = await ucitajPitanjaIzBanke(supabase, rad)
     const prethodni = new Set(rad.used_question_keys)
     const stavke: Array<{ snapshot: SnapshotBezPozicije; key: string }> = []

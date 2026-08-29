@@ -35,4 +35,12 @@ describe('pametna dnevna vežba', () => {
     expect(plan.every((stavka) => stavka.difficulty >= 1 && stavka.difficulty <= 5)).toBe(true)
     expect(plan.find((stavka) => stavka.reason === 'izazov')?.difficulty).toBe(5)
   })
+
+  it('za predmet sa fiksnom težinom prilagođava oblasti, ali ne menja težinu', () => {
+    const plan = napraviPametniPlan(TEME, 10, null, 5)
+    expect(plan.every((stavka) => stavka.difficulty === 5)).toBe(true)
+    expect(new Set(plan.map((stavka) => stavka.reason))).toEqual(
+      new Set(['slaba_oblast', 'ponavljanje', 'izazov']),
+    )
+  })
 })

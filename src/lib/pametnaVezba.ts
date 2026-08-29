@@ -62,11 +62,13 @@ export function napraviPametniPlan(
   teme: TemaPametneVezbe[],
   brojPitanja: number,
   osnovnaTezina: number | null,
+  fiksnaTezina?: StavkaPametneVezbe['difficulty'],
 ): StavkaPametneVezbe[] {
   const broj = Math.max(1, Math.floor(brojPitanja))
   if (teme.length === 0) return []
 
-  const baza = Math.max(1, Math.min(5, Math.round(osnovnaTezina ?? 3))) as StavkaPametneVezbe['difficulty']
+  const baza = fiksnaTezina
+    ?? Math.max(1, Math.min(5, Math.round(osnovnaTezina ?? 3))) as StavkaPametneVezbe['difficulty']
   const poSlabosti = [...teme].sort((a, b) =>
     procenat(a) - procenat(b)
     || a.answersCount - b.answersCount
@@ -98,10 +100,10 @@ export function napraviPametniPlan(
   const brojPonavljanja = Math.round(broj * 0.25)
   const brojIzazova = Math.max(0, broj - brojSlabih - brojPonavljanja)
   const najlosijiProcenat = slabe[0]?.successPct
-  const laksaTezina = najlosijiProcenat != null && najlosijiProcenat < 40
+  const laksaTezina = fiksnaTezina ?? (najlosijiProcenat != null && najlosijiProcenat < 40
     ? Math.max(1, baza - 1) as StavkaPametneVezbe['difficulty']
-    : baza
-  const tezaTezina = Math.min(5, baza + 1) as StavkaPametneVezbe['difficulty']
+    : baza)
+  const tezaTezina = fiksnaTezina ?? Math.min(5, baza + 1) as StavkaPametneVezbe['difficulty']
 
   return [
     ...rasporedi(slabe, brojSlabih, laksaTezina, 'slaba_oblast'),

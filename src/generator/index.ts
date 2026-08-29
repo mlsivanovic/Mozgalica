@@ -35,6 +35,7 @@ import { srpskiGramatika4 } from './moduli4/srpskiGramatika4.ts'
 import { srpskiRecnik4 } from './moduli4/srpskiRecnik4.ts'
 import { srpskiCitanje4 } from './moduli4/srpskiCitanje4.ts'
 import { MODULI5 } from './moduli5/index.ts'
+import { MODULI_PRIRODE_I_DRUSTVA } from './moduliPid/index.ts'
 
 const MODULI: TopicGenerator[] = [
   sabiranje, oduzimanje, mnozenje, deljenje, kombinovane,
@@ -48,6 +49,8 @@ const MODULI: TopicGenerator[] = [
   ...MODULI5,
   // Srpski jezik, 3. razred
   srpskiVrsteReci, srpskiGramatika, srpskiCitanje, srpskiRecnik,
+  // Priroda i društvo, 3. i 4. razred
+  ...MODULI_PRIRODE_I_DRUSTVA,
 ]
 
 export const REGISTAR = new Map<string, TopicGenerator>(MODULI.map((m) => [m.slug, m]))

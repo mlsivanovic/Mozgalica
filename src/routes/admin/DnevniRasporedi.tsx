@@ -7,8 +7,9 @@ import {
   type NoviDnevniRasporedKviza,
 } from '../../lib/api'
 import { formatDatum } from '../../lib/format'
+import { predmetImaTezinu, razrediPredmeta, tezinaZaPredmet } from '../../lib/predmet'
 import {
-  NAZIVI_PREDMETA, NAZIVI_RAZREDA, NAZIVI_TEZINA, NAZIVI_TIPOVA, RAZREDI,
+  KONFIGURACIJA_PREDMETA, NAZIVI_PREDMETA, NAZIVI_RAZREDA, NAZIVI_TEZINA, NAZIVI_TIPOVA, PREDMETI,
   type DnevniRasporedKviza, type IzvorDnevnogKviza, type Oblast, type ProfilDeteta, type Tezina, type TipPitanja,
 } from '../../types/db'
 import './generator.css'
@@ -47,10 +48,13 @@ function formaIzRasporeda(raspored: DnevniRasporedKviza): FormaRasporeda {
     grade: raspored.grade,
     source: raspored.source,
     topicIds: raspored.topic_ids,
-    // Srpski jezik nema težinu ni ponuđene odgovore — stari rasporedi koji
-    // su ih imali vraćaju se na neutralna podešavanja.
-    difficulty: raspored.subject === 'srpski' ? null : raspored.difficulty,
-    questionType: raspored.subject === 'srpski' && !['text', 'truefalse'].includes(raspored.question_type ?? '')
+    difficulty: predmetImaTezinu(raspored.subject)
+      ? raspored.difficulty
+      : tezinaZaPredmet(raspored.subject),
+    questionType: (raspored.source !== 'bank' || raspored.subject === 'priroda_drustvo')
+      && !KONFIGURACIJA_PREDMETA[raspored.subject].tipoviGeneratora.includes(
+        raspored.question_type as TipPitanja,
+      )
       ? null
       : raspored.question_type,
     questionCount: raspored.question_count,
@@ -128,7 +132,9 @@ export function DnevniRasporedi({
   function promeniKontekst(izmene: Partial<Pick<FormaRasporeda, 'subject' | 'grade' | 'source'>>) {
     if (!forma) return
     const subject = izmene.subject ?? forma.subject
-    const grade = izmene.grade ?? forma.grade
+    const trazeniRazred = izmene.grade ?? forma.grade
+    const dozvoljeniRazredi = razrediPredmeta(subject)
+    const grade = dozvoljeniRazredi.includes(trazeniRazred) ? trazeniRazred : dozvoljeniRazredi[0]
     let source = izmene.source ?? forma.source
     const sveTeme = oblasti.filter((oblast) => oblast.subject === subject && oblast.grade === grade)
     const generatorskeTeme = sveTeme.filter((oblast) => podrzane.has(oblast.slug))
@@ -138,12 +144,12 @@ export function DnevniRasporedi({
     }
     if (source === 'generator' && generatorskeTeme.length === 0) source = 'bank'
     const teme = source === 'generator' ? generatorskeTeme : sveTeme
-    const questionType = source !== 'bank' && subject === 'srpski'
-      && forma.questionType != null && !['text', 'truefalse'].includes(forma.questionType)
+    const ograniceniTipovi = source !== 'bank' || subject === 'priroda_drustvo'
+    const questionType = ograniceniTipovi && forma.questionType != null
+      && !KONFIGURACIJA_PREDMETA[subject].tipoviGeneratora.includes(forma.questionType)
       ? null
       : forma.questionType
-    // Srpski jezik nema nivoe težine — sva pitanja idu na najtežem nivou
-    const difficulty = subject === 'srpski' ? null : forma.difficulty
+    const difficulty = predmetImaTezinu(subject) ? forma.difficulty : tezinaZaPredmet(subject)
     setForma({ ...forma, ...izmene, subject, grade, source, questionType, difficulty, topicIds: teme.map((oblast) => oblast.id) })
   }
 
@@ -272,7 +278,7 @@ export function DnevniRasporedi({
             <div className="polje">
               <label>Predmet</label>
               <div className="segment">
-                {(['matematika', 'srpski'] as const).map((predmet) => (
+                {PREDMETI.map((predmet) => (
                   <button key={predmet} type="button" className={`segment-dugme ${forma.subject === predmet ? 'segment-dugme--izabran' : ''}`} onClick={() => promeniKontekst({ subject: predmet })}>
                     {NAZIVI_PREDMETA[predmet]}
                   </button>
@@ -282,7 +288,7 @@ export function DnevniRasporedi({
             <div className="polje">
               <label>Razred</label>
               <div className="segment">
-                {RAZREDI.map((razred) => (
+                {razrediPredmeta(forma.subject).map((razred) => (
                   <button key={razred} type="button" className={`segment-dugme ${forma.grade === razred ? 'segment-dugme--izabran' : ''}`} onClick={() => promeniKontekst({ grade: razred })}>
                     {NAZIVI_RAZREDA[razred]}
                   </button>
@@ -304,8 +310,7 @@ export function DnevniRasporedi({
               <label htmlFor="dr-broj">Broj pitanja</label>
               <input id="dr-broj" type="number" min={1} max={50} value={forma.questionCount} onChange={(e) => setForma({ ...forma, questionCount: Number(e.target.value) })} />
             </div>
-            {/* Srpski jezik nema nivoe težine — sva pitanja idu na najtežem nivou */}
-            {forma.subject !== 'srpski' && (
+            {predmetImaTezinu(forma.subject) && (
               <div className="polje">
                 <label htmlFor="dr-tezina">Težina</label>
                 <select id="dr-tezina" value={forma.difficulty ?? ''} onChange={(e) => setForma({ ...forma, difficulty: e.target.value ? Number(e.target.value) as Tezina : null })}>
@@ -319,7 +324,8 @@ export function DnevniRasporedi({
               <select id="dr-tip" value={forma.questionType ?? ''} onChange={(e) => setForma({ ...forma, questionType: e.target.value ? e.target.value as TipPitanja : null })}>
                 <option value="">Automatski / svi tipovi</option>
                 {Object.entries(NAZIVI_TIPOVA)
-                  .filter(([vrednost]) => forma.source === 'bank' || forma.subject !== 'srpski' || ['text', 'truefalse'].includes(vrednost))
+                  .filter(([vrednost]) => forma.source === 'bank' && forma.subject !== 'priroda_drustvo'
+                    || KONFIGURACIJA_PREDMETA[forma.subject].tipoviGeneratora.includes(vrednost as TipPitanja))
                   .map(([vrednost, naziv]) => <option key={vrednost} value={vrednost}>{naziv}</option>)}
               </select>
             </div>

@@ -10,18 +10,13 @@ import { kvizImaPredmet, kvizImaRazred, pokusajPripadaProfilu } from '../../lib/
 import { formatDatum, formatDatumZaInput, formatProcenat, formatTrajanje } from '../../lib/format'
 import { Loader } from '../../components/Zajednicke'
 import {
-  NAZIVI_RAZREDA,
+  NAZIVI_PREDMETA, NAZIVI_RAZREDA, PREDMETI,
   RAZREDI, type Kviz, type Pokusaj, type Predmet, type ProfilDeteta, type Razred, type StatusPokusaja,
 } from '../../types/db'
 
 const NAZIVI_STATUSA: Record<StatusPokusaja, string> = {
   in_progress: 'U toku', submitted: 'Završen', expired: 'Istekao',
 }
-
-const PREDMETI: Array<{ vrednost: Predmet, naziv: string }> = [
-  { vrednost: 'matematika', naziv: 'Matematika' },
-  { vrednost: 'srpski', naziv: 'Srpski' },
-]
 
 export function Rezultati() {
   const [ucitava, setUcitava] = useState(true)
@@ -147,7 +142,7 @@ export function Rezultati() {
             >
               <option value="">Svi kvizovi</option>
               {PREDMETI.map((predmet) => (
-                <option key={predmet.vrednost} value={predmet.vrednost}>{predmet.naziv}</option>
+                <option key={predmet} value={predmet}>{NAZIVI_PREDMETA[predmet]}</option>
               ))}
             </select>
           </div>

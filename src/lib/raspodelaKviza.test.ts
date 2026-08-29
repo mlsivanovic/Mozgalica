@@ -39,6 +39,7 @@ describe('izbor oblasti standardnog kviza', () => {
     { id: 's3', slug: 'srpski-gramatika', name: 'Gramatika', sort_order: 1, subject: 'srpski', grade: 3 },
     { id: 's4', slug: 'srpski-gramatika-4', name: 'Gramatika', sort_order: 2, subject: 'srpski', grade: 4 },
     { id: 'm3', slug: 'sabiranje', name: 'Sabiranje', sort_order: 3, subject: 'matematika', grade: 3 },
+    { id: 'p4', slug: 'pid-covek-4', name: 'Čovek', sort_order: 4, subject: 'priroda_drustvo', grade: 4 },
   ]
 
   it('izbacuje zaostale oblasti drugog razreda i predmeta', () => {
@@ -52,5 +53,10 @@ describe('izbor oblasti standardnog kviza', () => {
 
   it('posle promene sa četvrtog na treći razred ne vraća oblast četvrtog', () => {
     expect(izaberiOblastiZaKviz(oblasti, 'srpski', 3, ['srpski-gramatika-4'])).toEqual([])
+  })
+
+  it('izdvaja oblast Prirode i društva bez mešanja sa drugim predmetima', () => {
+    expect(izaberiOblastiZaKviz(oblasti, 'priroda_drustvo', 4, ['sabiranje', 'pid-covek-4']))
+      .toEqual([oblasti[3]])
   })
 })

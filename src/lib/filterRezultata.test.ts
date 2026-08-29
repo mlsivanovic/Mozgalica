@@ -7,6 +7,7 @@ const kategorije: KategorijaKviza[] = [
   { quiz_id: 'mat-3', subject: 'matematika', grade: 3 },
   { quiz_id: 'mat-4', subject: 'matematika', grade: 4 },
   { quiz_id: 'srp-3', subject: 'srpski', grade: 3 },
+  { quiz_id: 'pid-4', subject: 'priroda_drustvo', grade: 4 },
 ]
 
 describe('filteri rezultata', () => {
@@ -33,6 +34,7 @@ describe('filteri rezultata', () => {
     expect(kvizImaPredmet(pokusaj, kategorije, 'matematika')).toBe(true)
     // Pogrešan predmet
     expect(kvizImaPredmet(pokusaj, kategorije, 'srpski')).toBe(false)
+    expect(kvizImaPredmet({ ...pokusaj, quiz_id: 'pid-4' }, kategorije, 'priroda_drustvo')).toBe(true)
     // Kviz bez kategorije ne pripada nijednom predmetu
     expect(kvizImaPredmet({ ...pokusaj, quiz_id: 'nepoznat' }, kategorije, 'matematika')).toBe(false)
   })

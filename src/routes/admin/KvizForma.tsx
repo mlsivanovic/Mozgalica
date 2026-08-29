@@ -12,8 +12,9 @@ import {
 import {
   izaberiOblastiZaKviz, napraviPlanOblastiKviza, type IzvorStandardnogKviza,
 } from '../../lib/raspodelaKviza'
+import { predmetImaTezinu, razrediPredmeta, tezinaZaPredmet } from '../../lib/predmet'
 import {
-  NAZIVI_PREDMETA, NAZIVI_RAZREDA, NAZIVI_TEZINA, NAZIVI_TIPOVA, RAZREDI,
+  KONFIGURACIJA_PREDMETA, NAZIVI_PREDMETA, NAZIVI_RAZREDA, NAZIVI_TEZINA, NAZIVI_TIPOVA, PREDMETI, RAZREDI,
   type Oblast, type Predmet, type Razred, type Tezina, type TipPitanja,
   type ProfilDeteta,
 } from '../../types/db'
@@ -85,8 +86,7 @@ export function KvizForma() {
   const oblastiZaPrikaz = useMemo(() => {
     return oblasti.filter((o) => o.subject === predmet && o.grade === razred)
   }, [oblasti, predmet, razred])
-  const kombinovaniDostupan = predmet === 'srpski'
-    && oblastiZaPrikaz.some((o) => podrzaneSlugs.includes(o.slug))
+  const kombinovaniDostupan = oblastiZaPrikaz.some((o) => podrzaneSlugs.includes(o.slug))
     && oblastiZaPrikaz.some((o) => !podrzaneSlugs.includes(o.slug))
 
   // Funkcija za generisanje inicijalnih default vrednosti
@@ -113,8 +113,7 @@ export function KvizForma() {
   const ucitajKonfiguraciju = useCallback((p: Predmet, r: Razred): StandardQuizConfig => {
     const oblastiKonteksta = oblasti.filter((o) => o.subject === p && o.grade === r)
     const defaults = getDefaults(p, r, oblasti)
-    const kombinovaniKontekst = p === 'srpski'
-      && oblastiKonteksta.some((o) => podrzaneSlugs.includes(o.slug))
+    const kombinovaniKontekst = oblastiKonteksta.some((o) => podrzaneSlugs.includes(o.slug))
       && oblastiKonteksta.some((o) => !podrzaneSlugs.includes(o.slug))
     const saved = localStorage.getItem(`standard_quiz_settings_${p}_${r}`)
     if (!saved) return defaults
@@ -137,8 +136,10 @@ export function KvizForma() {
       if (noviIzvor === 'generator') {
         konacneTeme = konacneTeme.filter((slug) => podrzaneSlugs.includes(slug))
       }
-      const konacniTip = noviIzvor !== 'bank' && p === 'srpski'
-        && !['auto', 'single', 'truefalse'].includes(parsed.type ?? defaults.type)
+      const konacniTip = (noviIzvor !== 'bank' || p === 'priroda_drustvo')
+        && !['auto', ...KONFIGURACIJA_PREDMETA[p].tipoviGeneratora].includes(
+          (parsed.type ?? defaults.type) as TipPitanja | 'auto',
+        )
         ? 'auto'
         : (parsed.type ?? defaults.type)
 
@@ -164,8 +165,11 @@ export function KvizForma() {
 
   function promeniPredmet(noviPredmet: Predmet) {
     if (noviPredmet === predmet) return
-    if (oblasti.length > 0) setCfg(ucitajKonfiguraciju(noviPredmet, razred))
+    const podrzaniRazredi = razrediPredmeta(noviPredmet)
+    const noviRazred = podrzaniRazredi.includes(razred) ? razred : podrzaniRazredi[0]
+    if (oblasti.length > 0) setCfg(ucitajKonfiguraciju(noviPredmet, noviRazred))
     setPredmet(noviPredmet)
+    setRazred(noviRazred)
     setGreska(null)
   }
 
@@ -193,8 +197,10 @@ export function KvizForma() {
     if (noviIzvor === 'generator') {
       sledeceTeme = cfg.selectedTopics.filter((slug) => podrzaneSlugs.includes(slug))
     }
-    const tip = noviIzvor !== 'bank' && predmet === 'srpski'
-      && !['auto', 'single', 'truefalse'].includes(cfg.type)
+    const tip = (noviIzvor !== 'bank' || predmet === 'priroda_drustvo')
+      && !['auto', ...KONFIGURACIJA_PREDMETA[predmet].tipoviGeneratora].includes(
+        cfg.type as TipPitanja | 'auto',
+      )
       ? 'auto'
       : cfg.type
     azurirajCfg({ source: noviIzvor, selectedTopics: sledeceTeme, type: tip })
@@ -326,7 +332,9 @@ export function KvizForma() {
         const filterBanke: FilterPitanja = {
           topicIds: oblastiBanke.map((oblast) => oblast!.id),
         }
-        if (cfg.difficulty) filterBanke.difficulty = Number(cfg.difficulty)
+        filterBanke.difficulty = predmetImaTezinu(predmet)
+          ? cfg.difficulty ? Number(cfg.difficulty) : undefined
+          : tezinaZaPredmet(predmet)
         if (cfg.type && cfg.type !== 'auto') filterBanke.type = cfg.type
         const svaPitanjaIzBanke = planBanke.length > 0 ? await listajPitanja(filterBanke) : []
 
@@ -337,7 +345,10 @@ export function KvizForma() {
           if (stavka.source === 'generator') {
             const rez = generisi({
               topicSlug: stavka.topicSlug,
-              difficulty: cfg.difficulty ? (Number(cfg.difficulty) as Tezina) : (3 as Tezina),
+              difficulty: tezinaZaPredmet(
+                predmet,
+                cfg.difficulty ? Number(cfg.difficulty) as Tezina : undefined,
+              ),
               count: stavka.questionCount,
               type: (cfg.type === 'auto' || !cfg.type ? 'auto' : cfg.type) as TipPitanja | 'auto',
               wordProblems: false,
@@ -396,7 +407,9 @@ export function KvizForma() {
           topicIds: izabraneOblasti.map((oblast) => oblast.id),
         }
 
-        if (cfg.difficulty) {
+        if (!predmetImaTezinu(predmet)) {
+          filter.difficulty = tezinaZaPredmet(predmet)
+        } else if (cfg.difficulty) {
           filter.difficulty = Number(cfg.difficulty)
         }
         if (cfg.type && cfg.type !== 'auto') {
@@ -615,7 +628,7 @@ export function KvizForma() {
                 <div className="polje">
                   <label htmlFor="f-predmet">Predmet</label>
                   <div className="segment">
-                    {(['matematika', 'srpski'] as const).map((p) => (
+                    {PREDMETI.map((p) => (
                       <button
                         key={p} type="button"
                         className={`segment-dugme ${predmet === p ? 'segment-dugme--izabran' : ''}`}
@@ -630,7 +643,7 @@ export function KvizForma() {
                 <div className="polje">
                   <label htmlFor="f-razred">Razred</label>
                   <div className="segment">
-                    {RAZREDI.map((r) => (
+                    {razrediPredmeta(predmet).map((r) => (
                       <button
                         key={r} type="button"
                         className={`segment-dugme ${razred === r ? 'segment-dugme--izabran' : ''}`}
@@ -701,18 +714,20 @@ export function KvizForma() {
               </div>
 
               <div className="red-polja">
-                <div className="polje">
-                  <label htmlFor="std-difficulty">Težina pitanja</label>
-                  <select
-                    id="std-difficulty" value={cfg.difficulty}
-                    onChange={(e) => azurirajCfg({ difficulty: e.target.value })}
-                  >
-                    <option value="">Sve težine (mešovito)</option>
-                    {Object.entries(NAZIVI_TEZINA).map(([k, v]) => (
-                      <option key={k} value={k}>{v} ({k})</option>
-                    ))}
-                  </select>
-                </div>
+                {predmetImaTezinu(predmet) && (
+                  <div className="polje">
+                    <label htmlFor="std-difficulty">Težina pitanja</label>
+                    <select
+                      id="std-difficulty" value={cfg.difficulty}
+                      onChange={(e) => azurirajCfg({ difficulty: e.target.value })}
+                    >
+                      <option value="">Sve težine (mešovito)</option>
+                      {Object.entries(NAZIVI_TEZINA).map(([k, v]) => (
+                        <option key={k} value={k}>{v} ({k})</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
                 <div className="polje">
                   <label htmlFor="std-type">Tip pitanja</label>
@@ -722,7 +737,10 @@ export function KvizForma() {
                   >
                     <option value="auto">Svi tipovi (automatski)</option>
                     {Object.entries(NAZIVI_TIPOVA)
-                      .filter(([k]) => cfg.source === 'bank' || predmet !== 'srpski' || ['single', 'truefalse'].includes(k))
+                      .filter(([k]) => cfg.source === 'bank'
+                        ? predmet !== 'priroda_drustvo'
+                          || KONFIGURACIJA_PREDMETA[predmet].tipoviGeneratora.includes(k as TipPitanja)
+                        : KONFIGURACIJA_PREDMETA[predmet].tipoviGeneratora.includes(k as TipPitanja))
                       .map(([k, v]) => (
                       <option key={k} value={k}>{v}</option>
                     ))}
