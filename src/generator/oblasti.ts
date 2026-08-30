@@ -23,6 +23,7 @@ export const NAZIVI_GENERISANIH_OBLASTI: Record<string, string> = {
   'srpski-gramatika-4': 'Gramatika', 'srpski-recnik-4': 'Rečnik', 'srpski-citanje-4': 'Čitanje i razumevanje',
   'pid-priroda-covek-drustvo-3': 'Priroda, čovek i društvo', 'pid-orijentacija-3': 'Orijentacija',
   'pid-proslost-3': 'Prošlost', 'pid-kretanje-3': 'Kretanje', 'pid-materijali-3': 'Materijali',
+  'pid-beograd-3': 'Beograd — moj grad',
   'pid-odlike-srbije-4': 'Odlike Srbije', 'pid-covek-4': 'Čovek',
   'pid-materijali-4': 'Materijali', 'pid-proslost-srbije-4': 'Prošlost Srbije',
 }
@@ -46,5 +47,6 @@ export const IKONE_GENERISANIH_OBLASTI: Record<string, string> = {
   'srpski-recnik-4': '🗣️', 'srpski-citanje-4': '📖',
   'pid-priroda-covek-drustvo-3': '🌿', 'pid-orijentacija-3': '🧭', 'pid-proslost-3': '⌛',
   'pid-kretanje-3': '🏃', 'pid-materijali-3': '🧪', 'pid-odlike-srbije-4': '🇷🇸',
+  'pid-beograd-3': '🏙️',
   'pid-covek-4': '🧑', 'pid-materijali-4': '🧲', 'pid-proslost-srbije-4': '🏛️',
 }

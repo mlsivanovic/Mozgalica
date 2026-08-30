@@ -44,8 +44,8 @@ function proveriStrukturu(pitanje: GenerisanoPitanje) {
 }
 
 describe('generatori Prirode i društva', () => {
-  it('registruje svih devet oblasti', () => {
-    expect(OBLASTI).toHaveLength(9)
+  it('registruje svih deset oblasti', () => {
+    expect(OBLASTI).toHaveLength(10)
     expect(OBLASTI.every((oblast) => podrzaneOblasti().includes(oblast))).toBe(true)
   })
 

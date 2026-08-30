@@ -1,7 +1,8 @@
 import { PID_OBLASTI_3 } from './treci.ts'
 import { PID_OBLASTI_4 } from './cetvrti.ts'
+import { beograd3 } from './beograd.ts'
 
-export const MODULI_PRIRODE_I_DRUSTVA = [...PID_OBLASTI_3, ...PID_OBLASTI_4]
+export const MODULI_PRIRODE_I_DRUSTVA = [...PID_OBLASTI_3, beograd3, ...PID_OBLASTI_4]
 
 // Manifest povezuje svaku programsku celinu sa stabilnom porodicom potpisa generatora.
 export const PID_PROGRAMSKA_POKRIVENOST: Record<string, readonly string[]> = {
@@ -24,6 +25,10 @@ export const PID_PROGRAMSKA_POKRIVENOST: Record<string, readonly string[]> = {
   'pid-materijali-3': [
     'povratne-promene', 'nepovratne-promene', 'promene-stanja', 'svojstva-tecnosti',
     'rastvaranje', 'toplotna-provodljivost', 'toplotna-izolacija', 'reciklaza', 'odrzivi-razvoj',
+  ],
+  'pid-beograd-3': [
+    'polozaj-i-vode', 'reljef-i-izletista', 'znamenitosti', 'proslost-grada',
+    'kultura', 'orijentacija-u-gradu', 'saobracaj', 'zastita-prirode',
   ],
   'pid-odlike-srbije-4': [
     'polozaj-srbije', 'simboli-i-valuta', 'reljef-srbije', 'vode-srbije', 'sume-srbije',

@@ -255,8 +255,8 @@ describe('tekstualni zadaci', () => {
 })
 
 describe('registar', () => {
-  it('svih 58 oblasti ima generator', () => {
-    expect(REGISTAR.size).toBe(58)
+  it('svih 59 oblasti ima generator', () => {
+    expect(REGISTAR.size).toBe(59)
     expect(podrzaneOblasti()).toContain('sabiranje')
     expect(podrzaneOblasti()).toContain('novac')
     expect(podrzaneOblasti()).toContain('pid-proslost-srbije-4')
