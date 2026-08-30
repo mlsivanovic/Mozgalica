@@ -3,13 +3,13 @@ import { SRPSKI2_BANKA } from './srpski2Banka.ts'
 import { napraviSqlUvoza } from '../../scripts/uvoz-srpski2.mjs'
 
 describe('početna banka srpskog za 2. razred', () => {
-  it('ima 90 jedinstvenih pitanja, po 30 za svaku oblast', () => {
-    expect(SRPSKI2_BANKA).toHaveLength(90)
+  it('ima 150 jedinstvenih pitanja, po 50 za svaku oblast', () => {
+    expect(SRPSKI2_BANKA).toHaveLength(150)
     for (const slug of ['srpski-pravopis-2', 'srpski-knjizevnost-2', 'srpski-jezicka-kultura-2']) {
-      expect(SRPSKI2_BANKA.filter((p) => p.topicSlug === slug)).toHaveLength(30)
+      expect(SRPSKI2_BANKA.filter((p) => p.topicSlug === slug)).toHaveLength(50)
     }
-    expect(new Set(SRPSKI2_BANKA.map((p) => p.gen_signature)).size).toBe(90)
-    expect(new Set(SRPSKI2_BANKA.map((p) => p.text)).size).toBe(90)
+    expect(new Set(SRPSKI2_BANKA.map((p) => p.gen_signature)).size).toBe(150)
+    expect(new Set(SRPSKI2_BANKA.map((p) => p.text)).size).toBe(150)
   })
 
   it('svi odgovori su automatski ocenljivi u postojećoj SQL šemi', () => {
@@ -36,13 +36,25 @@ describe('početna banka srpskog za 2. razred', () => {
   it('pravopis ne koristi normalizovano tekstualno ocenjivanje', () => {
     const pravopis = SRPSKI2_BANKA.filter((p) => p.topicSlug === 'srpski-pravopis-2')
     expect(pravopis.every((p) => p.type === 'truefalse')).toBe(true)
-    for (const porodica of ['veliko-slovo', 'ne', 'li', 'tacka', 'nabrajanje', 'datum']) {
+    for (const porodica of ['veliko-slovo', 'ne', 'li', 'tacka', 'upitnik', 'uzvicnik', 'nabrajanje', 'datum']) {
       expect(pravopis.some((p) => p.porodica === porodica), porodica).toBe(true)
     }
     expect(pravopis.find((p) => p.gen_signature!.endsWith(':novi-sad'))!.correct).toEqual({ value: true })
     expect(pravopis.find((p) => p.gen_signature!.endsWith(':novi-sad-malo'))!.correct).toEqual({ value: false })
     expect(pravopis.find((p) => p.gen_signature!.endsWith(':neznam'))!.correct).toEqual({ value: false })
     expect(pravopis.find((p) => p.gen_signature!.endsWith(':nemam'))!.correct).toEqual({ value: true })
+    expect(pravopis.find((p) => p.gen_signature!.endsWith(':nemoj'))!.correct).toEqual({ value: true })
+    expect(pravopis.find((p) => p.gen_signature!.endsWith(':upitnik-tacka'))!.correct).toEqual({ value: false })
+    expect(pravopis.find((p) => p.gen_signature!.endsWith(':crna-gora'))!.correct).toEqual({ value: true })
+  })
+
+  it('ne izlazi iz programa 2. razreda', () => {
+    const tekst = JSON.stringify(SRPSKI2_BANKA).toLowerCase()
+    expect(tekst).not.toMatch(/zbirn|gradivn|ličn[ae] zamenic|prisvojni pridev|lirik|epik[ae]|didaskal|personifik|apozicij|subjekat|predikat|nepravda|nesrećan|fruška gora|imena naroda/)
+    const knjizevnost = SRPSKI2_BANKA.filter((p) => p.topicSlug === 'srpski-knjizevnost-2')
+    for (const vrsta of ['pesma', 'priča', 'basna', 'bajka', 'stih']) {
+      expect(knjizevnost.some((p) => p.porodica === 'vrste' || JSON.stringify(p).toLowerCase().includes(vrsta)), vrsta).toBe(true)
+    }
   })
 
   it('uvoz podrazumevano radi rollback, ne hardkoduje vlasnika i ne prepisuje pitanja', () => {
