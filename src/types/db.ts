@@ -441,7 +441,7 @@ export const KONFIGURACIJA_PREDMETA: Record<Predmet, KonfiguracijaPredmeta> = {
     tipoviGeneratora: ['numeric', 'single'],
   },
   srpski: {
-    razredi: [3, 4], imaTezinu: false, fiksnaTezina: 5,
+    razredi: [3, 4, 5], imaTezinu: false, fiksnaTezina: 5,
     tipoviGeneratora: ['text', 'truefalse'],
   },
   priroda_drustvo: {

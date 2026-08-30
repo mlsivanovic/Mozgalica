@@ -663,6 +663,11 @@ export function KvizForma() {
               <p className="blago malo razmak-dole">
                 Ove opcije se automatski pamte za kombinaciju {NAZIVI_PREDMETA[predmet]}{predmet === 'matematika' ? ` (${NAZIVI_RAZREDA[razred]})` : ''}.
               </p>
+              {predmet === 'srpski' && razred === 5 && (
+                <p className="poruka poruka--info razmak-dole">
+                  Sadržaj za 5. razred prati novi program nastave koji se primenjuje od školske 2027/28.
+                </p>
+              )}
 
               <div className="polje">
                 <label htmlFor="std-title">Naziv kviza</label>

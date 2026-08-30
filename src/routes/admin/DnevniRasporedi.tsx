@@ -274,6 +274,12 @@ export function DnevniRasporedi({
             </div>
           </div>
 
+          {forma.subject === 'srpski' && forma.grade === 5 && (
+            <p className="poruka poruka--info razmak-dole">
+              Sadržaj prati novi program nastave koji se primenjuje od školske 2027/28.
+            </p>
+          )}
+
           <div className="red-polja">
             <div className="polje">
               <label>Predmet</label>

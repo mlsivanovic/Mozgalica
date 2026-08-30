@@ -35,6 +35,9 @@ import { srpskiGramatika4 } from './moduli4/srpskiGramatika4.ts'
 import { srpskiRecnik4 } from './moduli4/srpskiRecnik4.ts'
 import { srpskiCitanje4 } from './moduli4/srpskiCitanje4.ts'
 import { MODULI5 } from './moduli5/index.ts'
+import { srpskiGramatika5 } from './moduliSrpski5/gramatika.ts'
+import { srpskiRecnik5 } from './moduliSrpski5/recnik.ts'
+import { srpskiCitanje5 } from './moduliSrpski5/citanje.ts'
 import { MODULI2 } from './moduli2/index.ts'
 import { MODULI_PRIRODE_I_DRUSTVA } from './moduliPid/index.ts'
 
@@ -50,6 +53,8 @@ const MODULI: TopicGenerator[] = [
   srpskiGramatika4, srpskiRecnik4, srpskiCitanje4,
   // Matematika, 5. razred
   ...MODULI5,
+  // Srpski jezik, 5. razred
+  srpskiGramatika5, srpskiRecnik5, srpskiCitanje5,
   // Srpski jezik, 3. razred
   srpskiVrsteReci, srpskiGramatika, srpskiCitanje, srpskiRecnik,
   // Priroda i društvo, 3. i 4. razred

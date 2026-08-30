@@ -52,7 +52,7 @@
 .kviz-pitanje-kartica {
   animation: kviz-uklizi 0.35s ease;
 }
-.kviz-pitanje-tekst { font-size: 1.35rem; line-height: 1.35; }
+.kviz-pitanje-tekst { font-size: 1.35rem; line-height: 1.35; white-space: pre-wrap; }
 
 .kviz-savet-dugme {
   border-radius: 999px !important;

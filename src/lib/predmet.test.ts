@@ -3,11 +3,11 @@ import { KONFIGURACIJA_PREDMETA, PREDMETI } from '../types/db.ts'
 import { predmetImaTezinu, razrediPredmeta, tezinaZaPredmet } from './predmet.ts'
 
 describe('centralna konfiguracija predmeta', () => {
-  it('matematika pokriva 2.–5. razred, ostali predmeti 3. i 4.', () => {
+  it('matematika pokriva 2.–5, srpski 3.–5, a priroda i društvo 3. i 4. razred', () => {
     expect(razrediPredmeta('matematika')).toEqual([2, 3, 4, 5])
     expect(PREDMETI).toContain('priroda_drustvo')
     expect(razrediPredmeta('priroda_drustvo')).toEqual([3, 4])
-    expect(razrediPredmeta('srpski')).toEqual([3, 4])
+    expect(razrediPredmeta('srpski')).toEqual([3, 4, 5])
     expect(KONFIGURACIJA_PREDMETA.priroda_drustvo.tipoviGeneratora).toEqual([
       'single', 'truefalse', 'matching',
     ])

@@ -112,6 +112,11 @@ export function Generator() {
         Generisana pitanja NIKAD se ne objavljuju direktno — prvo prolaze tvoj pregled na sledećem koraku.
         Izaberi jednu ili više oblasti da napraviš mešoviti kviz.
       </p>
+      {predmet === 'srpski' && razred === 5 && (
+        <p className="poruka poruka--info razmak-dole">
+          Sadržaj za 5. razred prati novi program nastave koji se primenjuje od školske 2027/28.
+        </p>
+      )}
 
       <div className="kartica razmak-dole gen-forma">
         <div className="gen-sekcija gen-sekcija--predmet">

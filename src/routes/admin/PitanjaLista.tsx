@@ -330,6 +330,11 @@ export function PitanjaLista() {
           </button>
         </div>
       </div>
+      {predmet === 'srpski' && razred === 5 && (
+        <p className="poruka poruka--info razmak-dole">
+          Sadržaj za 5. razred prati novi program nastave koji se primenjuje od školske 2027/28.
+        </p>
+      )}
 
       {greska && <p className="poruka poruka--greska">{greska}</p>}
 
