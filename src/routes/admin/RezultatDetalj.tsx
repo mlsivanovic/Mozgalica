@@ -1,6 +1,7 @@
 // Detaljan pregled jednog pokušaja: svi odgovori + ručna korekcija ocene
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
+import { RoditeljskiLink as Link } from '../../lib/roditelj'
 import { PitanjeRenderer } from '../../components/pitanja/PitanjeRenderer'
 import { Loader } from '../../components/Zajednicke'
 import {
@@ -12,6 +13,8 @@ import type { KvizPitanje, Pokusaj, PokusajOdgovor, PonovniOdgovorPokusaja } fro
 
 export function RezultatDetalj() {
   const { id } = useParams<{ id: string }>()
+  const [params,setParams] = useSearchParams()
+  const [ocenjuje,setOcenjuje] = useState(false)
   const [ucitava, setUcitava] = useState(true)
   const [greska, setGreska] = useState<string | null>(null)
   const [pokusaj, setPokusaj] = useState<Pokusaj | null>(null)
@@ -53,12 +56,14 @@ export function RezultatDetalj() {
   useEffect(() => { ucitaj() }, [id])
 
   async function ispravi(answerId: string, isCorrect: boolean, points: number) {
+    if(ocenjuje) return
+    setOcenjuje(true)
     try {
       await overrideOcene(answerId, isCorrect, points)
       await osvezi()
     } catch (e) {
       setGreska(String((e as Error).message ?? e))
-    }
+    } finally { setOcenjuje(false) }
   }
 
   if (ucitava) return <Loader />
@@ -70,11 +75,12 @@ export function RezultatDetalj() {
 
   return (
     <div>
+      <p className="razmak-dole"><Link to="/admin/napredak/rezultati">← Rezultati</Link></p>
       <h1>{pokusaj.child_name}{pokusaj.child_label ? ` (${pokusaj.child_label})` : ''}</h1>
       {greska && <p className="poruka poruka--greska">{greska}</p>}
 
       <div className="mreza-kartica razmak-dole">
-        <div className="kartica centar"><p className="blago malo">Rezultat</p><h2>{formatProcenat(pokusaj.score_pct)}</h2></div>
+        <div className="kartica centar"><p className="blago malo">Rezultat</p><h2>{pokusaj.review_pending ? 'Čeka pregled' : formatProcenat(pokusaj.score_pct)}</h2></div>
         <div className="kartica centar"><p className="blago malo">Poeni</p><h2>{pokusaj.total_points} / {pokusaj.max_points}</h2></div>
         <div className="kartica centar">
           <p className="blago malo">Zvezdice</p>
@@ -91,12 +97,14 @@ export function RezultatDetalj() {
 
       {pokusaj.review_pending && (
         <p className="poruka poruka--upozorenje razmak-dole">
-          ⏳ Ovaj pokušaj ima odgovore koji čekaju tvoju ocenu — prikazani rezultat je zato privremeno umanjen.
+          ⏳ Ovaj pokušaj ima odgovore koji čekaju tvoju ocenu — prikazani poeni su privremeni, a konačna ocena stiže posle pregleda.
         </p>
       )}
 
+      <div className="red razmak-dole" role="group" aria-label="Prikaz odgovora"><button className="dugme dugme--senka" aria-pressed={(params.get('odgovori') ?? (pokusaj.review_pending ? 'pending' : 'all')) === 'pending'} onClick={() => setParams(p => {p.set('odgovori','pending');return p})}>Za pregled ({odgovori.filter(o=>o.graded_by === 'pending').length})</button><button className="dugme dugme--senka" aria-pressed={params.get('odgovori') === 'all' || (!params.has('odgovori') && !pokusaj.review_pending)} onClick={() => setParams(p => {p.set('odgovori','all');return p})}>Svi odgovori</button></div>
+      {params.get('odgovori') === 'pending' && !odgovori.some(o => o.graded_by === 'pending') && <p className="poruka poruka--uspeh">Svi odgovori su pregledani. Izaberi „Svi odgovori“ za ceo pokušaj.</p>}
       <div className="mreza-kartica">
-        {pitanja.map((q, i) => {
+        {pitanja.filter(q => (params.get('odgovori') ?? (pokusaj.review_pending ? 'pending' : 'all')) !== 'pending' || mapaOdgovora.get(q.id)?.graded_by === 'pending').map((q) => {
           const odg = mapaOdgovora.get(q.id)
           const cekaOcenu = odg?.graded_by === 'pending'
           const boja = cekaOcenu ? 'var(--boja-ivica)' : odg?.is_correct ? 'var(--boja-uspeh)' : 'var(--boja-greska)'
@@ -106,7 +114,7 @@ export function RezultatDetalj() {
             <div key={q.id} className="kartica" style={{ borderLeft: `5px solid ${boja}` }}>
               <p className="malo blago">
                 <span style={{ fontWeight: 700, color: boja }}>{labela}</span>
-                {' · '}Pitanje {i + 1} · {odg?.awarded_points ?? 0} / {q.points} poena{' '}
+                {' · '}Pitanje {q.position + 1} · {odg?.awarded_points ?? 0} / {q.points} poena{' '}
                 {cekaOcenu ? '(čeka ručnu ocenu)' : odg?.graded_by === 'manual' ? '(ručno ocenjeno)' : '(automatski ocenjeno)'}
               </p>
               <p style={{ fontWeight: 700 }}>{q.text}</p>
@@ -122,14 +130,14 @@ export function RezultatDetalj() {
                 <div className="red razmak-gore">
                   <button
                     type="button" className="dugme dugme--senka dugme--malo"
-                    disabled={odg.is_correct === true}
+                    disabled={ocenjuje || odg.is_correct === true}
                     onClick={() => ispravi(odg.id, true, q.points)}
                   >
                     Označi tačnim
                   </button>
                   <button
                     type="button" className="dugme dugme--senka dugme--malo"
-                    disabled={odg.is_correct === false}
+                    disabled={ocenjuje || odg.is_correct === false}
                     onClick={() => ispravi(odg.id, false, 0)}
                   >
                     Označi netačnim

@@ -69,3 +69,8 @@ describe('automatska arhiva kvizova', () => {
     expect(rezultat.aktivni).toHaveLength(1)
   })
 })
+
+it('pomera završen kviz u arhivu na beogradsku ponoć nezavisno od lokalne zone', () => {
+  const rezultat = podeliKvizove([KVIZ], [status({last_submitted_at:'2026-08-30T21:59:00Z'})], new Date('2026-08-30T22:01:00Z'))
+  expect(rezultat.arhivirani).toHaveLength(1)
+})

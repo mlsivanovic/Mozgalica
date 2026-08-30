@@ -1,6 +1,6 @@
 // Banka pitanja: filteri + tabela + CRUD + bulk selekcija (dodaj u kviz / novi kviz)
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useRoditeljskiNavigate as useNavigate } from '../../lib/roditelj'
 import {
   dodajPitanjaUKviz, listajKvizove, listajOblasti, listajPitanja, obrisiPitanja, obrisiPitanje,
   postaviPitanjaKviza, sacuvajKviz, ucitajPocetnaPitanja,

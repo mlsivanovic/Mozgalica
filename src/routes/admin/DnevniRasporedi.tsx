@@ -1,5 +1,5 @@
 // Administratorski pregled i forma za svakodnevno, serverski zakazano slanje kvizova.
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { podrzaneOblasti } from '../../generator'
 import {
   listajOblasti, listajProfileDeteta, obrisiDnevniRasporedKviza,
@@ -83,9 +83,13 @@ function nazivIzvora(izvor: IzvorDnevnogKviza): string {
 }
 
 export function DnevniRasporedi({
-  rasporedi, onPromena,
+  rasporedi, onPromena, otvoriId, pocetnoDete = '', samoForma = false, onZatvori,
 }: {
   rasporedi: DnevniRasporedKviza[]
+  otvoriId?: string
+  pocetnoDete?: string
+  samoForma?: boolean
+  onZatvori?: () => void
   onPromena: () => Promise<void>
 }) {
   const [profili, setProfili] = useState<ProfilDeteta[]>([])
@@ -163,6 +167,14 @@ export function DnevniRasporedi({
     })
   }
 
+  const otvorenaForma = useRef<string | null>(null)
+  useEffect(() => {
+    if (!otvoriId || profili.length === 0 || otvorenaForma.current === otvoriId) return
+    otvorenaForma.current = otvoriId
+    const raspored = rasporedi.find(r => r.id === otvoriId)
+    setForma(raspored ? formaIzRasporeda(raspored) : otvoriId === 'novi' ? { ...novaForma(profili), childProfileId: pocetnoDete } : null)
+  }, [otvoriId, profili, rasporedi, pocetnoDete])
+
   async function sacuvaj() {
     if (!forma) return
     if (!forma.childProfileId) { setGreska('Izaberi dete kome se kviz šalje.'); return }
@@ -212,7 +224,7 @@ export function DnevniRasporedi({
 
   return (
     <section>
-      <div className="red red--razmak razmak-dole">
+      <div className="red red--razmak razmak-dole" hidden={samoForma}>
         <div>
           <h2>Dnevni rasporedi</h2>
           <p className="blago malo">Svaki dan nastaje novi kviz. Push stiže na povezane uređaje, a pametna vežba može da pošalje nedeljni mejl roditelju.</p>
@@ -222,14 +234,14 @@ export function DnevniRasporedi({
         </button>
       </div>
 
-      {profili.length === 0 && <p className="poruka poruka--info">Prvo napravi profil deteta u Podešavanjima.</p>}
+      {profili.length === 0 && <p className="poruka poruka--info">Prvo dodaj dete preko opcije Upravljaj decom.</p>}
       {greska && <p className="poruka poruka--greska">{greska}</p>}
 
       {forma && (
         <div className="kartica razmak-dole generator-strana">
           <div className="red red--razmak">
             <h3>{forma.id ? 'Uredi dnevni raspored' : 'Novi dnevni raspored'}</h3>
-            <button type="button" className="dugme dugme--senka dugme--malo" onClick={() => setForma(null)}>Otkaži</button>
+            <button type="button" className="dugme dugme--senka dugme--malo" onClick={() => { setForma(null); onZatvori?.() }}>Otkaži</button>
           </div>
           <p className="blago malo razmak-dole">Prvi kviz stiže u prvom narednom izabranom terminu po vremenu Srbije.</p>
 
@@ -265,6 +277,7 @@ export function DnevniRasporedi({
             <div className="polje">
               <label htmlFor="dr-dete">Dete</label>
               <select id="dr-dete" value={forma.childProfileId} onChange={(e) => setForma({ ...forma, childProfileId: e.target.value })}>
+                <option value="">Izaberi dete…</option>
                 {profili.map((profil) => <option key={profil.id} value={profil.id}>{profil.avatar} {profil.name}</option>)}
               </select>
             </div>
@@ -381,15 +394,15 @@ export function DnevniRasporedi({
         </div>
       )}
 
-      {rasporedi.length === 0 ? (
+      {samoForma ? null : rasporedi.length === 0 ? (
         <p className="blago">Nema dnevnih rasporeda. Napravi prvi raspored za redovno vežbanje.</p>
       ) : (
         <div className="mreza-kartica">
-          {rasporedi.map((raspored) => (
+          {!samoForma && rasporedi.map((raspored) => (
             <article className="kartica" key={raspored.id}>
               <div className="red red--razmak">
                 <h3>{raspored.child_avatar} {raspored.child_name}</h3>
-                <span className={`bedz ${raspored.is_active ? 'bedz--uspeh' : 'bedz--neutral'}`}>{raspored.is_active ? 'Aktivan' : 'Pauziran'}</span>
+                <span className={`bedz ${raspored.is_active ? 'bedz--uspeh' : 'bedz--neutral'}`}>{raspored.is_active ? 'Uključen' : 'Pauziran'}</span>
               </div>
               {raspored.smart_mode && <span className="bedz bedz--uspeh">🧠 Pametna vežba</span>}
               <p>{NAZIVI_PREDMETA[raspored.subject]} · {NAZIVI_RAZREDA[raspored.grade]} · {raspored.question_count} pitanja</p>

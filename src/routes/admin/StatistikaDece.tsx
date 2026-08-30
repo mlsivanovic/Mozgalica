@@ -1,6 +1,6 @@
 // Pregled svih profila sa najvažnijim pokazateljima statistike.
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { RoditeljskiLink as Link } from '../../lib/roditelj'
 import { TitleAvatar } from '../../components/TitleAvatar'
 import { Loader } from '../../components/Zajednicke'
 import { ucitajPregledStatistikeDece } from '../../lib/api'

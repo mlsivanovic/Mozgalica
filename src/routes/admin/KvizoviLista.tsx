@@ -1,6 +1,9 @@
 // Aktivni i automatski arhivirani kvizovi administratora.
+import { useSearchParams } from 'react-router-dom'
+import { useRoditelj } from '../../lib/roditelj'
+import { supabase } from '../../lib/supabase'
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { RoditeljskiLink as Link, useRoditeljskiNavigate as useNavigate } from '../../lib/roditelj'
 import {
   listajDnevneRasporedeKvizova, listajKvizove, listajStatuseArhiveKvizova, obrisiKviz,
   type StatusArhiveKviza,
@@ -19,7 +22,11 @@ export function KvizoviLista() {
   const [kvizovi, setKvizovi] = useState<Kviz[]>([])
   const [statusi, setStatusi] = useState<StatusArhiveKviza[]>([])
   const [rasporedi, setRasporedi] = useState<DnevniRasporedKviza[]>([])
-  const [prikaz, setPrikaz] = useState<PrikazKvizova>('aktivni')
+  const { deteId } = useRoditelj()
+  const [params,setParams] = useSearchParams()
+  const prikaz = (params.get('prikaz') ?? 'aktivni') as PrikazKvizova
+  const setPrikaz = (v: PrikazKvizova) => setParams(p => {p.set('prikaz',v);return p})
+  const [dodele,setDodele] = useState<Array<{quiz_id:string; child_profile_id:string|null}>>([])
   const [greska, setGreska] = useState<string | null>(null)
 
   async function ucitaj() {
@@ -29,6 +36,9 @@ export function KvizoviLista() {
       const [ucitaniKvizovi, ucitaniStatusi, ucitaniRasporedi] = await Promise.all([
         listajKvizove(), listajStatuseArhiveKvizova(), listajDnevneRasporedeKvizova(),
       ])
+      const { data: veze, error: greskaVeza } = await supabase().from('quiz_links').select('quiz_id,child_profile_id')
+      if(greskaVeza) throw greskaVeza
+      setDodele(veze ?? [])
       setKvizovi(ucitaniKvizovi)
       setStatusi(ucitaniStatusi)
       setRasporedi(ucitaniRasporedi)
@@ -40,10 +50,11 @@ export function KvizoviLista() {
   }
 
   useEffect(() => { void ucitaj() }, [])
+  useEffect(() => { if (prikaz === 'rasporedi') navigate('/admin/vezbanje/rasporedi', { replace: true }) }, [prikaz, navigate])
 
   const { aktivni, arhivirani } = useMemo(
-    () => podeliKvizove(kvizovi, statusi),
-    [kvizovi, statusi],
+    () => podeliKvizove(kvizovi.filter(k => !deteId || dodele.some(d => d.quiz_id === k.id && d.child_profile_id === deteId)), statusi),
+    [kvizovi, statusi, deteId, dodele],
   )
 
   async function obrisi(id: string) {
@@ -59,6 +70,7 @@ export function KvizoviLista() {
   }
 
   if (ucitava) return <Loader />
+  if (greska && kvizovi.length === 0) return <div className="poruka poruka--greska" role="alert">{greska}<button className="dugme" onClick={() => void ucitaj()}>Pokušaj ponovo</button></div>
 
   const prikazaniAktivni = prikaz === 'aktivni' ? aktivni : []
   const prikazaniArhivirani = prikaz === 'arhiva' ? arhivirani : []
@@ -67,7 +79,7 @@ export function KvizoviLista() {
   return (
     <div>
       <div className="zaglavlje-strane">
-        <h1>Kvizovi</h1>
+        <h2>Kvizovi i arhiva</h2>
         <button type="button" className="dugme dugme--akcenat" onClick={() => navigate('/admin/kvizovi/novi')}>
           + Novi kviz
         </button>
@@ -96,7 +108,7 @@ export function KvizoviLista() {
           type="button"
           className={`dugme ${prikaz === 'rasporedi' ? '' : 'dugme--senka'}`}
           aria-pressed={prikaz === 'rasporedi'}
-          onClick={() => setPrikaz('rasporedi')}
+          onClick={() => navigate('/admin/vezbanje/rasporedi')}
         >
           Dnevni rasporedi <span className="bedz">{rasporedi.length}</span>
         </button>
@@ -153,13 +165,13 @@ function KvizKartica({
         <Link to={`/admin/kvizovi/${kviz.id}`} className="dugme dugme--senka dugme--malo">
           Otvori
         </Link>
-        <button
+        <details><summary>Radnje</summary><button
           type="button"
-          className="dugme dugme--opasno dugme--malo"
+          className="dugme dugme--senka dugme--malo"
           onClick={() => { void onObrisi(kviz.id) }}
         >
           Obriši
-        </button>
+        </button></details>
       </div>
     </article>
   )

@@ -1,11 +1,16 @@
 import { lazy, Suspense } from 'react'
 import { HashRouter, Navigate, Route, Routes, useParams } from 'react-router-dom'
 import { AdminLayout } from './components/AdminLayout'
-import { PitanjaSekcija, RezultatiSekcija } from './components/AdminSekcijaTabovi'
+import { PitanjaSekcija } from './components/AdminSekcijaTabovi'
+import { VezbanjeSekcija, NagradeSekcija } from './components/RoditeljskeSekcije'
+import { Vezbanje } from './routes/admin/Vezbanje'
+import { Rasporedi } from './routes/admin/Rasporedi'
+import { Napredak, NapredakSekcija } from './routes/admin/Napredak'
+import { Zadaj } from './routes/admin/Zadaj'
+import { RoditeljskoPreusmerenje } from './lib/roditelj'
 import { AuthProvider } from './lib/auth'
 import { Generator } from './routes/admin/Generator'
 import { KvizDetalj } from './routes/admin/KvizDetalj'
-import { KvizForma } from './routes/admin/KvizForma'
 import { KvizoviLista } from './routes/admin/KvizoviLista'
 import { Kontrolna } from './routes/admin/Kontrolna'
 import { PitanjaLista } from './routes/admin/PitanjaLista'
@@ -13,8 +18,6 @@ import { Podesavanja } from './routes/admin/Podesavanja'
 import { Prijava } from './routes/admin/Prijava'
 import { RezultatDetalj } from './routes/admin/RezultatDetalj'
 import { Rezultati } from './routes/admin/Rezultati'
-import { StatistikaDece } from './routes/admin/StatistikaDece'
-import { StatistikaDetetaDetalj } from './routes/admin/StatistikaDetetaDetalj'
 import { KvizRezultat } from './routes/kviz/KvizRezultat'
 import { KvizResavanje } from './routes/kviz/KvizResavanje'
 import { KvizUlaz } from './routes/kviz/KvizUlaz'
@@ -38,24 +41,38 @@ function App() {
 
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<Kontrolna />} />
-            <Route path="pitanja" element={<PitanjaSekcija />}>
-              <Route index element={<PitanjaLista />} />
-              <Route path="generator" element={<Generator />} />
+            <Route element={<VezbanjeSekcija />}>
+              <Route path="vezbanje" element={<Vezbanje />} />
+              <Route path="vezbanje/rasporedi" element={<Rasporedi />} />
+              <Route path="pitanja" element={<PitanjaSekcija />}>
+                <Route index element={<PitanjaLista />} />
+                <Route path="generator" element={<Generator />} />
+              </Route>
+              <Route path="kvizovi" element={<KvizoviLista />} />
             </Route>
-            <Route path="generator" element={<Navigate to="/admin/pitanja/generator" replace />} />
-            <Route path="kvizovi" element={<KvizoviLista />} />
-            <Route path="kvizovi/novi" element={<KvizForma />} />
+            <Route path="generator" element={<RoditeljskoPreusmerenje to="/admin/pitanja/generator" />} />
+            <Route path="zadaj" element={<Zadaj />} />
+            <Route path="kvizovi/novi" element={<RoditeljskoPreusmerenje to="/admin/zadaj" />} />
             <Route path="kvizovi/:id" element={<KvizDetalj />} />
             <Route path="sah" element={<Sah />} />
-            <Route path="rezultati" element={<RezultatiSekcija />}>
-              <Route index element={<Rezultati />} />
-              <Route path="statistika" element={<StatistikaDece />} />
-              <Route path="statistika/:profilId" element={<StatistikaDetetaDetalj />} />
-              <Route path=":id" element={<RezultatDetalj />} />
+            <Route path="napredak" element={<NapredakSekcija />}>
+              <Route index element={<Napredak />} />
+              <Route path="rezultati" element={<Rezultati />} />
             </Route>
-            <Route path="statistika-dece" element={<Navigate to="/admin/rezultati/statistika" replace />} />
+            <Route path="rezultati" element={<RoditeljskoPreusmerenje to="/admin/napredak/rezultati" />} />
+            <Route path="rezultati/statistika" element={<RoditeljskoPreusmerenje to="/admin/napredak" />} />
+            <Route path="rezultati/statistika/:profilId" element={<PreusmeriStaruStatistiku />} />
+            <Route path="rezultati/:id" element={<RezultatDetalj />} />
+            <Route path="statistika-dece" element={<RoditeljskoPreusmerenje to="/admin/napredak" />} />
             <Route path="statistika-dece/:profilId" element={<PreusmeriStaruStatistiku />} />
-            <Route path="podesavanja" element={<Podesavanja />} />
+            <Route path="nagrade" element={<NagradeSekcija />}>
+              <Route index element={<Podesavanja key="isporuka" sekcija="isporuka" />} />
+              <Route path="istorija" element={<Podesavanja key="istorija" sekcija="istorija" />} />
+              <Route path="katalog" element={<Podesavanja key="katalog" sekcija="katalog" />} />
+              <Route path="pravila" element={<Podesavanja key="pravila" sekcija="pravila" />} />
+            </Route>
+            <Route path="deca" element={<Podesavanja key="profili" sekcija="profili" />} />
+            <Route path="podesavanja" element={<Podesavanja key="obavestenja" />} />
           </Route>
 
           <Route path="/kviz/:token" element={<KvizUlaz />} />
@@ -76,7 +93,7 @@ function App() {
 
 function PreusmeriStaruStatistiku() {
   const { profilId } = useParams<{ profilId: string }>()
-  return <Navigate to={`/admin/rezultati/statistika/${profilId ?? ''}`} replace />
+  return <RoditeljskoPreusmerenje to={`/admin/napredak?dete=${profilId ?? ''}`} />
 }
 
 export default App

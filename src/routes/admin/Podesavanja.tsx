@@ -1,7 +1,7 @@
 // Administratorska podešavanja: profili dece, šah, titule, prodavnica i obaveštenja.
 import { useEffect, useState } from 'react'
 import { PushKontrole } from '../../components/PushKontrole'
-import { Loader } from '../../components/Zajednicke'
+import { Loader, TemaDugme } from '../../components/Zajednicke'
 import { IkonaNagrade } from '../../components/IkonaNagrade'
 import { OznakaRangaTitule, TitleAvatar } from '../../components/TitleAvatar'
 import {
@@ -10,6 +10,7 @@ import {
   sacuvajNivoeTitula, sacuvajProfilDeteta, sacuvajSahNagrade, sacuvajStavkeProdavnice,
   ucitajJavniProfil, ucitajPodesavanja, ucitajSahNagrade, type KupovinaAdminPrikaz,
 } from '../../lib/api'
+import { useRoditelj } from '../../lib/roditelj'
 import { useAuth } from '../../lib/auth'
 import { emailJeIspravan, normalizujEmail } from '../../lib/email'
 import { formatDatum, formatProcenat } from '../../lib/format'
@@ -254,18 +255,13 @@ function validirajStavke(stavke: StavkaForma[]): string | null {
   return null
 }
 
-const TABOVI: Array<{ id: TabPodesavanja, naziv: string, ikona: string }> = [
-  { id: 'profili', naziv: 'Profili dece', ikona: '👥' },
-  { id: 'sah', naziv: 'Šah', ikona: '♟️' },
-  { id: 'titule', naziv: 'Titule', ikona: '🏆' },
-  { id: 'prodavnica', naziv: 'Prodavnica', ikona: '🛒' },
-  { id: 'obavestenja', naziv: 'Obaveštenja', ikona: '🔔' },
-]
-
-export function Podesavanja() {
-  const { session } = useAuth()
+type Sekcija = 'profili' | 'pravila' | 'isporuka' | 'istorija' | 'katalog' | 'obavestenja'
+export function Podesavanja({ sekcija = 'obavestenja' }: { sekcija?: Sekcija }) {
+  const { session, odjavi } = useAuth()
+  const { deteId, osveziProfile } = useRoditelj()
+  const [pravilo, setPravilo] = useState<TabPodesavanja>('titule')
+  const aktivanTab = sekcija === 'pravila' ? pravilo : ['isporuka', 'istorija', 'katalog'].includes(sekcija) ? 'prodavnica' : sekcija
   const [ucitava, setUcitava] = useState(true)
-  const [aktivanTab, setAktivanTab] = useState<TabPodesavanja>('profili')
   const [ukljucena, setUkljucena] = useState(true)
   const [profili, setProfili] = useState<ProfilDeteta[]>([])
   const [preglediProfila, setPreglediProfila] = useState<Record<string, JavniProfilPayload>>({})
@@ -285,24 +281,27 @@ export function Podesavanja() {
   const [cuvaKatalog, setCuvaKatalog] = useState(false)
   const [radiKupovinu, setRadiKupovinu] = useState(false)
 
+  const [ucitano, setUcitano] = useState(false)
   async function ucitajSve() {
+    setGreska(null)
     setUcitava(true)
     try {
-      const [podesavanja, ucitaniProfili, ucitaniNivoi, nagrade, stavke, ucitaneKupovine] = await Promise.all([
-        ucitajPodesavanja(), listajProfileDeteta(), listajNivoeTitula(), ucitajSahNagrade(),
-        listajStavkeProdavnice().catch(() => [] as StavkaProdavnice[]),
-        listajKupovineProdavnice().catch(() => [] as KupovinaAdminPrikaz[]),
-      ])
-      setUkljucena(podesavanja?.email_notifications ?? true)
-      setProfili(ucitaniProfili)
-      setTitleGroups(groupTitleLevels(ucitaniNivoi))
-      setSahNagrade(nagrade)
-      setStavkeProdavnice(stavke.map(stavkaUFormu))
-      setKupovine(ucitaneKupovine)
-      const pregledi = await Promise.all(ucitaniProfili.map(async (profil) => (
-        [profil.id, await ucitajJavniProfil(profil.public_token)] as const
-      )))
-      setPreglediProfila(Object.fromEntries(pregledi))
+      if (sekcija === 'profili') {
+        const ucitaniProfili = await listajProfileDeteta()
+        setProfili(ucitaniProfili)
+        const pregledi = await Promise.all(ucitaniProfili.map(async profil => [profil.id, await ucitajJavniProfil(profil.public_token)] as const))
+        setPreglediProfila(Object.fromEntries(pregledi))
+      } else if (sekcija === 'pravila') {
+        const [nivoi, nagrade] = await Promise.all([listajNivoeTitula(), ucitajSahNagrade()])
+        setTitleGroups(groupTitleLevels(nivoi)); setSahNagrade(nagrade)
+      } else if (sekcija === 'katalog') {
+        setStavkeProdavnice((await listajStavkeProdavnice()).map(stavkaUFormu))
+      } else if (sekcija === 'isporuka' || sekcija === 'istorija') {
+        setKupovine(await listajKupovineProdavnice())
+      } else {
+        setUkljucena((await ucitajPodesavanja())?.email_notifications ?? true)
+      }
+      setUcitano(true)
     } catch (e) {
       setGreska(String((e as Error).message ?? e))
     } finally {
@@ -377,6 +376,7 @@ export function Podesavanja() {
       }, forma.id)
       setForma(null)
       await ucitajSve()
+      await osveziProfile()
       setPoruka('Profil je sačuvan.')
     } catch (e) {
       setGreska(String((e as Error).message ?? e))
@@ -612,42 +612,32 @@ export function Podesavanja() {
   }
 
   function promeniTab(tab: TabPodesavanja) {
-    setAktivanTab(tab)
+    setPravilo(tab)
     setForma(null)
     setGreska(null)
     setPoruka(null)
   }
 
+  const prikazaneKupovine = kupovine.filter(k => (!deteId || k.childProfileId === deteId)
+    && (sekcija === 'isporuka' ? k.status === 'requested' : k.status !== 'requested'))
   if (ucitava) return <Loader />
+  if (!ucitano && greska) return <div role="alert" className="poruka poruka--greska">{greska} <button className="dugme" onClick={() => void ucitajSve()}>Pokušaj ponovo</button></div>
 
   return (
     <div className="sadrzaj">
-      <h1>Podešavanja</h1>
+      {sekcija === 'profili' ? <h1>Upravljaj decom</h1> : sekcija === 'pravila' ? <h1>Titule i pravila za zvezdice</h1> : sekcija === 'obavestenja' ? <h1>Podešavanja aplikacije</h1> : null}
       {poruka && <p className="poruka poruka--uspeh razmak-gore">{poruka}</p>}
       {greska && <p className="poruka poruka--greska razmak-gore" role="alert">{greska}</p>}
 
-      <div className="podesavanja-tabovi" role="tablist" aria-label="Sekcije podešavanja">
-        {TABOVI.map((tab) => (
-          <button
-            key={tab.id}
-            id={`podesavanja-tab-${tab.id}`}
-            type="button"
-            role="tab"
-            aria-selected={aktivanTab === tab.id}
-            aria-controls={`podesavanja-panel-${tab.id}`}
-            className={`podesavanja-tab ${aktivanTab === tab.id ? 'podesavanja-tab--aktivan' : ''}`}
-            onClick={() => promeniTab(tab.id)}
-          >
-            <span aria-hidden="true">{tab.ikona}</span>
-            {tab.naziv}
-          </button>
-        ))}
-      </div>
+      {sekcija === 'pravila' && <div className="red razmak-gore razmak-dole" role="group" aria-label="Pravila nagrađivanja">
+        <button className="dugme dugme--senka" aria-pressed={pravilo === 'titule'} onClick={() => promeniTab('titule')}>Titule</button>
+        <button className="dugme dugme--senka" aria-pressed={pravilo === 'sah'} onClick={() => promeniTab('sah')}>Zvezdice za šah</button>
+      </div>}
 
       {aktivanTab === 'profili' && (
       <section
         id="podesavanja-panel-profili" className="kartica podesavanja-panel"
-        role="tabpanel" aria-labelledby="podesavanja-tab-profili"
+        aria-label="profili"
       >
         <div className="red red--razmak">
           <div>
@@ -830,7 +820,7 @@ export function Podesavanja() {
       {aktivanTab === 'sah' && (
       <section
         id="podesavanja-panel-sah" className="kartica podesavanja-panel"
-        role="tabpanel" aria-labelledby="podesavanja-tab-sah"
+        aria-label="sah"
       >
         <h2>Nagrade za šah</h2>
         <p className="blago">
@@ -894,7 +884,7 @@ export function Podesavanja() {
       {aktivanTab === 'titule' && (
       <section
         id="podesavanja-panel-titule" className="kartica podesavanja-panel"
-        role="tabpanel" aria-labelledby="podesavanja-tab-titule"
+        aria-label="titule"
       >
         <h2>Titule i podtitule</h2>
         <p className="blago razmak-dole">
@@ -928,7 +918,7 @@ export function Podesavanja() {
                       />
                     </div>
                   </div>
-                  
+
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }} onClick={(e) => e.stopPropagation()}>
                     <button
                       type="button"
@@ -955,7 +945,7 @@ export function Podesavanja() {
                     {/* Avatar sekcija */}
                     <div className="titula-avatar-podesavanje" style={{ padding: '1rem', borderBottom: '1px solid var(--boja-ivica)', background: 'var(--boja-polje)', borderRadius: 'var(--radius)', marginBottom: '1rem' }}>
                       <p className="malo blago" style={{ fontWeight: 800, textTransform: 'uppercase', marginBottom: '0.6rem' }}>Avatar i izgled titule</p>
-                      
+
                       {/* Previews */}
                       <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap', alignItems: 'center', marginBottom: '1rem' }}>
                         <div style={{ textAlign: 'center' }}>
@@ -1118,8 +1108,9 @@ export function Podesavanja() {
       {aktivanTab === 'prodavnica' && (
       <section
         id="podesavanja-panel-prodavnica" className="kartica podesavanja-panel"
-        role="tabpanel" aria-labelledby="podesavanja-tab-prodavnica"
+        aria-label="prodavnica"
       >
+        {sekcija === 'katalog' && <>
         <div className="red red--razmak">
           <div>
             <h2>Katalog nagrada</h2>
@@ -1137,10 +1128,9 @@ export function Podesavanja() {
           {stavkeProdavnice.length === 0 ? (
             <p className="blago">Još nema stavki. Dodaj prvu nagradu gore.</p>
           ) : stavkeProdavnice.map((stavka) => (
-            <div
-              key={stavka.tempId}
-              className={`prodavnica-stavka-red ${stavka.is_active ? '' : 'prodavnica-stavka-red--neaktivna'}`}
-            >
+            <details key={stavka.tempId} className="roditelj-katalog-stavka" open={stavka.tempId.startsWith('nova-') || undefined}>
+              <summary><span>{stavka.emoji} <strong>{stavka.title || 'Nova nagrada'}</strong></span><span>{stavka.cost} ⭐ · {stavka.is_active ? 'Aktivna' : 'Neaktivna'} · Uredi</span></summary>
+              <div className="prodavnica-stavka-red">
               <div className="prodavnica-stavka-ikona">
                 <IkonaNagrade
                   iconUrl={stavka.icon_url}
@@ -1220,6 +1210,7 @@ export function Podesavanja() {
                 Obriši
               </button>
             </div>
+            </details>
           ))}
         </div>
 
@@ -1229,23 +1220,25 @@ export function Podesavanja() {
           </button>
         </div>
 
+        </>}
+        {sekcija !== 'katalog' && (
         <div style={{ marginTop: '2rem', borderTop: '1px solid var(--boja-ivica)', paddingTop: '1.2rem' }}>
-          <h2>Kupovine dece</h2>
+          <h2>{sekcija === 'isporuka' ? 'Za isporuku' : 'Istorija nagrada'}</h2>
           <p className="blago malo">
             Označi nagradu kao ostvarenu kada je isporučiš detetu. Otkazivanje vraća potrošene
             zvezdice u detetov raspoloživi balans.
           </p>
 
-          <div className="prodavnica-filteri razmak-gore" role="group" aria-label="Filter po statusu">
+          <div hidden={sekcija === 'isporuka'} className="prodavnica-filteri razmak-gore" role="group" aria-label="Filter po statusu">
             {([
               ['sve', 'Sve'],
-              ['requested', 'Čeka isporuku'],
+
               ['consumed', 'Ostvarene'],
               ['cancelled', 'Otkazane'],
             ] as const).map(([id, naziv]) => {
               const broj = id === 'sve'
-                ? kupovine.length
-                : kupovine.filter((k) => k.status === id).length
+                ? prikazaneKupovine.length
+                : prikazaneKupovine.filter((k) => k.status === id).length
               return (
                 <button
                   key={id}
@@ -1260,9 +1253,9 @@ export function Podesavanja() {
           </div>
 
           <div className="prodavnica-kupovine razmak-gore">
-            {kupovine.filter((k) => filterKupovina === 'sve' || k.status === filterKupovina).length === 0 ? (
+            {prikazaneKupovine.filter((k) => filterKupovina === 'sve' || k.status === filterKupovina).length === 0 ? (
               <p className="blago">Nema kupovina u ovoj kategoriji.</p>
-            ) : kupovine
+            ) : prikazaneKupovine
               .filter((k) => filterKupovina === 'sve' || k.status === filterKupovina)
               .map((kupovina) => (
                 <div key={kupovina.id} className="prodavnica-kupovina">
@@ -1325,14 +1318,16 @@ export function Podesavanja() {
               ))}
           </div>
         </div>
+        )}
       </section>
       )}
 
       {aktivanTab === 'obavestenja' && (
       <section
         id="podesavanja-panel-obavestenja" className="kartica podesavanja-panel"
-        role="tabpanel" aria-labelledby="podesavanja-tab-obavestenja"
+        aria-label="obavestenja"
       >
+        <div className="roditelj-alati"><div><h2>Izgled</h2><p className="blago">Svetla ili tamna tema</p></div><TemaDugme /></div>
         <h2>Mejl obaveštenja</h2>
         <p className="blago razmak-dole">
           Kada dete završi kviz, na tvoju email adresu stiže obaveštenje sa rezultatom.
@@ -1349,6 +1344,7 @@ export function Podesavanja() {
           </p>
           <PushKontrole />
         </div>
+        <div className="roditelj-sekcija"><h2>Nalog</h2><button className="dugme dugme--senka" onClick={() => void odjavi()}>Odjavi se</button></div>
       </section>
       )}
     </div>

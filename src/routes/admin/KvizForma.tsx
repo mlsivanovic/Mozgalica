@@ -1,11 +1,11 @@
 // Kreiranje novog kviza — podržava Standardni (automatski generisani) i Slobodan (ručni unos) režim rada.
 // Podešavanja standardnog kviza čuvaju se zasebno za svaku kombinaciju predmeta i razreda u LocalStorage-u.
-import { useCallback, useEffect, useState, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useCallback, useEffect, useState, useMemo, useRef } from 'react'
+import { useRoditeljskiNavigate as useNavigate } from '../../lib/roditelj'
 import { generisi, podrzaneOblasti } from '../../generator'
 import { IKONE_GENERISANIH_OBLASTI, NAZIVI_GENERISANIH_OBLASTI } from '../../generator/oblasti'
 import {
-  listajOblasti, listajPitanja, sacuvajKviz, postaviPitanjaKviza,
+  listajOblasti, listajPitanja, napraviKvizSaId, postaviPitanjaKviza,
   listajProfileDeteta, dodeliKvizProfilu,
   type FilterPitanja, type SnapshotUnos,
 } from '../../lib/api'
@@ -33,7 +33,7 @@ interface StandardQuizConfig {
   passThreshold: number
 }
 
-export function KvizForma() {
+export function KvizForma({ pocetnoDete = '', onNazad }: { pocetnoDete?: string; onNazad?: () => void }) {
   const navigate = useNavigate()
   const [mod, setMod] = useState<'standard' | 'manual'>('standard')
   
@@ -44,7 +44,13 @@ export function KvizForma() {
   
   // Profili dece za dodelu kviza
   const [profiliDece, setProfiliDece] = useState<ProfilDeteta[]>([])
-  const [izabranoDete, setIzabranoDete] = useState<string>('') // prazno za "bez deteta"
+  const [izabranoDete, setIzabranoDete] = useState<string>(pocetnoDete) // prazno za "bez deteta"
+
+  const [potvrda, setPotvrda] = useState(false)
+  const [zapoceto, setZapoceto] = useState(false)
+  const [posaljiEmail, setPosaljiEmail] = useState(false)
+  const kreiranje = useRef<{ id: string; snapshot: boolean; zahtev: string; unosi: SnapshotUnos[] | null; radi: boolean }>({ id: crypto.randomUUID(), snapshot: false, zahtev: crypto.randomUUID(), unosi: null, radi: false })
+  useEffect(() => { if (!zapoceto) setIzabranoDete(pocetnoDete) }, [pocetnoDete, zapoceto])
 
   // Spisak oblasti koje imaju automatski generator na backendu
   const podrzaneSlugs = useMemo(() => podrzaneOblasti(), [])
@@ -73,12 +79,12 @@ export function KvizForma() {
   // Učitavanje oblasti pri montiranju
   useEffect(() => {
     listajOblasti().then(setOblasti).catch((e) => {
-      console.error('Greška pri učitavanju oblasti:', e)
+      setGreska(`Oblasti nisu učitane. Osveži stranicu i pokušaj ponovo. ${(e as Error).message}`)
     })
 
     // Učitavanje profila dece
     listajProfileDeteta().then(setProfiliDece).catch((e) => {
-      console.error('Greška pri učitavanju profila dece:', e)
+      setGreska(`Profili nisu učitani. Osveži stranicu i pokušaj ponovo. ${(e as Error).message}`)
     })
   }, [])
 
@@ -228,14 +234,17 @@ export function KvizForma() {
 
   // Kreiranje slobodnog (ručnog) kviza
   async function napraviRucno() {
+    if (kreiranje.current.radi) return
     if (manualTitle.trim().length < 2) {
       setGreska('Unesi naziv kviza.')
       return
     }
     setGreska(null)
+    kreiranje.current.radi = true
     setCuva(true)
     try {
-      const quizId = await sacuvajKviz({
+      setZapoceto(true)
+      const quizId = await napraviKvizSaId({
         title: manualTitle.trim(),
         description: manualDescription.trim() || null,
         time_limit_seconds: null,
@@ -250,23 +259,20 @@ export function KvizForma() {
         require_label: false,
         label_name: 'Odeljenje',
         grade: razred,
-      })
+      }, kreiranje.current.id)
 
-      // Dodeli kviz izabranom detetu ako je odabrano
-      if (izabranoDete) {
-        await dodeliKvizProfilu(quizId, izabranoDete, true)
-      }
-
-      navigate(`/admin/kvizovi/${quizId}`)
+      navigate(`/admin/kvizovi/${quizId}?primalac=${izabranoDete}`)
     } catch (e) {
       setGreska(String((e as Error).message ?? e))
     } finally {
+      kreiranje.current.radi = false
       setCuva(false)
     }
   }
 
   // Kreiranje i generisanje standardnog kviza
   async function generisiKviz() {
+    if (kreiranje.current.radi) return
     if (cfg.title.trim().length < 2) {
       setGreska('Unesi naziv kviza.')
       return
@@ -278,35 +284,20 @@ export function KvizForma() {
       setGreska('Moraš izabrati barem jednu oblast za kviz.')
       return
     }
-    if (cfg.count < 1) {
-      setGreska('Broj pitanja mora biti veći od nule.')
+    if (!Number.isInteger(cfg.count) || cfg.count < 1 || cfg.count > 50) {
+      setGreska('Broj pitanja mora biti ceo broj između 1 i 50.')
       return
     }
 
     setGreska(null)
+    kreiranje.current.radi = true
     setCuva(true)
 
     try {
       const timeLimitSeconds = cfg.timeLimit ? Number(cfg.timeLimit) * 60 : null
       
-      // 1. Snimi novi kviz red u bazi
-      const quizId = await sacuvajKviz({
-        title: cfg.title.trim(),
-        description: `Standardni automatski kviz (${NAZIVI_PREDMETA[predmet]} - ${NAZIVI_RAZREDA[razred]})`,
-        time_limit_seconds: timeLimitSeconds,
-        default_max_attempts: 1,
-        shuffle_questions: cfg.shuffleQuestions,
-        shuffle_answers: cfg.shuffleAnswers,
-        show_result: true,
-        show_correct: true,
-        pass_threshold_pct: cfg.passThreshold,
-        require_name: true,
-        fixed_child_name: null,
-        require_label: false,
-        label_name: 'Odeljenje',
-        grade: razred,
-      })
-
+      const quizId = kreiranje.current.id
+      if (!kreiranje.current.unosi) {
       let unosi: SnapshotUnos[] = []
 
       // 2a. Generator ili kombinovani izvor: ravnomerno po oblastima, a kod
@@ -418,8 +409,8 @@ export function KvizForma() {
 
         const bankPitanja = await listajPitanja(filter)
 
-        if (bankPitanja.length === 0) {
-          throw new Error('Nije pronađeno nijedno pitanje u banci za izabrana podešavanja. Promeni oblast ili težinu.')
+        if (bankPitanja.length < cfg.count) {
+          throw new Error(`Pronađeno je ${bankPitanja.length} od potrebnih ${cfg.count} pitanja. Smanji broj pitanja ili promeni filtere.`)
         }
 
         // Nasumičan izbor pitanja
@@ -443,18 +434,41 @@ export function KvizForma() {
         }))
       }
 
-      // 3. Postavi pitanja u kviz
-      await postaviPitanjaKviza(quizId, unosi)
+      kreiranje.current.unosi = unosi
+      }
+      setZapoceto(true)
+      await napraviKvizSaId({
+        title: cfg.title.trim(),
+        description: `Standardni automatski kviz (${NAZIVI_PREDMETA[predmet]} - ${NAZIVI_RAZREDA[razred]})`,
+        time_limit_seconds: timeLimitSeconds,
+        default_max_attempts: 1,
+        shuffle_questions: cfg.shuffleQuestions,
+        shuffle_answers: cfg.shuffleAnswers,
+        show_result: true,
+        show_correct: true,
+        pass_threshold_pct: cfg.passThreshold,
+        require_name: true,
+        fixed_child_name: null,
+        require_label: false,
+        label_name: 'Odeljenje',
+        grade: razred,
+      }, kreiranje.current.id)
+
+      if (!kreiranje.current.snapshot) {
+        await postaviPitanjaKviza(quizId, kreiranje.current.unosi)
+        kreiranje.current.snapshot = true
+      }
 
       // 4. Dodeli kviz izabranom detetu ako je odabrano
       if (izabranoDete) {
-        await dodeliKvizProfilu(quizId, izabranoDete, true)
+        await dodeliKvizProfilu(quizId, izabranoDete, posaljiEmail, kreiranje.current.zahtev)
       }
 
-      navigate(`/admin/kvizovi/${quizId}`)
+      navigate(izabranoDete ? `/admin/vezbanje?dete=${izabranoDete}` : `/admin/kvizovi/${quizId}`)
     } catch (e) {
       setGreska(String((e as Error).message ?? e))
     } finally {
+      kreiranje.current.radi = false
       setCuva(false)
     }
   }
@@ -478,12 +492,29 @@ export function KvizForma() {
   const sveOblastiIzabrane = vidljiveOblasti.length > 0 && 
     vidljiveOblasti.every((o) => cfg.selectedTopics.includes(o.slug))
 
+  const primalac = profiliDece.find(p => p.id === izabranoDete)
+  if (potvrda) return <div>
+    <ol className="roditelj-koraci"><li>1. Dete i aktivnost</li><li>2. Sadržaj</li><li aria-current="step">3. Potvrda</li></ol>
+    <h2>Pregled pre potvrde</h2>
+    <div className="kartica razmak-gore"><h3>{mod === 'manual' ? manualTitle || 'Ručni kviz' : cfg.title}</h3>
+      <p className="razmak-gore">Za: <strong>{primalac?.name ?? 'Bez dodele — priprema kviza'}</strong></p>
+      <p>{NAZIVI_PREDMETA[predmet]} · {NAZIVI_RAZREDA[razred]}</p>
+      {mod === 'manual' ? <p className="poruka poruka--info">Najpre ćeš dodati pitanja. Kviz dodeli detetu iz pregleda gotovog kviza.</p> : <><p>{cfg.count} pitanja · {cfg.selectedTopics.length} oblasti · {cfg.timeLimit ? `${cfg.timeLimit} minuta` : 'bez vremenskog ograničenja'}</p><p className="malo blago">Izvor: {cfg.source === 'generator' ? 'Generator' : cfg.source === 'bank' ? 'Banka pitanja' : 'Kombinovano'} · prag {cfg.passThreshold}%</p></>}
+      {primalac && mod !== 'manual' && <><p className="malo blago razmak-gore">Aktivnost se pojavljuje na profilu deteta. Push stiže na povezane uređaje.</p><label className="stiklir"><input type="checkbox" checked={posaljiEmail} disabled={!primalac.email || zapoceto} onChange={e => setPosaljiEmail(e.target.checked)} />Pošalji i mejl detetu{!primalac.email ? ' (email nije unet)' : ''}</label></>}
+    </div>
+    {greska && <p className="poruka poruka--greska" role="alert">{greska}</p>}
+    {zapoceto && greska && <p className="blago">Ponovni pokušaj nastavlja isti kviz, bez nove dodele ili duplog slanja.</p>}
+    <div className="roditelj-radnje"><button className="dugme dugme--senka" disabled={cuva || zapoceto} onClick={() => setPotvrda(false)}>← Izmeni sadržaj</button><button className="dugme dugme--akcenat" disabled={cuva} onClick={() => void (mod === 'manual' ? napraviRucno() : generisiKviz())}>{cuva ? 'Čuvam…' : zapoceto ? 'Pokušaj ponovo' : mod === 'manual' ? 'Napravi i dodaj pitanja' : primalac ? 'Napravi i dodeli kviz' : 'Sačuvaj kviz bez dodele'}</button></div>
+  </div>
+
   return (
     <div className="generator-strana">
       <div className="zaglavlje-strane">
-        <h1>Novi kviz</h1>
+        <h2>Sadržaj kviza</h2>
       </div>
 
+      <ol className="roditelj-koraci"><li>1. Dete i aktivnost</li><li aria-current="step">2. Sadržaj</li><li>3. Potvrda</li></ol>
+      <p className="razmak-dole">Za: <strong>{primalac?.name ?? 'Bez dodele'}</strong> {onNazad && <button className="dugme dugme--senka dugme--malo" onClick={onNazad}>Promeni dete ili aktivnost</button>}</p>
       {/* Segmentirani kontroler za izbor MODA (Standardni vs Slobodan) */}
       <div className="segment razmak-dole" role="tablist">
         <button
@@ -543,7 +574,7 @@ export function KvizForma() {
               </div>
             </div>
 
-            {profiliDece.length > 0 && (
+            {!onNazad && profiliDece.length > 0 && (
               <div className="polje">
                 <label htmlFor="kv-dodeljeno-manual">Dodeli kviz detetu (opciono)</label>
                 <select
@@ -563,15 +594,15 @@ export function KvizForma() {
 
             {greska && <p className="poruka poruka--greska" role="alert">{greska}</p>}
 
-            <button type="button" className="dugme dugme--akcenat" disabled={cuva} onClick={napraviRucno}>
-              {cuva ? 'Pravim…' : 'Napravi kviz i nastavi'}
+            <button type="button" className="dugme dugme--akcenat" disabled={cuva} onClick={() => { if(manualTitle.trim().length < 2) {setGreska('Unesi naziv kviza.'); return} setPotvrda(true) }}>
+              Pregled i potvrda →
             </button>
           </div>
         </div>
       ) : (
         <div className="gen-forma">
           {/* LEVA STRANA: Izbor oblasti (samo za standardni kviz) */}
-          <div className="gen-sekcija gen-sekcija--oblasti">
+          <details className="gen-sekcija gen-sekcija--oblasti roditelj-opcije"><summary>Oblasti · {cfg.selectedTopics.length} izabrano</summary>
             <div className="red red--razmak razmak-dole">
               <p className="gen-naslov">Uključene oblasti</p>
               <button
@@ -617,12 +648,12 @@ export function KvizForma() {
                 })}
               </div>
             )}
-          </div>
+          </details>
 
           {/* DESNA STRANA: Podešavanja predmeta, razreda, količine, težine i izvora */}
           <div className="gen-desno">
             {/* Predmet i Razred */}
-            <div className="gen-sekcija">
+            <div className="gen-sekcija roditelj-osnovno">
               <p className="gen-naslov razmak-dole">Predmet i razred</p>
               <div className="red-polja">
                 <div className="polje">
@@ -658,8 +689,8 @@ export function KvizForma() {
             </div>
 
             {/* Podešavanja standardnog kviza */}
-            <div className="gen-sekcija gen-sekcija--podesavanje kartica">
-              <h2>Opcije standardnog kviza</h2>
+            <div className="gen-sekcija gen-sekcija--podesavanje kartica roditelj-kolicina">
+              <h2>Naziv i broj pitanja</h2>
               <p className="blago malo razmak-dole">
                 Ove opcije se automatski pamte za kombinaciju {NAZIVI_PREDMETA[predmet]}{predmet === 'matematika' ? ` (${NAZIVI_RAZREDA[razred]})` : ''}.
               </p>
@@ -678,7 +709,7 @@ export function KvizForma() {
                 />
               </div>
 
-              {profiliDece.length > 0 && (
+              {!onNazad && profiliDece.length > 0 && (
                 <div className="polje">
                   <label htmlFor="std-dodeljeno">Dodeli kviz detetu (opciono)</label>
                   <select
@@ -705,6 +736,8 @@ export function KvizForma() {
                   />
                 </div>
 
+              </div>
+              <details className="roditelj-opcije"><summary>Izvor pitanja, težina i tip</summary>
                 <div className="polje">
                   <label htmlFor="std-source">Izvor pitanja</label>
                   <select
@@ -716,7 +749,6 @@ export function KvizForma() {
                     {kombinovaniDostupan && <option value="combined">Kombinovano (generator + banka)</option>}
                   </select>
                 </div>
-              </div>
 
               <div className="red-polja">
                 {predmetImaTezinu(predmet) && (
@@ -752,10 +784,11 @@ export function KvizForma() {
                   </select>
                 </div>
               </div>
+              </details>
             </div>
 
             {/* Dodatne postavke kviza */}
-            <div className="gen-sekcija gen-sekcija--opcije kartica razmak-gore">
+            <details className="gen-sekcija gen-sekcija--opcije kartica razmak-gore roditelj-opcije"><summary>Dodatne opcije</summary>
               <h2>Dodatne opcije kviza</h2>
               
               <div className="red-polja">
@@ -796,15 +829,15 @@ export function KvizForma() {
                   Mešaj ponuđene odgovore
                 </label>
               </div>
-            </div>
+            </details>
 
             {greska && <p className="poruka poruka--greska" role="alert">{greska}</p>}
 
             <button
               type="button" className="dugme dugme--akcenat gen-dugme razmak-gore"
-              disabled={cuva} onClick={generisiKviz}
+              disabled={cuva} onClick={() => { if(!cfg.selectedTopics.length || cfg.count < 1 || cfg.count > 50 || cfg.title.trim().length < 2) {setGreska('Unesi naziv, izaberi oblasti i broj pitanja od 1 do 50.'); return} setGreska(null); setPotvrda(true) }}
             >
-              {cuva ? 'Pravim kviz…' : '⚡ Generiši kviz i nastavi'}
+              Pregled i potvrda →
             </button>
           </div>
         </div>

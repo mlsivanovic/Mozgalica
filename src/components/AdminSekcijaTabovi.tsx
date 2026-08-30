@@ -1,4 +1,5 @@
-import { Link, Outlet, useLocation } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
+import { RoditeljskiLink as Link } from '../lib/roditelj'
 
 interface TabSekcije {
   naziv: string
@@ -42,7 +43,7 @@ export function PitanjaSekcija() {
           aktivna: (putanja) => !putanja.startsWith('/admin/pitanja/generator'),
         },
         {
-          naziv: 'Generator',
+          naziv: 'Generiši pitanja',
           putanja: '/admin/pitanja/generator',
           aktivna: (putanja) => putanja.startsWith('/admin/pitanja/generator'),
         },

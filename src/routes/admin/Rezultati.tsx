@@ -1,18 +1,24 @@
 // Tabela rezultata sa filterima + CSV izvoz
-import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { lazy, useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { useRoditelj } from '../../lib/roditelj'
+import { usePeriodNapretka } from '../../lib/periodNapretka'
+import { danasUBeogradu } from '../../lib/statistikaDeteta'
+import { RoditeljskiLink as Link } from '../../lib/roditelj'
 import {
   listajKategorijeKvizova, listajKvizove, listajPokusaje, listajProfileDeteta,
   type KategorijaKviza,
 } from '../../lib/api'
 import { napraviCsv, preuzmiCsv } from '../../lib/csv'
-import { kvizImaPredmet, kvizImaRazred, pokusajPripadaProfilu } from '../../lib/filterRezultata'
-import { formatDatum, formatDatumZaInput, formatProcenat, formatTrajanje } from '../../lib/format'
+import { kvizImaPredmet, kvizImaRazred } from '../../lib/filterRezultata'
+import { formatDatum, formatProcenat, formatTrajanje } from '../../lib/format'
 import { Loader } from '../../components/Zajednicke'
 import {
   NAZIVI_PREDMETA, NAZIVI_RAZREDA, PREDMETI,
   RAZREDI, type Kviz, type Pokusaj, type Predmet, type ProfilDeteta, type Razred, type StatusPokusaja,
 } from '../../types/db'
+
+const Sah = lazy(() => import('./Sah').then(m => ({default:m.Sah})))
 
 const NAZIVI_STATUSA: Record<StatusPokusaja, string> = {
   in_progress: 'U toku', submitted: 'Završen', expired: 'Istekao',
@@ -26,12 +32,16 @@ export function Rezultati() {
   const [profili, setProfili] = useState<ProfilDeteta[]>([])
   const [kategorijeKvizova, setKategorijeKvizova] = useState<KategorijaKviza[]>([])
 
-  const [filterDete, setFilterDete] = useState('')
-  const [filterPredmet, setFilterPredmet] = useState<Predmet | ''>('')
-  const [filterRazred, setFilterRazred] = useState<Razred | ''>('')
-  const [filterStatus, setFilterStatus] = useState('')
-  const [filterOd, setFilterOd] = useState(() => formatDatumZaInput())
-  const [filterDo, setFilterDo] = useState(() => formatDatumZaInput())
+  const { deteId: filterDete } = useRoditelj()
+  const [parametri, postaviParametre] = useSearchParams()
+  const { from: filterOd, to: filterDo } = usePeriodNapretka()
+  const filterPredmet = (parametri.get('predmet') ?? '') as Predmet | ''
+  const filterRazred = (Number(parametri.get('razred')) || '') as Razred | ''
+  const filterStatus = parametri.get('status') ?? ''
+  function promeniFilter(ime: string, vrednost: string) { postaviParametre(p => { if(vrednost) p.set(ime,vrednost); else p.delete(ime); return p }) }
+  const setFilterPredmet = (v: string) => promeniFilter('predmet',v)
+  const setFilterRazred = (v: number | '') => promeniFilter('razred',String(v))
+  const setFilterStatus = (v: string) => promeniFilter('status',v)
 
   useEffect(() => {
     Promise.all([
@@ -54,16 +64,15 @@ export function Rezultati() {
     return mapa
   }, [kvizovi])
   const mapaProfila = useMemo(() => new Map(profili.map((profil) => [profil.id, profil])), [profili])
-  const izabraniProfil = filterDete ? mapaProfila.get(filterDete) : undefined
 
   // Broj pokušaja na čekanju pregleda — nezavisan od aktivnih filtera, da uvek bude tačan.
   const brojCekaPregled = useMemo(
-    () => pokusaji.filter((p) => p.status === 'submitted' && p.review_pending).length,
-    [pokusaji],
+    () => pokusaji.filter((p) => p.status === 'submitted' && p.review_pending && (!filterDete || p.child_profile_id === filterDete)).length,
+    [pokusaji, filterDete],
   )
 
   const filtrirano = useMemo(() => pokusaji.filter((p) => {
-    if (!pokusajPripadaProfilu(p, izabraniProfil)) return false
+    if (filterDete && p.child_profile_id !== filterDete) return false
     if (!kvizImaPredmet(p, kategorijeKvizova, filterPredmet)) return false
     if (!kvizImaRazred(p.quiz_id, mapaRazredaKviza, filterRazred)) return false
     if (filterStatus === 'review_pending') {
@@ -71,11 +80,11 @@ export function Rezultati() {
     } else if (filterStatus && p.status !== filterStatus) {
       return false
     }
-    if (filterOd && new Date(p.started_at) < new Date(`${filterOd}T00:00:00`)) return false
-    if (filterDo && new Date(p.started_at) > new Date(`${filterDo}T23:59:59.999`)) return false
+    if (filterOd && danasUBeogradu(new Date(p.submitted_at ?? p.started_at)) < filterOd) return false
+    if (filterDo && danasUBeogradu(new Date(p.submitted_at ?? p.started_at)) > filterDo) return false
     return true
   }), [
-    pokusaji, izabraniProfil, kategorijeKvizova, filterPredmet, filterRazred,
+    pokusaji, filterDete, kategorijeKvizova, filterPredmet, filterRazred,
     mapaRazredaKviza, filterStatus, filterOd, filterDo,
   ])
 
@@ -99,48 +108,30 @@ export function Rezultati() {
 
   // Brza prečica: poništava sve filtere i prikazuje samo pokušaje na čekanju pregleda.
   function prikaziCekaPregled() {
-    setFilterDete('')
-    setFilterPredmet('')
-    setFilterRazred('')
-    setFilterOd('')
-    setFilterDo('')
-    setFilterStatus('review_pending')
+    postaviParametre(p => { p.set('vrsta','quiz'); p.set('status','review_pending'); p.set('period','all'); p.delete('predmet'); p.delete('razred'); return p })
   }
 
   if (ucitava) return <Loader />
+  if (greska) return <p className="poruka poruka--greska" role="alert">{greska} Osveži stranicu za ponovni pokušaj.</p>
 
   return (
     <div>
-      <div className="zaglavlje-strane">
-        <h1>Rezultati</h1>
-        <button type="button" className="dugme dugme--senka" onClick={prikaziCekaPregled}>
-          ⏳ Čeka pregled {brojCekaPregled > 0 && <span className="bedz">{brojCekaPregled}</span>}
-        </button>
-        <button type="button" className="dugme dugme--senka" disabled={filtrirano.length === 0} onClick={izvezi}>
-          ⬇ Izvezi CSV
-        </button>
+      <div className="roditelj-alati"><label>Aktivnost <select aria-label="Vrsta rezultata" value={parametri.get('vrsta') ?? 'quiz'} onChange={e => promeniFilter('vrsta',e.target.value)}><option value="quiz">Kvizovi</option><option value="chess">Šah</option></select></label>
+        <button type="button" className="dugme dugme--senka" onClick={prikaziCekaPregled}>Čeka pregled ({brojCekaPregled})</button>
       </div>
-
+      {parametri.get('vrsta') === 'chess' ? <Sah istorija /> : <>
       {greska && <p className="poruka poruka--greska">{greska}</p>}
 
-      <div className="kartica razmak-dole">
-        <div className="red-polja">
+      <details className="roditelj-filteri"><summary>Filteri{filterPredmet || filterRazred || filterStatus ? ' · aktivni' : ''}</summary>
+        <p className="malo blago">{filterPredmet ? NAZIVI_PREDMETA[filterPredmet] : 'Svi predmeti'} · {filterRazred ? `${filterRazred}. razred` : 'Svi razredi'} · {filterStatus === 'review_pending' ? 'Čeka pregled' : filterStatus || 'Svi statusi'}</p>
+        <div className="red-polja razmak-gore">
           <div className="polje">
-            <label htmlFor="rf-dete">Dete</label>
-            <select id="rf-dete" value={filterDete} onChange={(e) => setFilterDete(e.target.value)}>
-              <option value="">Sva deca</option>
-              {profili.map((profil) => (
-                <option key={profil.id} value={profil.id}>{profil.name}</option>
-              ))}
-            </select>
-          </div>
-          <div className="polje">
-            <label htmlFor="rf-kviz">Kviz</label>
+            <label htmlFor="rf-kviz">Predmet</label>
             <select
               id="rf-kviz" value={filterPredmet}
               onChange={(e) => setFilterPredmet(e.target.value as Predmet | '')}
             >
-              <option value="">Svi kvizovi</option>
+              <option value="">Svi predmeti</option>
               {PREDMETI.map((predmet) => (
                 <option key={predmet} value={predmet}>{NAZIVI_PREDMETA[predmet]}</option>
               ))}
@@ -166,17 +157,11 @@ export function Rezultati() {
               <option value="review_pending">Čeka pregled</option>
             </select>
           </div>
-          <div className="polje">
-            <label htmlFor="rf-od">Od datuma</label>
-            <input id="rf-od" type="date" value={filterOd} onChange={(e) => setFilterOd(e.target.value)} />
-          </div>
-          <div className="polje">
-            <label htmlFor="rf-do">Do datuma</label>
-            <input id="rf-do" type="date" value={filterDo} onChange={(e) => setFilterDo(e.target.value)} />
-          </div>
         </div>
-      </div>
-
+        <button type="button" className="dugme dugme--senka" onClick={() => postaviParametre(p => {p.delete('predmet');p.delete('razred');p.delete('status');return p})}>Poništi filtere</button>
+        <button type="button" className="dugme dugme--senka" disabled={filtrirano.length === 0} onClick={izvezi}>Izvezi CSV</button>
+      </details>
+      <p className="malo blago razmak-dole">{filtrirano.length} rezultata{filterStatus === 'review_pending' ? ' · čeka pregled' : ''}{filterPredmet ? ` · ${NAZIVI_PREDMETA[filterPredmet]}` : ''}</p>
       <div className="tabela-omot">
         <table className="tabela tabela--kartice">
           <thead>
@@ -185,7 +170,7 @@ export function Rezultati() {
           <tbody>
             {filtrirano.map((p) => (
               <tr key={p.id}>
-                <td data-naslov="Dete">{imeDeteta(p)}{p.child_label ? ` (${p.child_label})` : ''}</td>
+                <td data-naslov="Dete">{imeDeteta(p)}{p.child_label ? ` (${p.child_label})` : ''}{!p.child_profile_id && <small className="blago"> · bez profila</small>}</td>
                 <td data-naslov="Kviz">{mapaKvizova.get(p.quiz_id) ?? '—'}</td>
                 <td data-naslov="Status">
                   <span className={`bedz ${
@@ -196,7 +181,7 @@ export function Rezultati() {
                     {p.status === 'submitted' && p.review_pending ? 'Čeka pregled' : NAZIVI_STATUSA[p.status]}
                   </span>
                 </td>
-                <td data-naslov="Rezultat">{formatProcenat(p.score_pct)}</td>
+                <td data-naslov="Rezultat">{p.review_pending ? 'Čeka ocenu' : formatProcenat(p.score_pct)}</td>
                 <td data-naslov="Zvezdice">
                   {p.stars_awarded == null && p.stars_earned == null
                     ? '—'
@@ -213,6 +198,7 @@ export function Rezultati() {
           </tbody>
         </table>
       </div>
+      </>}
     </div>
   )
 }

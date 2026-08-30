@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import {
   obrisiDnevniRasporedSaha, postaviAktivnostDnevnogRasporedaSaha,
   sacuvajDnevniRasporedSaha, type NoviDnevniRasporedSaha,
@@ -44,15 +44,27 @@ function opisSata(sekunde: DnevniRasporedSaha['clock_seconds']): string {
 }
 
 export function DnevniRasporediSaha({
-  profili, rasporedi, onPromena,
+  profili, rasporedi, onPromena, otvoriId, pocetnoDete = '', samoForma = false, onZatvori,
 }: {
   profili: ProfilDeteta[]
   rasporedi: DnevniRasporedSaha[]
+  otvoriId?: string
+  pocetnoDete?: string
+  samoForma?: boolean
+  onZatvori?: () => void
   onPromena: () => Promise<void>
 }) {
   const [forma, setForma] = useState<FormaRasporeda | null>(null)
   const [greska, setGreska] = useState<string | null>(null)
   const [radi, setRadi] = useState<string | null>(null)
+
+  const otvorenaForma = useRef<string | null>(null)
+  useEffect(() => {
+    if (!otvoriId || profili.length === 0 || otvorenaForma.current === otvoriId) return
+    otvorenaForma.current = otvoriId
+    const raspored = rasporedi.find(r => r.id === otvoriId)
+    setForma(raspored ? formaIzRasporeda(raspored) : otvoriId === 'novi' ? { ...novaForma(profili), childProfileId: pocetnoDete } : null)
+  }, [otvoriId, profili, rasporedi, pocetnoDete])
 
   async function sacuvaj(e: FormEvent) {
     e.preventDefault()
@@ -104,7 +116,7 @@ export function DnevniRasporediSaha({
 
   return (
     <section>
-      <div className="zaglavlje-strane">
+      <div className="zaglavlje-strane" hidden={samoForma}>
         <div>
           <h2>Dnevni rasporedi</h2>
           <p className="blago malo">Svaki dan nastaje nova partija. Push obaveštenje stiže na povezane uređaje, bez mejla.</p>
@@ -124,7 +136,7 @@ export function DnevniRasporediSaha({
         <form className="kartica razmak-dole" onSubmit={sacuvaj}>
           <div className="red red--razmak">
             <h3>{forma.id ? 'Uredi dnevni raspored' : 'Novi dnevni raspored'}</h3>
-            <button type="button" className="dugme dugme--senka dugme--malo" onClick={() => setForma(null)}>Zatvori</button>
+            <button type="button" className="dugme dugme--senka dugme--malo" onClick={() => { setForma(null); onZatvori?.() }}>Zatvori</button>
           </div>
           <p className="blago malo razmak-dole">Prva partija stiže u prvom narednom izabranom terminu po vremenu Srbije.</p>
 
@@ -132,6 +144,7 @@ export function DnevniRasporediSaha({
             <div className="polje">
               <label htmlFor="ds-dete">Dete</label>
               <select id="ds-dete" value={forma.childProfileId} onChange={(e) => setForma({ ...forma, childProfileId: e.target.value })}>
+                <option value="">Izaberi dete…</option>
                 {profili.map((profil) => <option key={profil.id} value={profil.id}>{profil.avatar} {profil.name}</option>)}
               </select>
             </div>
@@ -169,15 +182,15 @@ export function DnevniRasporediSaha({
         </form>
       )}
 
-      {rasporedi.length === 0 ? (
+      {samoForma ? null : rasporedi.length === 0 ? (
         <p className="blago">Nema dnevnih rasporeda. Napravi prvi raspored za redovno igranje.</p>
       ) : (
         <div className="mreza-kartica">
-          {rasporedi.map((raspored) => (
+          {!samoForma && rasporedi.map((raspored) => (
             <article className="kartica" key={raspored.id}>
               <div className="red red--razmak">
                 <h3>{raspored.child_avatar} {raspored.child_name}</h3>
-                <span className={`bedz ${raspored.is_active ? 'bedz--uspeh' : 'bedz--neutral'}`}>{raspored.is_active ? 'Aktivan' : 'Pauziran'}</span>
+                <span className={`bedz ${raspored.is_active ? 'bedz--uspeh' : 'bedz--neutral'}`}>{raspored.is_active ? 'Uključen' : 'Pauziran'}</span>
               </div>
               <p>ELO {raspored.approximate_elo} · {raspored.child_color === 'white' ? 'beli' : 'crni'} · {opisSata(raspored.clock_seconds)}</p>
               <p className="malo razmak-gore"><strong>Sledeća:</strong> {opisSledeceg(raspored)}</p>

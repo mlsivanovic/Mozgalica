@@ -1,3 +1,4 @@
+import { danasUBeogradu } from './statistikaDeteta'
 import type { StatusArhiveKviza } from './api'
 import type { Kviz } from '../types/db'
 
@@ -16,8 +17,7 @@ export function podeliKvizove(
   statusi: StatusArhiveKviza[],
   sada: Date = new Date(),
 ): PodelaKvizova {
-  const pocetakDana = new Date(sada)
-  pocetakDana.setHours(0, 0, 0, 0)
+  const danas = danasUBeogradu(sada)
   const statusPoKvizu = new Map(statusi.map((status) => [status.quiz_id, status]))
   const aktivni: Kviz[] = []
   const arhivirani: ArhiviraniKviz[] = []
@@ -25,7 +25,7 @@ export function podeliKvizove(
   for (const kviz of kvizovi) {
     const status = statusPoKvizu.get(kviz.id)
     const zavrsenAt = status?.last_submitted_at
-    const zavrsenPreDanas = zavrsenAt != null && new Date(zavrsenAt) < pocetakDana
+    const zavrsenPreDanas = zavrsenAt != null && danasUBeogradu(new Date(zavrsenAt)) < danas
     const potpunoZavrsen = status != null
       && status.submitted_count > 0
       && status.in_progress_count === 0

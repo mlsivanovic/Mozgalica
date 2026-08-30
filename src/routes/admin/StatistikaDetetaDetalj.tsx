@@ -1,36 +1,21 @@
 // Detaljan administratorski pregled napretka jednog profila deteta.
-import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { RoditeljskiLink as Link } from '../../lib/roditelj'
+import { usePeriodNapretka } from '../../lib/periodNapretka'
 import { TitleAvatar } from '../../components/TitleAvatar'
 import { Loader } from '../../components/Zajednicke'
 import { ucitajStatistikuDeteta } from '../../lib/api'
 import { formatDatum, formatProcenat, formatTrajanje } from '../../lib/format'
-import {
-  danasUBeogradu, imaPodatkeZaGrafik, odrediBrziPeriod,
-  validirajPrilagodjeniPeriod, type BrziPeriodStatistike, type OpsegDatumaStatistike,
-} from '../../lib/statistikaDeteta'
+import { imaPodatkeZaGrafik } from '../../lib/statistikaDeteta'
 import type {
   NagradeStatistikeDeteta, StatistikaDetetaPayload, StatistikaOblastiDeteta,
   TackaTrendaDeteta,
 } from '../../types/kviz'
 import './statistika-dece.css'
 
-const BRZI_PERIODI: Array<{ id: Exclude<BrziPeriodStatistike, 'custom'>; naziv: string }> = [
-  { id: '7d', naziv: '7 dana' },
-  { id: '30d', naziv: '30 dana' },
-  { id: 'school-year', naziv: 'Školska godina' },
-  { id: 'all', naziv: 'Sve vreme' },
-]
-
 function formatirajDan(datum: string): string {
-  const [godina, mesec, dan] = datum.split('-')
-  if (!godina || !mesec || !dan) return datum
+  const [godina,mesec,dan] = datum.split('-')
   return `${Number(dan)}.${Number(mesec)}.${godina}.`
-}
-
-function opisOpsega(opseg: OpsegDatumaStatistike): string {
-  if (!opseg.from || !opseg.to) return 'Sve vreme'
-  return `${formatirajDan(opseg.from)} – ${formatirajDan(opseg.to)}`
 }
 
 function prikaziTrend(trend: number | null): { tekst: string; klasa: string } {
@@ -218,17 +203,12 @@ function Nagrade({ rewards }: { rewards: NagradeStatistikeDeteta }) {
   )
 }
 
-export function StatistikaDetetaDetalj() {
-  const { profilId = '' } = useParams<{ profilId: string }>()
+export function StatistikaDetetaDetalj({ profilId }: { profilId: string }) {
+  const aktivniOpseg = usePeriodNapretka()
   const [ucitava, setUcitava] = useState(true)
   const [osvezava, setOsvezava] = useState(false)
   const [greska, setGreska] = useState<string | null>(null)
   const [statistika, setStatistika] = useState<StatistikaDetetaPayload | null>(null)
-  const [period, setPeriod] = useState<BrziPeriodStatistike>('all')
-  const [aktivniOpseg, setAktivniOpseg] = useState<OpsegDatumaStatistike>(() => odrediBrziPeriod('all'))
-  const [customFrom, setCustomFrom] = useState(() => odrediBrziPeriod('30d').from ?? '')
-  const [customTo, setCustomTo] = useState(danasUBeogradu)
-  const [greskaPerioda, setGreskaPerioda] = useState<string | null>(null)
   const poslednjiUcitaniProfil = useRef<string | null>(null)
 
   useEffect(() => {
@@ -263,26 +243,11 @@ export function StatistikaDetetaDetalj() {
     return () => { aktivno = false }
   }, [profilId, aktivniOpseg.from, aktivniOpseg.to])
 
-  function izaberiBrziPeriod(noviPeriod: Exclude<BrziPeriodStatistike, 'custom'>) {
-    setPeriod(noviPeriod)
-    setGreskaPerioda(null)
-    setAktivniOpseg(odrediBrziPeriod(noviPeriod))
-  }
-
-  function primeniPrilagodjeniPeriod(dogadjaj: FormEvent<HTMLFormElement>) {
-    dogadjaj.preventDefault()
-    const greskaValidacije = validirajPrilagodjeniPeriod(customFrom, customTo)
-    setGreskaPerioda(greskaValidacije)
-    if (greskaValidacije) return
-    setPeriod('custom')
-    setAktivniOpseg({ from: customFrom, to: customTo })
-  }
-
   if (ucitava) return <Loader tekst="Učitavanje statistike deteta…" />
   if (!statistika?.ok || !statistika.summary || !statistika.rewards) {
     return (
       <div>
-        <Link to="/admin/rezultati/statistika" className="dugme dugme--senka dugme--malo">← Statistika</Link>
+        <Link to="/admin/napredak?dete=" className="dugme dugme--senka dugme--malo">← Sva deca</Link>
         <p className="poruka poruka--greska razmak-gore">{greska ?? 'Statistika deteta nije dostupna.'}</p>
       </div>
     )
@@ -298,7 +263,7 @@ export function StatistikaDetetaDetalj() {
     <div className="statistika-detalj">
       <div className="zaglavlje-strane">
         <div className="statistika-detalj-naslov">
-          <Link to="/admin/rezultati/statistika" className="statistika-nazad">← Statistika</Link>
+          <Link to="/admin/napredak?dete=" className="statistika-nazad">← Sva deca</Link>
           <div className="statistika-dete-identitet">
             <span className="statistika-dete-avatar statistika-dete-avatar--veliki" aria-hidden="true">{statistika.avatar}</span>
             <div>
@@ -311,50 +276,6 @@ export function StatistikaDetetaDetalj() {
       </div>
 
       {greska && <p className="poruka poruka--greska">{greska}</p>}
-
-      <section className="kartica statistika-periodi" aria-label="Izbor vremenskog perioda">
-        <div className="statistika-sekcija-zaglavlje">
-          <div>
-            <h2>Period</h2>
-            <p className="malo blago">Prikazano: {opisOpsega(aktivniOpseg)}</p>
-          </div>
-        </div>
-        <div className="statistika-period-dugmad" role="group" aria-label="Brzi periodi">
-          {BRZI_PERIODI.map((opcija) => (
-            <button
-              key={opcija.id}
-              type="button"
-              className={`dugme dugme--senka dugme--malo ${period === opcija.id ? 'statistika-period-dugme--aktivno' : ''}`}
-              onClick={() => izaberiBrziPeriod(opcija.id)}
-              aria-pressed={period === opcija.id}
-            >
-              {opcija.naziv}
-            </button>
-          ))}
-          <button
-            type="button"
-            className={`dugme dugme--senka dugme--malo ${period === 'custom' ? 'statistika-period-dugme--aktivno' : ''}`}
-            onClick={() => setPeriod('custom')}
-            aria-pressed={period === 'custom'}
-          >
-            Prilagodi period
-          </button>
-        </div>
-        {period === 'custom' && (
-          <form className="statistika-prilagodjeni-period" onSubmit={primeniPrilagodjeniPeriod}>
-            <div className="polje">
-              <label htmlFor="statistika-od">Od datuma</label>
-              <input id="statistika-od" type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)} />
-            </div>
-            <div className="polje">
-              <label htmlFor="statistika-do">Do datuma</label>
-              <input id="statistika-do" type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)} />
-            </div>
-            <button type="submit" className="dugme dugme--akcenat dugme--malo">Primeni</button>
-            {greskaPerioda && <p className="poruka poruka--greska">{greskaPerioda}</p>}
-          </form>
-        )}
-      </section>
 
       {summary.completedAttempts === 0 ? (
         <section className="kartica statistika-prazno">

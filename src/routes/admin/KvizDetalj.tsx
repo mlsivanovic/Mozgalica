@@ -1,6 +1,7 @@
 // Detalji kviza: podešavanja, izbor pitanja (snapshot), linkovi za decu
-import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { useParams, useSearchParams } from 'react-router-dom'
+import { RoditeljskiLink as Link, useRoditelj } from '../../lib/roditelj'
 import {
   dodajPitanjaUKviz, dodeliKvizProfilu, izmeniLink, kvizImaPokusaje, listajLinkove,
   listajOblasti, listajPitanja, listajPitanjaKviza, listajPokusajeKviza,
@@ -78,7 +79,7 @@ export function KvizDetalj() {
 
       <LinkoviKviza
         quizId={kviz.id} linkovi={linkovi} statusi={statusi}
-        profili={profili} onPromena={ucitajSve}
+        profili={profili} imaPitanja={snapshotPitanja.length > 0} onPromena={ucitajSve}
       />
     </div>
   )
@@ -391,7 +392,7 @@ function RezultatiKviza({ pokusaji }: { pokusaji: Pokusaj[] }) {
                       {p.status === 'submitted' && p.review_pending ? 'Čeka pregled' : NAZIVI_STATUSA[p.status]}
                     </span>
                   </td>
-                  <td data-naslov="Rezultat">{formatProcenat(p.score_pct)}</td>
+                  <td data-naslov="Rezultat">{p.review_pending ? 'Čeka pregled' : formatProcenat(p.score_pct)}</td>
                   <td data-naslov="Zvezdice">
                     {p.stars_awarded == null && p.stars_earned == null
                       ? '—'
@@ -412,17 +413,23 @@ function RezultatiKviza({ pokusaji }: { pokusaji: Pokusaj[] }) {
 
 // ---------------------------------------------------------------------------
 function LinkoviKviza({
-  quizId, linkovi, statusi, profili, onPromena,
+  quizId, linkovi, statusi, profili, imaPitanja, onPromena,
 }: {
   quizId: string
   linkovi: KvizLink[]
   statusi: StatusLinka[]
   profili: ProfilDeteta[]
+  imaPitanja: boolean
   onPromena: () => void
 }) {
   const [label, setLabel] = useState('')
   const [maxAttempts, setMaxAttempts] = useState(1)
-  const [izabraniProfil, setIzabraniProfil] = useState('')
+  const [params] = useSearchParams()
+  const { deteId } = useRoditelj()
+  const zahtevDodele = useRef(crypto.randomUUID())
+  const slanjeDodele = useRef(false)
+  const [dodelaZapoceta, setDodelaZapoceta] = useState(false)
+  const [izabraniProfil, setIzabraniProfil] = useState(() => {const id=params.get('primalac') ?? deteId; return linkovi.some(l => l.child_profile_id === id) ? '' : id})
   const [posaljiEmail, setPosaljiEmail] = useState(false)
   const [greska, setGreska] = useState<string | null>(null)
   const [radi, setRadi] = useState(false)
@@ -448,6 +455,8 @@ function LinkoviKviza({
   }
 
   async function dodeli() {
+    if (slanjeDodele.current) return
+    if (!imaPitanja) {setGreska('Najpre dodaj pitanja u kviz.'); return}
     if (!izabraniProfil) {
       setGreska('Izaberi profil deteta.')
       return
@@ -455,13 +464,18 @@ function LinkoviKviza({
     setRadi(true)
     setGreska(null)
     try {
-      await dodeliKvizProfilu(quizId, izabraniProfil, posaljiEmail)
+      slanjeDodele.current = true
+      setDodelaZapoceta(true)
+      await dodeliKvizProfilu(quizId, izabraniProfil, posaljiEmail, zahtevDodele.current)
+      setDodelaZapoceta(false)
+      zahtevDodele.current = crypto.randomUUID()
       setIzabraniProfil('')
       setPosaljiEmail(false)
       onPromena()
     } catch (e) {
       setGreska(String((e as Error).message ?? e))
     } finally {
+      slanjeDodele.current = false
       setRadi(false)
     }
   }
@@ -495,6 +509,7 @@ function LinkoviKviza({
     <>
       <section className="kartica razmak-dole">
         <h2>Dodela profilima</h2>
+        {!imaPitanja && <p className="poruka poruka--info">Najpre dodaj pitanja, zatim dodeli kviz.</p>}
         <p className="blago razmak-dole">
           Dodeljeni kviz se pojavljuje na stalnom profilnom linku deteta i može da se završi samo jednom.
           Naziv se automatski menja u format „Predmet — Ime deteta”.
@@ -505,7 +520,7 @@ function LinkoviKviza({
             <label htmlFor="lk-profil">Profil deteta</label>
             <select
               id="lk-profil"
-              value={izabraniProfil}
+              value={izabraniProfil} disabled={dodelaZapoceta}
               onChange={(e) => {
                 const id = e.target.value
                 const profil = dostupniProfili.find((p) => p.id === id)
@@ -523,7 +538,7 @@ function LinkoviKviza({
           <button
             type="button" className="dugme dugme--akcenat"
             style={{ alignSelf: 'flex-end', marginBottom: '1rem' }}
-            disabled={radi || dostupniProfili.length === 0} onClick={dodeli}
+            disabled={radi || !imaPitanja || dostupniProfili.length === 0} onClick={dodeli}
           >
             Dodeli kviz
           </button>
@@ -534,7 +549,7 @@ function LinkoviKviza({
               <input
                 type="checkbox"
                 checked={posaljiEmail}
-                disabled={!profilZaDodelu?.email}
+                disabled={dodelaZapoceta || !profilZaDodelu?.email}
                 onChange={(e) => setPosaljiEmail(e.target.checked)}
               />
               Pošalji i mejl detetu kada kviz stigne
@@ -542,7 +557,7 @@ function LinkoviKviza({
             <p className="malo blago">
               {profilZaDodelu?.email
                 ? `Mejl će biti poslat na ${profilZaDodelu.email}.`
-                : <>Profil nema email adresu. <Link to="/admin/podesavanja">Dodaj je u podešavanjima.</Link></>}
+                : <>Profil nema email adresu. <Link to="/admin/deca">Dodaj je u profilu deteta.</Link></>}
             </p>
           </div>
         )}

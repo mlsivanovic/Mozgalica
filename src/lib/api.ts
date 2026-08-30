@@ -360,7 +360,7 @@ export async function dodeliKvizProfilu(
   quizId: string,
   childProfileId: string,
   sendEmail: boolean,
-  idempotencyKey = crypto.randomUUID(),
+  idempotencyKey: string = crypto.randomUUID(),
 ): Promise<KvizLink> {
   const { data, error } = await supabase().rpc('assign_quiz_to_profile', {
     p_quiz_id: quizId,
@@ -407,10 +407,15 @@ export async function kvizImaPokusaje(quizId: string): Promise<boolean> {
 
 // ---------- Rezultati (admin) ----------
 export async function listajPokusaje(): Promise<Pokusaj[]> {
-  const { data, error } = await supabase()
-    .from('attempts').select('*').order('started_at', { ascending: false }).limit(1000)
-  if (error) throw new Error(opisiGresku(error)!)
-  return data as Pokusaj[]
+  const svi: Pokusaj[] = []
+  for (let od = 0; ; od += 1000) {
+    const { data, error } = await supabase()
+      .from('attempts').select('*').order('started_at', { ascending: false }).order('id')
+      .range(od, od + 999)
+    if (error) throw new Error(opisiGresku(error)!)
+    svi.push(...(data as Pokusaj[]))
+    if (data.length < 1000) return svi
+  }
 }
 
 export async function listajPokusajeKviza(quizId: string): Promise<Pokusaj[]> {
@@ -664,7 +669,7 @@ export async function ucitajStatistikuDeteta(
   to: string | null,
 ): Promise<StatistikaDetetaPayload> {
   const { data, error } = await supabase().rpc('admin_get_child_statistics_detail', {
-    p_profile_id: profileId,
+    p_child_profile_id: profileId,
     p_from_date: from,
     p_to_date: to,
   })
@@ -772,6 +777,7 @@ export async function sacuvajStavkeProdavnice(stavke: NoviStavkaProdavnice[]): P
 
 export interface KupovinaAdminPrikaz {
   id: string
+  childProfileId: string
   childName: string
   childAvatar: string
   title: string
@@ -1054,4 +1060,12 @@ async function proveriPushRpc(naziv: string, parametri: Record<string, unknown>)
   const odgovor = data as { ok: boolean; active?: boolean; error?: string }
   if (!odgovor.ok) throw new Error(odgovor.error ?? 'Push status nije dostupan.')
   return odgovor.active === true
+}
+
+// Poznati ID omogućava bezbedno ponavljanje kreiranja posle prekida veze.
+export async function napraviKvizSaId(kviz: NoviKviz, id: string): Promise<string> {
+  const { error } = await supabase().from('quizzes').upsert({ ...kviz, id }, { onConflict: 'id', ignoreDuplicates: true })
+  if (error) throw new Error(opisiGresku(error)!)
+  await ucitajKviz(id)
+  return id
 }

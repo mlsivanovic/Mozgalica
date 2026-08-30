@@ -55,3 +55,100 @@
   .admin-nav a { flex: 0 0 auto; padding: 0.5rem 0.9rem; }
   .admin-sekcioni-tabovi { width: 100%; }
 }
+
+/* Roditeljski okvir je odvojen od dečjeg interfejsa. */
+.roditeljski-okvir { min-height: 100dvh; font-size: 16px; --visina-dugmeta: 48px; }
+.roditelj-zaglavlje { display:flex; justify-content:space-between; align-items:center; padding:12px 20px; background:var(--boja-kartica); border-bottom:1px solid var(--boja-ivica); }
+.roditelj-ikona-dugme { width:48px; height:48px; display:grid; place-items:center; color:var(--boja-tekst-blagi); border-radius:12px; }
+.roditelj-ikona-dugme:hover { background:var(--boja-primarna-svetla); }
+.roditelj-kontekst { max-width:1120px; padding:16px 20px 0; margin:auto; }
+.roditelj-izbor { display:flex; align-items:center; gap:16px; justify-content:space-between; }
+.roditelj-izbor select { min-width:0; width:min(100%,340px); }
+.roditelj-upravljaj { font-size:14px; font-weight:700; padding:10px 0; text-align:right; }
+.roditelj-zajednicko { color:var(--boja-tekst-blagi); font-size:14px; padding:8px 0; }
+.roditelj-nav { position:fixed; z-index:60; bottom:0; left:0; right:0; display:grid; grid-template-columns:repeat(4,1fr); gap:4px; padding:8px 8px calc(8px + env(safe-area-inset-bottom)); background:var(--boja-kartica); border-top:1px solid var(--boja-ivica); }
+.roditelj-nav a { min-height:54px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:4px; color:var(--boja-tekst-blagi); border-radius:12px; font-size:12px; font-weight:700; text-decoration:none; }
+.roditelj-nav a.aktivna { color:var(--boja-primarna); background:var(--boja-primarna-svetla); }
+.roditelj-sadrzaj { max-width:1120px; padding:24px 20px calc(108px + env(safe-area-inset-bottom)); }
+.roditelj-sadrzaj > .sadrzaj { padding:0; }
+.roditeljski-okvir .dugme--malo { min-height:48px; }
+.roditeljski-okvir .polje input, .roditeljski-okvir .polje select, .roditeljski-okvir textarea { min-width:0; max-width:100%; font-size:16px; }
+.roditeljski-okvir .bulk-traka { bottom:calc(88px + env(safe-area-inset-bottom)); }
+.roditeljski-okvir .toast-omot { bottom:calc(88px + env(safe-area-inset-bottom)); }
+.roditelj-preskoci { position:fixed; top:-100px; left:16px; z-index:300; padding:12px; background:var(--boja-kartica); }
+.roditelj-preskoci:focus { top:12px; }
+.roditeljski-okvir a:focus-visible, .roditeljski-okvir button:focus-visible, .roditeljski-okvir summary:focus-visible { outline:3px solid var(--boja-akcenat); outline-offset:3px; }
+.roditelj-naslov { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:24px; }
+.roditelj-naslov h1 { font-size:28px; }
+.roditelj-naslov .dugme { padding:10px 16px; flex-shrink:0; }
+.roditelj-sekcija { margin-top:28px; }
+.roditelj-sekcija h2 { font-size:20px; margin-bottom:14px; }
+.roditelj-kartice { display:grid; gap:14px; grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr)); }
+.roditelj-dete { display:block; color:var(--boja-tekst); padding:20px; border:1px solid var(--boja-ivica); box-shadow:none; }
+.roditelj-dete:hover { text-decoration:none; border-color:var(--boja-primarna); }
+.roditelj-identitet { display:flex; align-items:center; gap:12px; margin-bottom:16px; }
+.roditelj-avatar { font-size:32px; }
+.roditelj-metrike { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin:12px 0; }
+.roditelj-metrike strong { display:block; font-size:24px; }
+.roditelj-metrike span { display:block; font-size:13px; color:var(--boja-tekst-blagi); }
+.roditelj-lista { list-style:none; border:1px solid var(--boja-ivica); background:var(--boja-kartica); border-radius:14px; overflow:hidden; }
+.roditelj-red { padding:16px; display:flex; justify-content:space-between; align-items:center; gap:14px; color:var(--boja-tekst); }
+.roditelj-red + .roditelj-red, li + li > .roditelj-red { border-top:1px solid var(--boja-ivica); }
+.roditelj-red small { display:block; color:var(--boja-tekst-blagi); margin-top:4px; }
+.roditelj-red > div { min-width:0; overflow-wrap:anywhere; }
+.roditelj-red:hover { text-decoration:none; background:var(--boja-hover-red); }
+.roditelj-paznja { border-left:4px solid var(--boja-upozorenje); }
+.roditelj-mirno { padding:14px 16px; background:var(--boja-uspeh-svetla); color:var(--boja-uspeh-tekst); border-radius:12px; }
+.roditelj-tabovi { display:flex; gap:6px; padding-bottom:16px; margin-bottom:8px; flex-wrap:wrap; }
+.roditelj-tabovi a { padding:10px 12px; min-height:44px; border-radius:10px; color:var(--boja-tekst-blagi); font-weight:700; }
+.roditelj-tabovi a[aria-current] { background:var(--boja-primarna-svetla); color:var(--boja-primarna); }
+.roditelj-alati { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:16px; }
+.roditelj-filteri { margin-bottom:16px; }
+.roditelj-filteri > summary, .roditelj-opcije > summary { min-height:48px; cursor:pointer; padding:12px 0; font-weight:700; }
+.roditelj-koraci { display:flex; gap:8px; list-style:none; margin:16px 0 24px; font-size:14px; color:var(--boja-tekst-blagi); }
+.roditelj-koraci li { flex:1; border-top:3px solid var(--boja-ivica); padding-top:8px; }
+.roditelj-koraci li[aria-current] { color:var(--boja-primarna); border-color:var(--boja-primarna); font-weight:700; }
+.roditelj-radnje { display:flex; gap:12px; flex-wrap:wrap; margin-top:20px; }
+.roditeljski-okvir .gen-forma { grid-template-columns:1fr; }
+.roditeljski-okvir .gen-desno { display:contents; }
+.roditelj-osnovno { order:-2; }
+.roditelj-kolicina { order:-1; }
+.roditeljski-okvir .gen-sekcija--oblasti { order:0; }
+@media(max-width:640px) {
+  .roditelj-zaglavlje { padding:8px 12px; }
+  .roditelj-kontekst { padding:12px 12px 0; }
+  .roditelj-sadrzaj { padding:20px 12px calc(104px + env(safe-area-inset-bottom)); }
+  .roditelj-naslov h1 { font-size:26px; }
+  .roditeljski-okvir .tabela--kartice td { overflow-wrap:anywhere; }
+  .roditeljski-okvir .segment { flex-wrap:wrap; }
+  .roditeljski-okvir .segment-dugme { min-width:0; }
+  .roditelj-upravljaj { max-width:100px; }
+}
+@media(min-width:1024px) {
+  .roditeljski-okvir { padding-left:208px; }
+  .roditelj-nav { top:0; bottom:0; width:208px; right:auto; display:flex; flex-direction:column; padding:110px 16px 24px; border-top:0; border-right:1px solid var(--boja-ivica); }
+  .roditelj-nav a { flex-direction:row; justify-content:flex-start; padding:14px; gap:12px; font-size:16px; }
+  .roditelj-sadrzaj { padding-bottom:48px; }
+  .roditelj-zaglavlje { position:relative; z-index:61; }
+}
+.roditelj-katalog-stavka { border:1px solid var(--boja-ivica); border-radius:12px; padding:12px; }
+.roditelj-katalog-stavka > summary { display:flex; justify-content:space-between; gap:12px; align-items:center; min-height:48px; cursor:pointer; }
+.roditelj-katalog-stavka > summary span:last-child { font-size:13px; color:var(--boja-tekst-blagi); }
+.roditelj-katalog-stavka[open] > summary { margin-bottom:16px; }
+.roditeljski-okvir .prodavnica-stavka-red { grid-template-columns:1fr; }
+.roditeljski-okvir .prodavnica-stavka-red input, .roditeljski-okvir .prodavnica-stavka-red textarea { width:100%; min-width:0; }
+
+.roditeljski-okvir [hidden] { display: none !important; }
+.roditelj-sadrzaj:focus { outline: none; }
+
+.roditeljski-okvir .dugme, .roditeljski-okvir select, .roditeljski-okvir .segment-dugme, .roditeljski-okvir summary, .roditelj-tabovi a, .roditeljski-okvir .stiklir { min-height:48px; }
+.roditeljski-okvir .malo, .roditeljski-okvir small, .roditeljski-okvir .bedz, .roditeljski-okvir .segment-dugme, .roditeljski-okvir .dugme, .roditeljski-okvir .polje label, .roditelj-nav a, .roditelj-metrike span, .roditelj-koraci, .roditelj-upravljaj, .roditelj-zajednicko, .roditelj-katalog-stavka > summary span:last-child { font-size:16px; }
+.roditelj-nav a { overflow-wrap:normal; }
+.roditelj-red { flex-wrap:wrap; }
+.roditeljski-okvir .obavestenja-zvonce { width:48px; height:48px; }
+.roditeljski-okvir .roditelj-metrike { grid-template-columns:repeat(auto-fit,minmax(90px,1fr)); }
+
+.roditeljski-okvir .statistika-metrike dt, .roditeljski-okvir .statistika-trend, .roditeljski-okvir .statistika-oblast-zaglavlje, .roditeljski-okvir .statistika-kratka-lista li, .roditeljski-okvir .statistika-tesko-meta, .roditeljski-okvir .statistika-status-kupovina span, .roditeljski-okvir .statistika-grafik-osa { font-size:16px; }
+.roditeljski-okvir .tabela a, .roditelj-upravljaj { display:inline-flex; align-items:center; min-height:48px; }
+
+.roditeljski-okvir .tabela, .roditeljski-okvir .tabela th, .roditeljski-okvir .tabela td { font-size:16px; }

@@ -2,7 +2,7 @@
 // Podržava izbor VIŠE oblasti odjednom (automatski kviz iz više tema) —
 // ukupan broj pitanja se ravnomerno raspoređuje po izabranim oblastima.
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useRoditeljskiNavigate as useNavigate } from '../../lib/roditelj'
 import { podrzaneOblasti } from '../../generator'
 import { generisi } from '../../generator'
 import { IKONE_GENERISANIH_OBLASTI, NAZIVI_GENERISANIH_OBLASTI } from '../../generator/oblasti'
