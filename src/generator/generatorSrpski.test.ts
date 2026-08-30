@@ -210,6 +210,21 @@ describe('generatori srpskog jezika', () => {
     expect(plan.find((stavka) => stavka.topicSlug === 'srpski-gramatika')?.source).toBe('generator')
   })
 
+  it('kombinovani kviz 4. razreda deli generator i banku', () => {
+    const oblasti = [
+      'srpski-gramatika-4', 'srpski-pravopis-4', 'srpski-citanje-4',
+      'srpski-recnik-4', 'srpski-knjizevnost-4', 'srpski-jezicka-kultura-4',
+    ]
+    const plan = napraviPlanOblastiKviza(oblasti, 20, new Set(podrzaneOblasti()), 'combined')
+    expect(plan.reduce((zbir, stavka) => zbir + stavka.questionCount, 0)).toBe(20)
+    expect(plan.map((stavka) => stavka.topicSlug)).toEqual(oblasti)
+    expect(plan.find((stavka) => stavka.topicSlug === 'srpski-pravopis-4')?.source).toBe('bank')
+    expect(plan.find((stavka) => stavka.topicSlug === 'srpski-knjizevnost-4')?.source).toBe('bank')
+    expect(plan.find((stavka) => stavka.topicSlug === 'srpski-jezicka-kultura-4')?.source).toBe('bank')
+    expect(plan.find((stavka) => stavka.topicSlug === 'srpski-gramatika-4')?.source).toBe('generator')
+    expect(plan.find((stavka) => stavka.topicSlug === 'srpski-citanje-4')?.source).toBe('generator')
+  })
+
   it('bez ponavljanja zaustavlja se kada iscrpi tekstualne sinonime 4. razreda', () => {
     const rezultat = generisi(cfg({ topicSlug: 'srpski-recnik-4', count: 50, type: 'text', seed: 7 }))
     expect(rezultat.questions).toHaveLength(16)
