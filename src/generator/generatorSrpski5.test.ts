@@ -20,7 +20,7 @@ const norm = (s: string) => s.toLowerCase().replace(/[čć]/g, 'c').replaceAll('
 
 describe('srpski za 5. razred', () => {
   it('registruje tri generatora i omogućava razred bez promene težine', () => {
-    expect(razrediPredmeta('srpski')).toEqual([3, 4, 5])
+    expect(razrediPredmeta('srpski')).toEqual([2, 3, 4, 5])
     expect(razrediPredmeta('priroda_drustvo')).toEqual([3, 4])
     expect(tezinaZaPredmet('srpski', 1)).toBe(5)
     for (const slug of MODULI) {

@@ -269,6 +269,9 @@ describe('registar', () => {
     // se ne generišu (banka i istorijski kvizovi ostaju netaknuti).
     expect(podrzaneOblasti()).not.toContain('srpski-pravopis')
     expect(podrzaneOblasti()).not.toContain('srpski-pravopis-4')
+    expect(podrzaneOblasti()).not.toContain('srpski-pravopis-2')
+    expect(podrzaneOblasti()).toContain('srpski-vrste-reci-2')
+    expect(podrzaneOblasti()).toContain('srpski-gramatika-2')
     expect(podrzaneOblasti()).toContain('srpski-citanje')
     expect(podrzaneOblasti()).toContain('srpski-recnik')
   })

@@ -22,7 +22,7 @@ interface DnevniRad {
   child_profile_id: string
   child_name: string
   subject: Predmet
-  grade: 3 | 4 | 5
+  grade: 2 | 3 | 4 | 5
   source: Izvor
   topic_ids: string[]
   topic_slugs: string[]
