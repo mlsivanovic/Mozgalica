@@ -131,7 +131,7 @@ describe('matematička pravila po oblastima', () => {
   it('svi rezultati su u opsegu 0–1000 (osim mernih jedinica do 10000) — samo 3. razred', () => {
     // Viši razredi (slugovi sa sufiksom "-4"/"-5") imaju zasebna pravila i
     // granice u namenskim testovima.
-    for (const oblast of podrzaneOblasti().filter((s) => !s.endsWith('-4') && !s.endsWith('-5') && !s.startsWith('srpski-') && !s.startsWith('pid-'))) {
+    for (const oblast of podrzaneOblasti().filter((s) => !s.endsWith('-2') && !s.endsWith('-4') && !s.endsWith('-5') && !s.startsWith('srpski-') && !s.startsWith('pid-'))) {
       if (oblast === 'poredjenje-brojeva' || oblast === 'rimski-brojevi') continue // odgovor može biti znak/rimski string, ne broj
       const maks = oblast === 'merne-jedinice' ? 10000 : 1000
       for (const tezina of TEZINE) {
@@ -255,8 +255,8 @@ describe('tekstualni zadaci', () => {
 })
 
 describe('registar', () => {
-  it('svih 59 oblasti ima generator', () => {
-    expect(REGISTAR.size).toBe(59)
+  it('svaka podržana oblast ima tačno jedan generator', () => {
+    expect(REGISTAR.size).toBe(podrzaneOblasti().length)
     expect(podrzaneOblasti()).toContain('sabiranje')
     expect(podrzaneOblasti()).toContain('novac')
     expect(podrzaneOblasti()).toContain('pid-proslost-srbije-4')

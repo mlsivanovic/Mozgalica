@@ -14,7 +14,7 @@ import {
 } from '../../lib/raspodelaKviza'
 import { predmetImaTezinu, razrediPredmeta, tezinaZaPredmet } from '../../lib/predmet'
 import {
-  KONFIGURACIJA_PREDMETA, NAZIVI_PREDMETA, NAZIVI_RAZREDA, NAZIVI_TEZINA, NAZIVI_TIPOVA, PREDMETI, RAZREDI,
+  KONFIGURACIJA_PREDMETA, NAZIVI_PREDMETA, NAZIVI_RAZREDA, NAZIVI_TEZINA, NAZIVI_TIPOVA, PREDMETI,
   type Oblast, type Predmet, type Razred, type Tezina, type TipPitanja,
   type ProfilDeteta,
 } from '../../types/db'
@@ -531,7 +531,7 @@ export function KvizForma() {
             <div className="polje">
               <label htmlFor="kv-razred-manual">Razred</label>
               <div className="segment">
-                {RAZREDI.map((r) => (
+                {razrediPredmeta(predmet).map((r) => (
                   <button
                     key={r} type="button"
                     className={`segment-dugme ${razred === r ? 'segment-dugme--izabran' : ''}`}

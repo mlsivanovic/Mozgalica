@@ -35,9 +35,12 @@ import { srpskiGramatika4 } from './moduli4/srpskiGramatika4.ts'
 import { srpskiRecnik4 } from './moduli4/srpskiRecnik4.ts'
 import { srpskiCitanje4 } from './moduli4/srpskiCitanje4.ts'
 import { MODULI5 } from './moduli5/index.ts'
+import { MODULI2 } from './moduli2/index.ts'
 import { MODULI_PRIRODE_I_DRUSTVA } from './moduliPid/index.ts'
 
 const MODULI: TopicGenerator[] = [
+  // Matematika, 2. razred
+  ...MODULI2,
   sabiranje, oduzimanje, mnozenje, deljenje, kombinovane,
   poredjenje, nizovi, obim, jedinice, novac,
   rimski, jednacine, nejednacine,

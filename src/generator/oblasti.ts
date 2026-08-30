@@ -1,5 +1,11 @@
 // Jedinstveni nazivi i ikonice automatskih generatora koje dele sve admin forme.
 export const NAZIVI_GENERISANIH_OBLASTI: Record<string, string> = {
+  'brojevi-do-100-2': 'Brojevi do 100', 'sabiranje-2': 'Sabiranje', 'oduzimanje-2': 'Oduzimanje',
+  'mnozenje-2': 'Množenje', 'deljenje-2': 'Deljenje',
+  'kombinovane-operacije-2': 'Kombinovane računske operacije', 'jednacine-2': 'Jednačine',
+  'delovi-celine-2': 'Delovi celine', 'novac-2': 'Novac', 'rimski-brojevi-2': 'Rimski brojevi',
+  'nizovi-2': 'Nizovi', 'tabele-i-dijagrami-2': 'Tabele i dijagrami',
+  'geometrija-2': 'Geometrija', 'merenje-2': 'Merenje i mere',
   sabiranje: 'Sabiranje', oduzimanje: 'Oduzimanje', mnozenje: 'Množenje', deljenje: 'Deljenje',
   'kombinovane-operacije': 'Kombinovane računske operacije', 'poredjenje-brojeva': 'Poređenje brojeva',
   'nizovi-i-obrasci': 'Nizovi i obrasci', 'obim-i-merenje': 'Obim i merenje dužine',
@@ -29,6 +35,11 @@ export const NAZIVI_GENERISANIH_OBLASTI: Record<string, string> = {
 }
 
 export const IKONE_GENERISANIH_OBLASTI: Record<string, string> = {
+  'brojevi-do-100-2': '💯', 'sabiranje-2': '➕', 'oduzimanje-2': '➖',
+  'mnozenje-2': '✖️', 'deljenje-2': '➗', 'kombinovane-operacije-2': '🧮',
+  'jednacine-2': '🟰', 'delovi-celine-2': '🍕', 'novac-2': '💰',
+  'rimski-brojevi-2': '🏛️', 'nizovi-2': '🔁', 'tabele-i-dijagrami-2': '📊',
+  'geometrija-2': '📐', 'merenje-2': '📏',
   sabiranje: '➕', oduzimanje: '➖', mnozenje: '✖️', deljenje: '➗',
   'kombinovane-operacije': '🧮', 'poredjenje-brojeva': '⚖️', 'nizovi-i-obrasci': '🔁',
   'obim-i-merenje': '📐', 'merne-jedinice': '📏', novac: '💰', 'rimski-brojevi': '🏛️',
