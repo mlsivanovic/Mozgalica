@@ -11,7 +11,7 @@ import { useAuth } from '../lib/auth'
 import { oznaciInboxProcitanim } from '../lib/obavestenja'
 import { postaviBedzAplikacije, slusajPushPoruke } from '../lib/push'
 import type { InboxObavestenja } from '../types/db'
-import { Loader } from './Zajednicke'
+import { Loader, TemaDugme } from './Zajednicke'
 import { ObavestenjaZvonce } from './ObavestenjaZvonce'
 import './adminLayout.css'
 
@@ -80,6 +80,7 @@ function RoditeljskiOkvir({ inbox, onProcitano }: { inbox: InboxObavestenja; onP
         <Link to="/admin" className="admin-logo">🧠 Mozgalica</Link>
         <div className="red">
           <ObavestenjaZvonce inbox={inbox} onOznaciProcitanim={onProcitano} nazivPrimaoca="roditelja" />
+          <TemaDugme className="roditelj-ikona-dugme" />
           <Link to="/admin/podesavanja" className="roditelj-ikona-dugme" aria-label="Podešavanja aplikacije"><RoditeljskaIkona ime="podesavanja" /></Link>
         </div>
       </header>

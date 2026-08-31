@@ -58,9 +58,10 @@
 
 /* Roditeljski okvir je odvojen od dečjeg interfejsa. */
 .roditeljski-okvir { min-height: 100dvh; font-size: 16px; --visina-dugmeta: 48px; }
-.roditelj-zaglavlje { display:flex; justify-content:space-between; align-items:center; padding:12px 20px; background:var(--boja-kartica); border-bottom:1px solid var(--boja-ivica); }
-.roditelj-ikona-dugme { width:48px; height:48px; display:grid; place-items:center; color:var(--boja-tekst-blagi); border-radius:12px; }
-.roditelj-ikona-dugme:hover { background:var(--boja-primarna-svetla); }
+.roditelj-zaglavlje { display:flex; justify-content:space-between; align-items:center; padding:12px 20px; background:var(--boja-kartica); border-bottom:1px solid var(--boja-ivica); position:sticky; top:0; z-index:61; }
+.roditelj-zaglavlje .red { flex-wrap:nowrap; gap:4px; }
+.roditelj-ikona-dugme { width:48px; height:48px; display:grid; place-items:center; color:var(--boja-tekst-blagi); border-radius:12px; border:0; background:transparent; padding:0; font:inherit; font-size:1.15rem; cursor:pointer; text-decoration:none; flex-shrink:0; }
+.roditelj-ikona-dugme:hover { background:var(--boja-primarna-svetla); text-decoration:none; }
 .roditelj-kontekst { max-width:1120px; padding:16px 20px 0; margin:auto; }
 .roditelj-izbor { display:flex; align-items:center; gap:16px; justify-content:space-between; }
 .roditelj-izbor select { min-width:0; width:min(100%,340px); }
@@ -130,7 +131,6 @@
   .roditelj-nav { top:0; bottom:0; width:208px; right:auto; display:flex; flex-direction:column; padding:110px 16px 24px; border-top:0; border-right:1px solid var(--boja-ivica); }
   .roditelj-nav a { flex-direction:row; justify-content:flex-start; padding:14px; gap:12px; font-size:16px; }
   .roditelj-sadrzaj { padding-bottom:48px; }
-  .roditelj-zaglavlje { position:relative; z-index:61; }
 }
 .roditelj-katalog-stavka { border:1px solid var(--boja-ivica); border-radius:12px; padding:12px; }
 .roditelj-katalog-stavka > summary { display:flex; justify-content:space-between; gap:12px; align-items:center; min-height:48px; cursor:pointer; }

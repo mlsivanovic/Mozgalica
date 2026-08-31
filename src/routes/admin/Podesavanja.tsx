@@ -1,7 +1,7 @@
 // Administratorska podešavanja: profili dece, šah, titule, prodavnica i obaveštenja.
 import { useEffect, useState } from 'react'
 import { PushKontrole } from '../../components/PushKontrole'
-import { Loader, TemaDugme } from '../../components/Zajednicke'
+import { Loader } from '../../components/Zajednicke'
 import { IkonaNagrade } from '../../components/IkonaNagrade'
 import { OznakaRangaTitule, TitleAvatar } from '../../components/TitleAvatar'
 import {
@@ -1327,7 +1327,6 @@ export function Podesavanja({ sekcija = 'obavestenja' }: { sekcija?: Sekcija }) 
         id="podesavanja-panel-obavestenja" className="kartica podesavanja-panel"
         aria-label="obavestenja"
       >
-        <div className="roditelj-alati"><div><h2>Izgled</h2><p className="blago">Svetla ili tamna tema</p></div><TemaDugme /></div>
         <h2>Mejl obaveštenja</h2>
         <p className="blago razmak-dole">
           Kada dete završi kviz, na tvoju email adresu stiže obaveštenje sa rezultatom.

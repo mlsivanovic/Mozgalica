@@ -31,7 +31,7 @@ export function Modal({
 
 // Dugme za preklapanje svetle/tamne teme. Prati sistemsku temu dok korisnik
 // ne izabere svoju (izbor se pamti u localStorage preko src/lib/tema.ts).
-export function TemaDugme() {
+export function TemaDugme({ className }: { className?: string } = {}) {
   const [tema, setTema] = useState(trenutnaTema)
 
   useEffect(() => pratiSistemskuTemu(setTema), [])
@@ -42,7 +42,9 @@ export function TemaDugme() {
 
   return (
     <button
-      type="button" className="dugme dugme--senka dugme--malo" onClick={preklopi}
+      type="button"
+      className={className ?? 'dugme dugme--senka dugme--malo'}
+      onClick={preklopi}
       aria-label={tema === 'tamna' ? 'Uključi svetlu temu' : 'Uključi tamnu temu'}
       title={tema === 'tamna' ? 'Svetla tema' : 'Tamna tema'}
     >
