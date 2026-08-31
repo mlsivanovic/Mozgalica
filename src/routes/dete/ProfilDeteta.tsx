@@ -5,7 +5,10 @@ import { PushKontrole } from '../../components/PushKontrole'
 import { Loader, TemaDugme } from '../../components/Zajednicke'
 import {
   listajObavestenjaDeteta, oznaciObavestenjaDetetaProcitanim, ucitajJavniProfil,
+  ucitajRasporedCasovaDeteta,
 } from '../../lib/api'
+import type { PregledRasporedaCasova } from '../../types/kviz'
+import { RasporedCasovaPregled } from './RasporedCasovaPregled'
 import { formatDatum, formatOdbrojavanje, formatProcenat } from '../../lib/format'
 import { oznaciInboxProcitanim } from '../../lib/obavestenja'
 import {
@@ -27,6 +30,7 @@ import './profil.css'
 export function ProfilDeteta() {
   const { profilToken = '' } = useParams<{ profilToken: string }>()
   const [profil, setProfil] = useState<JavniProfilPayload | null>(null)
+  const [raspored, setRaspored] = useState<PregledRasporedaCasova | null>(null)
   const [ucitava, setUcitava] = useState(true)
   const [inbox, setInbox] = useState<InboxObavestenja>({ obavestenja: [], neprocitano: 0 })
 
@@ -38,6 +42,12 @@ export function ProfilDeteta() {
     } catch {
       // Profil i kvizovi ostaju dostupni i kada inbox privremeno ne može da se osveži.
     }
+    try {
+      const noviRaspored = await ucitajRasporedCasovaDeteta(profilToken)
+      setRaspored(noviRaspored.ok && noviRaspored.exists ? noviRaspored : null)
+    } catch {
+      // Raspored časova nije obavezan za rad profila.
+    }
   }, [profilToken])
 
   useEffect(() => {
@@ -47,9 +57,10 @@ export function ProfilDeteta() {
   useEffect(() => {
     postaviDecjiManifest()
     setUcitava(true)
-    ucitajJavniProfil(profilToken)
-      .then((ucitaniProfil) => {
+    Promise.all([ucitajJavniProfil(profilToken), ucitajRasporedCasovaDeteta(profilToken)])
+      .then(([ucitaniProfil, ucitaniRaspored]) => {
         setProfil(ucitaniProfil)
+        setRaspored(ucitaniRaspored.ok && ucitaniRaspored.exists ? ucitaniRaspored : null)
         if (!ucitaniProfil.ok) return
 
         zapamtiProfilZaInstalaciju(profilToken)
@@ -181,6 +192,18 @@ export function ProfilDeteta() {
             </Link>
           </div>
         </section>
+
+        {raspored?.exists && (
+          <section className="profil-sekcija" aria-label="Raspored časova">
+            <div className="profil-sekcija-naslov">
+              <div>
+                <p className="profil-nadnaslov">Škola</p>
+                <h2>Raspored časova</h2>
+              </div>
+            </div>
+            <RasporedCasovaPregled raspored={raspored} />
+          </section>
+        )}
 
         <section className="profil-sekcija">
           <div className="profil-sekcija-naslov">

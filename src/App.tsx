@@ -5,6 +5,7 @@ import { PitanjaSekcija } from './components/AdminSekcijaTabovi'
 import { VezbanjeSekcija, NagradeSekcija } from './components/RoditeljskeSekcije'
 import { Vezbanje } from './routes/admin/Vezbanje'
 import { Rasporedi } from './routes/admin/Rasporedi'
+import { RasporedCasova } from './routes/admin/RasporedCasova'
 import { Napredak, NapredakSekcija } from './routes/admin/Napredak'
 import { Zadaj } from './routes/admin/Zadaj'
 import { RoditeljskoPreusmerenje } from './lib/roditelj'
@@ -41,6 +42,7 @@ function App() {
 
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<Kontrolna />} />
+            <Route path="raspored-casova" element={<RasporedCasova />} />
             <Route element={<VezbanjeSekcija />}>
               <Route path="vezbanje" element={<Vezbanje />} />
               <Route path="vezbanje/rasporedi" element={<Rasporedi />} />

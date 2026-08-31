@@ -12,8 +12,11 @@ da tokom letnjeg raspusta na zabavan način obnove gradivo.
   pitanja i kvizove, dodeljuje šahovske partije, dnevne rasporede i aktivne kvizove,
   uređuje profile dece. Po potrebi može da napravi i generički link sa više pokušaja.
 - **Dete** ne otvara nalog — preko stalnog profilnog linka vidi aktivne kvizove i partije,
-  zvezdice, titulu i prethodne rezultate. Započeti profilni kviz nastavlja tamo gde je
+  zvezdice, titulu, raspored časova i prethodne rezultate. Započeti profilni kviz nastavlja tamo gde je
   prekinut, uključujući povratak sa drugog uređaja.
+- **Raspored časova:** roditelj unosi školski raspored (prepodnevna i popodnevna smena,
+  naizmenične nedelje, pretčas). Dete na profilu vidi Danas, Sutra (za pakovanje knjiga)
+  i nedeljnu mrežu. Ovo je odvojeno od dnevnih rasporeda kviza i šaha.
 - **Šah protiv računara:** dete igra na jednom od pet ELO nivoa, sa satom ili bez njega.
   Posle poraza ili predaje može najviše tri puta da ponovi partiju — protiv istog ili
   slabijeg protivnika.

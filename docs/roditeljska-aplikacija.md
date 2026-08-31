@@ -4,6 +4,8 @@
 
 Četiri odredišta su **Danas**, **Vežbanje**, **Napredak** i **Nagrade**. Na širinama manjim od 1024 px navigacija je pri dnu, a na većim u bočnoj traci. Podešavanja aplikacije sadrže izgled, obaveštenja i odjavu. Profili su u „Upravljaj decom“.
 
+**Raspored časova** (školski časovi, smene, pretčas) nije isto što i **Rasporedi** u Vežbanju (automatski dnevni kvizovi i šah). Roditelj ga unosi na `/admin/raspored-casova` i na kartici na Danas; dete ga vidi na profilu (Danas / Sutra / Nedelja). Piše samo prijavljeni roditelj, preko RPC.
+
 Izbor deteta živi u URL parametru `dete`. Odsustvo parametra znači svu decu. Nepoznat ili nedostupan profil prikazuje grešku. Zajednički alati (pitanja, generator, katalog, pravila i profili) čuvaju parametar, ali umesto birača prikazuju oznaku zajedničkog sadržaja. Forme dodele i rasporeda imaju svoj izbor primaoca, nezavisan od globalnog filtera. Detalj konkretnog pokušaja ne prikazuje globalni birač.
 
 `RoditeljskiLink` i `useRoditeljskiNavigate` čuvaju kontekst pri navigaciji. Period i filteri napretka prenose se u detalj i nazad, a arhiva zadržava svoj prikaz. Stare rute rezultata, statistike, generatora, kvizova i šaha ostaju dostupne ili preusmeravaju na odgovarajuće odredište.
@@ -24,6 +26,7 @@ Izbor deteta živi u URL parametru `dete`. Odsustvo parametra znači svu decu. N
 npx vitest run
 npm run build
 supabase db query --linked -f supabase/tests/roditeljski_pregled.sql
+supabase db query --linked -f supabase/tests/raspored_casova.sql
 ```
 
 Integracioni SQL test proverava pristup, vlasništvo, nepoznat profil, ograničenje događaja, dnevnu zonu i slaganje brojača sa zadacima. Radi u transakciji koja se završava sa `ROLLBACK` i ne menja poslovne podatke.

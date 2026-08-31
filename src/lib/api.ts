@@ -10,9 +10,11 @@ import type {
 import type {
   InboxDetetaPayload, JavniProfilPayload, KupovinaPayload, KvizMeta, NapredakTitule,
   ObjasnjenjePayload, PokusajPayload, PonovniPayload, PonovnoPitanjeUnos, PotvrdaTajmera,
-  PregledStatistikeDecePayload, ProdavnicaPayload,
+  PregledRasporedaCasova, PregledStatistikeDecePayload, ProdavnicaPayload,
+  RasporedCasovaAdmin, RasporedCasovaKartica, RasporedCasovaUnos,
   RezultatPayload, SahStanjePayload, SavePotvrda, SavetPayload, StatistikaDetetaPayload,
 } from '../types/kviz'
+import type { SmenaCasova } from './rasporedCasova'
 import { SEED_PITANJA } from '../data/seedPitanja'
 import { supabase } from './supabase'
 
@@ -921,6 +923,101 @@ export async function ucitajJavniProfil(profileToken: string): Promise<JavniProf
   const { data, error } = await supabase().rpc('get_child_profile', { p_profile_token: profileToken })
   if (error) return { ok: false, error: opisiGresku(error)! }
   return data as JavniProfilPayload
+}
+
+function greskaRasporeda(error: { message: string } | null, data: { ok?: boolean; error?: string } | null): string | null {
+  if (error) return opisiGresku(error)
+  if (data && data.ok === false) {
+    if (data.error === 'forbidden') return 'Nemaš dozvolu za raspored časova.'
+    if (data.error === 'not_found') return 'Profil deteta nije dostupan.'
+    if (data.error === 'invalid') return 'Podaci rasporeda nisu ispravni. Proveri satnicu i predmete.'
+    return data.error ?? 'Raspored časova nije sačuvan.'
+  }
+  return null
+}
+
+export async function ucitajRasporedCasova(childProfileId: string): Promise<RasporedCasovaAdmin> {
+  const { data, error } = await supabase().rpc('admin_get_school_timetable', {
+    p_child_profile_id: childProfileId,
+  })
+  const greska = greskaRasporeda(error, data as { ok?: boolean; error?: string } | null)
+  if (greska) return { ok: false, exists: false, error: greska }
+  return data as RasporedCasovaAdmin
+}
+
+export async function listajRasporedeCasova(childProfileId?: string): Promise<RasporedCasovaKartica[]> {
+  const { data, error } = await supabase().rpc('admin_list_school_timetables', {
+    p_child_profile_id: childProfileId || null,
+  })
+  const greska = greskaRasporeda(error, data as { ok?: boolean; error?: string } | null)
+  if (greska) throw new Error(greska)
+  return ((data as { children?: RasporedCasovaKartica[] }).children ?? [])
+}
+
+export async function sacuvajRasporedCasova(
+  childProfileId: string,
+  unos: RasporedCasovaUnos,
+): Promise<RasporedCasovaAdmin> {
+  const { data, error } = await supabase().rpc('admin_upsert_school_timetable', {
+    p_child_profile_id: childProfileId,
+    p_payload: {
+      rotationMode: unos.rotationMode,
+      defaultShift: unos.defaultShift,
+      anchorMonday: unos.anchorMonday,
+      includeSaturday: unos.includeSaturday,
+      sharedSlots: unos.sharedSlots,
+      morningPeriods: unos.morningPeriods,
+      afternoonPeriods: unos.afternoonPeriods,
+      slots: unos.slots.map((s) => ({
+        shift: s.shift, weekday: s.weekday, periodNo: s.periodNo,
+        subject: s.subject, teacher: s.teacher, room: s.room, color: s.color, note: s.note,
+      })),
+    },
+  })
+  const greska = greskaRasporeda(error, data as { ok?: boolean; error?: string } | null)
+  if (greska) return { ok: false, exists: false, error: greska }
+  return data as RasporedCasovaAdmin
+}
+
+export async function postaviSmenuNedelje(
+  childProfileId: string,
+  weekMonday: string,
+  shift: SmenaCasova,
+): Promise<RasporedCasovaAdmin> {
+  const { data, error } = await supabase().rpc('admin_set_week_shift', {
+    p_child_profile_id: childProfileId,
+    p_week_monday: weekMonday,
+    p_shift: shift,
+  })
+  const greska = greskaRasporeda(error, data as { ok?: boolean; error?: string } | null)
+  if (greska) return { ok: false, exists: false, error: greska }
+  return data as RasporedCasovaAdmin
+}
+
+export async function kopirajRasporedCasova(fromChild: string, toChild: string): Promise<RasporedCasovaAdmin> {
+  const { data, error } = await supabase().rpc('admin_copy_school_timetable', {
+    p_from_child: fromChild,
+    p_to_child: toChild,
+  })
+  const greska = greskaRasporeda(error, data as { ok?: boolean; error?: string } | null)
+  if (greska) return { ok: false, exists: false, error: greska }
+  return data as RasporedCasovaAdmin
+}
+
+export async function obrisiRasporedCasova(childProfileId: string): Promise<void> {
+  const { data, error } = await supabase().rpc('admin_delete_school_timetable', {
+    p_child_profile_id: childProfileId,
+  })
+  const greska = greskaRasporeda(error, data as { ok?: boolean; error?: string } | null)
+  if (greska) throw new Error(greska)
+}
+
+export async function ucitajRasporedCasovaDeteta(profileToken: string): Promise<PregledRasporedaCasova> {
+  const { data, error } = await supabase().rpc('get_child_school_timetable', {
+    p_profile_token: profileToken,
+  })
+  if (error) return { ok: false, exists: false, error: opisiGresku(error)! }
+  return data as PregledRasporedaCasova
 }
 
 // ---------- RPC za dete — prodavnica ----------

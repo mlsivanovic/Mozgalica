@@ -1,0 +1,91 @@
+/* Raspored časova — roditeljski uređivač i dečji pregled. */
+
+.raspored-tabovi { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
+.raspored-tabovi button {
+  flex: 1; min-width: 90px; min-height: 48px; border: 2px solid var(--boja-ivica);
+  background: var(--boja-kartica); color: var(--boja-tekst); border-radius: 12px;
+  font: inherit; font-weight: 800; cursor: pointer;
+}
+.raspored-tabovi button[aria-current] {
+  background: var(--boja-primarna); color: var(--boja-na-boji); border-color: var(--boja-primarna);
+}
+
+.raspored-smena {
+  display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px;
+  border-radius: 999px; background: var(--boja-primarna-svetla); color: var(--boja-primarna-tamna);
+  font-weight: 800; font-size: 0.95rem; margin-bottom: 12px;
+}
+
+.raspored-knjige { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 14px; }
+.raspored-knjige span {
+  padding: 8px 12px; border-radius: 999px; font-weight: 800; color: #fff;
+}
+
+.raspored-casovi { display: grid; gap: 10px; }
+.raspored-cas {
+  display: grid; grid-template-columns: 88px 1fr; gap: 12px; align-items: center;
+  padding: 12px; border: 2px solid var(--boja-ivica); border-radius: 14px;
+  background: var(--boja-kartica); border-left-width: 8px;
+}
+.raspored-cas--sada { box-shadow: var(--senka-jaka); transform: scale(1.01); }
+.raspored-cas--sledeci { border-style: dashed; }
+.raspored-cas time { display: block; font-weight: 800; font-variant-numeric: tabular-nums; }
+.raspored-cas small { color: var(--boja-tekst-blagi); }
+.raspored-cas h3 { font-size: 1.15rem; }
+.raspored-bedz {
+  display: inline-block; margin-top: 4px; padding: 2px 8px; border-radius: 999px;
+  background: var(--boja-akcenat); color: #fff; font-size: 0.75rem; font-weight: 800;
+}
+
+.raspored-prazno { text-align: center; padding: 1.4rem; }
+.raspored-prazno span { font-size: 2rem; display: block; margin-bottom: 8px; }
+
+.raspored-mreza-omot { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.raspored-mreza {
+  width: 100%; min-width: 520px; border-collapse: separate; border-spacing: 6px;
+}
+.raspored-mreza th, .raspored-mreza td {
+  text-align: center; padding: 0; vertical-align: stretch;
+}
+.raspored-mreza th {
+  font-size: 0.85rem; color: var(--boja-tekst-blagi); font-weight: 800; padding: 6px;
+}
+.raspored-mreza th.raspored-mreza--danas { color: var(--boja-primarna); }
+.raspored-sat { white-space: nowrap; font-size: 0.78rem; color: var(--boja-tekst-blagi); padding: 6px 4px !important; }
+.raspored-celija {
+  width: 100%; min-height: 64px; border: 2px dashed var(--boja-ivica); border-radius: 10px;
+  background: transparent; color: inherit; font: inherit; cursor: pointer; padding: 6px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+}
+.raspored-celija:hover { border-color: var(--boja-primarna); }
+.raspored-celija--popunjena {
+  border-style: solid; color: #fff; font-weight: 800; font-size: 0.85rem;
+}
+.raspored-celija small { font-weight: 600; opacity: 0.9; }
+
+.raspored-izbor { display: flex; flex-wrap: wrap; gap: 8px; }
+.raspored-izbor button {
+  min-height: 44px; padding: 8px 12px; border-radius: 999px; border: 2px solid var(--boja-ivica);
+  background: var(--boja-kartica); font: inherit; font-weight: 700; cursor: pointer;
+}
+.raspored-izbor button[aria-pressed='true'] {
+  background: var(--boja-primarna); color: var(--boja-na-boji); border-color: var(--boja-primarna);
+}
+
+.raspored-dijalog {
+  width: min(440px, 100%); border: 0; border-radius: 16px; padding: 20px;
+  box-shadow: var(--senka-jaka); background: var(--boja-kartica); color: var(--boja-tekst);
+}
+.raspored-dijalog::backdrop { background: rgba(20, 24, 44, 0.45); }
+
+.raspored-satnica { display: grid; gap: 8px; }
+.raspored-satnica-red { display: grid; grid-template-columns: 90px 1fr 1fr; gap: 8px; align-items: center; }
+.raspored-satnica-red input { min-height: 44px; }
+
+.raspored-kartica-dete { display: flex; flex-direction: column; gap: 8px; }
+.raspored-kartica-dete h2 { display: flex; align-items: center; gap: 8px; }
+
+@media (max-width: 640px) {
+  .raspored-cas { grid-template-columns: 72px 1fr; }
+  .raspored-celija { min-height: 56px; font-size: 0.8rem; }
+}

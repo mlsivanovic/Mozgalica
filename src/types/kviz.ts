@@ -1,5 +1,8 @@
 // Tipovi payload-a koje vraćaju SECURITY DEFINER RPC funkcije za dete
 import type {
+  CasUDanu, RezimRotacije, SatnicaCasa, SmenaCasova, SlotRasporedaCasova,
+} from '../lib/rasporedCasova'
+import type {
   FiksnoImeDeteta, Obavestenje, OdgovorDeteta, OpcijeJson, TacanOdgovor, TipPitanja,
 } from './db'
 
@@ -491,4 +494,60 @@ export interface InboxDetetaPayload {
   error?: string
   unreadCount?: number
   notifications?: Obavestenje[]
+}
+
+export interface DanRasporedaCasova {
+  date: string
+  weekday: number
+  isBreak: boolean
+  shift: SmenaCasova | null
+  lessons: CasUDanu[]
+}
+
+export interface PregledRasporedaCasova {
+  ok: boolean
+  exists: boolean
+  error?: string
+  childName?: string
+  rotationMode?: RezimRotacije
+  includeSaturday?: boolean
+  sharedSlots?: boolean
+  thisWeekShift?: SmenaCasova
+  weekMonday?: string
+  overrideShift?: SmenaCasova | null
+  serverNow?: string
+  today?: DanRasporedaCasova
+  tomorrow?: DanRasporedaCasova
+  week?: DanRasporedaCasova[]
+}
+
+export interface RasporedCasovaUnos {
+  rotationMode: RezimRotacije
+  defaultShift: SmenaCasova
+  anchorMonday: string
+  includeSaturday: boolean
+  sharedSlots: boolean
+  morningPeriods: SatnicaCasa[]
+  afternoonPeriods: SatnicaCasa[]
+  slots: SlotRasporedaCasova[]
+}
+
+export interface RasporedCasovaAdmin {
+  ok: boolean
+  exists: boolean
+  error?: string
+  childProfileId?: string
+  childName?: string
+  childAvatar?: string
+  timetable?: RasporedCasovaUnos & { id: string; updatedAt: string }
+  resolved?: PregledRasporedaCasova
+}
+
+export interface RasporedCasovaKartica {
+  childProfileId: string
+  childName: string
+  childAvatar: string
+  exists: boolean
+  today: DanRasporedaCasova | null
+  nextSubject: string | null
 }

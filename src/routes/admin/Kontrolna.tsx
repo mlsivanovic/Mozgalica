@@ -1,13 +1,21 @@
 import { RoditeljskiLink as Link, useRoditelj } from '../../lib/roditelj'
 import { ucitajRoditeljskiPregled } from '../../lib/roditeljskiPregled'
+import { listajRasporedeCasova } from '../../lib/api'
 import { useRoditeljskiPodaci } from '../../lib/useRoditeljskiPodaci'
 import { formatDatum, formatProcenat } from '../../lib/format'
+import { nazivCasa, nazivSmene } from '../../lib/rasporedCasova'
 import { Loader } from '../../components/Zajednicke'
 import { NAZIVI_PREDMETA, type Predmet } from '../../types/db'
+import type { RasporedCasovaKartica } from '../../types/kviz'
+
+async function ucitajDanas(id: string) {
+  const [pregled, casovi] = await Promise.all([ucitajRoditeljskiPregled(id), listajRasporedeCasova(id)])
+  return { ...pregled, casovi }
+}
 
 export function Kontrolna() {
   const { dete } = useRoditelj()
-  const { podaci, greska, radi, osvezi } = useRoditeljskiPodaci(ucitajRoditeljskiPregled)
+  const { podaci, greska, radi, osvezi } = useRoditeljskiPodaci(ucitajDanas)
   if (!podaci && radi) return <Loader tekst="Pripremam dnevni pregled…" />
   const problemi = podaci?.schedules.filter(s => s.error) ?? []
   const paznja = problemi.length + (podaci?.reviewCount ?? 0) + (podaci?.rewardCount ?? 0)
@@ -20,13 +28,14 @@ export function Kontrolna() {
         {!!podaci.reviewCount && <Link to="/admin/napredak/rezultati?status=review_pending&period=all" className="roditelj-red"><div><strong>Kvizovi čekaju tvoju ocenu</strong><small>Završi pregled da rezultat bude konačan.</small></div><span className="bedz">{podaci.reviewCount} →</span></Link>}
         {!!podaci.rewardCount && <Link to="/admin/nagrade" className="roditelj-red"><div><strong>Nagrade za isporuku</strong><small>Označi ostvarenom kada je dete dobije.</small></div><span className="bedz">{podaci.rewardCount} →</span></Link>}
       </div></section> : <p className="roditelj-mirno">✓ Nema obaveza za tebe.</p>}
+      <RasporedCasovaKartice casovi={podaci.casovi} />
       <section className="roditelj-sekcija"><h2>{dete ? 'Dnevni pregled' : 'Moja deca'}</h2>
         {podaci.children.length === 0 ? <div className="kartica"><p>Dodaj dete da ovde pratiš njegove zadatke i napredak.</p><Link to="/admin/deca" className="dugme razmak-gore">Dodaj dete</Link></div>
           : <div className="roditelj-kartice">{podaci.children.map(d => <article className="kartica roditelj-dete" key={d.id}>
             <Link to={`/admin?dete=${d.id}`} className="roditelj-identitet"><span className="roditelj-avatar">{d.avatar}</span><h3>{d.name}</h3><span aria-hidden="true">→</span></Link>
             <div className="roditelj-metrike"><div><strong>{d.completedToday}</strong><span>završeno danas</span></div><div><strong>{d.quizCount}</strong><span>preostalo kvizova</span></div><div><strong>{d.chessCount}</strong><span>preostalo partija</span></div></div>
             <p className="malo blago">Poslednji kviz: {d.lastResult ? d.lastResult.pending ? 'čeka pregled' : formatProcenat(d.lastResult.score) : 'još nema rezultata'}</p>
-            <div className="red razmak-gore"><Link to={`/admin/vezbanje?dete=${d.id}`}>Zadaci →</Link><Link to={`/admin/napredak?dete=${d.id}`}>Napredak →</Link></div>
+            <div className="red razmak-gore"><Link to={`/admin/vezbanje?dete=${d.id}`}>Zadaci →</Link><Link to={`/admin/raspored-casova?dete=${d.id}`}>Raspored →</Link><Link to={`/admin/napredak?dete=${d.id}`}>Napredak →</Link></div>
           </article>)}</div>}
       </section>
       <section className="roditelj-sekcija"><div className="roditelj-alati"><h2>Sledeće zakazano</h2><Link to="/admin/vezbanje/rasporedi">Svi rasporedi →</Link></div>
@@ -38,4 +47,38 @@ export function Kontrolna() {
       <p className="malo blago razmak-gore" aria-live="polite">{radi ? 'Osvežavam…' : `Ažurirano ${formatDatum(podaci.updatedAt)} · vreme u Beogradu`}</p>
     </>}
   </div>
+}
+
+function RasporedCasovaKartice({ casovi }: { casovi: RasporedCasovaKartica[] }) {
+  if (casovi.length === 0) return null
+  return (
+    <section className="roditelj-sekcija" aria-label="Raspored časova">
+      <div className="roditelj-alati">
+        <h2>Raspored časova</h2>
+        <Link to="/admin/raspored-casova">Otvori raspored →</Link>
+      </div>
+      <div className="roditelj-lista">
+        {casovi.map((c) => {
+          const sledeci = c.today?.lessons.find((l) => l.isCurrent || l.isNext)
+          return (
+            <Link key={c.childProfileId} to={`/admin/raspored-casova?dete=${c.childProfileId}`} className="roditelj-red">
+              <div>
+                <strong>{c.childName} · raspored časova</strong>
+                <small>
+                  {!c.exists
+                    ? 'Još nije unet — dodaj časove da ih dete vidi.'
+                    : c.today?.isBreak
+                      ? 'Danas nema škole'
+                      : sledeci
+                        ? `${nazivSmene(c.today?.shift)} · ${nazivCasa(sledeci.periodNo)} ${sledeci.subject} u ${sledeci.startsAt}`
+                        : `${nazivSmene(c.today?.shift)} · nema više časova danas`}
+                </small>
+              </div>
+              <span className="bedz">{c.exists ? 'Otvori' : 'Unesi'} →</span>
+            </Link>
+          )
+        })}
+      </div>
+    </section>
+  )
 }

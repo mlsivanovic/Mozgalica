@@ -24,6 +24,8 @@ describe('roditeljski kontekst u URL-u', () => {
     expect(uredjivanjeAktivnosti('/admin/kvizovi/neki-kviz')).toBe(true)
     expect(glavnaSekcija('/admin/rezultati/nekakav-id')).toBe('napredak')
     expect(glavnaSekcija('/admin/sah')).toBe('vezbanje')
+    expect(glavnaSekcija('/admin/raspored-casova')).toBe('danas')
+    expect(glavnaSekcija('/admin/vezbanje/rasporedi')).toBe('vezbanje')
   })
 })
 
