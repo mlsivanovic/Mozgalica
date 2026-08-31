@@ -1,8 +1,9 @@
 // Prikaz rezultata detetu — poziva submit_attempt ponovo (idempotentno) preko
 // sačuvanog attemptToken-a, pa je stranica bezbedna i posle osvežavanja (F5).
-// Uz rezultat dete može da otvori objašnjenja netačnih zadataka, a zatim da ih
-// reši ponovo sa novim brojevima (jedan ponovni pokušaj — posle njega je kviz
-// zaključan; sve tačno u ponovnom pokušaju dopunjuje zvezdice do 5).
+// Uz rezultat dete može da otvori objašnjenja netačnih zadataka. U matematici
+// zatim može da ih reši ponovo sa novim brojevima (jedan ponovni pokušaj —
+// posle njega je kviz zaključan; sve tačno u ponovnom pokušaju dopunjuje
+// zvezdice do 5). Ostali predmeti vide objašnjenja, ali bez ponovnog rada.
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { PitanjeRenderer } from '../../components/pitanja/PitanjeRenderer'
@@ -81,6 +82,7 @@ function opisiPonovnuGresku(kod: string | undefined): string {
     case 'already_locked': return 'Ponovni pokušaj je već iskorišćen — kviz je zaključan.'
     case 'no_incorrect': return 'Nema netačnih zadataka za ponovni pokušaj.'
     case 'pending_review': return 'Rezultat još čeka pregled odrasle osobe.'
+    case 'not_allowed': return 'Ponovni pokušaj je dostupan samo u matematici.'
     default: return 'Ponovni pokušaj trenutno nije dostupan. Proveri internet konekciju.'
   }
 }
@@ -189,6 +191,8 @@ export function KvizRezultat() {
   const zakljucano = !!retry?.submitted
   const novPokusajMoguc = !profilniKviz && (rezultat.attemptsLeft ?? 0) > 0 && !zakljucano
   const netacni = (rezultat.questions ?? []).filter((q) => !q.isCorrect)
+  const mozeObjasnjenja = !!rezultat.showCorrect && netacni.length > 0 && !zakljucano
+  const mozePonovni = !!retry?.available
   const ponovniPregled = ponovniIshod?.questions ?? []
   const ponovnoTacnih = ponovniPregled.filter((q) => q.isCorrect).length
 
@@ -215,7 +219,7 @@ export function KvizRezultat() {
   }
 
   async function pokreniPonovni() {
-    if (!rezultat?.questions || !attemptToken || radi) return
+    if (!rezultat?.questions || !attemptToken || radi || !rezultat.retry?.available) return
     setRadi(true)
     setGreska(null)
     try {
@@ -291,7 +295,7 @@ export function KvizRezultat() {
           <span className="bedz bedz--greska">✗ {rezultat.incorrectCount} netačnih</span>
         </div>
 
-        {retry?.available && tokUI && (
+        {mozeObjasnjenja && tokUI && (
           <button type="button" className="dugme dugme--akcenat razmak-gore" onClick={prikaziObjasnjenja}>
             💡 Objasni netačne
           </button>
@@ -331,20 +335,24 @@ export function KvizRezultat() {
               )
             })}
           </div>
-          <div ref={dnoRef} className="kviz-ponovni-dno" />
-          <div className="centar razmak-gore">
-            <button
-              type="button"
-              className="dugme dugme--akcenat"
-              disabled={!skrolovanDno || radi}
-              onClick={pokreniPonovni}
-            >
-              🔄 Probaj ponovo netačne
-            </button>
-            {!skrolovanDno && (
-              <p className="malo blago">Skroluj do kraja objašnjenja da otključaš dugme.</p>
-            )}
-          </div>
+          {mozePonovni && (
+            <>
+              <div ref={dnoRef} className="kviz-ponovni-dno" />
+              <div className="centar razmak-gore">
+                <button
+                  type="button"
+                  className="dugme dugme--akcenat"
+                  disabled={!skrolovanDno || radi}
+                  onClick={pokreniPonovni}
+                >
+                  🔄 Probaj ponovo netačne
+                </button>
+                {!skrolovanDno && (
+                  <p className="malo blago">Skroluj do kraja objašnjenja da otključaš dugme.</p>
+                )}
+              </div>
+            </>
+          )}
         </div>
       )}
 

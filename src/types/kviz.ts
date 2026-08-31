@@ -107,8 +107,9 @@ export interface RezultatPitanja {
 
 // Stanje toka „objašnjenja + ponovni pokušaj netačnih zadataka" za pokušaj
 export interface RetryInfo {
-  // true samo kad kviz dozvoljava prikaz tačnih odgovora, rezultat ne čeka ručnu
-  // ocenu, postoje netačni zadaci i ponovni pokušaj još nije predat (zaključan)
+  // true samo za kvizove iz matematike, kad kviz dozvoljava prikaz tačnih
+  // odgovora, rezultat ne čeka ručnu ocenu, postoje netačni zadaci i
+  // ponovni pokušaj još nije predat (zaključan)
   available: boolean
   explanationsSeen: boolean
   started: boolean
