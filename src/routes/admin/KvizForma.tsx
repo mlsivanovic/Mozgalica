@@ -10,8 +10,9 @@ import {
   type FilterPitanja, type SnapshotUnos,
 } from '../../lib/api'
 import {
-  izaberiOblastiZaKviz, napraviPlanOblastiKviza, type IzvorStandardnogKviza,
+  izaberiOblastiZaKviz, napraviPlanOblastiKviza, dostupanKombinovaniIzvor, type IzvorStandardnogKviza,
 } from '../../lib/raspodelaKviza'
+import { sastaviKombinovaniPid } from '../../lib/kombinovaniPid'
 import { predmetImaTezinu, razrediPredmeta, tezinaZaPredmet } from '../../lib/predmet'
 import {
   KONFIGURACIJA_PREDMETA, NAZIVI_PREDMETA, NAZIVI_RAZREDA, NAZIVI_TEZINA, NAZIVI_TIPOVA, PREDMETI,
@@ -92,8 +93,7 @@ export function KvizForma({ pocetnoDete = '', onNazad }: { pocetnoDete?: string;
   const oblastiZaPrikaz = useMemo(() => {
     return oblasti.filter((o) => o.subject === predmet && o.grade === razred)
   }, [oblasti, predmet, razred])
-  const kombinovaniDostupan = oblastiZaPrikaz.some((o) => podrzaneSlugs.includes(o.slug))
-    && oblastiZaPrikaz.some((o) => !podrzaneSlugs.includes(o.slug))
+  const kombinovaniDostupan = dostupanKombinovaniIzvor(predmet, oblastiZaPrikaz, new Set(podrzaneSlugs))
 
   // Funkcija za generisanje inicijalnih default vrednosti
   const getDefaults = useCallback((p: Predmet, r: Razred, sveOblasti: Oblast[]): StandardQuizConfig => {
@@ -119,8 +119,7 @@ export function KvizForma({ pocetnoDete = '', onNazad }: { pocetnoDete?: string;
   const ucitajKonfiguraciju = useCallback((p: Predmet, r: Razred): StandardQuizConfig => {
     const oblastiKonteksta = oblasti.filter((o) => o.subject === p && o.grade === r)
     const defaults = getDefaults(p, r, oblasti)
-    const kombinovaniKontekst = oblastiKonteksta.some((o) => podrzaneSlugs.includes(o.slug))
-      && oblastiKonteksta.some((o) => !podrzaneSlugs.includes(o.slug))
+    const kombinovaniKontekst = dostupanKombinovaniIzvor(p, oblastiKonteksta, new Set(podrzaneSlugs))
     const saved = localStorage.getItem(`standard_quiz_settings_${p}_${r}`)
     if (!saved) return defaults
 
@@ -300,9 +299,18 @@ export function KvizForma({ pocetnoDete = '', onNazad }: { pocetnoDete?: string;
       if (!kreiranje.current.unosi) {
       let unosi: SnapshotUnos[] = []
 
-      // 2a. Generator ili kombinovani izvor: ravnomerno po oblastima, a kod
-      // kombinovanog izvora svaka oblast bira generator ili banku.
-      if (cfg.source === 'generator' || cfg.source === 'combined') {
+      if (cfg.source === 'combined' && predmet === 'priroda_drustvo') {
+        const tip = (cfg.type && cfg.type !== 'auto' ? cfg.type : 'auto') as TipPitanja | 'auto'
+        const banka = await listajPitanja({
+          topicIds: izabraneOblasti.map((o) => o.id), difficulty: 5,
+          ...(tip === 'auto' ? {} : { type: tip }),
+        })
+        const rezultat = sastaviKombinovaniPid({
+          plan: napraviPlanOblastiKviza(izabraneOblasti.map((o) => o.slug), cfg.count, new Set(podrzaneSlugs), 'combined'),
+          oblasti: izabraneOblasti, banka, type: tip, seed: Math.floor(Math.random() * 2 ** 32),
+        })
+        unosi = rezultat.snapshot.map((pitanje) => ({ ...pitanje, quiz_id: quizId }))
+      } else if (cfg.source === 'generator' || cfg.source === 'combined') {
         const plan = napraviPlanOblastiKviza(
           izabraneOblasti.map((oblast) => oblast.slug),
           cfg.count,
@@ -614,7 +622,9 @@ export function KvizForma({ pocetnoDete = '', onNazad }: { pocetnoDete?: string;
             </div>
             {cfg.source === 'combined' && (
               <p className="blago malo razmak-dole">
-                Oblasti označene kao „generator“ prave nova pitanja, a oblasti označene kao „banka“ koriste postojeća pitanja iz baze.
+                {predmet === 'priroda_drustvo'
+                  ? 'U svakoj oblasti približno pola pitanja dolazi iz banke, a pola iz generatora. Ako jedan izvor nema dovoljno pitanja, drugi dopunjava.'
+                  : 'Oblasti označene kao „generator“ prave nova pitanja, a oblasti označene kao „banka“ koriste postojeća pitanja iz baze.'}
               </p>
             )}
             
@@ -640,7 +650,7 @@ export function KvizForma({ pocetnoDete = '', onNazad }: { pocetnoDete?: string;
                       <span className="gen-oblast-tekst">
                         {NAZIVI_GENERISANIH_OBLASTI[o.slug] ?? o.name}
                         {cfg.source === 'combined' && (
-                          <small className="blago"> · {o.imaGenerator ? 'generator' : 'banka'}</small>
+                          <small className="blago"> · {o.imaGenerator ? predmet === 'priroda_drustvo' ? 'generator + banka' : 'generator' : 'banka'}</small>
                         )}
                       </span>
                     </label>

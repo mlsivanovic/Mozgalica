@@ -91,3 +91,5 @@ export const pidCovek4 = napraviPidGenerator(covek)
 export const pidMaterijali4 = napraviPidGenerator(materijali)
 export const pidProslostSrbije4 = napraviPidGenerator(proslostSrbije)
 export const PID_OBLASTI_4 = [pidOdlikeSrbije4, pidCovek4, pidMaterijali4, pidProslostSrbije4]
+
+export const PID_PODACI_4 = [odlikeSrbije, covek, materijali, proslostSrbije]

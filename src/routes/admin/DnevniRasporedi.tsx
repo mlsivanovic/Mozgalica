@@ -6,6 +6,7 @@ import {
   postaviAktivnostDnevnogRasporeda, sacuvajDnevniRasporedKviza,
   type NoviDnevniRasporedKviza,
 } from '../../lib/api'
+import { dostupanKombinovaniIzvor } from '../../lib/raspodelaKviza'
 import { formatDatum } from '../../lib/format'
 import { predmetImaTezinu, razrediPredmeta, tezinaZaPredmet } from '../../lib/predmet'
 import {
@@ -116,9 +117,9 @@ export function DnevniRasporedi({
       && (forma.source !== 'generator' || podrzane.has(oblast.slug)),
     )
   }, [forma, oblasti, podrzane])
-  const kombinovaniDostupan = forma != null
-    && oblasti.some((oblast) => oblast.subject === forma.subject && oblast.grade === forma.grade && podrzane.has(oblast.slug))
-    && oblasti.some((oblast) => oblast.subject === forma.subject && oblast.grade === forma.grade && !podrzane.has(oblast.slug))
+  const kombinovaniDostupan = forma != null && dostupanKombinovaniIzvor(
+    forma.subject, oblasti.filter((o) => o.subject === forma.subject && o.grade === forma.grade), podrzane,
+  )
 
   useEffect(() => {
     if (!forma || oblastiZaFormu.length === 0) return
@@ -142,7 +143,7 @@ export function DnevniRasporedi({
     let source = izmene.source ?? forma.source
     const sveTeme = oblasti.filter((oblast) => oblast.subject === subject && oblast.grade === grade)
     const generatorskeTeme = sveTeme.filter((oblast) => podrzane.has(oblast.slug))
-    const imaKombinaciju = generatorskeTeme.length > 0 && generatorskeTeme.length < sveTeme.length
+    const imaKombinaciju = dostupanKombinovaniIzvor(subject, sveTeme, podrzane)
     if (source === 'combined' && !imaKombinaciju) {
       source = generatorskeTeme.length > 0 ? 'generator' : 'bank'
     }
@@ -357,7 +358,9 @@ export function DnevniRasporedi({
             </div>
             {forma.source === 'combined' && (
               <p className="blago malo razmak-dole">
-                Oblasti sa generatorom prave nova pitanja; ostale koriste pitanja iz banke.
+                {forma.subject === 'priroda_drustvo'
+                  ? 'U svakoj oblasti približno pola pitanja dolazi iz banke, a pola iz generatora. Prednost imaju ranije nekorišćena pitanja; nedostatak dopunjava drugi izvor.'
+                  : 'Oblasti sa generatorom prave nova pitanja; ostale koriste pitanja iz banke.'}
               </p>
             )}
             <div className="gen-oblasti">
@@ -369,7 +372,7 @@ export function DnevniRasporedi({
                     <span className="gen-oblast-tekst">
                       {oblast.name}
                       {forma.source === 'combined' && (
-                        <small className="blago"> · {podrzane.has(oblast.slug) ? 'generator' : 'banka'}</small>
+                        <small className="blago"> · {podrzane.has(oblast.slug) ? forma.subject === 'priroda_drustvo' ? 'generator + banka' : 'generator' : 'banka'}</small>
                       )}
                     </span>
                   </label>

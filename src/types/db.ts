@@ -388,7 +388,7 @@ export interface PushPretplata {
 
 export interface StatusPushObavestenja {
   podrzano: boolean
-  dozvola: NotificationPermission | 'unsupported'
+  dozvola: 'default' | 'denied' | 'granted' | 'unsupported'
   aktivno: boolean
   razlog?: string
 }

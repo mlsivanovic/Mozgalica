@@ -1,5 +1,14 @@
 // Plan ravnomerne raspodele standardnog kviza po oblastima i izvorima.
-import type { Oblast, Predmet, Razred } from '../types/db'
+import type { Oblast, Predmet, Razred } from '../types/db.ts'
+
+export function dostupanKombinovaniIzvor(
+  predmet: Predmet,
+  oblasti: readonly Pick<Oblast, 'slug'>[],
+  podrzani: ReadonlySet<string>,
+): boolean {
+  return oblasti.some((o) => podrzani.has(o.slug))
+    && (predmet === 'priroda_drustvo' || oblasti.some((o) => !podrzani.has(o.slug)))
+}
 
 export type IzvorStandardnogKviza = 'bank' | 'generator' | 'combined'
 export type IzvorPitanjaOblasti = 'bank' | 'generator'

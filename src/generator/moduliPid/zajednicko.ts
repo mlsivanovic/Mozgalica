@@ -102,3 +102,26 @@ export function napraviPidGenerator(oblast: PidOblast): TopicGenerator {
     },
   }
 }
+
+// Kombinovani kviz mora proveriti ceo konačni fond pre istorijskog ponavljanja.
+export function sviPidKandidati(oblast: PidOblast, cfg: GeneratorConfig, rng: Rng): GenerisanoPitanje[] {
+  const kandidati: GenerisanoPitanje[] = []
+  const taken = new Set<string>()
+  for (const cinjenica of oblast.cinjenice) {
+    const jedna = { ...oblast, cinjenice: [cinjenica] }
+    if (cfg.type === 'auto' || cfg.type === 'single') kandidati.push(napraviIzbor(jedna, cfg, rng, taken)!)
+    if (cfg.type === 'auto' || cfg.type === 'truefalse') {
+      kandidati.push(napraviTvrdnju(jedna, cfg, () => 0, taken)!, napraviTvrdnju(jedna, cfg, () => 0.75, taken)!)
+    }
+  }
+  if (cfg.type === 'auto' || cfg.type === 'matching') {
+    const parovi = oblast.parovi
+    for (let a = 0; a < parovi.length - 3; a++)
+      for (let b = a + 1; b < parovi.length - 2; b++)
+        for (let c = b + 1; c < parovi.length - 1; c++)
+          for (let d = c + 1; d < parovi.length; d++) {
+            kandidati.push(napraviPovezivanje({ ...oblast, parovi: [parovi[a], parovi[b], parovi[c], parovi[d]] }, cfg, rng, taken)!)
+          }
+  }
+  return kandidati
+}

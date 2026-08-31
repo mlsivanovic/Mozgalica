@@ -5,6 +5,8 @@ import type { GenerisanoPitanje } from '../../../src/generator/types.ts'
 import {
   napraviPametniPlan, type StavkaPametneVezbe, type TemaPametneVezbe,
 } from '../../../src/lib/pametnaVezba.ts'
+import { sastaviKombinovaniPid, type PitanjeKombinovaneBanke } from '../../../src/lib/kombinovaniPid.ts'
+import type { TipPitanja } from '../../../src/types/db.ts'
 import { napraviPlanOblastiKviza } from '../../../src/lib/raspodelaKviza.ts'
 import {
   KONFIGURACIJA_PREDMETA, type Predmet,
@@ -12,6 +14,10 @@ import {
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+
+function napraviKlijent() {
+  return createClient(SUPABASE_URL, SERVICE_ROLE_KEY)
+}
 
 type Izvor = 'generator' | 'bank' | 'combined'
 
@@ -47,19 +53,7 @@ interface TemaPametneVezbeIzBaze {
   last_answered_at: string | null
 }
 
-interface PitanjeIzBanke {
-  id: string
-  topic_id: string
-  type: string
-  difficulty: number
-  text: string
-  options: unknown
-  correct: unknown
-  explanation: string | null
-  hint: string | null
-  points: number
-  manual_review: boolean
-}
+type PitanjeIzBanke = PitanjeKombinovaneBanke
 
 interface SnapshotPitanje {
   source_question_id: string | null
@@ -107,18 +101,20 @@ async function seedZa(rad: DnevniRad): Promise<number> {
 }
 
 async function ucitajPitanjaIzBanke(
-  supabase: ReturnType<typeof createClient>,
+  supabase: ReturnType<typeof napraviKlijent>,
   rad: DnevniRad,
 ): Promise<PitanjeIzBanke[]> {
   const sva: PitanjeIzBanke[] = []
   const velicinaStrane = 1000
   for (let od = 0; ; od += velicinaStrane) {
-    const { data, error } = await supabase
+    let upit = supabase
       .from('questions')
-      .select('id, topic_id, type, difficulty, text, options, correct, explanation, hint, points, manual_review')
+      .select('id, topic_id, type, difficulty, text, options, correct, explanation, hint, points, manual_review, gen_signature')
       .eq('owner_id', rad.owner_id)
       .in('topic_id', rad.topic_ids)
       .range(od, od + velicinaStrane - 1)
+    if (rad.source === 'combined' && rad.subject === 'priroda_drustvo') upit = upit.order('id')
+    const { data, error } = await upit
     if (error) throw new Error(error.message)
     const strana = (data ?? []) as PitanjeIzBanke[]
     sva.push(...strana)
@@ -203,7 +199,7 @@ function generisiPitanja(
 }
 
 async function ucitajPametniPlan(
-  supabase: ReturnType<typeof createClient>,
+  supabase: ReturnType<typeof napraviKlijent>,
   rad: DnevniRad,
 ): Promise<StavkaPametneVezbe[] | null> {
   if (!rad.smart_mode) return null
@@ -290,7 +286,7 @@ function snapshotIzGeneratora(pitanje: GenerisanoPitanje, tema: Tema): SnapshotB
   }
 }
 
-async function obradi(rad: DnevniRad, supabase: ReturnType<typeof createClient>) {
+async function obradi(rad: DnevniRad, supabase: ReturnType<typeof napraviKlijent>) {
   const seed = await seedZa(rad)
   const pametniPlan = await ucitajPametniPlan(supabase, rad)
   let snapshot: SnapshotPitanje[]
@@ -332,6 +328,14 @@ async function obradi(rad: DnevniRad, supabase: ReturnType<typeof createClient>)
       return { ...snapshotIzGeneratora(pitanje, tema), position }
     })
     kljucevi = generisana.map((pitanje) => pitanje.signature)
+  } else if (rad.subject === 'priroda_drustvo') {
+    const rezultat = sastaviKombinovaniPid({
+      plan: pametniPlan ?? napraviPlanOblastiKviza(rad.topic_slugs, rad.question_count, PODRZANI_GENERATORI, 'combined'),
+      oblasti: [...mapaPoSlugu.values()], banka: await ucitajPitanjaIzBanke(supabase, rad),
+      seed, type: (rad.question_type ?? 'auto') as TipPitanja | 'auto', prethodniKljucevi: rad.used_question_keys,
+    })
+    snapshot = rezultat.snapshot
+    kljucevi = rezultat.kljucevi
   } else {
     const plan = pametniPlan
       ? pametniPlan.map((stavka) => ({
@@ -395,7 +399,7 @@ async function obradi(rad: DnevniRad, supabase: ReturnType<typeof createClient>)
 
 Deno.serve(async (req: Request) => {
   if (req.method !== 'POST') return odgovor('Metoda nije dozvoljena.', 405)
-  const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY)
+  const supabase = napraviKlijent()
   const { data, error } = await supabase.rpc('claim_due_daily_quiz_runs', { p_limit: 20 })
   if (error) return odgovor(`Preuzimanje dnevnih kvizova nije uspelo: ${error.message}`, 500)
 

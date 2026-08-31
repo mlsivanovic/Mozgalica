@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Oblast } from '../types/db.ts'
-import { izaberiOblastiZaKviz, napraviPlanOblastiKviza } from './raspodelaKviza.ts'
+import { izaberiOblastiZaKviz, napraviPlanOblastiKviza, dostupanKombinovaniIzvor } from './raspodelaKviza.ts'
 
 const PODRZANI = new Set(['gramatika', 'pravopis'])
 
@@ -58,5 +58,20 @@ describe('izbor oblasti standardnog kviza', () => {
   it('izdvaja oblast Prirode i društva bez mešanja sa drugim predmetima', () => {
     expect(izaberiOblastiZaKviz(oblasti, 'priroda_drustvo', 4, ['sabiranje', 'pid-covek-4']))
       .toEqual([oblasti[3]])
+  })
+})
+
+
+describe('dostupnost kombinovanog izvora u formama', () => {
+  const oblasti = [{ slug: 'gramatika' }, { slug: 'pravopis' }]
+  it('priroda i društvo nudi kombinovani izvor i kada sve oblasti imaju generator', () => {
+    expect(dostupanKombinovaniIzvor('priroda_drustvo', oblasti, PODRZANI)).toBe(true)
+    expect(dostupanKombinovaniIzvor('priroda_drustvo', [], PODRZANI)).toBe(false)
+  })
+  it('srpski i matematika zadržavaju potrebu za oblastima bez generatora', () => {
+    for (const predmet of ['srpski', 'matematika'] as const) {
+      expect(dostupanKombinovaniIzvor(predmet, oblasti, PODRZANI)).toBe(false)
+      expect(dostupanKombinovaniIzvor(predmet, [...oblasti, { slug: 'samo-banka' }], PODRZANI)).toBe(true)
+    }
   })
 })

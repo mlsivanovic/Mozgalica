@@ -214,3 +214,5 @@ export const pidMaterijali3 = napraviPidGenerator(materijali)
 export const PID_OBLASTI_3 = [
   pidPrirodaCovekDrustvo3, pidOrijentacija3, pidProslost3, pidKretanje3, pidMaterijali3,
 ]
+
+export const PID_PODACI_3 = [prirodaCovekDrustvo, orijentacija, proslost, kretanje, materijali]
