@@ -1,7 +1,10 @@
-.sah-strana { min-height: 100vh; background: var(--boja-pozadina); padding: 1rem; }
+.sah-strana { min-height: 100dvh; background: var(--boja-pozadina); padding: 1rem; }
 .sah-omot { width: min(100%, 980px); margin: 0 auto; }
+.sah-zaglavlje { min-height:64px; padding:8px 0; }
+.sah-zaglavlje h1 { font-size:clamp(1.25rem,4vw,1.8rem); }
+.sah-spremna { margin:clamp(1rem,8vh,4rem) auto; display:grid; justify-items:center; gap:10px; padding:clamp(24px,6vw,42px); border-radius:24px; }
 .sah-igra { display: grid; grid-template-columns: minmax(280px, 620px) minmax(240px, 1fr); gap: 1.2rem; align-items: start; }
-.sah-tabla-omot { position: relative; width: 100%; }
+.sah-tabla-omot { position: relative; width: 100%; border-radius:18px; overflow:hidden; box-shadow:var(--senka-jaka); }
 .sah-tabla-admin { width: min(100%, 500px); margin: 0 auto; }
 .sah-promocija {
   position: absolute; inset: 50% auto auto 50%; transform: translate(-50%, -50%);
@@ -72,7 +75,8 @@
 }
 
 @media (max-width: 760px) {
-  .sah-strana { padding: 0.65rem; }
+  .sah-strana { padding: 0 10px calc(20px + env(safe-area-inset-bottom)); }
+  .sah-zaglavlje { position:sticky; top:0; z-index:15; margin:0 -10px 10px; padding:8px 12px; background:color-mix(in srgb,var(--boja-pozadina) 92%,transparent); backdrop-filter:blur(18px); border-bottom:1px solid var(--boja-ivica); }
   .sah-igra { grid-template-columns: 1fr; }
   .sah-panel .kartica { padding: 0.8rem; }
   .sah-potezi button { min-height: 44px; }

@@ -2,9 +2,11 @@
 
 ## Navigacija i kontekst
 
-Četiri odredišta su **Danas**, **Vežbanje**, **Napredak** i **Nagrade**. Na širinama manjim od 1024 px navigacija je pri dnu, a na većim u bočnoj traci. Podešavanja aplikacije sadrže izgled, obaveštenja i odjavu. Profili su u „Upravljaj decom“.
+Četiri odredišta su **Danas**, **Zadaci**, **Napredak** i **Nagrade**. Na širinama manjim od 1024 px navigacija je pri dnu, a na većim u bočnoj traci. Plutajuće dugme **Zadaj** je glavna akcija i otvara izbor kviza ili šahovske partije. Podešavanja aplikacije sadrže izgled, obaveštenja i odjavu. Profili su u „Upravljaj decom“.
 
-**Raspored časova** (školski časovi, smene, pretčas) nije isto što i **Rasporedi** u Vežbanju (automatski dnevni kvizovi i šah). Roditelj ga unosi na `/admin/raspored-casova` i na kartici na Danas; dete ga vidi na profilu (Danas / Sutra / Nedelja). Piše samo prijavljeni roditelj, preko RPC.
+**Raspored časova** (školski časovi, smene, pretčas) nije isto što i **Rasporedi** u Zadacima (automatski dnevni kvizovi i šah). Roditelj ga unosi na `/admin/raspored-casova` i na kartici na Danas; dete ga vidi na kartici Raspored. Piše samo prijavljeni roditelj, preko RPC.
+
+Dečja aplikacija koristi četiri stalna odredišta: **Početna**, **Raspored**, **Nagrade** i **Rezultati**. Prodavnica je deo Nagrada, a tema i podešavanja su u gornjoj traci. Kviz i šah imaju izdvojen, fokusiran prikaz bez glavne navigacije. Izbor teme podržava sistemsku, svetlu i tamnu varijantu i pamti se lokalno na uređaju.
 
 Izbor deteta živi u URL parametru `dete`. Odsustvo parametra znači svu decu. Nepoznat ili nedostupan profil prikazuje grešku. Zajednički alati (pitanja, generator, katalog, pravila i profili) čuvaju parametar, ali umesto birača prikazuju oznaku zajedničkog sadržaja. Forme dodele i rasporeda imaju svoj izbor primaoca, nezavisan od globalnog filtera. Detalj konkretnog pokušaja ne prikazuje globalni birač.
 

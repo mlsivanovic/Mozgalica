@@ -3,7 +3,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { PauziraniTajmer, Tajmer } from '../../components/Tajmer'
-import { Loader, ProgresTraka, TemaDugme } from '../../components/Zajednicke'
+import { Loader, ProgresTraka } from '../../components/Zajednicke'
+import { Ikona } from '../../components/Ikona'
+import { StatusIkona } from '../../components/ui'
 import { PitanjeRenderer, odgovorJePrazan } from '../../components/pitanja/PitanjeRenderer'
 import {
   iskoristiSavet, nastaviPokusaj, posaljiOdgovore, potvrdiTajmer, predajKviz,
@@ -36,6 +38,7 @@ export function KvizResavanje() {
   const [predaje, setPredaje] = useState(false)
   const [trazimSavet, setTrazimSavet] = useState(false)
   const [porukaSavet, setPorukaSavet] = useState<string | null>(null)
+  const [pregledOtvoren, setPregledOtvoren] = useState(false)
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -228,13 +231,11 @@ export function KvizResavanje() {
     : `/kviz/${token}`
 
   return (
-    <div className="sadrzaj sadrzaj--usko" style={{ paddingBottom: '5rem' }}>
-      <div className="red red--razmak razmak-dole">
-        <div className="red">
-          <Link to={pocetnaRuta} className="dugme dugme--senka dugme--malo">🏠 Početna</Link>
-          <h1 style={{ fontSize: '1.2rem' }}>{stanje.childName || 'Rešavanje kviza'}</h1>
-        </div>
-        <div className="red">
+    <div className="sadrzaj sadrzaj--usko kviz-aplikacija">
+      <div className="kviz-aplikacija-traka">
+        <Link to={pocetnaRuta} className="ui-ikona-dugme" aria-label="Izađi iz kviza"><Ikona ime="nazad" /></Link>
+        <div className="kviz-traka-naslov"><strong>{stanje.childName || 'Kviz'}</strong><span>Pitanje {indeks + 1} od {pitanja.length}</span></div>
+        <div className="kviz-traka-tajmer">
           {stanje.accessMode === 'profile' && preostaloProfil !== null ? (
             <PauziraniTajmer
               initialSeconds={preostaloProfil}
@@ -244,7 +245,6 @@ export function KvizResavanje() {
           ) : deadlineAt ? (
             <Tajmer deadlineAt={deadlineAt} serverOffsetMs={serverOffsetMs} onIstek={predajOdmah} />
           ) : null}
-          <TemaDugme />
         </div>
       </div>
 
@@ -254,8 +254,8 @@ export function KvizResavanje() {
         </p>
       )}
 
-      <div className="red red--razmak">
-        <p className="malo blago razmak-dole">Pitanje {indeks + 1} od {pitanja.length}</p>
+      <div className="red red--razmak kviz-meta-red">
+        <button type="button" className="dugme dugme--tekst dugme--malo" onClick={() => setPregledOtvoren(true)}><Ikona ime="pregled" velicina={18} />Pregled pitanja</button>
         {imaSavetaZaBiloKoje && (
           <span className="bedz kviz-saveti-bedz" title="Preostali saveti za ceo pokušaj">
             💡 {Math.max(0, 3 - (stanje.hintsUsed ?? 0))}/3
@@ -263,22 +263,6 @@ export function KvizResavanje() {
         )}
       </div>
       <ProgresTraka vrednost={pitanja.length - neodgovorenaPitanja} ukupno={pitanja.length} />
-
-      <div className="red razmak-dole" style={{ flexWrap: 'wrap', marginTop: '0.6rem' }}>
-        {pitanja.map((p, i) => {
-          const odgovoreno = !odgovorJePrazan(stanje.answers[p.id]?.answer ?? null)
-          return (
-            <button
-              key={p.id} type="button" onClick={() => setIndeks(i)}
-              aria-label={`Pitanje ${i + 1}${odgovoreno ? ', odgovoreno' : ', bez odgovora'}`}
-              aria-current={i === indeks}
-              className={`kviz-broj ${i === indeks ? 'kviz-broj--trenutno' : odgovoreno ? 'kviz-broj--odgovoreno' : ''}`}
-            >
-              {i + 1}
-            </button>
-          )
-        })}
-      </div>
 
       <div className="kartica kviz-pitanje-kartica" key={trenutno.id}>
         <h2 className="kviz-pitanje-tekst">{trenutno.text}</h2>
@@ -323,8 +307,8 @@ export function KvizResavanje() {
         )}
       </div>
 
-      <p className="malo blago centar razmak-gore">
-        {sinhronizuje ? 'Čuvam odgovore…' : svePotvrdjeno ? 'Svi odgovori su sačuvani ✔' : `${nesinhronizovanoBroj} odgovora čeka slanje…`}
+      <p className="malo blago centar razmak-gore kviz-status-cuvanja">
+        {sinhronizuje ? <StatusIkona vrsta="neutralno">Čuvam…</StatusIkona> : svePotvrdjeno ? <StatusIkona vrsta="uspeh">Sačuvano</StatusIkona> : <StatusIkona vrsta="upozorenje">{nesinhronizovanoBroj} čeka slanje</StatusIkona>}
       </p>
 
       {greska && <p className="poruka poruka--greska">{greska}</p>}
@@ -345,6 +329,11 @@ export function KvizResavanje() {
           </div>
         </div>
       )}
+      {pregledOtvoren && <div className="modal-pozadina" role="presentation" onClick={() => setPregledOtvoren(false)}><div className="modal kviz-pregled-list" role="dialog" aria-modal="true" aria-label="Pregled pitanja" onClick={e => e.stopPropagation()}>
+        <div className="red red--razmak"><div><p className="malo blago">Kviz</p><h2>Pregled pitanja</h2></div><button type="button" className="ui-ikona-dugme" aria-label="Zatvori pregled" onClick={() => setPregledOtvoren(false)}><Ikona ime="zatvori" /></button></div>
+        <div className="kviz-pregled-mreza razmak-gore">{pitanja.map((p,i) => { const odgovoreno=!odgovorJePrazan(stanje.answers[p.id]?.answer ?? null); return <button key={p.id} type="button" className={`kviz-broj ${i === indeks ? 'kviz-broj--trenutno' : odgovoreno ? 'kviz-broj--odgovoreno' : ''}`} aria-label={`Pitanje ${i+1}${odgovoreno?', odgovoreno':', bez odgovora'}`} onClick={() => {setIndeks(i);setPregledOtvoren(false)}}>{i+1}</button> })}</div>
+        <p className="malo blago razmak-gore">{pitanja.length-neodgovorenaPitanja} od {pitanja.length} odgovoreno</p>
+      </div></div>}
     </div>
   )
 }

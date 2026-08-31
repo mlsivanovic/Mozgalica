@@ -1,10 +1,11 @@
 // Upravljanje svetlom/tamnom temom. Ključ i pravila su usklađeni sa inline
 // skriptom u index.html (koja postavlja temu pre prvog crtanja, bez bljeska).
 export type Tema = 'svetla' | 'tamna'
+export type IzborTeme = 'sistem' | Tema
 
 const KLJUC = 'mozgalica:tema'
-const TAMNA_BOJA = '#14182c'
-const SVETLA_BOJA = '#5b6ee1'
+const TAMNA_BOJA = '#10121a'
+const SVETLA_BOJA = '#4f46e5'
 
 function sistemskaTema(): Tema {
   return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'tamna' : 'svetla'
@@ -22,14 +23,16 @@ export function trenutnaTema(): Tema {
 }
 
 // Da li je korisnik EKSPLICITNO izabrao temu (nasuprot praćenju sistemske)
-export function imaEksplicitniIzbor(): boolean {
+export function izborTeme(): IzborTeme {
   try {
     const v = localStorage.getItem(KLJUC)
-    return v === 'svetla' || v === 'tamna'
+    return v === 'svetla' || v === 'tamna' ? v : 'sistem'
   } catch {
-    return false
+    return 'sistem'
   }
 }
+
+export function imaEksplicitniIzbor(): boolean { return izborTeme() !== 'sistem' }
 
 export function postaviTemu(t: Tema, zapamti = true): void {
   document.documentElement.setAttribute('data-theme', t)
@@ -37,6 +40,17 @@ export function postaviTemu(t: Tema, zapamti = true): void {
   if (zapamti) {
     try { localStorage.setItem(KLJUC, t) } catch { /* privatni režim / puna memorija — nije kritično */ }
   }
+}
+
+export function postaviIzborTeme(izbor: IzborTeme): Tema {
+  if (izbor === 'sistem') {
+    try { localStorage.removeItem(KLJUC) } catch { /* privatni režim */ }
+    const tema = sistemskaTema()
+    postaviTemu(tema, false)
+    return tema
+  }
+  postaviTemu(izbor)
+  return izbor
 }
 
 export function preklopiTemu(): Tema {

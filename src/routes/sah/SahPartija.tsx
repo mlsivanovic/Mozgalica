@@ -3,6 +3,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { SahTabla } from '../../components/SahTabla'
 import { Konfete, Loader, TemaDugme } from '../../components/Zajednicke'
+import { Ikona } from '../../components/Ikona'
+import { Maskota } from '../../components/Maskota'
 import { sahAkcija } from '../../lib/api'
 import { postaviDecjiManifest } from '../../pwa'
 import { dozvoljeniEloZaPokusaj, preostaloPokusaja } from '../../sah/pokusaj'
@@ -420,10 +422,13 @@ export function SahPartija() {
     <main className="sah-strana">
       {prikazujeRezultat && (stanje.starsAwarded ?? 0) > 0 && <Konfete />}
       <div className="sah-omot">
-        <div className="red red--razmak razmak-dole">
-          <div>
+        <div className="red red--razmak razmak-dole sah-zaglavlje">
+          <div className="red sah-zaglavlje-identitet">
+            {stanje.profileToken && <Link to={`/dete/${stanje.profileToken}`} className="ui-ikona-dugme" aria-label="Nazad na profil"><Ikona ime="nazad" /></Link>}
+            <div>
             <p className="malo blago">Šah protiv računara</p>
             <h1>{stanje.childName} · ELO {stanje.approximateElo}</h1>
+            </div>
           </div>
           <TemaDugme />
         </div>
@@ -432,8 +437,8 @@ export function SahPartija() {
         {obavestenje && <p className="poruka poruka--uspeh" role="status">{obavestenje}</p>}
 
         {stanje.status === 'assigned' ? (
-          <section className="kartica centar sadrzaj--usko" style={{ margin: '2rem auto' }}>
-            <div style={{ fontSize: '4rem' }} aria-hidden="true">♟️</div>
+          <section className="kartica centar sadrzaj--usko sah-spremna">
+            <Maskota stanje="pozdrav" velicina={96} />
             <h2>Spreman/na za partiju?</h2>
             <p className="blago razmak-gore">
               Igraš {stanje.childColor === 'white' ? 'belim' : 'crnim'} figurama
@@ -504,7 +509,7 @@ export function SahPartija() {
                                 type="button" className="dugme dugme--akcenat"
                                 disabled={radi} onClick={() => setBiraElo(true)}
                               >
-                                ↻ Pokušaj ponovo
+                                <Ikona ime="ponovi" /> Pokušaj ponovo
                               </button>
                               <p className="malo blago">
                                 {radi
@@ -546,7 +551,7 @@ export function SahPartija() {
                         type="button" className="dugme dugme--senka dugme--malo sah-ponisti razmak-gore"
                         onClick={() => void poništiPoslednjiPotez()}
                       >
-                        ↶ Poništi moj potez
+                        <Ikona ime="ponovi" /> Poništi moj potez
                       </button>
                     )}
                     <button
@@ -619,13 +624,13 @@ export function SahPartija() {
                       type="button" className="dugme dugme--senka dugme--malo"
                       disabled={aktivniPly <= 0} onClick={() => idiNa(0)} aria-label="Početak partije"
                     >
-                      ⏮
+                      <Ikona ime="nazad" />
                     </button>
                     <button
                       type="button" className="dugme dugme--senka dugme--malo"
                       disabled={aktivniPly <= 0} onClick={() => idiNa(aktivniPly - 1)} aria-label="Prethodni potez"
                     >
-                      ←
+                      <Ikona ime="nazad" />
                     </button>
                     <div className="sah-pregled-nav-info">
                       <strong>{aktivniPly} / {potezi.length}</strong>
@@ -635,13 +640,13 @@ export function SahPartija() {
                       type="button" className="dugme dugme--senka dugme--malo"
                       disabled={aktivniPly >= potezi.length} onClick={() => idiNa(aktivniPly + 1)} aria-label="Sledeći potez"
                     >
-                      →
+                      <Ikona ime="napred" />
                     </button>
                     <button
                       type="button" className="dugme dugme--senka dugme--malo"
                       disabled={aktivniPly >= potezi.length} onClick={() => idiNa(potezi.length)} aria-label="Kraj partije"
                     >
-                      ⏭
+                      <Ikona ime="napred" />
                     </button>
                   </div>
                 )}

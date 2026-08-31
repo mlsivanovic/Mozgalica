@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { ObavestenjaZvonce } from '../../components/ObavestenjaZvonce'
 import { IkonaNagrade } from '../../components/IkonaNagrade'
-import { Loader, Modal, TemaDugme } from '../../components/Zajednicke'
+import { Loader, Modal } from '../../components/Zajednicke'
 import { kupiStavku, listajObavestenjaDeteta, oznaciObavestenjaDetetaProcitanim, ucitajProdavnicu } from '../../lib/api'
 import { formatDatum } from '../../lib/format'
 import { oznaciInboxProcitanim } from '../../lib/obavestenja'
@@ -131,7 +131,7 @@ export function Prodavnica() {
   }
 
   return (
-    <main className="prodavnica-strana">
+    <div className="prodavnica-strana">
       <div className="prodavnica-omot">
         <div className="red red--kraj">
           <ObavestenjaZvonce
@@ -139,11 +139,10 @@ export function Prodavnica() {
             onOznaciProcitanim={oznaciProcitanim}
             nazivPrimaoca={prodavnica.name ?? 'deteta'}
           />
-          <TemaDugme />
         </div>
 
-        <Link className="dugme dugme--senka dugme--malo razmak-gore" to={`/dete/${profilToken}`}>
-          ← Nazad na profil
+        <Link className="dugme dugme--senka dugme--malo razmak-gore" to={`/dete/${profilToken}/nagrade`}>
+          ← Nazad na nagrade
         </Link>
 
         <section className="prodavnica-zaglavlje">
@@ -297,6 +296,6 @@ export function Prodavnica() {
           </div>
         </Modal>
       )}
-    </main>
+    </div>
   )
 }

@@ -5,6 +5,7 @@ import { dodeliSahPartiju } from '../../lib/api'
 import { KvizForma } from './KvizForma'
 import { SAH_ELO_NIVOI, SAH_SATOVI } from '../../sah/podesavanja'
 import type { SahBoja } from '../../types/db'
+import { Ikona } from '../../components/Ikona'
 export function Zadaj() {
   const { deteId,profili } = useRoditelj()
   const [params] = useSearchParams()
@@ -16,7 +17,7 @@ export function Zadaj() {
   return <><div className="roditelj-naslov"><h1>Zadaj aktivnost</h1></div>
     <div hidden={korak !== 1}><ol className="roditelj-koraci"><li aria-current="step">1. Dete i aktivnost</li><li>2. Sadržaj</li><li>3. Potvrda</li></ol>
       <div className="kartica"><div className="polje"><label htmlFor="zadaj-dete">Kome je namenjeno?</label><select id="zadaj-dete" value={dete} onChange={e => setDete(e.target.value)}><option value="">Izaberi dete…</option>{profili.map(p => <option key={p.id} value={p.id}>{p.avatar} {p.name}</option>)}{vrsta === 'quiz' && <option value="bez-dodele">Pripremi kviz bez dodele</option>}</select></div>
-      <fieldset style={{border:0}}><legend className="razmak-dole">Šta želiš da zadaš?</legend><div className="red"><label className="stiklir"><input type="radio" name="vrsta" checked={vrsta === 'quiz'} onChange={() => setVrsta('quiz')} />Kviz</label><label className="stiklir"><input type="radio" name="vrsta" checked={vrsta === 'chess'} onChange={() => {setVrsta('chess'); if(dete === 'bez-dodele') setDete('')}} />Šah</label></div></fieldset>
+      <fieldset className="zadaj-vrste"><legend className="razmak-dole">Šta želiš da zadaš?</legend><div><label className={vrsta === 'quiz' ? 'aktivna' : ''}><input type="radio" name="vrsta" checked={vrsta === 'quiz'} onChange={() => setVrsta('quiz')} /><Ikona ime="zadaci" /><span><strong>Kviz</strong><small>Matematika, srpski ili priroda</small></span></label><label className={vrsta === 'chess' ? 'aktivna' : ''}><input type="radio" name="vrsta" checked={vrsta === 'chess'} onChange={() => {setVrsta('chess'); if(dete === 'bez-dodele') setDete('')}} /><Ikona ime="sah" /><span><strong>Šah</strong><small>Partija protiv računara</small></span></label></div></fieldset>
       {greska && <p role="alert" className="poruka poruka--greska">{greska}</p>}<button className="dugme dugme--akcenat razmak-gore" onClick={() => {if(!dete) {setGreska('Izaberi dete ili pripremu kviza bez dodele.');return} setGreska(null);setPokrenuto(true);setKorak(2)}}>Nastavi →</button></div>
     </div>
     {pokrenuto && <div hidden={korak === 1}>{vrsta === 'quiz' ? <KvizForma pocetnoDete={dete === 'bez-dodele' ? '' : dete} onNazad={() => setKorak(1)} /> : <DodelaSaha deteId={dete} onNazad={() => setKorak(1)} />}</div>}

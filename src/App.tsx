@@ -3,33 +3,35 @@ import { HashRouter, Navigate, Route, Routes, useParams } from 'react-router-dom
 import { AdminLayout } from './components/AdminLayout'
 import { PitanjaSekcija } from './components/AdminSekcijaTabovi'
 import { VezbanjeSekcija, NagradeSekcija } from './components/RoditeljskeSekcije'
-import { Vezbanje } from './routes/admin/Vezbanje'
-import { Rasporedi } from './routes/admin/Rasporedi'
-import { RasporedCasova } from './routes/admin/RasporedCasova'
-import { Napredak, NapredakSekcija } from './routes/admin/Napredak'
-import { Zadaj } from './routes/admin/Zadaj'
 import { RoditeljskoPreusmerenje } from './lib/roditelj'
 import { AuthProvider } from './lib/auth'
-import { Generator } from './routes/admin/Generator'
-import { KvizDetalj } from './routes/admin/KvizDetalj'
-import { KvizoviLista } from './routes/admin/KvizoviLista'
-import { Kontrolna } from './routes/admin/Kontrolna'
-import { PitanjaLista } from './routes/admin/PitanjaLista'
-import { Podesavanja } from './routes/admin/Podesavanja'
-import { Prijava } from './routes/admin/Prijava'
-import { RezultatDetalj } from './routes/admin/RezultatDetalj'
-import { Rezultati } from './routes/admin/Rezultati'
-import { KvizRezultat } from './routes/kviz/KvizRezultat'
-import { KvizResavanje } from './routes/kviz/KvizResavanje'
-import { KvizUlaz } from './routes/kviz/KvizUlaz'
 import { NijePronadjeno } from './routes/NijePronadjeno'
-import { Prodavnica } from './routes/dete/Prodavnica'
-import { ProfilDeteta } from './routes/dete/ProfilDeteta'
-import { PwaPocetakDeteta } from './routes/dete/PwaPocetakDeteta'
 import { Loader } from './components/Zajednicke'
+import { DecjiLayout } from './components/DecjiLayout'
 
 const Sah = lazy(() => import('./routes/admin/Sah').then((modul) => ({ default: modul.Sah })))
 const SahPartija = lazy(() => import('./routes/sah/SahPartija').then((modul) => ({ default: modul.SahPartija })))
+const Vezbanje = lazy(() => import('./routes/admin/Vezbanje').then(m => ({ default: m.Vezbanje })))
+const Rasporedi = lazy(() => import('./routes/admin/Rasporedi').then(m => ({ default: m.Rasporedi })))
+const RasporedCasova = lazy(() => import('./routes/admin/RasporedCasova').then(m => ({ default: m.RasporedCasova })))
+const Napredak = lazy(() => import('./routes/admin/Napredak').then(m => ({ default: m.Napredak })))
+const NapredakSekcija = lazy(() => import('./routes/admin/Napredak').then(m => ({ default: m.NapredakSekcija })))
+const Zadaj = lazy(() => import('./routes/admin/Zadaj').then(m => ({ default: m.Zadaj })))
+const Generator = lazy(() => import('./routes/admin/Generator').then(m => ({ default: m.Generator })))
+const KvizDetalj = lazy(() => import('./routes/admin/KvizDetalj').then(m => ({ default: m.KvizDetalj })))
+const KvizoviLista = lazy(() => import('./routes/admin/KvizoviLista').then(m => ({ default: m.KvizoviLista })))
+const Kontrolna = lazy(() => import('./routes/admin/Kontrolna').then(m => ({ default: m.Kontrolna })))
+const PitanjaLista = lazy(() => import('./routes/admin/PitanjaLista').then(m => ({ default: m.PitanjaLista })))
+const Podesavanja = lazy(() => import('./routes/admin/Podesavanja').then(m => ({ default: m.Podesavanja })))
+const Prijava = lazy(() => import('./routes/admin/Prijava').then(m => ({ default: m.Prijava })))
+const RezultatDetalj = lazy(() => import('./routes/admin/RezultatDetalj').then(m => ({ default: m.RezultatDetalj })))
+const Rezultati = lazy(() => import('./routes/admin/Rezultati').then(m => ({ default: m.Rezultati })))
+const KvizRezultat = lazy(() => import('./routes/kviz/KvizRezultat').then(m => ({ default: m.KvizRezultat })))
+const KvizResavanje = lazy(() => import('./routes/kviz/KvizResavanje').then(m => ({ default: m.KvizResavanje })))
+const KvizUlaz = lazy(() => import('./routes/kviz/KvizUlaz').then(m => ({ default: m.KvizUlaz })))
+const Prodavnica = lazy(() => import('./routes/dete/Prodavnica').then(m => ({ default: m.Prodavnica })))
+const ProfilDeteta = lazy(() => import('./routes/dete/ProfilDeteta').then(m => ({ default: m.ProfilDeteta })))
+const PwaPocetakDeteta = lazy(() => import('./routes/dete/PwaPocetakDeteta').then(m => ({ default: m.PwaPocetakDeteta })))
 
 function App() {
   return (
@@ -81,8 +83,15 @@ function App() {
           <Route path="/kviz/:token/resi" element={<KvizResavanje />} />
           <Route path="/kviz/:token/rezultat" element={<KvizRezultat />} />
           <Route path="/dete/pocetak" element={<PwaPocetakDeteta />} />
-          <Route path="/dete/:profilToken" element={<ProfilDeteta />} />
-          <Route path="/prodavnica/:profilToken" element={<Prodavnica />} />
+          <Route path="/dete/:profilToken" element={<DecjiLayout />}>
+            <Route index element={<ProfilDeteta prikaz="pocetna" />} />
+            <Route path="raspored" element={<ProfilDeteta prikaz="raspored" />} />
+            <Route path="nagrade" element={<ProfilDeteta prikaz="nagrade" />} />
+            <Route path="nagrade/prodavnica" element={<Prodavnica />} />
+            <Route path="rezultati" element={<ProfilDeteta prikaz="rezultati" />} />
+            <Route path="podesavanja" element={<ProfilDeteta prikaz="podesavanja" />} />
+          </Route>
+          <Route path="/prodavnica/:profilToken" element={<PreusmeriProdavnicu />} />
           <Route path="/sah/:token" element={<SahPartija />} />
 
           <Route path="*" element={<NijePronadjeno />} />
@@ -96,6 +105,11 @@ function App() {
 function PreusmeriStaruStatistiku() {
   const { profilId } = useParams<{ profilId: string }>()
   return <RoditeljskoPreusmerenje to={`/admin/napredak?dete=${profilId ?? ''}`} />
+}
+
+function PreusmeriProdavnicu() {
+  const { profilToken = '' } = useParams<{ profilToken: string }>()
+  return <Navigate to={`/dete/${profilToken}/nagrade/prodavnica`} replace />
 }
 
 export default App

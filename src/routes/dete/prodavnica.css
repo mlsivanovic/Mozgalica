@@ -1,10 +1,7 @@
 .prodavnica-strana {
-  min-height: 100vh;
-  padding: 1rem;
+  min-height: 0;
   background:
-    radial-gradient(circle at 10% 10%, var(--boja-primarna-svetla), transparent 34%),
-    radial-gradient(circle at 90% 30%, var(--boja-upozorenje-svetla), transparent 30%),
-    var(--boja-pozadina);
+    radial-gradient(circle at 90% 8%, color-mix(in srgb,var(--boja-upozorenje-svetla) 65%,transparent), transparent 32%);
 }
 
 .prodavnica-omot { width: min(860px, 100%); margin: 0 auto; }

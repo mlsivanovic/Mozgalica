@@ -13,6 +13,7 @@ import { postaviBedzAplikacije, slusajPushPoruke } from '../lib/push'
 import type { InboxObavestenja } from '../types/db'
 import { Loader, TemaDugme } from './Zajednicke'
 import { ObavestenjaZvonce } from './ObavestenjaZvonce'
+import { Ikona } from './Ikona'
 import './adminLayout.css'
 
 export function AdminLayout() {
@@ -70,14 +71,17 @@ function RoditeljskiOkvir({ inbox, onProcitano }: { inbox: InboxObavestenja; onP
   const detaljRezultata = /^\/admin\/rezultati\/[^/]+$/.test(pathname) && !pathname.endsWith('/statistika')
   const uredjivanje = uredjivanjeAktivnosti(pathname) || new URLSearchParams(search).has('raspored')
   const navigacija = [
-    ['danas', '/admin', 'Danas'], ['vezbanje', '/admin/vezbanje', 'Vežbanje'],
+    ['danas', '/admin', 'Danas'], ['vezbanje', '/admin/vezbanje', 'Zadaci'],
     ['napredak', '/admin/napredak', 'Napredak'], ['nagrade', '/admin/nagrade', 'Nagrade'],
   ] as const
   return (
     <div className="roditeljski-okvir">
       <a className="roditelj-preskoci" href="#roditeljski-sadrzaj" onClick={e => { e.preventDefault(); document.getElementById('roditeljski-sadrzaj')?.focus() }}>Preskoči na sadržaj</a>
       <header className="roditelj-zaglavlje">
-        <Link to="/admin" className="admin-logo">🧠 Mozgalica</Link>
+        <Link to="/admin" className="admin-logo" aria-label="Mozgalica · Danas">
+          <span className="admin-logo-znak"><Ikona ime="mozak" velicina={21} /></span>
+          <span>Mozgalica</span>
+        </Link>
         <div className="red">
           <ObavestenjaZvonce inbox={inbox} onOznaciProcitanim={onProcitano} nazivPrimaoca="roditelja" />
           <TemaDugme className="roditelj-ikona-dugme" />
@@ -103,6 +107,9 @@ function RoditeljskiOkvir({ inbox, onProcitano }: { inbox: InboxObavestenja; onP
           <RoditeljskaIkona ime={id} /><span>{naziv}</span>
         </Link>)}
       </nav>
+      {pathname !== '/admin/zadaj' && <Link to="/admin/zadaj" className="roditelj-fab" aria-label="Zadaj novu aktivnost">
+        <Ikona ime="dodaj" /><span>Zadaj</span>
+      </Link>}
       <main tabIndex={-1} id="roditeljski-sadrzaj" className="sadrzaj roditelj-sadrzaj">
         {ucitava ? <Loader tekst="Učitavanje profila…" /> : greska ? <div className="kartica"><p role="alert">{greska}</p><button className="dugme razmak-gore" onClick={() => void osveziProfile()}>Pokušaj ponovo</button></div>
           : nepoznatoDete && !zajednicko ? <div className="kartica"><h1>Profil nije dostupan</h1><p>Izaberi drugi profil ili pregled sve dece.</p><button className="dugme razmak-gore" onClick={() => izaberiDete('')}>Prikaži svu decu</button></div>

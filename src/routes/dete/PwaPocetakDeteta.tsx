@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Loader, TemaDugme } from '../../components/Zajednicke'
+import { Maskota } from '../../components/Maskota'
 import { ucitajJavniProfil } from '../../lib/api'
 import {
   izdvojiProfilniToken, poveziProfilSaPwa, ucitajPovezaniProfil,
@@ -79,11 +80,11 @@ export function PwaPocetakDeteta() {
   if (proverava) return <Loader tekst="Otvaram profil…" />
 
   return (
-    <main className="profil-strana">
+    <main className="profil-strana profil-pwa-strana">
       <div className="profil-omot profil-pwa-pocetak">
         <div className="red red--kraj"><TemaDugme /></div>
         <section className="kartica centar">
-          <div className="profil-avatar profil-avatar--mali" aria-hidden="true">🧠</div>
+          <div className="prijava-maskota"><Maskota stanje="pozdrav" velicina={92} /></div>
           <p className="profil-nadnaslov">Moja Mozgalica</p>
           <h1>Poveži profil deteta</h1>
           <p className="blago razmak-gore">

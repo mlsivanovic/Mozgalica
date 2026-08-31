@@ -8,6 +8,8 @@ import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { PitanjeRenderer } from '../../components/pitanja/PitanjeRenderer'
 import { Konfete, Loader } from '../../components/Zajednicke'
+import { Maskota } from '../../components/Maskota'
+import { Ikona } from '../../components/Ikona'
 import {
   nastaviPonovniPokusaj, otvoriObjasnjenja, pokreniPonovniPokusaj, predajKviz,
   predajPonovniPokusaj,
@@ -274,6 +276,7 @@ export function KvizRezultat() {
     <div className="sadrzaj sadrzaj--usko" style={{ paddingBottom: '3rem' }}>
       {zvezdice > 0 && mode !== 'ponovni' && <Konfete />}
       <div className="kartica centar">
+        <div className="kviz-rezultat-maskota"><Maskota stanje={zvezdice > 0 ? 'uspeh' : 'savet'} velicina={92} /></div>
         <h1>{rezultat.childName ? `Bravo, ${rezultat.childName}!` : 'Kviz je završen!'}</h1>
         <Zvezdice broj={zvezdice} />
         <p style={{ fontSize: '1.1rem', fontWeight: 700 }}>
@@ -297,7 +300,7 @@ export function KvizRezultat() {
 
         {mozeObjasnjenja && tokUI && (
           <button type="button" className="dugme dugme--akcenat razmak-gore" onClick={prikaziObjasnjenja}>
-            💡 Objasni netačne
+            <Ikona ime="sjaj" /> Objasni netačne
           </button>
         )}
 
@@ -348,7 +351,7 @@ export function KvizRezultat() {
                   🔄 Probaj ponovo netačne
                 </button>
                 {!skrolovanDno && (
-                  <p className="malo blago">Skroluj do kraja objašnjenja da otključaš dugme.</p>
+                  <p className="malo blago kviz-otkljucavanje"><Ikona ime="knjiga" velicina={18} /> Pročitaj sva objašnjenja — vežbanje se otključava na kraju.</p>
                 )}
               </div>
             </>

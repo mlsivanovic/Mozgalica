@@ -4,6 +4,8 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { kvizMeta, zapocniPokusaj } from '../../lib/api'
 import { zapocniStanje } from '../../lib/offlineQueue'
 import { Loader, TemaDugme } from '../../components/Zajednicke'
+import { Ikona } from '../../components/Ikona'
+import { Maskota } from '../../components/Maskota'
 import type { KvizMeta } from '../../types/kviz'
 import './kviz.css'
 
@@ -98,7 +100,7 @@ export function KvizUlaz() {
         <TemaDugme />
       </div>
       <div className="kartica kviz-kartica-uvod">
-        <div className="kviz-maskota" aria-hidden="true">{meta.childAvatar ?? '🧠'}</div>
+        <div className="kviz-maskota"><Maskota stanje="pozdrav" velicina={96} /></div>
         {meta.accessMode === 'profile' && (
           <p className="centar blago">Kviz za {meta.childName}</p>
         )}
@@ -106,10 +108,10 @@ export function KvizUlaz() {
         {meta.description && <p className="centar blago razmak-dole">{meta.description}</p>}
 
         <div className="kviz-cipovi">
-          <span className="kviz-cip">📝 {meta.questionCount} pitanja</span>
-          <span className="kviz-cip">⭐ {meta.totalPoints} poena</span>
+          <span className="kviz-cip"><Ikona ime="zadaci" velicina={18} /> {meta.questionCount} pitanja</span>
+          <span className="kviz-cip"><Ikona ime="zvezda" velicina={18} /> {meta.totalPoints} poena</span>
           {meta.timeLimitSeconds && (
-            <span className="kviz-cip">⏱ {Math.round(meta.timeLimitSeconds / 60)} min</span>
+            <span className="kviz-cip"><Ikona ime="vreme" velicina={18} /> {Math.round(meta.timeLimitSeconds / 60)} min</span>
           )}
         </div>
 

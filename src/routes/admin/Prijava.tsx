@@ -4,6 +4,7 @@ import { useState, type FormEvent } from 'react'
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '../../lib/auth'
 import { backendPodesen } from '../../lib/supabase'
+import { Maskota } from '../../components/Maskota'
 
 export function Prijava() {
   const { session, prijaviLozinkom, posaljiMagicLink } = useAuth()
@@ -51,9 +52,10 @@ export function Prijava() {
 
   return (
     <div className="sadrzaj sadrzaj--usko">
-      <div className="kartica" style={{ marginTop: '8vh' }}>
-        <h1 className="centar">🧠 Mozgalica</h1>
-        <p className="centar blago razmak-dole">Prijava za administratora</p>
+      <div className="kartica prijava-kartica">
+        <div className="prijava-maskota"><Maskota stanje="pozdrav" velicina={92} /></div>
+        <h1 className="centar">Dobro došli</h1>
+        <p className="centar blago razmak-dole">Prijavite se u roditeljsku Mozgalicu</p>
 
         <form onSubmit={posalji}>
           <div className="polje">

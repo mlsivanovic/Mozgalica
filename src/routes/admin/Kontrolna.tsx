@@ -20,7 +20,7 @@ export function Kontrolna() {
   const problemi = podaci?.schedules.filter(s => s.error) ?? []
   const paznja = problemi.length + (podaci?.reviewCount ?? 0) + (podaci?.rewardCount ?? 0)
   return <div>
-    <div className="roditelj-naslov"><div><h1>{dete ? `Danas · ${dete.name}` : 'Danas'}</h1><p className="blago malo">Mali koraci, svakog dana.</p></div><Link to="/admin/zadaj" className="dugme dugme--akcenat">+ Zadaj</Link></div>
+    <div className="roditelj-naslov roditelj-dobrodoslica"><div><p className="roditelj-nadnaslov">Dnevni pregled</p><h1>{dete ? `Danas · ${dete.name}` : 'Danas'}</h1><p className="blago">Sve važno na jednom mestu.</p></div></div>
     {greska && <div className="poruka poruka--greska" role="alert">{greska} <button className="dugme dugme--senka dugme--malo" onClick={() => void osvezi()}>Pokušaj ponovo</button></div>}
     {podaci && <>
       {paznja ? <section aria-label="Potrebna pažnja"><h2 className="razmak-dole">Potrebna pažnja</h2><div className="roditelj-lista roditelj-paznja">

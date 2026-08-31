@@ -1,6 +1,7 @@
 // Male zajedničke komponente: loader, modal, progres traka, dugme za temu
-import { useEffect, useState, type CSSProperties, type ReactNode } from 'react'
-import { pratiSistemskuTemu, preklopiTemu, trenutnaTema } from '../lib/tema'
+import { useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { izborTeme, postaviIzborTeme, pratiSistemskuTemu, preklopiTemu, trenutnaTema, type IzborTeme } from '../lib/tema'
+import { Ikona } from './Ikona'
 
 export function Loader({ tekst = 'Učitavanje…' }: { tekst?: string }) {
   return (
@@ -14,11 +15,19 @@ export function Loader({ tekst = 'Učitavanje…' }: { tekst?: string }) {
 export function Modal({
   naslov, onZatvori, children,
 }: { naslov: string; onZatvori: () => void; children: ReactNode }) {
+  const naslovId = useId()
+  const dialogRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    dialogRef.current?.focus()
+    const naTaster = (e: KeyboardEvent) => { if (e.key === 'Escape') onZatvori() }
+    window.addEventListener('keydown', naTaster)
+    return () => window.removeEventListener('keydown', naTaster)
+  }, [onZatvori])
   return (
     <div className="modal-pozadina" onClick={onZatvori} role="presentation">
-      <div className="modal" role="dialog" aria-modal="true" aria-label={naslov} onClick={(e) => e.stopPropagation()}>
+      <div ref={dialogRef} tabIndex={-1} className="modal" role="dialog" aria-modal="true" aria-labelledby={naslovId} onClick={(e) => e.stopPropagation()}>
         <div className="zaglavlje-strane">
-          <h2>{naslov}</h2>
+          <h2 id={naslovId}>{naslov}</h2>
           <button type="button" className="dugme dugme--senka dugme--malo" onClick={onZatvori}>
             Zatvori
           </button>
@@ -48,9 +57,19 @@ export function TemaDugme({ className }: { className?: string } = {}) {
       aria-label={tema === 'tamna' ? 'Uključi svetlu temu' : 'Uključi tamnu temu'}
       title={tema === 'tamna' ? 'Svetla tema' : 'Tamna tema'}
     >
-      {tema === 'tamna' ? '☀️' : '🌙'}
+      <Ikona ime={tema === 'tamna' ? 'svetla' : 'tamna'} />
     </button>
   )
+}
+
+export function TemaIzbor() {
+  const [izbor, setIzbor] = useState<IzborTeme>(izborTeme)
+  const opcije = [
+    ['sistem', 'izgled', 'Sistem'], ['svetla', 'svetla', 'Svetla'], ['tamna', 'tamna', 'Tamna'],
+  ] as const
+  return <div className="podesavanja-tema" role="radiogroup" aria-label="Tema aplikacije">
+    {opcije.map(([vrednost, ikona, naziv]) => <button key={vrednost} type="button" role="radio" aria-checked={izbor === vrednost} className={izbor === vrednost ? 'aktivna' : ''} onClick={() => { setIzbor(vrednost); postaviIzborTeme(vrednost) }}><Ikona ime={ikona} />{naziv}</button>)}
+  </div>
 }
 
 export function ProgresTraka({ vrednost, ukupno }: { vrednost: number; ukupno: number }) {

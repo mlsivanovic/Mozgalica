@@ -2,7 +2,10 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ObavestenjaZvonce } from '../../components/ObavestenjaZvonce'
 import { PushKontrole } from '../../components/PushKontrole'
-import { Loader, TemaDugme } from '../../components/Zajednicke'
+import { Loader, TemaIzbor } from '../../components/Zajednicke'
+import { Ikona } from '../../components/Ikona'
+import { Maskota } from '../../components/Maskota'
+import { PraznoStanje } from '../../components/ui'
 import {
   listajObavestenjaDeteta, oznaciObavestenjaDetetaProcitanim, ucitajJavniProfil,
   ucitajRasporedCasovaDeteta,
@@ -27,7 +30,9 @@ import type { InboxObavestenja } from '../../types/db'
 import { TitleAvatar } from '../../components/TitleAvatar'
 import './profil.css'
 
-export function ProfilDeteta() {
+type PrikazProfila = 'pocetna' | 'raspored' | 'nagrade' | 'rezultati' | 'podesavanja'
+
+export function ProfilDeteta({ prikaz = 'pocetna' }: { prikaz?: PrikazProfila }) {
   const { profilToken = '' } = useParams<{ profilToken: string }>()
   const [profil, setProfil] = useState<JavniProfilPayload | null>(null)
   const [raspored, setRaspored] = useState<PregledRasporedaCasova | null>(null)
@@ -118,18 +123,17 @@ export function ProfilDeteta() {
   const brojIstorije = (profil.history?.length ?? 0) + (profil.chessHistory?.length ?? 0)
 
   return (
-    <main className="profil-strana">
+    <div className="profil-strana">
       <div className="profil-omot">
-        <div className="red red--kraj">
+        {prikaz === 'pocetna' && <div className="red red--kraj">
           <ObavestenjaZvonce
             inbox={inbox}
             onOznaciProcitanim={oznaciProcitanim}
             nazivPrimaoca={profil.name ?? 'deteta'}
           />
-          <TemaDugme />
-        </div>
+        </div>}
 
-        <section className="profil-zaglavlje">
+        {(prikaz === 'pocetna' || prikaz === 'nagrade') && <section className="profil-zaglavlje">
           <div className="profil-avatar" aria-hidden="true">{profil.avatar}</div>
           <div>
             <p className="profil-nadnaslov">Moj profil</p>
@@ -145,14 +149,18 @@ export function ProfilDeteta() {
               </span>
             </div>
           </div>
-        </section>
+        </section>}
 
+        {prikaz === 'podesavanja' && <>
+        <div className="profil-sekcija-naslov"><div><p className="profil-nadnaslov">Moj nalog</p><h1>Podešavanja</h1></div></div>
+        <section className="kartica profil-push-kontrole"><h2>Izgled</h2><p className="blago malo razmak-dole">Mozgalica može da prati temu telefona.</p><TemaIzbor /></section>
         <ProfilPwaKontrole ime={profil.name ?? 'dete'} profilToken={profilToken} />
         <section className="kartica profil-push-kontrole">
           <PushKontrole profilToken={profilToken} />
         </section>
+        </>}
 
-        <section className="kartica profil-napredak" aria-label="Napredak do sledeće titule">
+        {prikaz === 'nagrade' && <section className="kartica profil-napredak" aria-label="Napredak do sledeće titule">
           <div className="red red--razmak" style={{ alignItems: 'center' }}>
             <div>
               <p className="malo blago">Trenutna titula</p>
@@ -179,21 +187,25 @@ export function ProfilDeteta() {
               ? `Još ${sledeca.starsNeeded} zvezdica do titule „${sledeca.name}”.`
               : 'Osvojena je najviša titula — svaka čast!'}
           </p>
-        </section>
+        </section>}
 
-        <section className="kartica profil-prodavnica-link" aria-label="Prodavnica nagrada">
+        {prikaz === 'nagrade' && <section className="kartica profil-prodavnica-link" aria-label="Prodavnica nagrada">
           <div className="red red--razmak" style={{ alignItems: 'center' }}>
             <div>
               <p className="malo blago">Zameni zvezdice za nagrade</p>
-              <h2 style={{ margin: 0 }}>🛒 Prodavnica</h2>
+              <h2 style={{ margin: 0 }}><span className="profil-naslov-ikona"><Ikona ime="prodavnica" /></span> Prodavnica</h2>
             </div>
-            <Link className="dugme dugme--akcenat" to={`/prodavnica/${profilToken}`}>
+            <Link className="dugme dugme--akcenat" to={`/dete/${profilToken}/nagrade/prodavnica`}>
               Otvori prodavnicu →
             </Link>
           </div>
-        </section>
+        </section>}
 
-        {raspored?.exists && (
+        {prikaz === 'pocetna' && raspored?.exists && <Link to={`/dete/${profilToken}/raspored`} className="kartica profil-danas-raspored">
+          <span className="profil-naslov-ikona"><Ikona ime="raspored" /></span><div><strong>Današnji raspored</strong><p className="malo blago">Pogledaj časove za danas i sutra.</p></div><Ikona ime="desno" />
+        </Link>}
+
+        {prikaz === 'raspored' && (
           <section className="profil-sekcija" aria-label="Raspored časova">
             <div className="profil-sekcija-naslov">
               <div>
@@ -201,11 +213,11 @@ export function ProfilDeteta() {
                 <h2>Raspored časova</h2>
               </div>
             </div>
-            <RasporedCasovaPregled raspored={raspored} />
+            {raspored?.exists ? <RasporedCasovaPregled raspored={raspored} /> : <PraznoStanje naslov="Raspored još nije unet" opis="Kada odrasla osoba unese časove, videćeš ih ovde." />}
           </section>
         )}
 
-        <section className="profil-sekcija">
+        {prikaz === 'pocetna' && <section className="profil-sekcija">
           <div className="profil-sekcija-naslov">
             <div>
               <p className="profil-nadnaslov">Vreme je za vežbu</p>
@@ -215,13 +227,7 @@ export function ProfilDeteta() {
           </div>
 
           {brojAktivnih === 0 ? (
-            <div className="kartica profil-prazno">
-              <span aria-hidden="true">🌟</span>
-              <div>
-                <h3>Sve je završeno!</h3>
-                <p className="blago">Novi kvizovi će se pojaviti ovde kada budu dodeljeni.</p>
-              </div>
-            </div>
+            <div className="profil-prazno-novo"><Maskota stanje="uspeh" /><div><h3>Sve je završeno!</h3><p className="blago">Novi zadaci će se pojaviti ovde.</p></div></div>
           ) : (
             <div className="profil-kvizovi">
               {profil.activeChessGames?.map((partija) => (
@@ -267,13 +273,10 @@ export function ProfilDeteta() {
               ))}
             </div>
           )}
-        </section>
+        </section>}
 
-        <details className="kartica profil-istorija">
-          <summary>
-            <span>Prethodni rezultati</span>
-            <span className="bedz">{brojIstorije}</span>
-          </summary>
+        {prikaz === 'rezultati' && <section className="profil-istorija">
+          <div className="profil-sekcija-naslov"><div><p className="profil-nadnaslov">Moj rad</p><h1>Rezultati</h1></div><span className="bedz">{brojIstorije}</span></div>
           <div className="profil-istorija-lista">
             {brojIstorije === 0 ? (
               <p className="blago">Još nema završenih aktivnosti.</p>
@@ -313,9 +316,9 @@ export function ProfilDeteta() {
               ))}
             </>}
           </div>
-        </details>
+        </section>}
       </div>
-    </main>
+    </div>
   )
 }
 

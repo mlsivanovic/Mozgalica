@@ -4,6 +4,7 @@ import { ucitajRoditeljskeZadatke } from '../../lib/roditeljskiPregled'
 import { useRoditeljskiPodaci } from '../../lib/useRoditeljskiPodaci'
 import { formatDatum } from '../../lib/format'
 import { Loader } from '../../components/Zajednicke'
+import { Ikona } from '../../components/Ikona'
 export function Vezbanje() {
   const { deteId } = useRoditelj()
   const { podaci, greska, radi, osvezi } = useRoditeljskiPodaci(ucitajRoditeljskeZadatke)
@@ -16,7 +17,7 @@ export function Vezbanje() {
     {podaci && [false,true].map(nedodeljeni => {
       if(nedodeljeni && deteId) return null
       const grupa = zadaci.filter(z => z.unassigned === nedodeljeni)
-      return <section className="roditelj-sekcija" key={String(nedodeljeni)}><h2>{nedodeljeni ? 'Nedodeljeni kvizovi' : 'Aktivni zadaci'}</h2>{grupa.length === 0 ? <p className="blago">{nedodeljeni ? 'Nema nedodeljenih kvizova.' : 'Nema preostalih zadataka u ovom prikazu.'}</p> : <div className="roditelj-lista">{grupa.map(z => <Link className="roditelj-red" key={`${z.id}-${z.childProfileId}`} to={z.kind === 'quiz' ? `/admin/kvizovi/${z.id}` : `/admin/sah?partija=${z.id}`}><div><strong>{z.kind === 'chess' ? '♟' : '▤'} {z.title}</strong><small>{z.childName ?? (z.unassigned ? 'Još nije dodeljen' : 'Deljeni link bez profila')} · {formatDatum(z.createdAt)}</small></div><span className="bedz">{z.state === 'in_progress' ? 'U toku' : z.unassigned ? 'Pripremljen' : 'Čeka'} →</span></Link>)}</div>}</section>
+      return <section className="roditelj-sekcija" key={String(nedodeljeni)}><h2>{nedodeljeni ? 'Nedodeljeni kvizovi' : 'Aktivni zadaci'}</h2>{grupa.length === 0 ? <p className="blago">{nedodeljeni ? 'Nema nedodeljenih kvizova.' : 'Nema preostalih zadataka u ovom prikazu.'}</p> : <div className="roditelj-lista">{grupa.map(z => <Link className="roditelj-red" key={`${z.id}-${z.childProfileId}`} to={z.kind === 'quiz' ? `/admin/kvizovi/${z.id}` : `/admin/sah?partija=${z.id}`}><span className="roditelj-red-ikona"><Ikona ime={z.kind === 'chess' ? 'sah' : 'zadaci'} /></span><div><strong>{z.title}</strong><small>{z.childName ?? (z.unassigned ? 'Još nije dodeljen' : 'Deljeni link bez profila')} · {formatDatum(z.createdAt)}</small></div><span className="bedz">{z.state === 'in_progress' ? 'U toku' : z.unassigned ? 'Pripremljen' : 'Čeka'} →</span></Link>)}</div>}</section>
     })}
   </>
 }

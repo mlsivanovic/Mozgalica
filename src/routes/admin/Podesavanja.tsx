@@ -20,6 +20,8 @@ import {
   type SahNagradaPodesavanje, type StavkaProdavnice,
 } from '../../types/db'
 import type { JavniProfilPayload } from '../../types/kviz'
+import { izborTeme, postaviIzborTeme, type IzborTeme } from '../../lib/tema'
+import { Ikona } from '../../components/Ikona'
 import './podesavanja.css'
 
 const BAZA_URL = typeof window !== 'undefined' ? `${window.location.origin}${import.meta.env.BASE_URL}` : ''
@@ -263,6 +265,7 @@ export function Podesavanja({ sekcija = 'obavestenja' }: { sekcija?: Sekcija }) 
   const aktivanTab = sekcija === 'pravila' ? pravilo : ['isporuka', 'istorija', 'katalog'].includes(sekcija) ? 'prodavnica' : sekcija
   const [ucitava, setUcitava] = useState(true)
   const [ukljucena, setUkljucena] = useState(true)
+  const [izgled, setIzgled] = useState<IzborTeme>(izborTeme)
   const [profili, setProfili] = useState<ProfilDeteta[]>([])
   const [preglediProfila, setPreglediProfila] = useState<Record<string, JavniProfilPayload>>({})
   const [titleGroups, setTitleGroups] = useState<TitleGroup[]>([])
@@ -1327,6 +1330,16 @@ export function Podesavanja({ sekcija = 'obavestenja' }: { sekcija?: Sekcija }) 
         id="podesavanja-panel-obavestenja" className="kartica podesavanja-panel"
         aria-label="obavestenja"
       >
+        <h2>Izgled</h2>
+        <p className="blago razmak-dole">Izaberi temu ili prepusti aplikaciji da prati podešavanje telefona.</p>
+        <div className="podesavanja-tema" role="radiogroup" aria-label="Tema aplikacije">
+          {([['sistem','izgled','Sistem'],['svetla','svetla','Svetla'],['tamna','tamna','Tamna']] as const).map(([vrednost,ikona,naziv]) => <button
+            key={vrednost} type="button" role="radio" aria-checked={izgled === vrednost}
+            className={izgled === vrednost ? 'aktivna' : ''}
+            onClick={() => { setIzgled(vrednost); postaviIzborTeme(vrednost) }}
+          ><Ikona ime={ikona} />{naziv}</button>)}
+        </div>
+        <div className="roditelj-sekcija">
         <h2>Mejl obaveštenja</h2>
         <p className="blago razmak-dole">
           Kada dete završi kviz, na tvoju email adresu stiže obaveštenje sa rezultatom.
@@ -1335,6 +1348,7 @@ export function Podesavanja({ sekcija = 'obavestenja' }: { sekcija?: Sekcija }) 
           <input type="checkbox" checked={ukljucena} onChange={(e) => promeniEmail(e.target.checked)} />
           Pošalji mi mejl kada dete završi kviz
         </label>
+        </div>
         <div className="podesavanja-push razmak-gore">
           <h2>Obaveštenja na uređaju</h2>
           <p className="blago razmak-dole">

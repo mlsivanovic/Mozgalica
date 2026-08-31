@@ -2,13 +2,13 @@
   "id": "mozgalica",
   "name": "Mozgalica — kvizovi i šah",
   "short_name": "Mozgalica",
-  "description": "Kvizovi iz matematike, srpskog i šaha - za decu 3. i 4. razred",
+  "description": "Kvizovi, šah, raspored i nagrade za decu od 2. do 5. razreda",
   "lang": "sr",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#f4f7ff",
-  "theme_color": "#5b6ee1",
+  "background_color": "#f7f7fc",
+  "theme_color": "#4f46e5",
   "icons": [
     {
       "src": "icon-192.png",
