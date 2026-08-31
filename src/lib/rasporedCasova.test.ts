@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
   aktivnaSmena, bojaPredmeta, casoviDana, danUNedelji, dodajDane, imaPretcas,
-  nastavniDan, nazivCasa, oznaciCasove, ponedeljakNedelje, postaviPretcas,
-  predmetiZaKnjige, PRETCAS_POPODNE, satnicaPreseta, sledeciCas,
+  kljucPredmeta, mapaBojaPredmeta, nastavniDan, nazivCasa, oznaciCasove, ponedeljakNedelje,
+  postaviPretcas, PREDLOZI_PREDMETA, predmetiZaKnjige, PRETCAS_POPODNE, satnicaPreseta, sledeciCas,
 } from './rasporedCasova'
 
 describe('kalendar rasporeda', () => {
@@ -95,5 +95,16 @@ describe('časovi u danu', () => {
   it('ista imena predmeta dobijaju istu boju', () => {
     expect(bojaPredmeta('Matematika')).toBe(bojaPredmeta('matematika'))
     expect(bojaPredmeta('Matematika', '#123456')).toBe('#123456')
+  })
+
+  it('ČOS i srpski imaju različite boje', () => {
+    expect(bojaPredmeta('ČOS')).not.toBe(bojaPredmeta('Srpski jezik'))
+    expect(bojaPredmeta('COS')).toBe(bojaPredmeta('ČOS'))
+  })
+
+  it('predlozi predmeta u jednom rasporedu ne dele boju', () => {
+    const mapa = mapaBojaPredmeta(PREDLOZI_PREDMETA)
+    const boje = PREDLOZI_PREDMETA.map((ime) => mapa.get(kljucPredmeta(ime)))
+    expect(new Set(boje).size).toBe(PREDLOZI_PREDMETA.length)
   })
 })

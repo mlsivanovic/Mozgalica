@@ -70,10 +70,67 @@ export const PREDLOZI_PREDMETA = [
 export const DANI_KRATKO = ['pon', 'uto', 'sre', 'čet', 'pet', 'sub'] as const
 export const DANI = ['Ponedeljak', 'Utorak', 'Sreda', 'Četvrtak', 'Petak', 'Subota'] as const
 
-const PALETA_PREDMETA = [
-  '#5b6ee1', '#ff8a3d', '#2eb872', '#e5484d', '#7c5cbf',
-  '#1a9bb5', '#d4a017', '#d95f8a', '#3d8b6e', '#c45c26',
-]
+const BOJE_POZNATIH_PREDMETA: Record<string, string> = {
+  'srpski jezik': '#3b5bdb',
+  'srpski': '#3b5bdb',
+  'matematika': '#f76707',
+  'priroda i društvo': '#2f9e44',
+  'priroda i drustvo': '#2f9e44',
+  'svet oko nas': '#0ca678',
+  'engleski jezik': '#e03131',
+  'engleski': '#e03131',
+  'fizičko vaspitanje': '#e67700',
+  'fizicko vaspitanje': '#e67700',
+  'likovna kultura': '#e64980',
+  'muzička kultura': '#7048e8',
+  'muzicka kultura': '#7048e8',
+  'digitalni svet': '#0c8599',
+  'čos': '#c2410c',
+  'cos': '#c2410c',
+  'čas odeljenskog starešine': '#c2410c',
+  'veronauka': '#9c36b5',
+  'informatika i računarstvo': '#1c7ed6',
+  'informatika i racunarstvo': '#1c7ed6',
+  'informatika': '#1c7ed6',
+  'istorija': '#a61e4d',
+  'geografija': '#087f5b',
+  'biologija': '#37b24d',
+  'fizika': '#364fc7',
+  'hemija': '#ae3ec9',
+  'tehnika i tehnologija': '#d9480f',
+  'nemački jezik': '#b08900',
+  'nemacki jezik': '#b08900',
+  'nemački': '#b08900',
+  'francuski jezik': '#c2255c',
+  'francuski': '#c2255c',
+  'građansko vaspitanje': '#495057',
+  'gradjansko vaspitanje': '#495057',
+}
+
+export function kljucPredmeta(naziv: string): string {
+  return naziv.trim().toLowerCase().normalize('NFC')
+}
+
+function hslUHex(h: number, s: number, l: number): string {
+  const sat = s / 100
+  const light = l / 100
+  const a = sat * Math.min(light, 1 - light)
+  const f = (n: number) => {
+    const k = (n + h / 30) % 12
+    const c = light - a * Math.max(Math.min(k - 3, 9 - k, 1), -1)
+    return Math.round(255 * c).toString(16).padStart(2, '0')
+  }
+  return `#${f(0)}${f(8)}${f(4)}`
+}
+
+function hashPredmeta(kljuc: string): number {
+  let h = 2166136261
+  for (let i = 0; i < kljuc.length; i++) {
+    h ^= kljuc.charCodeAt(i)
+    h = Math.imul(h, 16777619)
+  }
+  return h >>> 0
+}
 
 export function normalizujSat(vrednost: string): string {
   const deo = vrednost.trim().slice(0, 8)
@@ -168,11 +225,38 @@ export function nazivSmene(smena: SmenaCasova | null | undefined): string {
 }
 
 export function bojaPredmeta(naziv: string, override?: string | null): string {
+  if (override && /^#([0-9a-fA-F]{6})$/.test(override)) return override.toLowerCase()
+  const kljuc = kljucPredmeta(naziv)
+  if (!kljuc) return '#5b6ee1'
+  return BOJE_POZNATIH_PREDMETA[kljuc] ?? hslUHex((hashPredmeta(kljuc) * 137.508) % 360, 62, 42)
+}
+
+export function mapaBojaPredmeta(nazivi: Iterable<string>): Map<string, string> {
+  const redosled = [...new Set([...nazivi].map(kljucPredmeta).filter(Boolean))]
+  const zauzete = new Set<string>()
+  const mapa = new Map<string, string>()
+  for (const kljuc of redosled) {
+    const poznata = BOJE_POZNATIH_PREDMETA[kljuc]
+    if (!poznata) continue
+    mapa.set(kljuc, poznata)
+    zauzete.add(poznata)
+  }
+  for (const kljuc of redosled) {
+    if (mapa.has(kljuc)) continue
+    const osnova = hashPredmeta(kljuc)
+    let boja = bojaPredmeta(kljuc)
+    for (let i = 0; i < 36 && zauzete.has(boja); i++) {
+      boja = hslUHex((osnova * 137.508 + (i + 1) * 29) % 360, 62 - (i % 3) * 4, 40 + (i % 4) * 3)
+    }
+    mapa.set(kljuc, boja)
+    zauzete.add(boja)
+  }
+  return mapa
+}
+
+export function bojaIzMape(mapa: Map<string, string>, naziv: string, override?: string | null): string {
   if (override && /^#([0-9a-fA-F]{6})$/.test(override)) return override
-  let h = 0
-  const kljuc = naziv.trim().toLowerCase()
-  for (let i = 0; i < kljuc.length; i++) h = (h * 31 + kljuc.charCodeAt(i)) >>> 0
-  return PALETA_PREDMETA[h % PALETA_PREDMETA.length]
+  return mapa.get(kljucPredmeta(naziv)) ?? bojaPredmeta(naziv)
 }
 
 export function slotoviZaDan(

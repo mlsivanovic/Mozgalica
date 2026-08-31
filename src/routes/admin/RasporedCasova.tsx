@@ -5,7 +5,7 @@ import {
   sacuvajRasporedCasova, ucitajRasporedCasova,
 } from '../../lib/api'
 import {
-  belgradeDatum, bojaPredmeta, DANI_KRATKO, imaPretcas, nazivCasa, nazivSmene, ponedeljakNedelje,
+  belgradeDatum, bojaIzMape, DANI_KRATKO, imaPretcas, mapaBojaPredmeta, nazivCasa, nazivSmene, ponedeljakNedelje,
   postaviPretcas, PREDLOZI_PREDMETA, satnicaPreseta, type SatnicaCasa, type SmenaCasova,
   type SlotRasporedaCasova,
 } from '../../lib/rasporedCasova'
@@ -224,6 +224,7 @@ function Urednik({
   const [prikaz, setPrikaz] = useState<'mreza' | 'dete'>('mreza')
   const dani = unos.includeSaturday ? [1, 2, 3, 4, 5, 6] : [1, 2, 3, 4, 5]
   const periodi = smenaPrikaz === 'afternoon' ? unos.afternoonPeriods : unos.morningPeriods
+  const boje = mapaBojaPredmeta(unos.slots.map((s) => s.subject))
 
   async function sacuvaj(sledeci = unos) {
     setRadi(true); onGreska(null)
@@ -344,7 +345,7 @@ function Urednik({
                             <button
                               type="button"
                               className={`raspored-celija${slot ? ' raspored-celija--popunjena' : ''}`}
-                              style={slot ? { background: bojaPredmeta(slot.subject, slot.color), borderColor: 'transparent' } : undefined}
+                              style={slot ? { background: bojaIzMape(boje, slot.subject, slot.color), borderColor: 'transparent' } : undefined}
                               onClick={() => setCelija({ weekday: d, periodNo: p.periodNo })}
                             >
                               {slot ? slot.subject : '+'}

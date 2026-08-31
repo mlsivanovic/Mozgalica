@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import {
-  bojaPredmeta, DANI, DANI_KRATKO, nazivCasa, nazivSmene, predmetiZaKnjige,
+  bojaIzMape, DANI, DANI_KRATKO, mapaBojaPredmeta, nazivCasa, nazivSmene, predmetiZaKnjige,
 } from '../../lib/rasporedCasova'
 import type { CasUDanu } from '../../lib/rasporedCasova'
 import type { DanRasporedaCasova, PregledRasporedaCasova } from '../../types/kviz'
@@ -8,8 +8,8 @@ import '../admin/rasporedCasova.css'
 
 type Prikaz = 'danas' | 'sutra' | 'nedelja'
 
-function CasKartica({ cas }: { cas: CasUDanu }) {
-  const boja = bojaPredmeta(cas.subject, cas.color)
+function CasKartica({ cas, boje }: { cas: CasUDanu; boje: Map<string, string> }) {
+  const boja = bojaIzMape(boje, cas.subject, cas.color)
   return (
     <article
       className={`raspored-cas${cas.isCurrent ? ' raspored-cas--sada' : cas.isNext ? ' raspored-cas--sledeci' : ''}`}
@@ -32,7 +32,9 @@ function CasKartica({ cas }: { cas: CasUDanu }) {
   )
 }
 
-function DanPregled({ dan, naslov, prazan }: { dan: DanRasporedaCasova; naslov: string; prazan: string }) {
+function DanPregled({ dan, naslov, prazan, boje }: {
+  dan: DanRasporedaCasova; naslov: string; prazan: string; boje: Map<string, string>
+}) {
   const knjige = useMemo(() => predmetiZaKnjige(dan.lessons), [dan.lessons])
   if (dan.isBreak) {
     return (
@@ -49,13 +51,13 @@ function DanPregled({ dan, naslov, prazan }: { dan: DanRasporedaCasova; naslov: 
       {knjige.length > 0 && (
         <p className="raspored-knjige" aria-label="Predmeti za knjige">
           {knjige.map((ime) => (
-            <span key={ime} style={{ background: bojaPredmeta(ime) }}>{ime}</span>
+            <span key={ime} style={{ background: bojaIzMape(boje, ime) }}>{ime}</span>
           ))}
         </p>
       )}
       {dan.lessons.length === 0
         ? <div className="kartica raspored-prazno"><h3>Nema unetih časova za ovaj dan.</h3></div>
-        : <div className="raspored-casovi">{dan.lessons.map((cas) => <CasKartica key={cas.periodNo} cas={cas} />)}</div>}
+        : <div className="raspored-casovi">{dan.lessons.map((cas) => <CasKartica key={cas.periodNo} cas={cas} boje={boje} />)}</div>}
     </>
   )
 }
@@ -67,6 +69,7 @@ export function RasporedCasovaPregled({
   pocetni?: Prikaz
 }) {
   const [prikaz, setPrikaz] = useState<Prikaz>(pocetni)
+  const boje = useMemo(() => mapaBojaPredmeta(imenaIzRasporeda(raspored)), [raspored])
   if (!raspored.exists || !raspored.today || !raspored.tomorrow) return null
   const danasIme = raspored.today.isBreak ? 'Danas nema škole' : `Danas · ${DANI[(raspored.today.weekday - 1) as 0|1|2|3|4|5] ?? ''}`
   const sutraIme = raspored.tomorrow.isBreak ? 'Sutra nema škole' : `Sutra · ${DANI[(raspored.tomorrow.weekday - 1) as 0|1|2|3|4|5] ?? ''}`
@@ -80,8 +83,8 @@ export function RasporedCasovaPregled({
           </button>
         ))}
       </div>
-      {prikaz === 'danas' && <DanPregled dan={raspored.today} naslov={danasIme} prazan="Danas nema škole" />}
-      {prikaz === 'sutra' && <DanPregled dan={raspored.tomorrow} naslov={sutraIme} prazan="Sutra nema škole" />}
+      {prikaz === 'danas' && <DanPregled dan={raspored.today} naslov={danasIme} prazan="Danas nema škole" boje={boje} />}
+      {prikaz === 'sutra' && <DanPregled dan={raspored.tomorrow} naslov={sutraIme} prazan="Sutra nema škole" boje={boje} />}
       {prikaz === 'nedelja' && (periodiNedelje(raspored).length === 0
         ? <div className="kartica raspored-prazno"><h3>Još nema unetih časova ove nedelje.</h3></div>
         : (
@@ -107,7 +110,7 @@ export function RasporedCasovaPregled({
                     return (
                       <td key={dan.date}>
                         {cas
-                          ? <div className="raspored-celija raspored-celija--popunjena" style={{ background: bojaPredmeta(cas.subject, cas.color) }}>{cas.subject}</div>
+                          ? <div className="raspored-celija raspored-celija--popunjena" style={{ background: bojaIzMape(boje, cas.subject, cas.color) }}>{cas.subject}</div>
                           : <div className="raspored-celija" />}
                       </td>
                     )
@@ -120,6 +123,14 @@ export function RasporedCasovaPregled({
       ))}
     </section>
   )
+}
+
+function imenaIzRasporeda(raspored: PregledRasporedaCasova): string[] {
+  const imena: string[] = []
+  for (const dan of [raspored.today, raspored.tomorrow, ...(raspored.week ?? [])]) {
+    for (const cas of dan?.lessons ?? []) imena.push(cas.subject)
+  }
+  return imena
 }
 
 function periodiNedelje(raspored: PregledRasporedaCasova): number[] {
