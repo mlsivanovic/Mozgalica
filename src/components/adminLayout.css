@@ -84,6 +84,7 @@
 .roditelj-sekcija { margin-top:28px; }
 .roditelj-sekcija h2 { font-size:20px; margin-bottom:14px; }
 .roditelj-kartice { display:grid; gap:14px; grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr)); }
+.raspored-akcije { flex-wrap: nowrap; }
 .roditelj-dete { display:block; color:var(--boja-tekst); padding:20px; border:1px solid var(--boja-ivica); box-shadow:none; }
 .roditelj-dete:hover { text-decoration:none; border-color:var(--boja-primarna); }
 .roditelj-identitet { display:flex; align-items:center; gap:12px; margin-bottom:16px; }

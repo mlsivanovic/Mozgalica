@@ -61,6 +61,13 @@ a:hover { text-decoration: underline; }
 }
 .dugme--senka:hover { background: var(--boja-primarna-svetla); }
 .dugme--malo { min-height: 38px; padding: 0.3rem 0.9rem; font-size: 0.92rem; border-radius: var(--radius-mali); }
+.dugme--ikon {
+  width: var(--visina-dugmeta);
+  min-width: var(--visina-dugmeta);
+  height: var(--visina-dugmeta);
+  padding: 0;
+  flex-shrink: 0;
+}
 
 /* ---------- Kartice ---------- */
 .kartica {
