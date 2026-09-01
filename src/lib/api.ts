@@ -744,6 +744,17 @@ export async function sacuvajProfilDeteta(profil: NoviProfilDeteta, id?: string)
   if (error) throw new Error(opisiGresku(error)!)
 }
 
+export async function obrisiProfilDeteta(id: string): Promise<void> {
+  const { data, error } = await supabase().rpc('delete_child_profile', { p_profile_id: id })
+  if (error) throw new Error(opisiGresku(error)!)
+  const rezultat = data as { ok: boolean; error?: string }
+  if (!rezultat.ok) {
+    if (rezultat.error === 'not_found') throw new Error('Profil nije pronađen.')
+    if (rezultat.error === 'forbidden') throw new Error('Nemaš dozvolu za brisanje ovog profila.')
+    throw new Error('Profil nije moguće obrisati.')
+  }
+}
+
 export async function listajNivoeTitula(): Promise<NivoTitule[]> {
   const { data, error } = await supabase()
     .from('title_levels').select('*').order('min_stars')

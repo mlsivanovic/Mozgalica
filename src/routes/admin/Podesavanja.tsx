@@ -6,7 +6,7 @@ import { IkonaNagrade } from '../../components/IkonaNagrade'
 import { OznakaRangaTitule, TitleAvatar } from '../../components/TitleAvatar'
 import {
   listajKupovineProdavnice, listajNivoeTitula, listajProfileDeteta, listajStavkeProdavnice,
-  oznaciKupovinuKonzumiranom, otkaziKupovinu, postaviEmailObavestenja,
+  obrisiProfilDeteta, oznaciKupovinuKonzumiranom, otkaziKupovinu, postaviEmailObavestenja,
   sacuvajNivoeTitula, sacuvajProfilDeteta, sacuvajSahNagrade, sacuvajStavkeProdavnice,
   ucitajJavniProfil, ucitajPodesavanja, ucitajSahNagrade, type KupovinaAdminPrikaz,
 } from '../../lib/api'
@@ -260,7 +260,7 @@ function validirajStavke(stavke: StavkaForma[]): string | null {
 type Sekcija = 'profili' | 'pravila' | 'isporuka' | 'istorija' | 'katalog' | 'obavestenja'
 export function Podesavanja({ sekcija = 'obavestenja' }: { sekcija?: Sekcija }) {
   const { session, odjavi } = useAuth()
-  const { deteId, osveziProfile } = useRoditelj()
+  const { deteId, osveziProfile, izaberiDete } = useRoditelj()
   const [pravilo, setPravilo] = useState<TabPodesavanja>('titule')
   const aktivanTab = sekcija === 'pravila' ? pravilo : ['isporuka', 'istorija', 'katalog'].includes(sekcija) ? 'prodavnica' : sekcija
   const [ucitava, setUcitava] = useState(true)
@@ -273,6 +273,7 @@ export function Podesavanja({ sekcija = 'obavestenja' }: { sekcija?: Sekcija }) 
   const [greska, setGreska] = useState<string | null>(null)
   const [poruka, setPoruka] = useState<string | null>(null)
   const [cuvaProfil, setCuvaProfil] = useState(false)
+  const [briseProfil, setBriseProfil] = useState<string | null>(null)
   const [cuvaTitule, setCuvaTitule] = useState(false)
   const [sahNagrade, setSahNagrade] = useState<SahNagradaPodesavanje[]>([])
   const [cuvaSahNagrade, setCuvaSahNagrade] = useState(false)
@@ -391,6 +392,27 @@ export function Podesavanja({ sekcija = 'obavestenja' }: { sekcija?: Sekcija }) 
   async function kopirajProfilniLink(profil: ProfilDeteta) {
     await navigator.clipboard.writeText(`${BAZA_URL}#/dete/${profil.public_token}`)
     setPoruka(`Profilni link za ${profil.name} je kopiran.`)
+  }
+
+  async function obrisiProfil(profil: ProfilDeteta) {
+    if (!confirm(
+      `Obrisati profil „${profil.name}”? Ukloniće se dečji link, rezultati kvizova, šahovske partije, rasporedi i nagrade tog deteta. Sadržaj kvizova ostaje u arhivi.`,
+    )) return
+    setBriseProfil(profil.id)
+    setGreska(null)
+    setPoruka(null)
+    try {
+      await obrisiProfilDeteta(profil.id)
+      if (forma?.id === profil.id) setForma(null)
+      if (deteId === profil.id) izaberiDete('')
+      await ucitajSve()
+      await osveziProfile()
+      setPoruka(`Profil „${profil.name}” je obrisan.`)
+    } catch (e) {
+      setGreska(String((e as Error).message ?? e))
+    } finally {
+      setBriseProfil(null)
+    }
   }
 
   function izmeniBazu(indeks: number, noviNaziv: string) {
@@ -652,6 +674,10 @@ export function Podesavanja({ sekcija = 'obavestenja' }: { sekcija?: Sekcija }) 
           </button>
         </div>
 
+        {profili.length === 0 && (
+          <p className="blago razmak-gore">Još nema profila. Dodaj dete da dobije svoj link, kvizove i nagrade.</p>
+        )}
+
         <div className="mreza-kartica razmak-gore">
           {profili.map((profil) => {
             const pregled = preglediProfila[profil.id]
@@ -702,6 +728,14 @@ export function Podesavanja({ sekcija = 'obavestenja' }: { sekcija?: Sekcija }) 
                   </button>
                   <button type="button" className="dugme dugme--senka dugme--malo" onClick={() => kopirajProfilniLink(profil)}>
                     Kopiraj link
+                  </button>
+                  <button
+                    type="button"
+                    className="dugme dugme--opasno dugme--malo"
+                    disabled={briseProfil === profil.id}
+                    onClick={() => { void obrisiProfil(profil) }}
+                  >
+                    {briseProfil === profil.id ? 'Brišem…' : 'Obriši'}
                   </button>
                 </div>
                 <details className="profil-admin-istorija">
@@ -808,11 +842,26 @@ export function Podesavanja({ sekcija = 'obavestenja' }: { sekcija?: Sekcija }) 
                   ))}
                 </div>
               </fieldset>
-              <div className="red red--kraj razmak-gore">
-                <button type="button" className="dugme dugme--senka" onClick={() => setForma(null)}>Otkaži</button>
-                <button type="button" className="dugme dugme--akcenat" disabled={cuvaProfil} onClick={sacuvajProfil}>
-                  {cuvaProfil ? 'Čuvam…' : 'Sačuvaj profil'}
-                </button>
+              <div className="red red--razmak razmak-gore">
+                {forma.id ? (
+                  <button
+                    type="button"
+                    className="dugme dugme--opasno"
+                    disabled={cuvaProfil || briseProfil === forma.id}
+                    onClick={() => {
+                      const profil = profili.find((p) => p.id === forma.id)
+                      if (profil) void obrisiProfil(profil)
+                    }}
+                  >
+                    {briseProfil === forma.id ? 'Brišem…' : 'Obriši profil'}
+                  </button>
+                ) : <span />}
+                <div className="red">
+                  <button type="button" className="dugme dugme--senka" onClick={() => setForma(null)}>Otkaži</button>
+                  <button type="button" className="dugme dugme--akcenat" disabled={cuvaProfil} onClick={sacuvajProfil}>
+                    {cuvaProfil ? 'Čuvam…' : 'Sačuvaj profil'}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
