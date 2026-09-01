@@ -9,7 +9,6 @@ declare
   token text;
   kviz uuid;
   link uuid;
-  partija uuid;
   raspored_kviz uuid;
   raspored_sah uuid;
   odgovor jsonb;
@@ -69,7 +68,35 @@ begin
     owner_id, child_profile_id, assignment_request_id, approximate_elo, child_color, status
   ) values (
     vlasnik, dete, gen_random_uuid(), 700, 'white', 'assigned'
-  ) returning id into partija;
+  );
+
+  insert into public.chess_games (
+    owner_id, child_profile_id, assignment_request_id, approximate_elo, child_color,
+    status, result, termination, stars_awarded, completed_at,
+    daily_schedule_id, daily_local_date
+  ) values (
+    vlasnik, dete, gen_random_uuid(), 700, 'white',
+    'completed', 'child_loss', 'resignation', 0, now(),
+    raspored_sah, current_date
+  );
+
+  insert into public.chess_games (
+    owner_id, child_profile_id, assignment_request_id, approximate_elo, child_color,
+    status, result, termination, stars_awarded, completed_at, retry_of_game_id
+  )
+  select
+    vlasnik, dete, gen_random_uuid(), 700, 'white',
+    'completed', 'child_win', 'checkmate', 3, now(), g.id
+  from public.chess_games g
+  where g.child_profile_id = dete and g.result = 'child_loss'
+  limit 1;
+
+  insert into public.chess_games (
+    owner_id, child_profile_id, assignment_request_id, approximate_elo, child_color,
+    status, completed_at
+  ) values (
+    vlasnik, dete, gen_random_uuid(), 900, 'black', 'cancelled', now()
+  );
 
   insert into public.quizzes (owner_id, title)
   values (vlasnik, '__test_brisanje_kviz__')
@@ -84,6 +111,16 @@ begin
   ) values (
     link, kviz, dete, 1, '__test_brisanje_profila__', '[]'::jsonb
   );
+
+  begin
+    update public.chess_games
+    set retry_of_game_id = retry_of_game_id
+    where child_profile_id = dete and status = 'completed';
+    raise exception 'Stražar šaha mora da blokira izmenu završene partije';
+  exception
+    when raise_exception then
+      if sqlerrm not like '%nepromenjiva%' then raise; end if;
+  end;
 
   odgovor := public.delete_child_profile(dete);
   if odgovor->>'ok' <> 'true' then
@@ -102,8 +139,8 @@ begin
   if exists (select 1 from public.daily_chess_schedules where id = raspored_sah) then
     raise exception 'Dnevni raspored šaha nije obrisan';
   end if;
-  if exists (select 1 from public.chess_games where id = partija) then
-    raise exception 'Šahovska partija nije obrisana';
+  if exists (select 1 from public.chess_games where child_profile_id = dete) then
+    raise exception 'Šahovske partije nisu obrisane';
   end if;
   if exists (select 1 from public.quiz_links where id = link) then
     raise exception 'Profilni link kviza nije obrisan';
