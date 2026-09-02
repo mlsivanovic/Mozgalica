@@ -7,6 +7,7 @@
 .decji-brend:hover { text-decoration:none; }
 .decji-brend > span { width:36px; height:36px; display:grid; place-items:center; border-radius:12px; color:var(--boja-na-primarnoj); background:var(--boja-primarna); }
 .decji-sadrzaj { width:100%; max-width:960px; margin:0 auto; padding:18px 14px calc(104px + env(safe-area-inset-bottom)); outline:none; }
+.decji-sadrzaj:has(.raspored-pregled) { padding-left:6px; padding-right:6px; }
 .decji-nav { position:fixed; left:0; right:0; bottom:0; z-index:60; display:grid; grid-template-columns:repeat(4,1fr); gap:2px; padding:6px 8px calc(6px + env(safe-area-inset-bottom)); background:color-mix(in srgb,var(--boja-kartica) 92%,transparent); backdrop-filter:blur(20px); border-top:1px solid var(--boja-ivica); }
 .decji-nav a { min-height:58px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; border-radius:14px; color:var(--boja-tekst-blagi); font-size:12px; font-weight:750; text-decoration:none; }
 .decji-nav a.aktivna { color:var(--boja-primarna); background:var(--boja-primarna-svetla); }
@@ -15,5 +16,6 @@
 .decji-okvir input,.decji-okvir select,.decji-okvir textarea { min-height:56px; font-size:18px; }
 @media(min-width:768px) {
   .decji-sadrzaj { padding:28px 24px calc(112px + env(safe-area-inset-bottom)); }
+  .decji-sadrzaj:has(.raspored-pregled) { padding-left:12px; padding-right:12px; }
   .decji-nav { left:50%; right:auto; width:min(620px,calc(100% - 32px)); transform:translateX(-50%); bottom:12px; border:1px solid var(--boja-ivica); border-radius:22px; box-shadow:var(--senka-jaka); padding-bottom:6px; }
 }

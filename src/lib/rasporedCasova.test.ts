@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
-  aktivnaSmena, bojaPredmeta, casoviDana, danUNedelji, dodajDane, imaPretcas,
-  kljucPredmeta, mapaBojaPredmeta, nastavniDan, nazivCasa, oznaciCasove, ponedeljakNedelje,
-  postaviPretcas, PREDLOZI_PREDMETA, predmetiZaKnjige, PRETCAS_POPODNE, satnicaPreseta, sledeciCas,
+  aktivnaSmena, bojaPredmeta, casoviDana, csvRasporedaCasova, danUNedelji, dodajDane, imaPretcas,
+  kljucPredmeta, mapaBojaPredmeta, nastavniDan, nazivCasa, oznaciCasove, periodiNedelje,
+  ponedeljakNedelje, postaviPretcas, PREDLOZI_PREDMETA, predmetiZaKnjige, PRETCAS_POPODNE,
+  satnicaPreseta, sledeciCas,
 } from './rasporedCasova'
 
 describe('kalendar rasporeda', () => {
@@ -102,9 +103,35 @@ describe('časovi u danu', () => {
     expect(bojaPredmeta('COS')).toBe(bojaPredmeta('ČOS'))
   })
 
+  it('matematika i fizičko nisu iste nijanse', () => {
+    expect(bojaPredmeta('Matematika')).not.toBe(bojaPredmeta('Fizičko vaspitanje'))
+    expect(bojaPredmeta('Fizičko')).toBe(bojaPredmeta('Fizičko vaspitanje'))
+  })
+
+  it('nudi dopunsku i dodatnu nastavu kao predmete', () => {
+    expect(PREDLOZI_PREDMETA).toContain('Dopunska nastava')
+    expect(PREDLOZI_PREDMETA).toContain('Dodatna nastava')
+    expect(bojaPredmeta('Dopunska nastava')).not.toBe(bojaPredmeta('Dodatna nastava'))
+  })
+
   it('predlozi predmeta u jednom rasporedu ne dele boju', () => {
     const mapa = mapaBojaPredmeta(PREDLOZI_PREDMETA)
     const boje = PREDLOZI_PREDMETA.map((ime) => mapa.get(kljucPredmeta(ime)))
     expect(new Set(boje).size).toBe(PREDLOZI_PREDMETA.length)
+  })
+
+  it('sprema CSV mrežu nedeljnog rasporeda', () => {
+    const week = [
+      { weekday: 1, lessons: casoviDana(periodi, [
+        { shift: null, weekday: 1, periodNo: 1, subject: 'Matematika', teacher: 'Ana', room: '12', color: null, note: null },
+      ], 1, 'afternoon', true, null) },
+      { weekday: 2, lessons: casoviDana(periodi, slotovi, 2, 'afternoon', true, null) },
+    ]
+    expect(periodiNedelje(week)).toEqual([0, 1, 2])
+    const csv = csvRasporedaCasova(week)
+    expect(csv.zaglavlja).toEqual(['Čas', 'Vreme', 'Ponedeljak', 'Utorak'])
+    expect(csv.redovi[0]?.[0]).toBe('Pretčas')
+    expect(csv.redovi.find((r) => r[0] === '1. čas')?.[2]).toBe('Matematika (Ana, uč. 12)')
+    expect(csv.redovi.find((r) => r[0] === '1. čas')?.[3]).toBe('Matematika')
   })
 })

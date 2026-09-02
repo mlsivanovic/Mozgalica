@@ -1,6 +1,11 @@
 import { useMemo, useState } from 'react'
+import { Ikona } from '../../components/Ikona'
 import {
-  bojaIzMape, DANI, DANI_KRATKO, mapaBojaPredmeta, nazivCasa, nazivSmene, predmetiZaKnjige,
+  preuzmiRasporedCsv, preuzmiRasporedSliku, rasporedImaCasova,
+} from '../../lib/izvozRasporeda'
+import {
+  bojaIzMape, DANI, DANI_KRATKO, mapaBojaPredmeta, nazivCasa, nazivSmene, periodiNedelje,
+  predmetiZaKnjige,
 } from '../../lib/rasporedCasova'
 import type { CasUDanu } from '../../lib/rasporedCasova'
 import type { DanRasporedaCasova, PregledRasporedaCasova } from '../../types/kviz'
@@ -62,6 +67,56 @@ function DanPregled({ dan, naslov, prazan, boje }: {
   )
 }
 
+export function RasporedIzvoz({ raspored }: { raspored: PregledRasporedaCasova }) {
+  const [greska, setGreska] = useState<string | null>(null)
+  const [radi, setRadi] = useState<'png' | 'jpeg' | 'csv' | null>(null)
+  const ima = rasporedImaCasova(raspored)
+
+  async function slika(format: 'png' | 'jpeg') {
+    if (!ima) return
+    setGreska(null)
+    setRadi(format)
+    try {
+      await preuzmiRasporedSliku(raspored, format)
+    } catch (e) {
+      setGreska((e as Error).message || 'Slika nije sačuvana.')
+    } finally {
+      setRadi(null)
+    }
+  }
+
+  function csv() {
+    if (!ima) return
+    setGreska(null)
+    setRadi('csv')
+    try {
+      preuzmiRasporedCsv(raspored)
+    } catch (e) {
+      setGreska((e as Error).message || 'CSV nije sačuvan.')
+    } finally {
+      setRadi(null)
+    }
+  }
+
+  return (
+    <div className="raspored-izvoz">
+      <p className="raspored-izvoz-naslov"><Ikona ime="preuzmi" velicina={18} /> Izvezi raspored</p>
+      <div className="raspored-izvoz-dugmad">
+        <button type="button" className="dugme dugme--senka dugme--malo" disabled={!ima || radi != null} onClick={() => void slika('png')}>
+          {radi === 'png' ? 'Pripremam…' : 'PNG'}
+        </button>
+        <button type="button" className="dugme dugme--senka dugme--malo" disabled={!ima || radi != null} onClick={() => void slika('jpeg')}>
+          {radi === 'jpeg' ? 'Pripremam…' : 'JPG'}
+        </button>
+        <button type="button" className="dugme dugme--senka dugme--malo" disabled={!ima || radi != null} onClick={csv}>
+          {radi === 'csv' ? 'Pripremam…' : 'CSV'}
+        </button>
+      </div>
+      {greska && <p className="poruka poruka--greska" role="alert">{greska}</p>}
+    </div>
+  )
+}
+
 export function RasporedCasovaPregled({
   raspored, pocetni = 'danas',
 }: {
@@ -85,7 +140,7 @@ export function RasporedCasovaPregled({
       </div>
       {prikaz === 'danas' && <DanPregled dan={raspored.today} naslov={danasIme} prazan="Danas nema škole" boje={boje} />}
       {prikaz === 'sutra' && <DanPregled dan={raspored.tomorrow} naslov={sutraIme} prazan="Sutra nema škole" boje={boje} />}
-      {prikaz === 'nedelja' && (periodiNedelje(raspored).length === 0
+      {prikaz === 'nedelja' && (periodiNedelje(raspored.week ?? []).length === 0
         ? <div className="kartica raspored-prazno"><h3>Još nema unetih časova ove nedelje.</h3></div>
         : (
         <div className="raspored-mreza-omot">
@@ -102,7 +157,7 @@ export function RasporedCasovaPregled({
               </tr>
             </thead>
             <tbody>
-              {periodiNedelje(raspored).map((periodNo) => (
+              {periodiNedelje(raspored.week ?? []).map((periodNo) => (
                 <tr key={periodNo}>
                   <th className="raspored-sat">{nazivCasa(periodNo)}</th>
                   {(raspored.week ?? []).map((dan) => {
@@ -121,6 +176,7 @@ export function RasporedCasovaPregled({
           </table>
         </div>
       ))}
+      <RasporedIzvoz raspored={raspored} />
     </section>
   )
 }
@@ -131,12 +187,4 @@ function imenaIzRasporeda(raspored: PregledRasporedaCasova): string[] {
     for (const cas of dan?.lessons ?? []) imena.push(cas.subject)
   }
   return imena
-}
-
-function periodiNedelje(raspored: PregledRasporedaCasova): number[] {
-  const brojevi = new Set<number>()
-  for (const dan of raspored.week ?? []) {
-    for (const cas of dan.lessons) brojevi.add(cas.periodNo)
-  }
-  return [...brojevi].sort((a, b) => a - b)
 }

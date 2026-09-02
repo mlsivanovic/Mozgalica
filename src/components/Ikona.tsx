@@ -1,7 +1,7 @@
 import {
   ArrowLeft, ArrowRight, Bell, BookOpen, Brain, CalendarDays, Check, ChevronDown,
-  ChevronRight, CircleAlert, CircleCheck, Clock3, Cloud, CloudOff, Crown, Gift,
-  GraduationCap, Home, LayoutDashboard, ListChecks, Menu, Moon, MoreHorizontal,
+  ChevronRight, CircleAlert, CircleCheck, Clock3, Cloud, CloudOff, Crown, Download,
+  Gift, GraduationCap, Home, LayoutDashboard, ListChecks, Menu, Moon, MoreHorizontal,
   Palette, PencilLine, Play, Plus, RotateCcw, Search, Settings, ShoppingBag,
   Sparkles, Star, Sun, Swords, Target, TrendingUp, Trophy, UserRound, UsersRound, X,
   type LucideIcon,
@@ -15,7 +15,7 @@ const IKONE = {
   skola: GraduationCap, danas: Home, pregled: LayoutDashboard, zadaci: ListChecks,
   meni: Menu, tamna: Moon, vise: MoreHorizontal, izgled: Palette, uredi: PencilLine,
   pokreni: Play, dodaj: Plus, ponovi: RotateCcw, pretraga: Search,
-  podesavanja: Settings, prodavnica: ShoppingBag, sjaj: Sparkles, zvezda: Star,
+  podesavanja: Settings, preuzmi: Download, prodavnica: ShoppingBag, sjaj: Sparkles, zvezda: Star,
   svetla: Sun, sah: Swords, cilj: Target, napredak: TrendingUp, pehar: Trophy, dete: UserRound,
   deca: UsersRound, zatvori: X,
 } satisfies Record<string, LucideIcon>

@@ -11,7 +11,7 @@ import {
 } from '../../lib/rasporedCasova'
 import type { PregledRasporedaCasova, RasporedCasovaUnos } from '../../types/kviz'
 import { Loader } from '../../components/Zajednicke'
-import { RasporedCasovaPregled } from '../dete/RasporedCasovaPregled'
+import { RasporedCasovaPregled, RasporedIzvoz } from '../dete/RasporedCasovaPregled'
 import './rasporedCasova.css'
 import './generator.css'
 
@@ -300,6 +300,7 @@ function Urednik({
         ? <RasporedCasovaPregled raspored={pregled} />
         : (
           <>
+            {pregled?.exists && <RasporedIzvoz raspored={pregled} />}
             <div className="raspored-izbor razmak-dole">
               <button type="button" aria-pressed={smenaPrikaz === 'morning'} onClick={() => setSmenaPrikaz('morning')}>Prepodne</button>
               <button type="button" aria-pressed={smenaPrikaz === 'afternoon'} onClick={() => setSmenaPrikaz('afternoon')}>Popodne</button>
@@ -453,7 +454,7 @@ function CelijaDijalog({
         <datalist id="predlozi-predmeta">{PREDLOZI_PREDMETA.map((p) => <option key={p} value={p} />)}</datalist>
       </div>
       <div className="raspored-izbor razmak-dole">
-        {PREDLOZI_PREDMETA.slice(0, 8).map((p) => (
+        {PREDLOZI_PREDMETA.slice(0, 12).map((p) => (
           <button key={p} type="button" aria-pressed={subject === p} onClick={() => setSubject(p)}>{p}</button>
         ))}
       </div>

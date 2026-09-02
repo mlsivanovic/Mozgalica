@@ -61,7 +61,8 @@ export const SATNICA_POPODNE: SatnicaCasa[] = [
 export const PREDLOZI_PREDMETA = [
   'Srpski jezik', 'Matematika', 'Priroda i društvo', 'Svet oko nas',
   'Engleski jezik', 'Fizičko vaspitanje', 'Likovna kultura', 'Muzička kultura',
-  'Digitalni svet', 'ČOS', 'Veronauka', 'Informatika i računarstvo',
+  'Digitalni svet', 'ČOS', 'Dopunska nastava', 'Dodatna nastava',
+  'Veronauka', 'Informatika i računarstvo',
   'Istorija', 'Geografija', 'Biologija', 'Fizika', 'Hemija',
   'Tehnika i tehnologija', 'Nemački jezik', 'Francuski jezik',
   'Građansko vaspitanje',
@@ -79,8 +80,10 @@ const BOJE_POZNATIH_PREDMETA: Record<string, string> = {
   'svet oko nas': '#0ca678',
   'engleski jezik': '#e03131',
   'engleski': '#e03131',
-  'fizičko vaspitanje': '#e67700',
-  'fizicko vaspitanje': '#e67700',
+  'fizičko vaspitanje': '#4d7c0f',
+  'fizicko vaspitanje': '#4d7c0f',
+  'fizičko': '#4d7c0f',
+  'fizicko': '#4d7c0f',
   'likovna kultura': '#e64980',
   'muzička kultura': '#7048e8',
   'muzicka kultura': '#7048e8',
@@ -88,6 +91,10 @@ const BOJE_POZNATIH_PREDMETA: Record<string, string> = {
   'čos': '#c2410c',
   'cos': '#c2410c',
   'čas odeljenskog starešine': '#c2410c',
+  'dopunska nastava': '#5f3dc4',
+  'dopunska': '#5f3dc4',
+  'dodatna nastava': '#1864ab',
+  'dodatna': '#1864ab',
   'veronauka': '#9c36b5',
   'informatika i računarstvo': '#1c7ed6',
   'informatika i racunarstvo': '#1c7ed6',
@@ -324,4 +331,43 @@ export function predmetiZaKnjige(casovi: CasUDanu[]): string[] {
 
 export function sledeciCas(casovi: CasUDanu[]): CasUDanu | null {
   return casovi.find((c) => c.isCurrent || c.isNext) ?? null
+}
+
+export function periodiNedelje(dani: { lessons: { periodNo: number }[] }[]): number[] {
+  const brojevi = new Set<number>()
+  for (const dan of dani) {
+    for (const cas of dan.lessons) brojevi.add(cas.periodNo)
+  }
+  return [...brojevi].sort((a, b) => a - b)
+}
+
+function vremePerioda(dani: { lessons: CasUDanu[] }[], periodNo: number): string {
+  for (const dan of dani) {
+    const cas = dan.lessons.find((c) => c.periodNo === periodNo)
+    if (cas) return `${cas.startsAt}–${cas.endsAt}`
+  }
+  return ''
+}
+
+function tekstCasaZaIzvoz(cas: CasUDanu): string {
+  const extra = [cas.teacher, cas.room ? `uč. ${cas.room}` : null].filter(Boolean).join(', ')
+  return extra ? `${cas.subject} (${extra})` : cas.subject
+}
+
+export function csvRasporedaCasova(week: { weekday: number; lessons: CasUDanu[] }[]): {
+  zaglavlja: string[]
+  redovi: (string | null)[][]
+} {
+  const dani = [...week].sort((a, b) => a.weekday - b.weekday)
+  return {
+    zaglavlja: ['Čas', 'Vreme', ...dani.map((d) => DANI[d.weekday - 1] ?? '')],
+    redovi: periodiNedelje(dani).map((periodNo) => [
+      nazivCasa(periodNo),
+      vremePerioda(dani, periodNo) || null,
+      ...dani.map((dan) => {
+        const cas = dan.lessons.find((c) => c.periodNo === periodNo)
+        return cas ? tekstCasaZaIzvoz(cas) : null
+      }),
+    ]),
+  }
 }
