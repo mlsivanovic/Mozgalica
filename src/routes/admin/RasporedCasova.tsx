@@ -296,11 +296,11 @@ function Urednik({
         </p>
       )}
 
+      {pregled?.exists && <RasporedIzvoz raspored={pregled} />}
       {prikaz === 'dete' && pregled?.exists
         ? <RasporedCasovaPregled raspored={pregled} />
         : (
           <>
-            {pregled?.exists && <RasporedIzvoz raspored={pregled} />}
             <div className="raspored-izbor razmak-dole">
               <button type="button" aria-pressed={smenaPrikaz === 'morning'} onClick={() => setSmenaPrikaz('morning')}>Prepodne</button>
               <button type="button" aria-pressed={smenaPrikaz === 'afternoon'} onClick={() => setSmenaPrikaz('afternoon')}>Popodne</button>

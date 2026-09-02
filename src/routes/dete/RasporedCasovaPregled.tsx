@@ -176,7 +176,6 @@ export function RasporedCasovaPregled({
           </table>
         </div>
       ))}
-      <RasporedIzvoz raspored={raspored} />
     </section>
   )
 }

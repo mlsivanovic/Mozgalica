@@ -94,7 +94,6 @@
   display: inline-flex; align-items: center; gap: 6px; font-weight: 800; margin: 0;
 }
 .raspored-izvoz-dugmad { display: flex; flex-wrap: wrap; gap: 8px; }
-.decji-okvir .raspored-izvoz-dugmad .dugme { min-height: 44px; }
 
 @media (max-width: 640px) {
   .raspored-pregled { margin-inline: -2px; }
