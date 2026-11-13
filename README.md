@@ -47,6 +47,29 @@ da tokom letnjeg raspusta na zabavan način obnove gradivo.
 Kompletan spisak arhitekturnih odluka i faza razvoja nalazi se u planu projekta;
 koraci za povezivanje Supabase/Brevo naloga i Web Push-a su u [SETUP.md](./SETUP.md).
 
+## Android aplikacija (sideload)
+
+Dečja verzija ima Android omotač „Moja Mozgalica” u `android/` (Bubblewrap / Trusted Web
+Activity). Otvara živi sajt, pa izmene kvizova i šaha ne traže novi APK. Aplikacija se ne
+objavljuje na Play Store-u. Na podešavanjima profila deteta postoji dugme koje vodi na:
+
+`https://github.com/mlsivanovic/Mozgalica/releases/latest/download/Mozgalica.apk`
+
+Posle instalacije, u Family Link-u tu aplikaciju stavi na neograničeno vreme. Tada se ne
+računa u dnevni limit (Android 7+, van Google Kids Space-a).
+
+Novi APK, samo kad se menja omotač:
+
+```bash
+gh workflow run "Android APK" -f version_name=1.0.1 -f version_code=2
+```
+
+`version_code` mora da raste. Potpisni ključ je van gita, u `~/.mozgalica/android/`.
+Bez istog ključa nova verzija ne može da se instalira preko stare.
+
+Digital Asset Links (da omotač nema adresnu traku) stoje na
+`https://mlsivanovic.github.io/.well-known/assetlinks.json`.
+
 ## Pokretanje lokalno
 
 ```bash

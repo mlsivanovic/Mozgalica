@@ -22,6 +22,9 @@ import {
   zapamtiProfilZaInstalaciju,
 } from '../../lib/profilPwa'
 import {
+  ANDROID_APK_URL, prikaziAndroidPreuzimanje,
+} from '../../lib/decjaAplikacija'
+import {
   imaPonuduZaInstalaciju, ponudiInstalaciju, postaviDecjiManifest,
   slusajPonuduZaInstalaciju,
 } from '../../pwa'
@@ -155,6 +158,7 @@ export function ProfilDeteta({ prikaz = 'pocetna' }: { prikaz?: PrikazProfila })
         <div className="profil-sekcija-naslov"><div><p className="profil-nadnaslov">Moj nalog</p><h1>Podešavanja</h1></div></div>
         <section className="kartica profil-push-kontrole"><h2>Izgled</h2><p className="blago malo razmak-dole">Mozgalica može da prati temu telefona.</p><TemaIzbor /></section>
         <ProfilPwaKontrole ime={profil.name ?? 'dete'} profilToken={profilToken} />
+        <AndroidPreuzimanje />
         <section className="kartica profil-push-kontrole">
           <PushKontrole profilToken={profilToken} />
         </section>
@@ -319,6 +323,33 @@ export function ProfilDeteta({ prikaz = 'pocetna' }: { prikaz?: PrikazProfila })
         </section>}
       </div>
     </div>
+  )
+}
+
+function AndroidPreuzimanje() {
+  const prikazi = prikaziAndroidPreuzimanje({
+    userAgent: navigator.userAgent,
+    referrer: document.referrer,
+    search: window.location.search,
+  })
+  if (!prikazi) return null
+
+  return (
+    <section className="kartica profil-android">
+      <h2>Android aplikacija</h2>
+      <p className="blago">
+        Aplikacija je odvojena od Chrome-a. U Family Link-u je stavi na neograničeno vreme,
+        pa se ne računa u dnevni limit. Ovo ne važi u Google Kids Space-u.
+      </p>
+      <a className="dugme dugme--akcenat" href={ANDROID_APK_URL} target="_blank" rel="noopener noreferrer">
+        Preuzmi Android aplikaciju
+      </a>
+      <p className="malo">
+        Preuzmi fajl i otvori ga. Dozvoli instalaciju nepoznatih aplikacija samo za pregledač
+        ili Files, pa tu dozvolu posle instalacije isključi. U Family Link-u: dete, pa Vreme
+        ispred ekrana → Ograničenja → Ograničenja za aplikacije → Moja Mozgalica → Neograničeno vreme.
+      </p>
+    </section>
   )
 }
 

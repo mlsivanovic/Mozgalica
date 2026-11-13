@@ -1,0 +1,120 @@
+# Ručni release Android omotača. Ne ide na svaki push: sajt se ažurira sam,
+# a novi APK treba samo kad se menja omotač (ikona, start adresa, dozvole).
+# version_code mora da raste, inače telefon odbija instalaciju preko stare.
+name: Android APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_name:
+        description: versionName, npr. 1.0.0
+        required: true
+        default: "1.0.0"
+        type: string
+      version_code:
+        description: versionCode, ceo broj koji raste
+        required: true
+        default: "1"
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-apk
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Java
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: platform-tools platforms;android-36 build-tools;36.0.0
+
+      - name: Verzija i keystore
+        env:
+          VERSION_NAME: ${{ inputs.version_name }}
+          VERSION_CODE: ${{ inputs.version_code }}
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          python3 - << 'PY'
+          import base64, os, pathlib, re
+          name = os.environ["VERSION_NAME"].strip()
+          code = os.environ["VERSION_CODE"].strip()
+          if not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", name):
+              raise SystemExit("version_name mora biti npr. 1.0.0")
+          if not re.fullmatch(r"[1-9][0-9]*", code):
+              raise SystemExit("version_code mora biti pozitivan ceo broj")
+          gradle = pathlib.Path("android/app/build.gradle")
+          text = gradle.read_text()
+          text, n1 = re.subn(r"versionCode \d+", f"versionCode {code}", text, count=1)
+          text, n2 = re.subn(r'versionName "[^"]*"', f'versionName "{name}"', text, count=1)
+          if n1 != 1 or n2 != 1:
+              raise SystemExit("versionCode ili versionName nije pronađen")
+          gradle.write_text(text)
+          manifest = pathlib.Path("android/twa-manifest.json")
+          raw = manifest.read_text()
+          raw, a = re.subn(r'"appVersion": "[^"]*"', f'"appVersion": "{name}"', raw, count=1)
+          raw, b = re.subn(r'"appVersionCode": \d+', f'"appVersionCode": {code}', raw, count=1)
+          if a != 1 or b != 1:
+              raise SystemExit("verzija nije pronađena u twa-manifest.json")
+          manifest.write_text(raw)
+          keystore = pathlib.Path(os.environ["RUNNER_TEMP"]) / "mozgalica.keystore"
+          keystore.write_bytes(base64.b64decode(os.environ["ANDROID_KEYSTORE_BASE64"]))
+          print(f"verzija {name} ({code})")
+          PY
+
+      - name: Sastavi APK
+        working-directory: android
+        run: chmod +x ./gradlew && ./gradlew assembleRelease --stacktrace
+
+      - name: Potpiši APK
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          BT="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)"
+          UNSIGNED="android/app/build/outputs/apk/release/app-release-unsigned.apk"
+          ALIGNED="${RUNNER_TEMP}/app-aligned.apk"
+          OUT="${RUNNER_TEMP}/Mozgalica.apk"
+          "$BT/zipalign" -f -p 4 "$UNSIGNED" "$ALIGNED"
+          "$BT/apksigner" sign \
+            --ks "${RUNNER_TEMP}/mozgalica.keystore" \
+            --ks-key-alias "$ANDROID_KEY_ALIAS" \
+            --ks-pass env:ANDROID_KEYSTORE_PASSWORD \
+            --key-pass env:ANDROID_KEY_PASSWORD \
+            --out "$OUT" \
+            "$ALIGNED"
+          "$BT/apksigner" verify "$OUT"
+
+      - name: GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION_NAME: ${{ inputs.version_name }}
+        run: |
+          gh release create "android-v${VERSION_NAME}" "${RUNNER_TEMP}/Mozgalica.apk" \
+            --title "Android ${VERSION_NAME}" \
+            --latest \
+            --notes "$(cat <<EOF
+          Android aplikacija Moja Mozgalica, za instalaciju van Play Store-a.
+
+          Preuzmi Mozgalica.apk i otvori ga na telefonu. Dozvoli instalaciju nepoznatih aplikacija samo za pregledač ili Files, pa tu dozvolu posle isključi.
+
+          U Family Link-u izaberi dete, pa Vreme ispred ekrana → Ograničenja → Ograničenja za aplikacije → Moja Mozgalica → Neograničeno vreme. Tada se aplikacija ne računa u dnevni limit. Ne važi u Google Kids Space-u.
+
+          Kvizovi i šah i dalje dolaze sa sajta. Novi APK treba samo kad se menja ovaj omotač.
+          EOF
+          )"

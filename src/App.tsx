@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react'
-import { HashRouter, Navigate, Route, Routes, useParams } from 'react-router-dom'
+import { HashRouter, Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom'
+import { hashDecjeAplikacije } from './lib/decjaAplikacija'
 import { AdminLayout } from './components/AdminLayout'
 import { PitanjaSekcija } from './components/AdminSekcijaTabovi'
 import { VezbanjeSekcija, NagradeSekcija } from './components/RoditeljskeSekcije'
@@ -38,6 +39,7 @@ function App() {
     <HashRouter>
       <AuthProvider>
         <Suspense fallback={<Loader />}>
+          <DecjiUlazOmotaca>
           <Routes>
           <Route path="/" element={<Navigate to="/admin" replace />} />
           <Route path="/prijava" element={<Prijava />} />
@@ -96,10 +98,21 @@ function App() {
 
           <Route path="*" element={<NijePronadjeno />} />
           </Routes>
+          </DecjiUlazOmotaca>
         </Suspense>
       </AuthProvider>
     </HashRouter>
   )
+}
+
+// Query ?aplikacija=dete dolazi iz Android omotača. Podrazumevani ulaz ne sme na admin,
+// čak i kad pregledač vrati #/admin posle prvog location.replace.
+function DecjiUlazOmotaca({ children }: { children: React.ReactNode }) {
+  const { pathname } = useLocation()
+  if (hashDecjeAplikacije(window.location.search, pathname)) {
+    return <Navigate to="/dete/pocetak" replace />
+  }
+  return children
 }
 
 function PreusmeriStaruStatistiku() {

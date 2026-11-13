@@ -62,6 +62,8 @@ a.profil-rezultat:hover { background: var(--boja-hover-red); }
 .profil-rezultat-broj { display: grid; justify-items: end; gap: 0.2rem; white-space: nowrap; }
 
 .profil-pwa-instalacija { margin-top: 1rem; }
+.profil-android { display: grid; justify-items: start; gap: 0.8rem; margin-top: 1rem; }
+.profil-android .dugme { text-align: center; }
 .profil-push-kontrole { margin-top: 1rem; }
 .profil-pwa-instalacija summary { cursor: pointer; font-weight: 800; }
 .profil-pwa-sadrzaj { display: grid; justify-items: start; gap: 0.8rem; margin-top: 0.9rem; }

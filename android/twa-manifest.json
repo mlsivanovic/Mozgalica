@@ -1,0 +1,48 @@
+{
+  "packageId": "io.github.mlsivanovic.mozgalica",
+  "host": "mlsivanovic.github.io",
+  "name": "Moja Mozgalica",
+  "launcherName": "Moja Mozgalica",
+  "display": "standalone",
+  "themeColor": "#4F46E5",
+  "themeColorDark": "#4F46E5",
+  "navigationColor": "#4F46E5",
+  "navigationColorDark": "#4F46E5",
+  "navigationDividerColor": "#00000000",
+  "navigationDividerColorDark": "#00000000",
+  "backgroundColor": "#F7F7FC",
+  "enableNotifications": true,
+  "startUrl": "/Mozgalica/?aplikacija=dete#/dete/pocetak",
+  "iconUrl": "https://mlsivanovic.github.io/Mozgalica/icon-512.png",
+  "maskableIconUrl": "https://mlsivanovic.github.io/Mozgalica/icon-512-maskable.png",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "android.keystore",
+    "alias": "mozgalica"
+  },
+  "appVersion": "1.0.0",
+  "appVersionCode": 1,
+  "shortcuts": [],
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "https://mlsivanovic.github.io/Mozgalica/manifest-dete.webmanifest",
+  "fallbackType": "customtabs",
+  "features": {},
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "fullScopeUrl": "https://mlsivanovic.github.io/Mozgalica/",
+  "minSdkVersion": 24,
+  "orientation": "default",
+  "fingerprints": [
+    {
+      "name": "release",
+      "value": "60:96:A9:F5:12:C2:ED:7C:7C:68:9D:15:76:23:46:A3:9D:D7:14:34:52:BD:AD:2A:69:AF:4B:3A:2A:C9:0A:1A"
+    }
+  ],
+  "additionalTrustedOrigins": [],
+  "retainedBundles": [],
+  "displayOverride": []
+}
