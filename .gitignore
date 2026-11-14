@@ -49,3 +49,7 @@ android-app/**/build/
 *.njsproj
 *.sln
 *.sw?
+
+# Firebase config (sadrži API ključ, ne komitovati)
+google-services.json
+GoogleService-Info.plist
