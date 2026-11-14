@@ -23,6 +23,7 @@ import io.github.mlsivanovic.mozgalica.podaci.povezivanje.PodesavanjaPovezivanja
 import io.github.mlsivanovic.mozgalica.podaci.povezivanje.ProfilRepozitorijum
 import io.github.mlsivanovic.mozgalica.podaci.povezivanje.SkladisteTokena
 import io.github.mlsivanovic.mozgalica.podaci.povezivanje.SupabaseIzvorProfila
+import io.github.mlsivanovic.mozgalica.podaci.sah.IzvorSaha
 import javax.inject.Singleton
 
 @Module
@@ -65,6 +66,9 @@ object PodaciModul {
 
     @Provides
     fun izvorKviza(supabase: SupabaseIzvorProfila): IzvorKviza = supabase
+
+    @Provides
+    fun izvorSaha(supabase: SupabaseIzvorProfila): IzvorSaha = supabase
 
     @Provides
     @Singleton

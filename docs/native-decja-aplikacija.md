@@ -298,7 +298,7 @@ Procena je za jednog programera sa AI pomoći, u radnim danima.
 - Tab Nagrade je i dalje prazan. Na Početnoj je samo ime titule iz profila.
 - U fazi 2 `get_quiz_by_token` se nije učitavao unapred. Faza 3 to radi samo za aktivne
   kvizove, i dalje bez `start_attempt` dok dete ne krene. Istorija rezultata je i dalje samo
-  lista; ne otvara detalj. Šah ostaje placeholder.
+  lista; ne otvara detalj. Šah je u fazi 5 zamenio placeholder.
 - Debug gradnja može lokalno da napuni keš ugovornim snimkom, bez upisa u bazu:
   `adb shell am start -n io.github.mlsivanovic.mozgalica/.MainActivity --ez probni true`.
   Dok je taj prikaz uključen, osvežavanje ne ide na mrežu. Gašenje:
@@ -424,6 +424,34 @@ Native ne treba da nosi generator od ~10.000 linija.
 - Zvuk i haptika na potez, uzimanje i šah.
 - **Gotovo kada:** cela partija, poništavanje i ponovni pokušaj rade, a prekid mreže usred
   partije se oporavlja preko `state`.
+
+#### Urađeno u fazi 5
+- `chesslib` 1.3.7 je dodat preko JitPack-a (`settings.gradle.kts`, `libs.versions.toml`).
+  `:core:podaci` sada ima `IzvorSaha`, `protumaciSah` i `sahZahtev`; `SahStanjeOdgovor` je
+  dobio opciona polja `stale` i `duplicate`, pa živi server i dalje prolazi strogi ugovor.
+- `SahViewModel` vodi `state`, `start`, `child_move`, `engine`, `undo`, `resign` i `retry`
+  sa `expectedRevision`. Potez deteta je optimističan; ako server odbije ili mreža padne,
+  tabla se vraća na poslednje potvrđeno stanje. Mrežni pozivi imaju rok od 15 s, pa zaglavljen
+  zahtev ne ostavlja `radi` zauvek uključen. `onAvailable` radi prinudni `state`.
+- Compose tabla je jedan `Canvas` sa vektorskim figurama, dodirom i prevlačenjem, isticanjem
+  legalnih polja, poslednjeg poteza, šaha, najave i animacije računara. Radi i okretanje za
+  crne. Promocija je dijalog sa četiri figure; `chesslib` daje legalne poteze, server ostaje
+  autoritet. Zvuk ide preko `ToneGenerator`-a (bez audio fajlova), haptika preko `LocalEfekti`.
+- Sat koristi `turnStartedAt`/`serverNow` pomeraj i osvežava se na 250 ms; rezultat, zvezdice,
+  pregled poteza (`pregledPly`, strelice i dodir na potez) i ponovni pokušaj sa ELO izborom
+  su u istom ekranu. Istorijske šahovske kartice u Rezultatima sada otvaraju pregled.
+- **Provereno:** `./gradlew testDebugUnitTest assembleDebug lintDebug` (64 testa, 0 padova;
+  lint samo upozorenja o verzijama), `npx vitest run` (51 fajl, 403 testa) i `npm run build`.
+- **E2E na probnom profilu `Proba Native`:** bela partija bez sata (`atO40r...`): start,
+  `e4 Nc6 d4 g6`, poništen `Nf3`, pa isključen wifi, odbijen `Bc4` uz poruku i vraćanje
+  table, uključen wifi i `state` se sam vratio; predaja daje `child_loss`/`resignation`/0
+  zvezdica, a ponovni pokušaj je napravio novu partiju `Hwve...` sa `retry_of_game_id`.
+  Crna partija sa satom (`EAM5...`): tabla okrenuta, sat 5:00/4:59 teče, `e7e5` dodirom,
+  odgovor računara `d4`, `d7d5` prevlačenjem. Pregled završene partije iz Rezultata:
+  `0/4`, `4/4`, strelice i dodir na potez rade.
+- **Nije provereno na uređaju:** dijalog promocije (samo `chesslib` test generiše promocione
+  poteze), istek sata i mat/realna pobeda sa zvezdicama. Realna deca, njihovi podaci i
+  obaveštenja nisu dirani; korišćen je samo probni profil.
 
 ### Faza 6 — Nagrade, titule, prodavnica (4–5 dana)
 - Port [`TitleAvatar.tsx`](../src/components/TitleAvatar.tsx) u Compose Canvas (8 fabričkih

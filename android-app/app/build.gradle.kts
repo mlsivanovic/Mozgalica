@@ -71,6 +71,7 @@ dependencies {
     implementation(libs.hilt.android)
     implementation(libs.hilt.compose)
     implementation(libs.code.scanner)
+    implementation(libs.chesslib)
     implementation(libs.work.runtime)
     ksp(libs.hilt.compiler)
     coreLibraryDesugaring(libs.desugar)

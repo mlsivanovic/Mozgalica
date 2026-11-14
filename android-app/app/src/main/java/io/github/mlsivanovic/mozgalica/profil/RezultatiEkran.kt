@@ -1,5 +1,6 @@
 package io.github.mlsivanovic.mozgalica.profil
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -22,6 +23,7 @@ fun RezultatiEkran(
     profil: SacuvaniProfil,
     osvezava: Boolean,
     onOsvezi: () -> Unit,
+    onSah: (String) -> Unit,
 ) {
     val broj = profil.istorijaKvizova.size + profil.istorijaSaha.size
     Osveziv(osvezava = osvezava, onOsvezi = onOsvezi) {
@@ -42,7 +44,9 @@ fun RezultatiEkran(
                 Text("Još nema završenih aktivnosti.", style = MaterialTheme.typography.bodyLarge)
             } else {
                 profil.istorijaSaha.forEach { partija ->
-                    Card(modifier = Modifier.fillMaxWidth()) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth().clickable { onSah(partija.playToken) },
+                    ) {
                         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text("Šah protiv ELO ${partija.approximateElo}", style = MaterialTheme.typography.titleLarge)
                             Text(formatDatum(partija.completedAt), color = MaterialTheme.colorScheme.onSurfaceVariant)

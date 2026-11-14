@@ -397,4 +397,8 @@ data class SahStanjeOdgovor(
     val retryAvailable: Boolean,
     val undoAvailable: Boolean,
     val moves: List<SahPotez>,
+    // play-chess vraća ova polja samo kad je zahtev odbačen zbog stale stanja
+    // ili je već obrađen isti requestId; podrazumevano su false.
+    val stale: Boolean = false,
+    val duplicate: Boolean = false,
 )

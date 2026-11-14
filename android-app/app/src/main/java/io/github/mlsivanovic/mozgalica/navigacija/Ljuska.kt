@@ -28,7 +28,6 @@ import io.github.mlsivanovic.mozgalica.povezivanje.PovezivanjeEkran
 import io.github.mlsivanovic.mozgalica.povezivanje.porukaSkeniranja
 import io.github.mlsivanovic.mozgalica.profil.CiljObavestenja
 import io.github.mlsivanovic.mozgalica.kviz.KvizTok
-import io.github.mlsivanovic.mozgalica.profil.FokusiranEkran
 import io.github.mlsivanovic.mozgalica.profil.PocetnaEkran
 import io.github.mlsivanovic.mozgalica.profil.PodesavanjaEkran
 import io.github.mlsivanovic.mozgalica.profil.PrazanTab
@@ -36,6 +35,7 @@ import io.github.mlsivanovic.mozgalica.profil.ProfilViewModel
 import io.github.mlsivanovic.mozgalica.profil.ProveraEkran
 import io.github.mlsivanovic.mozgalica.profil.RasporedEkran
 import io.github.mlsivanovic.mozgalica.profil.RezultatiEkran
+import io.github.mlsivanovic.mozgalica.sah.SahTok
 import io.github.mlsivanovic.mozgalica.profil.UiStanje
 import io.github.mlsivanovic.mozgalica.profil.ciljObavestenja
 import java.io.IOException
@@ -202,7 +202,7 @@ private fun Navigacija(
             composable<RezultatiRuta> {
                 val profil = stanje as? UiStanje.Profil
                 if (profil == null) ProveraEkran()
-                else RezultatiEkran(profil.podaci, profil.osvezava, onOsvezi)
+                else RezultatiEkran(profil.podaci, profil.osvezava, onOsvezi, onSah = { nav.navigate(SahRuta(it)) })
             }
             composable<PodesavanjaRuta> {
                 PodesavanjaEkran(
@@ -222,10 +222,14 @@ private fun Navigacija(
                 KvizTok(onNazad = { nav.popBackStack() })
             }
             composable<SahRuta> {
-                FokusiranEkran(
-                    naslov = "Šah",
-                    poruka = "Ovu partiju ćeš moći da igraš u narednoj verziji aplikacije.",
+                SahTok(
                     onNazad = { nav.popBackStack() },
+                    onNoviToken = { novi ->
+                        nav.navigate(SahRuta(novi)) {
+                            popUpTo<SahRuta> { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    },
                 )
             }
         }

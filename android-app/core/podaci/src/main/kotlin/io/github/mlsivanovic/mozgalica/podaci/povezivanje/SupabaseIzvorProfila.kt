@@ -34,10 +34,17 @@ import io.github.mlsivanovic.mozgalica.podaci.kviz.protumaciPonovni
 import io.github.mlsivanovic.mozgalica.podaci.kviz.protumaciRezultat
 import io.github.mlsivanovic.mozgalica.podaci.kviz.protumaciSavet
 import io.github.mlsivanovic.mozgalica.podaci.kviz.protumaciTajmer
+import io.github.mlsivanovic.mozgalica.podaci.sah.IshodSaha
+import io.github.mlsivanovic.mozgalica.podaci.sah.IzvorSaha
+import io.github.mlsivanovic.mozgalica.podaci.sah.SahAkcija
+import io.github.mlsivanovic.mozgalica.podaci.sah.SahPotezUnos
+import io.github.mlsivanovic.mozgalica.podaci.sah.protumaciSah
+import io.github.mlsivanovic.mozgalica.podaci.sah.sahZahtev
 import io.ktor.client.statement.bodyAsText
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
@@ -46,7 +53,7 @@ import kotlinx.serialization.json.put
 class SupabaseIzvorProfila(
     private val url: String,
     private val anonKljuc: String,
-) : IzvorProfila, IzvorSadrzaja, IzvorKviza {
+) : IzvorProfila, IzvorSadrzaja, IzvorKviza, IzvorSaha {
     private val json = Json { ignoreUnknownKeys = false }
 
     // Klijent se pravi tek na prvi mrežni poziv, posle crtanja keša.
@@ -181,6 +188,34 @@ class SupabaseIzvorProfila(
 
     override suspend fun predajPonovni(attemptToken: String, odgovori: Map<String, OdgovorDeteta>): IshodPonovnog =
         pozoviKviz(parametriCuvanja(attemptToken, odgovori), "submit_retry", ::protumaciPonovni, IshodPonovnog.Neuspesan)
+
+    override suspend fun stanje(playToken: String): IshodSaha = pozoviSah(sahZahtev(playToken, SahAkcija.STANJE))
+
+    override suspend fun akcija(
+        playToken: String,
+        akcija: SahAkcija,
+        expectedRevision: Int,
+        potez: SahPotezUnos?,
+        requestId: String,
+        elo: Int?,
+    ): IshodSaha = pozoviSah(
+        sahZahtev(playToken, akcija, expectedRevision, potez, requestId, elo),
+    )
+
+    private suspend fun pozoviSah(telo: JsonObject): IshodSaha {
+        if (url.isBlank() || anonKljuc.isBlank()) return IshodSaha.Neuspesan
+        return try {
+            val odgovor = klijent.functions.invoke(
+                function = "play-chess",
+                body = telo,
+            )
+            protumaciSah(odgovor.bodyAsText())
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            IshodSaha.Neuspesan
+        }
+    }
 
     private suspend fun <T> pozoviKviz(
         parametri: kotlinx.serialization.json.JsonObject,
