@@ -1,5 +1,10 @@
 package io.github.mlsivanovic.mozgalica.podaci.povezivanje
 
+import io.github.mlsivanovic.mozgalica.podaci.KupovinaOdgovor
+import io.github.mlsivanovic.mozgalica.podaci.ProdavnicaOdgovor
+import io.github.mlsivanovic.mozgalica.podaci.prodavnica.IshodKupovine
+import io.github.mlsivanovic.mozgalica.podaci.prodavnica.IshodProdavnice
+import io.github.mlsivanovic.mozgalica.podaci.prodavnica.IzvorProdavnice
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
@@ -86,6 +91,37 @@ class ProfilRepozitorijumTest {
         assertEquals(IshodOsvezavanja.Greska(PorukePovezivanja.MREZA), ishod)
         assertEquals(profil, repo.posmatraj().first())
         assertEquals(token, tokeni.token)
+    }
+
+    @Test
+    fun kupovinaKoristiTokenIAzuriraBalans() = runBlocking {
+        val tokeni = MemorijaTokena().apply { token = this@ProfilRepozitorijumTest.token }
+        val kes = MemorijaKesa()
+        kes.upisi(profil)
+        val podesavanja = MemorijaPodesavanja()
+        podesavanja.zapamtiIzabrani()
+        val prodavnica = object : IzvorProdavnice {
+            override suspend fun prodavnica(profileToken: String) = IshodProdavnice.Uspesna(
+                ProdavnicaOdgovor(true, null, "Ana", "🦊", 2, 4, emptyList(), emptyList()),
+            )
+            override suspend fun kupi(profileToken: String, itemId: String) = IshodKupovine.Uspesna(
+                KupovinaOdgovor(true, null, "kupovina", 2),
+            )
+        }
+        val repo = ProfilRepozitorijum(
+            kes = kes,
+            tokeni = tokeni,
+            izvor = IzvorProfila { IshodUcitavanja.Uspesan(profil) },
+            podesavanja = podesavanja,
+            izvorProdavnice = prodavnica,
+        )
+
+        val ishod = repo.kupi("stavka")
+
+        assertTrue(ishod is IshodKupovine.Uspesna)
+        repo.azurirajBalans(2)
+        assertEquals(2, repo.posmatraj().first()?.raspolozivoZvezdica)
+        assertEquals(4, repo.posmatraj().first()?.ukupnoZvezdica)
     }
 
     private fun repo(

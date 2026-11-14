@@ -24,6 +24,7 @@ import io.github.mlsivanovic.mozgalica.podaci.povezivanje.ProfilRepozitorijum
 import io.github.mlsivanovic.mozgalica.podaci.povezivanje.SkladisteTokena
 import io.github.mlsivanovic.mozgalica.podaci.povezivanje.SupabaseIzvorProfila
 import io.github.mlsivanovic.mozgalica.podaci.sah.IzvorSaha
+import io.github.mlsivanovic.mozgalica.podaci.prodavnica.IzvorProdavnice
 import javax.inject.Singleton
 
 @Module
@@ -71,6 +72,9 @@ object PodaciModul {
     fun izvorSaha(supabase: SupabaseIzvorProfila): IzvorSaha = supabase
 
     @Provides
+    fun izvorProdavnice(supabase: SupabaseIzvorProfila): IzvorProdavnice = supabase
+
+    @Provides
     @Singleton
     fun sinhronizacija(
         skladiste: SkladistePokusaja,
@@ -91,7 +95,10 @@ object PodaciModul {
         sadrzaj: KesSadrzaja,
         izvorSadrzaja: IzvorSadrzaja,
         pokusaji: SkladistePokusaja,
-    ): ProfilRepozitorijum = ProfilRepozitorijum(kes, tokeni, izvor, podesavanja, sadrzaj, izvorSadrzaja, pokusaji)
+        izvorProdavnice: IzvorProdavnice,
+    ): ProfilRepozitorijum = ProfilRepozitorijum(
+        kes, tokeni, izvor, podesavanja, sadrzaj, izvorSadrzaja, pokusaji, izvorProdavnice,
+    )
 }
 
 internal fun imaVezu(context: Context): Boolean {

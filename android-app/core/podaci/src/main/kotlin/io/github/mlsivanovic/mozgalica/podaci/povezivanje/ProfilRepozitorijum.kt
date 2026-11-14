@@ -1,9 +1,13 @@
 package io.github.mlsivanovic.mozgalica.podaci.povezivanje
 
 import io.github.mlsivanovic.mozgalica.podaci.kviz.SkladistePokusaja
+import io.github.mlsivanovic.mozgalica.podaci.prodavnica.IshodKupovine
+import io.github.mlsivanovic.mozgalica.podaci.prodavnica.IshodProdavnice
+import io.github.mlsivanovic.mozgalica.podaci.prodavnica.IzvorProdavnice
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 
 class ProfilRepozitorijum(
     private val kes: KesProfila,
@@ -13,6 +17,7 @@ class ProfilRepozitorijum(
     private val kesSadrzaja: KesSadrzaja = PrazanKesSadrzaja(),
     private val izvorSadrzaja: IzvorSadrzaja = PrazanIzvorSadrzaja,
     private val pokusaji: SkladistePokusaja? = null,
+    private val izvorProdavnice: IzvorProdavnice = PrazanIzvorProdavnice,
 ) {
     // Samo lokalni podaci. Mreža se ne zove dok neko ne pozove osvezi ili povezi.
     fun posmatraj(): Flow<SacuvaniProfil?> = combine(kes.posmatraj(), podesavanja.izabrani()) { profil, izabrani ->
@@ -60,6 +65,23 @@ class ProfilRepozitorijum(
     suspend fun oznaciProcitanim(ids: List<String>?) {
         val zaSlanje = kesSadrzaja.oznaciLokalno(ids)
         pokusajSlanje(zaSlanje)
+    }
+
+    suspend fun prodavnica(): IshodProdavnice {
+        val token = tokeni.procitaj() ?: return IshodProdavnice.Odbijena("no_token")
+        return izvorProdavnice.prodavnica(token)
+    }
+
+    suspend fun kupi(itemId: String): IshodKupovine {
+        val token = tokeni.procitaj() ?: return IshodKupovine.Odbijena("no_token")
+        return izvorProdavnice.kupi(token, itemId)
+    }
+
+    // Posle kupovine odmah umanjujemo keširani balans; server ostaje izvor istine
+    // i sledeće osvežavanje ga potvrđuje.
+    suspend fun azurirajBalans(noviBalans: Int) {
+        val profil = kes.posmatraj().first() ?: return
+        kes.upisi(profil.copy(raspolozivoZvezdica = noviBalans.coerceAtLeast(0)))
     }
 
     suspend fun napuniIzSnimka(profilTelo: String, rasporedTelo: String, obavestenjaTelo: String): IshodSnimka {
@@ -139,6 +161,11 @@ private fun SacuvanoObavestenje.uDeteta() = io.github.mlsivanovic.mozgalica.poda
     readAt = readAt,
     createdAt = createdAt,
 )
+
+private object PrazanIzvorProdavnice : IzvorProdavnice {
+    override suspend fun prodavnica(profileToken: String) = IshodProdavnice.Neuspesna
+    override suspend fun kupi(profileToken: String, itemId: String) = IshodKupovine.Neuspesna
+}
 
 private object PrazanIzvorSadrzaja : IzvorSadrzaja {
     override suspend fun raspored(token: String) = IshodRasporeda.Neuspesan

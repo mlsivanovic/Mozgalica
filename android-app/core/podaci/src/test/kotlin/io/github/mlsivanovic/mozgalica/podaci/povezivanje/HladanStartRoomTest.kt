@@ -1,6 +1,7 @@
 package io.github.mlsivanovic.mozgalica.podaci.povezivanje
 
 import androidx.room.Room
+import io.github.mlsivanovic.mozgalica.podaci.ProfilnaTitula
 import androidx.test.core.app.ApplicationProvider
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
@@ -29,7 +30,15 @@ class HladanStartRoomTest {
     @Test(timeout = 20_000)
     fun posleSnimanjaHladanStartCitaRoomBezMreze() = runBlocking {
         val kes = RoomKesProfila(baza.profilDao())
-        val sacuvan = SacuvaniProfil("Proba Native", "🦊", 7, 6, "ShadowNoob Empowered")
+        val sacuvan = SacuvaniProfil(
+            ime = "Proba Native",
+            avatar = "🦊",
+            ukupnoZvezdica = 7,
+            raspolozivoZvezdica = 6,
+            titula = "ShadowNoob Empowered",
+            trenutnaTitula = ProfilnaTitula("ShadowNoob Empowered", 5, null),
+            sledecaTitula = ProfilnaTitula("ShadowNoob Unbound", 10, null, 3),
+        )
         kes.upisi(sacuvan)
 
         val noviKes = RoomKesProfila(baza.profilDao())

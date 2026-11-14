@@ -14,6 +14,7 @@ import io.github.mlsivanovic.mozgalica.podaci.AktivnaPartija
 import io.github.mlsivanovic.mozgalica.podaci.AktivniKviz
 import io.github.mlsivanovic.mozgalica.podaci.IstorijaKviza
 import io.github.mlsivanovic.mozgalica.podaci.IstorijaPartije
+import io.github.mlsivanovic.mozgalica.podaci.ProfilnaTitula
 import io.github.mlsivanovic.mozgalica.podaci.kviz.PokusajRed
 import io.github.mlsivanovic.mozgalica.podaci.kviz.PokusajDao
 import kotlinx.coroutines.flow.Flow
@@ -29,6 +30,8 @@ private data class SnimakListova(
     val aktivnePartije: List<AktivnaPartija> = emptyList(),
     val istorijaKvizova: List<IstorijaKviza> = emptyList(),
     val istorijaSaha: List<IstorijaPartije> = emptyList(),
+    val trenutnaTitula: ProfilnaTitula? = null,
+    val sledecaTitula: ProfilnaTitula? = null,
 )
 
 @Entity(tableName = "profil")
@@ -120,6 +123,8 @@ class RoomKesProfila(private val dao: ProfilDao) : KesProfila {
                         aktivnePartije = profil.aktivnePartije,
                         istorijaKvizova = profil.istorijaKvizova,
                         istorijaSaha = profil.istorijaSaha,
+                        trenutnaTitula = profil.trenutnaTitula,
+                        sledecaTitula = profil.sledecaTitula,
                     ),
                 ),
             ),
@@ -145,5 +150,7 @@ private fun izReda(red: ProfilRed): SacuvaniProfil {
         aktivnePartije = listovi.aktivnePartije,
         istorijaKvizova = listovi.istorijaKvizova,
         istorijaSaha = listovi.istorijaSaha,
+        trenutnaTitula = listovi.trenutnaTitula,
+        sledecaTitula = listovi.sledecaTitula,
     )
 }

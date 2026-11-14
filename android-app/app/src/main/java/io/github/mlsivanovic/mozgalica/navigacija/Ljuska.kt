@@ -30,12 +30,13 @@ import io.github.mlsivanovic.mozgalica.profil.CiljObavestenja
 import io.github.mlsivanovic.mozgalica.kviz.KvizTok
 import io.github.mlsivanovic.mozgalica.profil.PocetnaEkran
 import io.github.mlsivanovic.mozgalica.profil.PodesavanjaEkran
-import io.github.mlsivanovic.mozgalica.profil.PrazanTab
 import io.github.mlsivanovic.mozgalica.profil.ProfilViewModel
 import io.github.mlsivanovic.mozgalica.profil.ProveraEkran
 import io.github.mlsivanovic.mozgalica.profil.RasporedEkran
 import io.github.mlsivanovic.mozgalica.profil.RezultatiEkran
 import io.github.mlsivanovic.mozgalica.sah.SahTok
+import io.github.mlsivanovic.mozgalica.nagrade.NagradeEkran
+import io.github.mlsivanovic.mozgalica.nagrade.ProdavnicaTok
 import io.github.mlsivanovic.mozgalica.profil.UiStanje
 import io.github.mlsivanovic.mozgalica.profil.ciljObavestenja
 import java.io.IOException
@@ -198,7 +199,19 @@ private fun Navigacija(
                 if (profil == null) ProveraEkran()
                 else RasporedEkran(profil.raspored, profil.osvezava, onOsvezi)
             }
-            composable<NagradeRuta> { PrazanTab("Nagrade") }
+            composable<NagradeRuta> {
+                val profil = stanje as? UiStanje.Profil
+                if (profil == null) ProveraEkran()
+                else NagradeEkran(
+                    profil = profil.podaci,
+                    osvezava = profil.osvezava,
+                    onOsvezi = onOsvezi,
+                    onProdavnica = { nav.navigate(ProdavnicaRuta) },
+                )
+            }
+            composable<ProdavnicaRuta> {
+                ProdavnicaTok(onNazad = { nav.popBackStack() })
+            }
             composable<RezultatiRuta> {
                 val profil = stanje as? UiStanje.Profil
                 if (profil == null) ProveraEkran()
@@ -250,6 +263,7 @@ private fun androidx.navigation.NavDestination?.odrediste(): Odrediste? = when {
     hasRoute<PocetnaRuta>() -> Odrediste.POCETNA
     hasRoute<RasporedRuta>() -> Odrediste.RASPORED
     hasRoute<NagradeRuta>() -> Odrediste.NAGRADE
+    hasRoute<ProdavnicaRuta>() -> Odrediste.PRODAVNICA
     hasRoute<RezultatiRuta>() -> Odrediste.REZULTATI
     hasRoute<PodesavanjaRuta>() -> Odrediste.PODESAVANJA
     hasRoute<KvizRuta>() -> Odrediste.KVIZ

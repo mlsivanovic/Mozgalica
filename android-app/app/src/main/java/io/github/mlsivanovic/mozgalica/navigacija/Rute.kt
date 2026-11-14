@@ -15,6 +15,9 @@ data object RasporedRuta
 data object NagradeRuta
 
 @Serializable
+data object ProdavnicaRuta
+
+@Serializable
 data object RezultatiRuta
 
 @Serializable

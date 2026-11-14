@@ -30,4 +30,6 @@ private fun ProfilOdgovor.uSacuvani(): SacuvaniProfil = SacuvaniProfil(
     aktivnePartije = activeChessGames,
     istorijaKvizova = history,
     istorijaSaha = chessHistory,
+    trenutnaTitula = currentTitle,
+    sledecaTitula = nextTitle,
 )

@@ -5,6 +5,7 @@ enum class Odrediste {
     POCETNA,
     RASPORED,
     NAGRADE,
+    PRODAVNICA,
     REZULTATI,
     PODESAVANJA,
     KVIZ,
@@ -13,5 +14,5 @@ enum class Odrediste {
 
 fun prikazujeDonjuNavigaciju(odrediste: Odrediste): Boolean = when (odrediste) {
     Odrediste.POCETNA, Odrediste.RASPORED, Odrediste.NAGRADE, Odrediste.REZULTATI -> true
-    Odrediste.POVEZIVANJE, Odrediste.PODESAVANJA, Odrediste.KVIZ, Odrediste.SAH -> false
+    Odrediste.POVEZIVANJE, Odrediste.PODESAVANJA, Odrediste.PRODAVNICA, Odrediste.KVIZ, Odrediste.SAH -> false
 }

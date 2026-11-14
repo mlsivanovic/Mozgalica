@@ -27,6 +27,7 @@ import io.github.mlsivanovic.mozgalica.podaci.AktivnaPartija
 import io.github.mlsivanovic.mozgalica.podaci.AktivniKviz
 import io.github.mlsivanovic.mozgalica.podaci.povezivanje.SacuvanaObavestenja
 import io.github.mlsivanovic.mozgalica.podaci.povezivanje.SacuvaniProfil
+import io.github.mlsivanovic.mozgalica.nagrade.TitulaAvatar
 
 @Composable
 fun PocetnaEkran(
@@ -101,7 +102,14 @@ fun PocetnaEkran(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             profil.titula?.let { titula ->
-                Text(text = titula, style = MaterialTheme.typography.bodyLarge)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TitulaAvatar(
+                        ime = titula,
+                        avatar = profil.trenutnaTitula?.avatar,
+                        velicina = 28.dp,
+                    )
+                    Text(text = titula, style = MaterialTheme.typography.bodyLarge)
+                }
             }
             if (greskaMreze != null) {
                 Text(text = greskaMreze, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyLarge)

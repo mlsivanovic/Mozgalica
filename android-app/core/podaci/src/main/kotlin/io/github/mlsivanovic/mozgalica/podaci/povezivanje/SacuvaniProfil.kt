@@ -4,6 +4,7 @@ import io.github.mlsivanovic.mozgalica.podaci.AktivnaPartija
 import io.github.mlsivanovic.mozgalica.podaci.AktivniKviz
 import io.github.mlsivanovic.mozgalica.podaci.IstorijaKviza
 import io.github.mlsivanovic.mozgalica.podaci.IstorijaPartije
+import io.github.mlsivanovic.mozgalica.podaci.ProfilnaTitula
 
 data class SacuvaniProfil(
     val ime: String,
@@ -15,6 +16,8 @@ data class SacuvaniProfil(
     val aktivnePartije: List<AktivnaPartija> = emptyList(),
     val istorijaKvizova: List<IstorijaKviza> = emptyList(),
     val istorijaSaha: List<IstorijaPartije> = emptyList(),
+    val trenutnaTitula: ProfilnaTitula? = null,
+    val sledecaTitula: ProfilnaTitula? = null,
 )
 
 object PovezivanjeKonstante {

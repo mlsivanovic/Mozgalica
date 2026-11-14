@@ -295,7 +295,7 @@ Procena je za jednog programera sa AI pomoći, u radnim danima.
   podrazumevano uključeni. Sistemsko „ukloni animacije" gasi samo animacije, preko
   `LocalEfekti`. Zvučni fajlovi nisu dodati.
 - Push kontrole sa weba nisu kopirane. Nema FCM-a, nema `register_child_push`.
-- Tab Nagrade je i dalje prazan. Na Početnoj je samo ime titule iz profila.
+- Tab Nagrade je u fazi 6 dobio titule i prodavnicu. Na Početnoj je avatar trenutne titule.
 - U fazi 2 `get_quiz_by_token` se nije učitavao unapred. Faza 3 to radi samo za aktivne
   kvizove, i dalje bez `start_attempt` dok dete ne krene. Istorija rezultata je i dalje samo
   lista; ne otvara detalj. Šah je u fazi 5 zamenio placeholder.
@@ -459,6 +459,34 @@ Native ne treba da nosi generator od ~10.000 linija.
 - Napredak do sledeće titule, ekran „Nova titula!".
 - Prodavnica: `get_shop`, `purchase_shop_item`, potvrda, statusi kupovina.
 - **Gotovo kada:** kupovina umanji raspoložive zvezdice odmah i ostane dosledna posle osvežavanja.
+
+#### Urađeno u fazi 6
+- `SacuvaniProfil` sada čuva `trenutnaTitula` i `sledecaTitula` (prag, rang i `starsNeeded`).
+  Podaci idu u postojeći `listoviJson`, pa nema nove Room migracije; stari keš se čita sa
+  `null` titulama.
+- Portovan `TitleAvatar` u Compose Canvas: osam fabričkih titula, tri ranga, palete, oreol
+  i zvezdice za `Empowered`/`Unbound`. Avatar može biti emoji, base64 slika iz admina ili
+  generički bedž; nepoznata titula dobija generičku paletu.
+- Ekran Nagrade prikazuje trenutnu titulu, avatar, rang, napredak do sledeće titule i
+  prodavnicu. Kada se titula promeni posle osvežavanja, prikazuje se dijalog „Nova titula!”.
+- Prodavnica koristi `get_shop` i `purchase_shop_item` preko `IzvorProdavnice`; ima katalog,
+  potvrdu kupovine, poruke grešaka (`already_purchased`, `awaiting_consumption`,
+  `insufficient_balance`, `item_not_found`, `profile_not_found`) i istoriju kupovina sa
+  statusima `requested`/`consumed`/`cancelled`. Posle uspešne kupovine `newBalance` se odmah
+  upisuje u keš profila, a zatim se prodavnica osveži sa servera.
+- **Provereno:** `:core:podaci` i `:app` unit testovi (75 testa, 0 padova), `assembleDebug`
+  i `lintDebug` (samo postojeća upozorenja o verzijama), `npx vitest run` (51 fajl, 403 testa)
+  i `npm run build`.
+- **E2E na probnom profilu `Proba Native`:** Nagrade prikazuju `ShadowNoob Empowered`,
+  napredak 0/5 do `ShadowNoob Unbound` i avatar. Dodata je probna stavka od 3⭐; kupovina je
+  odmah spustila raspoloživo sa 5 na 2, stavka je postala „✓ Kupljeno”, a posle restarta
+  prodavnica i dalje prikazuje 2⭐ i kupovinu. Status je zatim prebačen na `consumed` i
+  prikazuje „Isporučeno”. Za proveru dijaloga titula je privremeno podignut broj zvezdica
+  na 10, pull-to-refresh je prikazao „Nova titula!” sa `ShadowNoob Unbound`, a zatim su
+  zvezdice vraćene na 5 (spendable 2 zbog kupovine). Probni podaci nisu brisani.
+- **Nije provereno na uređaju:** svih osam simbola titula (vizuelno su provereni ShadowNoob
+  Awakened/Empowered/Unbound; ostali su pokriveni mapiranjem i kompajliranjem), base64
+  avatar titule, status `cancelled` i greška kupovine preko mreže.
 
 ### Faza 7 — Push preko FCM-a (4–5 dana)
 

@@ -34,6 +34,11 @@ import io.github.mlsivanovic.mozgalica.podaci.kviz.protumaciPonovni
 import io.github.mlsivanovic.mozgalica.podaci.kviz.protumaciRezultat
 import io.github.mlsivanovic.mozgalica.podaci.kviz.protumaciSavet
 import io.github.mlsivanovic.mozgalica.podaci.kviz.protumaciTajmer
+import io.github.mlsivanovic.mozgalica.podaci.prodavnica.IshodKupovine
+import io.github.mlsivanovic.mozgalica.podaci.prodavnica.IshodProdavnice
+import io.github.mlsivanovic.mozgalica.podaci.prodavnica.IzvorProdavnice
+import io.github.mlsivanovic.mozgalica.podaci.prodavnica.protumaciKupovinu
+import io.github.mlsivanovic.mozgalica.podaci.prodavnica.protumaciProdavnicu
 import io.github.mlsivanovic.mozgalica.podaci.sah.IshodSaha
 import io.github.mlsivanovic.mozgalica.podaci.sah.IzvorSaha
 import io.github.mlsivanovic.mozgalica.podaci.sah.SahAkcija
@@ -53,7 +58,7 @@ import kotlinx.serialization.json.put
 class SupabaseIzvorProfila(
     private val url: String,
     private val anonKljuc: String,
-) : IzvorProfila, IzvorSadrzaja, IzvorKviza, IzvorSaha {
+) : IzvorProfila, IzvorSadrzaja, IzvorKviza, IzvorSaha, IzvorProdavnice {
     private val json = Json { ignoreUnknownKeys = false }
 
     // Klijent se pravi tek na prvi mrežni poziv, posle crtanja keša.
@@ -201,6 +206,39 @@ class SupabaseIzvorProfila(
     ): IshodSaha = pozoviSah(
         sahZahtev(playToken, akcija, expectedRevision, potez, requestId, elo),
     )
+
+    override suspend fun prodavnica(profileToken: String): IshodProdavnice {
+        if (url.isBlank() || anonKljuc.isBlank()) return IshodProdavnice.Neuspesna
+        return try {
+            val telo = klijent.postgrest.rpc(
+                "get_shop",
+                buildJsonObject { put("p_profile_token", profileToken) },
+            ).data
+            protumaciProdavnicu(telo)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            IshodProdavnice.Neuspesna
+        }
+    }
+
+    override suspend fun kupi(profileToken: String, itemId: String): IshodKupovine {
+        if (url.isBlank() || anonKljuc.isBlank()) return IshodKupovine.Neuspesna
+        return try {
+            val telo = klijent.postgrest.rpc(
+                "purchase_shop_item",
+                buildJsonObject {
+                    put("p_profile_token", profileToken)
+                    put("p_item_id", itemId)
+                },
+            ).data
+            protumaciKupovinu(telo)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            IshodKupovine.Neuspesna
+        }
+    }
 
     private suspend fun pozoviSah(telo: JsonObject): IshodSaha {
         if (url.isBlank() || anonKljuc.isBlank()) return IshodSaha.Neuspesan
