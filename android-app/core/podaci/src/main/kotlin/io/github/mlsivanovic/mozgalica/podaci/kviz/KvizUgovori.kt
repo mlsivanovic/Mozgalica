@@ -5,6 +5,8 @@ import io.github.mlsivanovic.mozgalica.podaci.KvizMetaOdgovor
 import io.github.mlsivanovic.mozgalica.podaci.OdgovorDeteta
 import io.github.mlsivanovic.mozgalica.podaci.PitanjeZaDete
 import io.github.mlsivanovic.mozgalica.podaci.PokusajOdgovor
+import io.github.mlsivanovic.mozgalica.podaci.PonovniOdgovor
+import io.github.mlsivanovic.mozgalica.podaci.PonovnoPitanje
 import io.github.mlsivanovic.mozgalica.podaci.PotvrdaOdgovor
 import io.github.mlsivanovic.mozgalica.podaci.RezultatOdgovor
 import io.github.mlsivanovic.mozgalica.podaci.SavetOdgovor
@@ -32,6 +34,12 @@ data class SnimakPokusaja(
     val skriveniProfilToken: String? = null,
     val preostaloSavetaSaServera: Int? = null,
     val faza: FazaKviza = FazaKviza.ULAZ,
+    // Ponovni pokušaj netačnih zadataka. Pitanja i odgovori ostaju u Room-u da
+    // prežive prekid rada; ishod stiže tek posle submit_retry.
+    val ponovnaPitanja: List<PonovnoPitanje> = emptyList(),
+    val ponovniOdgovori: Map<String, OdgovorDeteta> = emptyMap(),
+    val ponovniIshod: PonovniOdgovor? = null,
+    val ponovniZapocet: Boolean = false,
 )
 
 interface SkladistePokusaja {
@@ -91,6 +99,12 @@ sealed interface IshodObjasnjenja {
     data object Neuspesno : IshodObjasnjenja
 }
 
+sealed interface IshodPonovnog {
+    data class Uspesan(val odgovor: PonovniOdgovor) : IshodPonovnog
+    data class Odbijen(val kod: String?) : IshodPonovnog
+    data object Neuspesan : IshodPonovnog
+}
+
 interface IzvorKviza {
     suspend fun meta(token: String): IshodMeta
     suspend fun zapocni(token: String, ime: String, oznaka: String?): IshodPokusaja
@@ -100,6 +114,10 @@ interface IzvorKviza {
     suspend fun savet(attemptToken: String, pitanjeId: String): IshodSaveta
     suspend fun predaj(attemptToken: String): IshodPredaje
     suspend fun objasnjenja(attemptToken: String): IshodObjasnjenja
+    // Edge funkcija pripremi-ponovni generiše nove verzije na serveru i zove start_retry.
+    suspend fun pripremiPonovni(attemptToken: String): IshodPonovnog
+    suspend fun nastaviPonovni(attemptToken: String): IshodPonovnog
+    suspend fun predajPonovni(attemptToken: String, odgovori: Map<String, OdgovorDeteta>): IshodPonovnog
 }
 
 enum class IshodReda { Gotovo, CekaVezu, Privremeno }

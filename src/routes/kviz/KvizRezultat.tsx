@@ -16,7 +16,7 @@ import {
 } from '../../lib/api'
 import { obrisiStanje, ucitajStanje } from '../../lib/offlineQueue'
 import {
-  generisiPonovne, obrisiPonovneOdgovore, sacuvajPonovneOdgovore, ucitajPonovneOdgovore,
+  obrisiPonovneOdgovore, sacuvajPonovneOdgovore, ucitajPonovneOdgovore,
 } from '../../lib/ponovni'
 import { MAKSIMALNO_ZVEZDICA, porukaOhrabrenja } from '../../lib/ocena'
 import { formatProcenat } from '../../lib/format'
@@ -225,11 +225,12 @@ export function KvizRezultat() {
     setRadi(true)
     setGreska(null)
     try {
-      const unos = generisiPonovne(netacni)
       // Osiguraj da je server zabeležio viđena objašnjenja pre pokretanja
       const obj = await otvoriObjasnjenja(attemptToken)
       if (!obj.ok) throw new Error(obj.error ?? 'Objašnjenja nisu potvrđena.')
-      const r = await pokreniPonovniPokusaj(attemptToken, unos)
+      let r = await pokreniPonovniPokusaj(attemptToken)
+      // Ponovni pokušaj je možda već pokrenut u native aplikaciji — nastavi ga.
+      if (!r.ok && r.error === 'already_started') r = await nastaviPonovniPokusaj(attemptToken)
       if (!r.ok) throw new Error(r.error)
       if (r.submitted) {
         setPonovniIshod(r)

@@ -75,6 +75,7 @@ netaknut), ali brisanje pada. Pre brisanja uvek proveri:
 ```
 supabase/migrations/   SQL: šema, RLS, SECURITY DEFINER RPC funkcije, ocenjivanje, cron
 supabase/functions/    Deno Edge funkcije: play-chess (šahovska partija),
+                       pripremi-ponovni (nove verzije netačnih zadataka),
                        dispatch-notifications (mejlovi/push, Brevo),
                        process-daily-quizzes (dnevni kvizovi i šahovske partije)
 src/generator/         Deterministički generator pitanja — matematika i srpski jezik (bez AI)

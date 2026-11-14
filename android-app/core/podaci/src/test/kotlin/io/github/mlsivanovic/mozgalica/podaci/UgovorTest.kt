@@ -31,6 +31,7 @@ class UgovorTest {
         proveri<RezultatOdgovor>("submit_attempt.json")
         proveri<PotvrdaOdgovor>("mark_explanations_seen.json")
         proveri<PonovniOdgovor>("start_retry.json")
+        proveri<PonovniOdgovor>("pripremi_ponovni.json")
         proveri<PonovniOdgovor>("resume_retry.json")
         proveri<PonovniOdgovor>("submit_retry.json")
         proveri<ProdavnicaOdgovor>("get_shop.json")

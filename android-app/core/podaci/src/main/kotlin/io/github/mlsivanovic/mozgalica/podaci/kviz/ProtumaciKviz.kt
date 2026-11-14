@@ -4,6 +4,7 @@ import io.github.mlsivanovic.mozgalica.podaci.CuvanjeOdgovor
 import io.github.mlsivanovic.mozgalica.podaci.KvizMetaOdgovor
 import io.github.mlsivanovic.mozgalica.podaci.OdgovorDeteta
 import io.github.mlsivanovic.mozgalica.podaci.PokusajOdgovor
+import io.github.mlsivanovic.mozgalica.podaci.PonovniOdgovor
 import io.github.mlsivanovic.mozgalica.podaci.PotvrdaOdgovor
 import io.github.mlsivanovic.mozgalica.podaci.RezultatOdgovor
 import io.github.mlsivanovic.mozgalica.podaci.SavetOdgovor
@@ -125,6 +126,16 @@ fun parametriTajmera(attemptToken: String, sekunde: Int): JsonObject = buildJson
 fun parametriSaveta(attemptToken: String, pitanjeId: String): JsonObject = buildJsonObject {
     put("p_attempt_token", attemptToken)
     put("p_quiz_question_id", pitanjeId)
+}
+
+fun protumaciPonovni(telo: String): IshodPonovnog {
+    val omot = omot(telo) ?: return IshodPonovnog.Neuspesan
+    if (!omot.ok) return IshodPonovnog.Odbijen(omot.error)
+    return try {
+        IshodPonovnog.Uspesan(strogo.decodeFromString(PonovniOdgovor.serializer(), telo))
+    } catch (_: Exception) {
+        IshodPonovnog.Neuspesan
+    }
 }
 
 fun parametriMeta(token: String): JsonObject = buildJsonObject { put("p_token", token) }

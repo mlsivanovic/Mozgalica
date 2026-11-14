@@ -136,6 +136,9 @@ private open class PrazanIzvor : IzvorKviza {
     override suspend fun savet(attemptToken: String, pitanjeId: String) = IshodSaveta.Neuspesan
     override suspend fun predaj(attemptToken: String) = IshodPredaje.Neuspesna
     override suspend fun objasnjenja(attemptToken: String) = IshodObjasnjenja.Neuspesno
+    override suspend fun pripremiPonovni(attemptToken: String) = IshodPonovnog.Neuspesan
+    override suspend fun nastaviPonovni(attemptToken: String) = IshodPonovnog.Neuspesan
+    override suspend fun predajPonovni(attemptToken: String, odgovori: Map<String, OdgovorDeteta>) = IshodPonovnog.Neuspesan
 }
 
 private class MemorijaPokusaja : SkladistePokusaja {

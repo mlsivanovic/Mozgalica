@@ -9,7 +9,7 @@ import type {
 } from '../types/db'
 import type {
   InboxDetetaPayload, JavniProfilPayload, KupovinaPayload, KvizMeta, NapredakTitule,
-  ObjasnjenjePayload, PokusajPayload, PonovniPayload, PonovnoPitanjeUnos, PotvrdaTajmera,
+  ObjasnjenjePayload, PokusajPayload, PonovniPayload, PotvrdaTajmera,
   PregledRasporedaCasova, PregledStatistikeDecePayload, ProdavnicaPayload,
   RasporedCasovaAdmin, RasporedCasovaKartica, RasporedCasovaUnos,
   RezultatPayload, SahStanjePayload, SavePotvrda, SavetPayload, StatistikaDetetaPayload,
@@ -897,13 +897,11 @@ export async function otvoriObjasnjenja(attemptToken: string): Promise<Objasnjen
   return data as ObjasnjenjePayload
 }
 
-// Upisuje nove (klijentski generisane) verzije netačnih zadataka na server
-export async function pokreniPonovniPokusaj(
-  attemptToken: string,
-  pitanja: PonovnoPitanjeUnos[],
-): Promise<PonovniPayload> {
-  const { data, error } = await supabase().rpc('start_retry', {
-    p_attempt_token: attemptToken, p_questions: pitanja,
+// Server generiše nove verzije netačnih zadataka i upisuje ih preko start_retry.
+// Klijent više ne šalje tačne odgovore — samo token pokušaja.
+export async function pokreniPonovniPokusaj(attemptToken: string): Promise<PonovniPayload> {
+  const { data, error } = await supabase().functions.invoke('pripremi-ponovni', {
+    body: { attemptToken },
   })
   if (error) return { ok: false, error: opisiGresku(error)! } as PonovniPayload
   return data as PonovniPayload

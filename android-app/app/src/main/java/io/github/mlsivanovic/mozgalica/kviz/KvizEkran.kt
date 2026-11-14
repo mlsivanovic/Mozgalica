@@ -44,6 +44,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.mlsivanovic.mozgalica.dizajn.LocalEfekti
 import io.github.mlsivanovic.mozgalica.dizajn.Maskota
 import io.github.mlsivanovic.mozgalica.dizajn.StanjeMaskote
+import io.github.mlsivanovic.mozgalica.podaci.PonovnoPitanje
 import io.github.mlsivanovic.mozgalica.podaci.RezultatOdgovor
 import io.github.mlsivanovic.mozgalica.podaci.RezultatPitanja
 import io.github.mlsivanovic.mozgalica.podaci.kviz.FazaKviza
@@ -81,8 +82,10 @@ fun KvizTok(onNazad: () -> Unit, model: KvizViewModel = hiltViewModel()) {
     when {
         ui.ucitavaMeta && ui.meta == null && ui.greska == null -> Centrirano("Učitavanje kviza…")
         ui.greska != null && ui.meta == null && ui.faza == FazaKviza.ULAZ -> GreskaEkran(ui.greska ?: "", onNazad)
+        ui.ponovniIshod != null -> PonovniRezultatEkran(ui, model::zatvoriPonovniIshod)
+        ui.ponovniOtvoren -> PonovniEkran(ui, model::zatvoriPonovni, model)
         ui.faza == FazaKviza.CEKA && ui.rezultat == null && !ui.rezultatSkriven -> CekaEkran(ui, onNazad, model::vratiProbnuVezu)
-        ui.faza == FazaKviza.REZULTAT -> RezultatEkran(ui, onNazad, model::otvoriObjasnjenja, model::noviPokusaj)
+        ui.faza == FazaKviza.REZULTAT -> RezultatEkran(ui, onNazad, model::otvoriObjasnjenja, model::noviPokusaj, model::pokreniPonovni)
         ui.faza == FazaKviza.RESAVANJE && ui.pitanja.isNotEmpty() && ui.stanje != null -> ResavanjeEkran(ui, onNazad, model)
         else -> UlazEkran(ui, onNazad, model)
     }
@@ -305,7 +308,13 @@ private fun CekaEkran(ui: KvizUi, onNazad: () -> Unit, onVezu: () -> Unit) {
 }
 
 @Composable
-private fun RezultatEkran(ui: KvizUi, onNazad: () -> Unit, onObjasnjenja: () -> Unit, onNovi: () -> Unit) {
+private fun RezultatEkran(
+    ui: KvizUi,
+    onNazad: () -> Unit,
+    onObjasnjenja: () -> Unit,
+    onNovi: () -> Unit,
+    onPonovni: () -> Unit,
+) {
     val profilni = ui.stanje?.accessMode == "profile" || ui.skriveniAccessMode == "profile" || ui.rezultat?.accessMode == "profile"
     if (ui.rezultatSkriven || ui.rezultat?.showResult == false) {
         Centrirano("Kviz je predat. Tvoj rezultat će videti osoba koja ti je poslala link.")
@@ -347,11 +356,24 @@ private fun RezultatEkran(ui: KvizUi, onNazad: () -> Unit, onObjasnjenja: () -> 
         if (rezultat.showCorrect && netacni.isNotEmpty() && !rezultat.retry.submitted) {
             Button(onClick = onObjasnjenja) { Text("Objasni netačne") }
         }
-        if (rezultat.retry.available) {
-            Button(onClick = {}, enabled = false, modifier = Modifier.semantics { contentDescription = "Ponovni pokušaj stiže u sledećoj verziji" }) {
-                Text("Ponovni pokušaj stiže u sledećoj verziji")
+        when {
+            ui.ponovniZapocet -> {
+                Button(
+                    onClick = onPonovni,
+                    enabled = !ui.ponovniRadi,
+                    modifier = Modifier.semantics { contentDescription = "Nastavi ponovni pokušaj" },
+                ) { Text("Nastavi ponovni pokušaj") }
+            }
+            rezultat.retry.available && !rezultat.retry.submitted &&
+                (rezultat.retry.explanationsSeen || ui.objasnjenja) -> {
+                Button(
+                    onClick = onPonovni,
+                    enabled = !ui.ponovniRadi,
+                    modifier = Modifier.semantics { contentDescription = "Probaj ponovo netačne" },
+                ) { Text("Probaj ponovo netačne") }
             }
         }
+        ui.ponovniGreska?.let { Text(it, color = MaterialTheme.colorScheme.error) }
         if (!profilni && rezultat.attemptsLeft > 0 && rezultat.retry.submitted != true) {
             OutlinedButton(onClick = onNovi) { Text("Pokušaj ponovo") }
         }
@@ -365,6 +387,130 @@ private fun RezultatEkran(ui: KvizUi, onNazad: () -> Unit, onObjasnjenja: () -> 
         TextButton(onClick = onNazad) { Text(if (profilni) "Nazad na moj profil" else "Nazad") }
     }
 }
+
+@Composable
+private fun PonovniEkran(ui: KvizUi, onNazad: () -> Unit, model: KvizViewModel) {
+    val pitanja = ui.ponovnaPitanja
+    if (pitanja.isEmpty()) {
+        Column(
+            modifier = Modifier.fillMaxSize().padding(24.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
+        ) {
+            Maskota(StanjeMaskote.PRAZNO, velicina = 88.dp)
+            Text("Ponovni pokušaj", style = MaterialTheme.typography.headlineMedium)
+            Text(ui.ponovniGreska ?: "Ponovni pokušaj trenutno nije dostupan.")
+            Button(onClick = onNazad, modifier = Modifier.heightIn(min = 56.dp)) { Text("Nazad na rezultat") }
+        }
+        return
+    }
+    val indeks = ui.ponovniIndeks.coerceIn(0, pitanja.lastIndex)
+    val pitanje = pitanja[indeks]
+    val odgovoreno = pitanja.count { !odgovorJePrazan(ui.ponovniOdgovori[it.id]) }
+    Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            TextButton(onClick = onNazad, modifier = Modifier.semantics { contentDescription = "Nazad na rezultat" }) { Text("←") }
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("Ponovni pokušaj", style = MaterialTheme.typography.bodyLarge)
+                Text("Pitanje ${indeks + 1} od ${pitanja.size}")
+            }
+            Text(if (ui.ponovniRadi) "Predajem…" else "")
+        }
+        Text("Nove verzije netačnih zadataka — isti tip i težina, drugi brojevi.")
+        LinearProgressIndicator(
+            progress = { odgovoreno.toFloat() / pitanja.size },
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Column(Modifier.weight(1f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(pitanje.text, style = MaterialTheme.typography.headlineMedium.copy(fontSize = 23.sp, lineHeight = 30.sp))
+            PitanjePrikaz(
+                pitanje = io.github.mlsivanovic.mozgalica.podaci.PitanjeZaDete(
+                    id = pitanje.id,
+                    type = pitanje.type,
+                    text = pitanje.text,
+                    options = pitanje.options,
+                    hasHint = false,
+                    hint = null,
+                    points = pitanje.points,
+                ),
+                odgovor = ui.ponovniOdgovori[pitanje.id],
+                dozvoljenUnos = !ui.ponovniRadi,
+                onOdgovor = { model.ponovniOdgovor(pitanje.id, it) },
+                onTekstFokus = {},
+            )
+            ui.ponovniGreska?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+        }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            OutlinedButton(
+                onClick = { model.ponovniIndeks(indeks - 1) },
+                enabled = indeks > 0,
+            ) { Text("Nazad") }
+            if (indeks < pitanja.lastIndex) {
+                Button(
+                    onClick = { model.ponovniIndeks(indeks + 1) },
+                    modifier = Modifier.semantics { contentDescription = "Sledeće" },
+                ) { Text("Napred") }
+            } else {
+                Button(
+                    onClick = model::predajPonovni,
+                    enabled = !ui.ponovniRadi,
+                    modifier = Modifier.semantics { contentDescription = "Završi ponovni pokušaj" },
+                ) { Text(if (ui.ponovniRadi) "Predajem…" else "Završi") }
+            }
+        }
+        Text("$odgovoreno od ${pitanja.size} odgovoreno", color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+    if (ui.ponovniUpozorenje) {
+        val praznih = pitanja.count { odgovorJePrazan(ui.ponovniOdgovori[it.id]) }
+        DonjiList(onZatvori = model::zatvoriPonovniUpozorenje) {
+            Text(tekstNeodgovorenih(praznih), style = MaterialTheme.typography.titleLarge)
+            Text("Možeš da odeš na prvo prazno ili da ipak predaš ponovni pokušaj.")
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(onClick = model::idiNaPrvoPraznoPonovno) { Text("Idi na prvo prazno") }
+                Button(
+                    onClick = model::predajPonovni,
+                    modifier = Modifier.semantics { contentDescription = "Ipak predaj ponovni" },
+                ) { Text("Ipak predaj") }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PonovniRezultatEkran(ui: KvizUi, onNazad: () -> Unit) {
+    val ishod = ui.ponovniIshod ?: return
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Maskota(
+            if (ishod.allCorrect == true) StanjeMaskote.USPEH else StanjeMaskote.PRAZNO,
+            velicina = 88.dp,
+        )
+        Text(
+            if (ishod.allCorrect == true) "Svi netačni zadaci su sada tačni!" else "Ponovni pokušaj je predat",
+            style = MaterialTheme.typography.headlineMedium,
+        )
+        Text("Na ovom pokušaju: ${ishod.starsAwarded ?: 0} / $MAKSIMALNO_ZVEZDICA ⭐")
+        if (ishod.allCorrect == false) {
+            Text("Neki zadaci i dalje nisu tačni. Pogledaj tačne odgovore ispod.")
+        }
+        ishod.questions.forEachIndexed { indeks, pitanje ->
+            PregledPitanja(ponovnoURezultat(pitanje), indeks, prikaziTacan = true)
+        }
+        Button(onClick = onNazad, modifier = Modifier.heightIn(min = 56.dp)) { Text("Nazad na rezultat") }
+    }
+}
+
+private fun ponovnoURezultat(pitanje: PonovnoPitanje): RezultatPitanja = RezultatPitanja(
+    id = pitanje.id,
+    type = pitanje.type,
+    text = pitanje.text,
+    options = pitanje.options,
+    points = pitanje.points,
+    answer = pitanje.answer,
+    isCorrect = pitanje.isCorrect == true,
+    awardedPoints = if (pitanje.isCorrect == true) pitanje.points else 0,
+    correct = pitanje.correct,
+    explanation = pitanje.explanation,
+    topicSlug = null,
+)
 
 @Composable
 private fun PregledPitanja(pitanje: RezultatPitanja, indeks: Int, prikaziTacan: Boolean) {

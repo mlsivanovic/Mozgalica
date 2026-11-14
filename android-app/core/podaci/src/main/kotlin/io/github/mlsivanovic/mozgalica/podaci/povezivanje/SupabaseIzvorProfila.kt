@@ -2,6 +2,8 @@ package io.github.mlsivanovic.mozgalica.podaci.povezivanje
 
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.createSupabaseClient
+import io.github.jan.supabase.functions.Functions
+import io.github.jan.supabase.functions.functions
 import io.github.jan.supabase.logging.LogLevel
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.postgrest.PropertyConversionMethod
@@ -11,6 +13,7 @@ import io.github.mlsivanovic.mozgalica.podaci.OdgovorDeteta
 import io.github.mlsivanovic.mozgalica.podaci.kviz.IshodCuvanja
 import io.github.mlsivanovic.mozgalica.podaci.kviz.IshodMeta
 import io.github.mlsivanovic.mozgalica.podaci.kviz.IshodObjasnjenja
+import io.github.mlsivanovic.mozgalica.podaci.kviz.IshodPonovnog
 import io.github.mlsivanovic.mozgalica.podaci.kviz.IshodPokusaja
 import io.github.mlsivanovic.mozgalica.podaci.kviz.IshodPredaje
 import io.github.mlsivanovic.mozgalica.podaci.kviz.IshodSaveta
@@ -27,9 +30,11 @@ import io.github.mlsivanovic.mozgalica.podaci.kviz.protumaciCuvanje
 import io.github.mlsivanovic.mozgalica.podaci.kviz.protumaciMeta
 import io.github.mlsivanovic.mozgalica.podaci.kviz.protumaciObjasnjenja
 import io.github.mlsivanovic.mozgalica.podaci.kviz.protumaciPokusaj
+import io.github.mlsivanovic.mozgalica.podaci.kviz.protumaciPonovni
 import io.github.mlsivanovic.mozgalica.podaci.kviz.protumaciRezultat
 import io.github.mlsivanovic.mozgalica.podaci.kviz.protumaciSavet
 import io.github.mlsivanovic.mozgalica.podaci.kviz.protumaciTajmer
+import io.ktor.client.statement.bodyAsText
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.json.Json
@@ -53,6 +58,7 @@ class SupabaseIzvorProfila(
             install(Postgrest) {
                 propertyConversionMethod = PropertyConversionMethod.NONE
             }
+            install(Functions)
         }
     }
 
@@ -154,6 +160,27 @@ class SupabaseIzvorProfila(
 
     override suspend fun objasnjenja(attemptToken: String): IshodObjasnjenja =
         pozoviKviz(parametriNastavka(attemptToken), "mark_explanations_seen", ::protumaciObjasnjenja, IshodObjasnjenja.Neuspesno)
+
+    override suspend fun pripremiPonovni(attemptToken: String): IshodPonovnog {
+        if (url.isBlank() || anonKljuc.isBlank()) return IshodPonovnog.Neuspesan
+        return try {
+            val odgovor = klijent.functions.invoke(
+                function = "pripremi-ponovni",
+                body = buildJsonObject { put("attemptToken", attemptToken) },
+            )
+            protumaciPonovni(odgovor.bodyAsText())
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            IshodPonovnog.Neuspesan
+        }
+    }
+
+    override suspend fun nastaviPonovni(attemptToken: String): IshodPonovnog =
+        pozoviKviz(parametriNastavka(attemptToken), "resume_retry", ::protumaciPonovni, IshodPonovnog.Neuspesan)
+
+    override suspend fun predajPonovni(attemptToken: String, odgovori: Map<String, OdgovorDeteta>): IshodPonovnog =
+        pozoviKviz(parametriCuvanja(attemptToken, odgovori), "submit_retry", ::protumaciPonovni, IshodPonovnog.Neuspesan)
 
     private suspend fun <T> pozoviKviz(
         parametri: kotlinx.serialization.json.JsonObject,

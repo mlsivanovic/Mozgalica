@@ -42,7 +42,7 @@ Native aplikacija koristi isti skup poziva kao dečji web:
 | Profil | `get_child_profile`, `get_child_school_timetable` |
 | Obaveštenja | `get_child_notifications`, `mark_child_notifications_read` |
 | Kviz | `get_quiz_by_token`, `start_attempt`, `resume_attempt`, `save_answers`, `checkpoint_attempt_timer`, `use_hint`, `submit_attempt`, `mark_explanations_seen` |
-| Ponovni pokušaj | `start_retry`, `resume_retry`, `submit_retry` (+ nova Edge funkcija, videti fazu 4) |
+| Ponovni pokušaj | Edge funkcija `pripremi-ponovni` + `start_retry`, `resume_retry`, `submit_retry` |
 | Prodavnica | `get_shop`, `purchase_shop_item` |
 | Šah | Edge funkcija `play-chess`, akcije `state`, `start`, `child_move`, `engine`, `undo`, `resign`, `retry` |
 | Push | `register_child_push`, `unregister_child_push`, `get_child_push_status` (proširuje se za FCM) |
@@ -338,7 +338,8 @@ Procena je za jednog programera sa AI pomoći, u radnim danima.
   Otključan tekst ostaje u snimku. Bez veze se ne otvara savet i ne otkriva odgovor.
 - `mark_explanations_seen` se beleži kad dete otvori objašnjenja i šalje se kad ima veze.
 - Rezultat je isključivo telo `submit_attempt`. `pendingReview` i `showResult: false` nemaju
-  ocenu. `retry.available` je isključeno dugme „stiže u sledećoj verziji“ i ne zove `start_retry`.
+  ocenu. `retry.available` je u fazi 3 bilo isključeno dugme „stiže u sledećoj verziji“ i nije
+  zvalo `start_retry`; faza 4 ga je zamenila pravim tokom preko Edge funkcije.
 - Sa Početne se, posle uspešnog osvežavanja profila, u pozadini zove samo `get_quiz_by_token`.
 - Maskota je vektorska (`core/dizajn/.../Maskota.kt`, Compose Canvas, isti oblici kao `Maskota.tsx`) sa
   stanjima `POZDRAV`, `SAVET`, `PRAZNO` i `USPEH`. Koristi se na ulazu, čekanju predaje, rezultatu,
@@ -359,24 +360,59 @@ Procena je za jednog programera sa AI pomoći, u radnim danima.
   „Veza se vratila“ pušta isti red nad tim snimcima i prikazuje `submit_attempt.json`.
 
 ### Faza 4 — Ponovni pokušaj (3–4 dana)
-Danas web generiše nove verzije netačnih zadataka u pregledaču
-([`ponovni.ts`](../src/lib/ponovni.ts)) i šalje ih zajedno sa tačnim odgovorima u `start_retry`.
+Do faze 4 web je generisao nove verzije netačnih zadataka u pregledaču
+([`ponovni.ts`](../src/lib/ponovni.ts)) i slao ih zajedno sa tačnim odgovorima u `start_retry`.
 Native ne treba da nosi generator od ~10.000 linija.
 
 - Nova Edge funkcija `pripremi-ponovni`: prima token pokušaja, učitava netačne zadatke,
   generiše nove verzije **istim TypeScript generatorom** i sama poziva `start_retry`.
-  Provera iz faze 0: produkcijski `play-chess` već uvozi `../../../src/sah/engine.ts`, van
-  `supabase/functions/`, i `state` je vratio 200. `deno check` prolazi i za uvoz
-  `src/generator/index.ts`. Naivna kopija u `_shared/generator` ne prolazi, jer
-  `../types/db.ts` i `../../types/db.ts` posle kopiranja ne pokazuju na isti fajl.
-  Faza 4 zato uvozi generator iz `src/generator`, isto kao što šah uvozi engine.
-  Kopija u `_shared` ostaje rezerva ako bundler prestane da prati spoljne uvoze, uz
-  prepravku tih putanja.
-- Web prelazi na istu funkciju. Usput se zatvara slabost: tačni odgovori za ponovni pokušaj
-  više ne dolaze od klijenta.
+  Klijent više ne šalje tačne odgovore. Funkcija je deploy-ovana CLI-jem.
+  Provera pretpostavke (2026-11-14): naivna kopija `src/generator` u `_shared/generator`
+  pada `deno check` jer nema `_shared/types/db.ts`; kopija sa `types/db.ts` i tri fajla iz
+  `lib/` prolazi `deno check`, a probna Edge funkcija nad tom kopijom vraća 200. Ipak,
+  generator se uvozi direktno iz `src/generator` (preko `src/lib/ponovni.ts`), kao što
+  `play-chess` uvozi engine — nema duplikata. `deno check --node-modules-dir=auto` prolazi
+  za `supabase/functions/pripremi-ponovni/index.ts`.
+- Web prelazi na istu funkciju. `pokreniPonovniPokusaj` šalje samo token pokušaja; ako je
+  retry već pokrenut na drugom klijentu, prelazi na `resume_retry`. Usput se zatvara slabost:
+  tačni odgovori za ponovni pokušaj više ne dolaze od klijenta.
 - Native: rešavanje ponovnog pokušaja (`resume_retry`, `submit_retry`) koristi komponente iz faze 3.
 - **Gotovo kada:** ponovni pokušaj radi identično na webu i u native aplikaciji, a postojeći
-  `vitest` testovi generatora prolaze nad `_shared` kopijom.
+  `vitest` testovi generatora prolaze nad istim kodom koji koristi Edge funkcija.
+
+**Urađeno u fazi 4:**
+
+- Edge funkcija `pripremi-ponovni` radi sa service role klijentom: proveri pokušaj, pročita
+  netačne `attempt_answers`, učita snapshot pitanja i slug oblasti, pozove `generisiPonovne`
+  i tek onda `start_retry`. Telo zahteva je samo `{ attemptToken }`; klijentska pitanja se
+  ignorišu. Domenske greške vraća kao `{ ok: false, error }` sa istim kodovima kao
+  `start_retry`, uz CORS za web.
+- Web `pokreniPonovniPokusaj(attemptToken)` zove `functions.invoke('pripremi-ponovni')`.
+  Iz pregledača se više ne šalju ni pitanja ni tačni odgovori. Ako funkcija vrati
+  `already_started` (retry je pokrenut u native aplikaciji), web automatski prelazi na
+  `resume_retry`.
+- Native je dobio `functions-kt` i tri nove metode izvora: `pripremiPonovni` (Edge funkcija),
+  `nastaviPonovni` (`resume_retry`) i `predajPonovni` (`submit_retry`). Room snimak čuva
+  pitanja, odgovore i ishod ponovnog pokušaja, pa rešavanje preživljava prekid rada.
+  Dugme „Probaj ponovo netačne“ pojavljuje se tek posle objašnjenja; ako je retry prekinut,
+  stoji „Nastavi ponovni pokušaj“. Rešavanje koristi `PitanjePrikaz` iz faze 3 (numpad,
+  kartice, uparivanje), a pregled rezultata koristi isti prikaz tačnog odgovora i objašnjenja.
+  `submit_retry` se šalje tek na mreži; odgovori ostaju u Room-u dok veza ne vrati.
+- Ugovorni snimak `pripremi_ponovni.json` je dodat u `android-app/core/podaci/src/test/resources/ugovori/`
+  i `UgovorTest` ga strogo parsira kao `PonovniOdgovor`.
+- Provera na emulatoru (API 36, pravi server):
+  - Pokušaj 1 (pokušaj iz faze 3): retry je pokrenut pozivom Edge funkcije, native ga je
+    preuzeo preko `resume_retry` i rešio sva 3 nova zadatka tačno; `submit_retry` je vratio
+    5 / 5 zvezdica, a web prikaz istog pokušaja pokazuje isti ishod i iste tekstove zadataka.
+  - Pokušaj 2: native je pokrenuo retry preko `pripremi-ponovni` (u bazi su bila 4 nova
+    zadatka), rešio 3 / 4; web prikaz istog pokušaja pokazuje ista 3 / 4 i 0 zvezdica.
+  - Pokušaj 3: web je pokrenuo retry preko Edge funkcije (3 nova zadatka), predao odgovore
+    i dobio server ocenu 1 / 3. Time je potvrđen i web deo toka; native i web za isti
+    pokušaj prikazuju isti ishod (provereno u prva dva pokušaja).
+- Probni profil „Proba Native“ i probni kvizovi ostaju u bazi za fazu 5. Profil nema mejl,
+  pa obaveštenja o rezultatu idu samo na admin pretplate, ne deci. Probni podaci se brišu
+  kada više ne budu potrebni, uz backup.
+
 
 ### Faza 5 — Šah (7–9 dana)
 - Compose tabla: prevlačenje i dodir, legalna polja (`chesslib`), promocija, okretanje za crne,
@@ -472,7 +508,7 @@ Web Push danas ide preko VAPID-a i tabele `push_subscriptions` (`endpoint`, `p25
 | Rizik | Ublažavanje |
 |---|---|
 | Dva dečja klijenta (web i native) se razilaze | Ugovorni testovi, tačka „native" u kontrolnoj listi za svaku migraciju koja menja dečji RPC |
-| Edge funkcija ne može da uveze generator | Provereno u fazi 0: bundler prati uvoz van `supabase/functions/` (`play-chess` → `src/sah/engine.ts`, a `deno check` prolazi i za `src/generator`). Naivna kopija u `_shared` lomi relativne uvoze `types/db.ts`. Rezerva i dalje: esbuild bundle ili kopija uz prepravku putanja |
+| Edge funkcija ne može da uveze generator | Provereno u fazi 4: bundler prati uvoz van `supabase/functions/` (`pripremi-ponovni` → `src/lib/ponovni.ts` → `src/generator`, a `play-chess` → `src/sah/engine.ts`). Naivna kopija u `_shared/generator` pada bez `_shared/types/db.ts`; kopija sa pratećim `types` i `lib` fajlovima prolazi i deploy vraća 200, ali se ne koristi da se izbegne duplikat. Rezerva: esbuild bundle ili potpuna kopija |
 | FCM service account ključ | Samo u Supabase secrets, uz najuža ovlašćenja (Firebase Cloud Messaging API) |
 | Ponovno povezivanje posle prelaska sa TWA | QR je brz. Napomena u release notes-u i na profilu deteta |
 | Tajmer se razlikuje od weba | Testovi za oba režima, sa veštačkim satom (`TestScheduler`) |

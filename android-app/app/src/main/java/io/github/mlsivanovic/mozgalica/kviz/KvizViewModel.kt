@@ -15,10 +15,14 @@ import io.github.mlsivanovic.mozgalica.navigacija.ucitajUgovor
 import io.github.mlsivanovic.mozgalica.podaci.KvizMetaOdgovor
 import io.github.mlsivanovic.mozgalica.podaci.OdgovorDeteta
 import io.github.mlsivanovic.mozgalica.podaci.PitanjeZaDete
+import io.github.mlsivanovic.mozgalica.podaci.PonovniOdgovor
+import io.github.mlsivanovic.mozgalica.podaci.PonovnoPitanje
 import io.github.mlsivanovic.mozgalica.podaci.RezultatOdgovor
 import io.github.mlsivanovic.mozgalica.podaci.kviz.FazaKviza
 import io.github.mlsivanovic.mozgalica.podaci.kviz.IshodMeta
 import io.github.mlsivanovic.mozgalica.podaci.kviz.IshodPokusaja
+import io.github.mlsivanovic.mozgalica.podaci.kviz.IshodObjasnjenja
+import io.github.mlsivanovic.mozgalica.podaci.kviz.IshodPonovnog
 import io.github.mlsivanovic.mozgalica.podaci.kviz.IshodSaveta
 import io.github.mlsivanovic.mozgalica.podaci.kviz.KvizSinhronizacija
 import io.github.mlsivanovic.mozgalica.podaci.kviz.OdlukaCheckpointa
@@ -77,6 +81,15 @@ data class KvizUi(
     val oznaka: String = "",
     val tekstFokus: Boolean = false,
     val preostaloSavetaSaServera: Int? = null,
+    val ponovnaPitanja: List<PonovnoPitanje> = emptyList(),
+    val ponovniOdgovori: Map<String, OdgovorDeteta> = emptyMap(),
+    val ponovniIshod: PonovniOdgovor? = null,
+    val ponovniZapocet: Boolean = false,
+    val ponovniOtvoren: Boolean = false,
+    val ponovniIndeks: Int = 0,
+    val ponovniRadi: Boolean = false,
+    val ponovniGreska: String? = null,
+    val ponovniUpozorenje: Boolean = false,
 )
 
 @HiltViewModel
@@ -115,6 +128,10 @@ class KvizViewModel @Inject constructor(
                         skriveniAccessMode = snimak?.skriveniAccessMode,
                         skriveniProfilToken = snimak?.skriveniProfilToken,
                         preostaloSavetaSaServera = snimak?.preostaloSavetaSaServera ?: staro.preostaloSavetaSaServera,
+                        ponovnaPitanja = snimak?.ponovnaPitanja ?: emptyList(),
+                        ponovniOdgovori = snimak?.ponovniOdgovori ?: emptyMap(),
+                        ponovniIshod = snimak?.ponovniIshod,
+                        ponovniZapocet = snimak?.ponovniZapocet == true,
                         ucitavaMeta = if (metaStigla) false else staro.ucitavaMeta,
                     )
                 }
@@ -268,6 +285,174 @@ class KvizViewModel @Inject constructor(
         }
     }
 
+    fun ponovniIndeks(vrednost: Int) {
+        ui.update { if (it.ponovniIndeks == vrednost) it else it.copy(ponovniIndeks = vrednost, ponovniGreska = null) }
+    }
+
+    fun ponovniOdgovor(pitanjeId: String, vrednost: OdgovorDeteta) {
+        viewModelScope.launch {
+            skladiste.izmeni(token) { snimak ->
+                snimak.copy(ponovniOdgovori = snimak.ponovniOdgovori + (pitanjeId to vrednost))
+            }
+        }
+    }
+
+    fun pokreniPonovni() {
+        val trenutno = ui.value
+        val stanje = trenutno.stanje ?: return
+        if (!trenutno.naMrezi && !probni) {
+            ui.update { it.copy(ponovniOtvoren = true, ponovniGreska = porukaPonovnog(null)) }
+            return
+        }
+        viewModelScope.launch {
+            ui.update { it.copy(ponovniRadi = true, ponovniGreska = null, ponovniUpozorenje = false) }
+            val zapocet = skladiste.procitaj(token)?.ponovniZapocet == true
+            val snimakIzvor = if (probni) SnimakIzvor { context.ucitajUgovor(it) } else null
+
+            if (!probni && !zapocet) {
+                // Server mora da zna da su objašnjenja viđena pre nego što dozvoli retry.
+                if (izvor.objasnjenja(stanje.attemptToken) !is IshodObjasnjenja.Potvrdeno) {
+                    ui.update { it.copy(ponovniRadi = false, ponovniOtvoren = true, ponovniGreska = porukaPonovnog(null)) }
+                    return@launch
+                }
+                skladiste.izmeni(token) { snimak ->
+                    snimak.copy(
+                        rezultat = snimak.rezultat?.let { rezultat ->
+                            rezultat.copy(retry = rezultat.retry.copy(explanationsSeen = true))
+                        },
+                    )
+                }
+            }
+
+            val prvi = if (probni) {
+                if (zapocet) snimakIzvor!!.nastaviPonovni(stanje.attemptToken)
+                else snimakIzvor!!.pripremiPonovni(stanje.attemptToken)
+            } else {
+                if (zapocet) izvor.nastaviPonovni(stanje.attemptToken) else izvor.pripremiPonovni(stanje.attemptToken)
+            }
+
+            // Ponovni pokušaj je možda pokrenut na drugom klijentu (web/native).
+            val ishod = if (!probni && prvi is IshodPonovnog.Odbijen && prvi.kod == "already_started") {
+                izvor.nastaviPonovni(stanje.attemptToken)
+            } else {
+                prvi
+            }
+
+            when (ishod) {
+                is IshodPonovnog.Uspesan -> {
+                    val odgovor = ishod.odgovor
+                    skladiste.izmeni(token) { snimak ->
+                        snimak.copy(
+                            ponovnaPitanja = odgovor.questions,
+                            ponovniIshod = if (odgovor.submitted) odgovor else null,
+                            ponovniZapocet = !odgovor.submitted,
+                            ponovniOdgovori = if (zapocet) snimak.ponovniOdgovori else emptyMap(),
+                        )
+                    }
+                    ui.update { it.copy(ponovniRadi = false, ponovniOtvoren = true, ponovniIndeks = 0) }
+                }
+                is IshodPonovnog.Odbijen -> ui.update {
+                    it.copy(ponovniRadi = false, ponovniOtvoren = true, ponovniGreska = porukaPonovnog(ishod.kod))
+                }
+                IshodPonovnog.Neuspesan -> ui.update {
+                    it.copy(ponovniRadi = false, ponovniOtvoren = true, ponovniGreska = porukaPonovnog(null))
+                }
+            }
+        }
+    }
+
+    fun predajPonovni() {
+        val trenutno = ui.value
+        val stanje = trenutno.stanje ?: return
+        if (trenutno.ponovnaPitanja.isEmpty()) return
+        if (!trenutno.naMrezi && !probni) {
+            ui.update { it.copy(ponovniGreska = "Predaja ponovnog pokušaja traži vezu.") }
+            return
+        }
+        viewModelScope.launch {
+            // Poslednji odgovor se upisuje u Room asinhrono — predaja čita sveže stanje.
+            val odgovori = skladiste.procitaj(token)?.ponovniOdgovori ?: trenutno.ponovniOdgovori
+            val praznih = trenutno.ponovnaPitanja.count { odgovorJePrazan(odgovori[it.id]) }
+            if (praznih > 0) {
+                ui.update { it.copy(ponovniUpozorenje = true) }
+                return@launch
+            }
+            ui.update { it.copy(ponovniRadi = true, ponovniGreska = null, ponovniUpozorenje = false) }
+            val ishod = if (probni) {
+                SnimakIzvor { context.ucitajUgovor(it) }.predajPonovni(stanje.attemptToken, odgovori)
+            } else {
+                izvor.predajPonovni(stanje.attemptToken, odgovori)
+            }
+            when (ishod) {
+                is IshodPonovnog.Uspesan -> {
+                    val odgovor = ishod.odgovor
+                    skladiste.izmeni(token) { snimak ->
+                        val rezultat = snimak.rezultat?.let { postojeci ->
+                            postojeci.copy(
+                                starsAwarded = odgovor.starsAwarded ?: postojeci.starsAwarded,
+                                retry = postojeci.retry.copy(
+                                    available = false,
+                                    submitted = true,
+                                    allCorrect = odgovor.allCorrect,
+                                ),
+                            )
+                        }
+                        snimak.copy(
+                            ponovniIshod = odgovor,
+                            ponovniZapocet = false,
+                            rezultat = rezultat,
+                        )
+                    }
+                    ui.update { it.copy(ponovniRadi = false) }
+                }
+                is IshodPonovnog.Odbijen -> ui.update {
+                    it.copy(ponovniRadi = false, ponovniGreska = porukaPonovnog(ishod.kod))
+                }
+                IshodPonovnog.Neuspesan -> ui.update {
+                    it.copy(ponovniRadi = false, ponovniGreska = "Predaja ponovnog pokušaja traži vezu.")
+                }
+            }
+        }
+    }
+
+    fun zatvoriPonovni() {
+        ui.update { it.copy(ponovniOtvoren = false, ponovniUpozorenje = false, ponovniGreska = null) }
+    }
+
+    fun zatvoriPonovniIshod() {
+        viewModelScope.launch {
+            skladiste.izmeni(token) {
+                it.copy(ponovniIshod = null, ponovnaPitanja = emptyList(), ponovniOdgovori = emptyMap())
+            }
+            ui.update {
+                it.copy(
+                    ponovniOtvoren = false,
+                    ponovniIshod = null,
+                    ponovnaPitanja = emptyList(),
+                    ponovniOdgovori = emptyMap(),
+                    ponovniGreska = null,
+                )
+            }
+        }
+    }
+
+    fun zatvoriPonovniUpozorenje() {
+        ui.update { it.copy(ponovniUpozorenje = false) }
+    }
+
+    fun idiNaPrvoPraznoPonovno() {
+        val trenutno = ui.value
+        val indeks = trenutno.ponovnaPitanja.indexOfFirst {
+            odgovorJePrazan(trenutno.ponovniOdgovori[it.id])
+        }
+        ui.update {
+            it.copy(
+                ponovniUpozorenje = false,
+                ponovniIndeks = if (indeks >= 0) indeks else it.ponovniIndeks,
+            )
+        }
+    }
+
     fun noviPokusaj() {
         viewModelScope.launch {
             satPosao?.cancel()
@@ -281,9 +466,25 @@ class KvizViewModel @Inject constructor(
                     rezultatSkriven = false,
                     faza = FazaKviza.ULAZ,
                     checkpointSekunde = null,
+                    ponovnaPitanja = emptyList(),
+                    ponovniOdgovori = emptyMap(),
+                    ponovniIshod = null,
+                    ponovniZapocet = false,
                 )
             }
-            ui.update { it.copy(objasnjenja = false, indeks = 0, greska = null) }
+            ui.update {
+                it.copy(
+                    objasnjenja = false,
+                    indeks = 0,
+                    greska = null,
+                    ponovnaPitanja = emptyList(),
+                    ponovniOdgovori = emptyMap(),
+                    ponovniIshod = null,
+                    ponovniZapocet = false,
+                    ponovniOtvoren = false,
+                    ponovniGreska = null,
+                )
+            }
         }
     }
 
@@ -452,6 +653,17 @@ class KvizViewModel @Inject constructor(
         mrezniPoziv = poziv
         runCatching { manager.registerDefaultNetworkCallback(poziv) }
     }
+}
+
+fun porukaPonovnog(kod: String?): String = when (kod) {
+    "explanations_not_seen" -> "Prvo pogledaj objašnjenja netačnih zadataka."
+    "already_locked" -> "Ponovni pokušaj je već iskorišćen — kviz je zaključan."
+    "no_incorrect" -> "Nema netačnih zadataka za ponovni pokušaj."
+    "pending_review" -> "Rezultat još čeka pregled odrasle osobe."
+    "not_allowed" -> "Ponovni pokušaj je dostupan samo u matematici."
+    "already_started" -> "Ponovni pokušaj je već pokrenut."
+    "not_started" -> "Ponovni pokušaj nije pokrenut."
+    else -> "Ponovni pokušaj trenutno nije dostupan. Proveri internet vezu."
 }
 
 fun porukaKviza(kod: String?): String = when (kod) {

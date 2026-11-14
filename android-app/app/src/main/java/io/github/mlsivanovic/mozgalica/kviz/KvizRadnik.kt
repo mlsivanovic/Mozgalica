@@ -22,6 +22,7 @@ import io.github.mlsivanovic.mozgalica.podaci.kviz.protumaciCuvanje
 import io.github.mlsivanovic.mozgalica.podaci.kviz.protumaciMeta
 import io.github.mlsivanovic.mozgalica.podaci.kviz.protumaciObjasnjenja
 import io.github.mlsivanovic.mozgalica.podaci.kviz.protumaciPokusaj
+import io.github.mlsivanovic.mozgalica.podaci.kviz.protumaciPonovni
 import io.github.mlsivanovic.mozgalica.podaci.kviz.protumaciRezultat
 import io.github.mlsivanovic.mozgalica.podaci.kviz.protumaciSavet
 import io.github.mlsivanovic.mozgalica.podaci.kviz.protumaciTajmer
@@ -103,4 +104,13 @@ class SnimakIzvor(
 
     override suspend fun objasnjenja(attemptToken: String) =
         protumaciObjasnjenja(ucitaj("mark_explanations_seen.json"))
+
+    override suspend fun pripremiPonovni(attemptToken: String) =
+        protumaciPonovni(ucitaj("start_retry.json"))
+
+    override suspend fun nastaviPonovni(attemptToken: String) =
+        protumaciPonovni(ucitaj("resume_retry.json"))
+
+    override suspend fun predajPonovni(attemptToken: String, odgovori: Map<String, OdgovorDeteta>) =
+        protumaciPonovni(ucitaj("submit_retry.json"))
 }

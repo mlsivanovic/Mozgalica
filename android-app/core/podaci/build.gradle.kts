@@ -33,6 +33,7 @@ dependencies {
     implementation(libs.serialization.json)
     implementation(libs.supabase.kt)
     implementation(libs.supabase.postgrest)
+    implementation(libs.supabase.functions)
     // OkHttp 5.5 (ktor-client-okhttp 3.6) traži compileSdk 37. Plan drži 36.
     implementation(libs.ktor.android)
     implementation(libs.coroutines.android)
