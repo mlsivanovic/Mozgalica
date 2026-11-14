@@ -1,5 +1,6 @@
 package io.github.mlsivanovic.mozgalica.podaci.povezivanje
 
+import io.github.mlsivanovic.mozgalica.podaci.kviz.SkladistePokusaja
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
@@ -11,6 +12,7 @@ class ProfilRepozitorijum(
     private val podesavanja: PodesavanjaPovezivanja,
     private val kesSadrzaja: KesSadrzaja = PrazanKesSadrzaja(),
     private val izvorSadrzaja: IzvorSadrzaja = PrazanIzvorSadrzaja,
+    private val pokusaji: SkladistePokusaja? = null,
 ) {
     // Samo lokalni podaci. Mreža se ne zove dok neko ne pozove osvezi ili povezi.
     fun posmatraj(): Flow<SacuvaniProfil?> = combine(kes.posmatraj(), podesavanja.izabrani()) { profil, izabrani ->
@@ -123,6 +125,7 @@ class ProfilRepozitorijum(
         runCatching { tokeni.obrisi() }
         runCatching { kes.obrisi() }
         runCatching { kesSadrzaja.obrisi() }
+        runCatching { pokusaji?.obrisiSve() }
         runCatching { podesavanja.zaboravi() }
     }
 }

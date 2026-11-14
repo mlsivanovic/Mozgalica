@@ -15,6 +15,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        isCoreLibraryDesugaringEnabled = true
     }
 
     testOptions {
@@ -28,6 +29,7 @@ android {
 }
 
 dependencies {
+    coreLibraryDesugaring(libs.desugar)
     implementation(libs.serialization.json)
     implementation(libs.supabase.kt)
     implementation(libs.supabase.postgrest)

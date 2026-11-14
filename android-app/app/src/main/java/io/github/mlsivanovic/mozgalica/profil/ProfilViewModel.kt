@@ -3,6 +3,7 @@ package io.github.mlsivanovic.mozgalica.profil
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.github.mlsivanovic.mozgalica.podaci.kviz.KvizPriprema
 import io.github.mlsivanovic.mozgalica.podaci.povezivanje.IshodOsvezavanja
 import io.github.mlsivanovic.mozgalica.podaci.povezivanje.IshodPovezivanja
 import io.github.mlsivanovic.mozgalica.podaci.povezivanje.PodesavanjaAplikacije
@@ -44,6 +45,7 @@ sealed interface UiStanje {
 class ProfilViewModel @Inject constructor(
     private val repo: ProfilRepozitorijum,
     private val podesavanjaAplikacije: PodesavanjaAplikacije,
+    private val priprema: KvizPriprema? = null,
 ) : ViewModel() {
     private val radi = MutableStateFlow(false)
     private val rucno = MutableStateFlow(false)
@@ -121,7 +123,11 @@ class ProfilViewModel @Inject constructor(
                 if (rucnoPovlacenje) rucno.value = true
                 greska.value = null
                 when (val ishod = repo.osvezi()) {
-                    IshodOsvezavanja.Osvezen, IshodOsvezavanja.NemaTokena -> Unit
+                    IshodOsvezavanja.Osvezen -> {
+                        val tokeni = repo.posmatraj().first()?.aktivniKvizovi?.map { it.quizToken }.orEmpty()
+                        priprema?.kesirajAktivne(tokeni)
+                    }
+                    IshodOsvezavanja.NemaTokena -> Unit
                     is IshodOsvezavanja.ProfilObrisan -> greska.value = ishod.poruka
                     is IshodOsvezavanja.Greska -> greska.value = ishod.poruka
                 }

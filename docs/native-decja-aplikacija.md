@@ -296,9 +296,9 @@ Procena je za jednog programera sa AI pomoći, u radnim danima.
   `LocalEfekti`. Zvučni fajlovi nisu dodati.
 - Push kontrole sa weba nisu kopirane. Nema FCM-a, nema `register_child_push`.
 - Tab Nagrade je i dalje prazan. Na Početnoj je samo ime titule iz profila.
-- `get_quiz_by_token` se ne učitava unapred. Dodir na kviz ili šah otvara fokusiranu rutu
-  sa tokenom, ali ne rešava zadatak i ne zove `start_attempt`. Istorija rezultata je samo
-  lista; ne otvara detalj.
+- U fazi 2 `get_quiz_by_token` se nije učitavao unapred. Faza 3 to radi samo za aktivne
+  kvizove, i dalje bez `start_attempt` dok dete ne krene. Istorija rezultata je i dalje samo
+  lista; ne otvara detalj. Šah ostaje placeholder.
 - Debug gradnja može lokalno da napuni keš ugovornim snimkom, bez upisa u bazu:
   `adb shell am start -n io.github.mlsivanovic.mozgalica/.MainActivity --ez probni true`.
   Dok je taj prikaz uključen, osvežavanje ne ide na mrežu. Gašenje:
@@ -317,6 +317,39 @@ Procena je za jednog programera sa AI pomoći, u radnim danima.
   stanje „poslato na pregled", animacije.
 - **Gotovo kada:** kviz se reši u avionskom režimu, predaje se po povratku mreže, a rezultat se
   poklapa sa web prikazom za isti pokušaj.
+
+**Urađeno u fazi 3:**
+
+- Ekran kviza je i dalje u `app` (paket `kviz`), kao faze 1 i 2. `start_attempt` se zove tek na
+  „Počni“ / „Nastavi“. Ako je pokušaj `in_progress` i uređaj već ima `attemptToken`, zove se samo
+  `resume_attempt`. Bez lokalnog tokena (novi telefon, profilni kviz) `start_attempt` je jedini
+  način da se token dobije; za profil on ne resetuje sat.
+- Spajanje odgovora je ista petlja kao u `KvizResavanje.tsx`: postojeći lokalni ključ se ne
+  prepisuje, ni kad je nesinhronizovan. Server se dodaje samo za pitanje kojeg nema lokalno.
+- Room je verzija 3. Nova tabela `pokusaj` čuva snimak. Migracija ne dira profil, raspored ni
+  obaveštenja.
+- Slanje ide kroz WorkManager, posao `kviz-slanje`, debounce 2 s, odmah pri izlasku, predaji i
+  povratku mreže. Inicijalizacija je lenja: ugrađeni WorkManager startup je isključen.
+  Dok nema veze, red ne zove RPC. `submit_attempt` ide tek posle potvrđenog `save_answers`,
+  sa `p_answers = null`. Dete tada vidi da predaja čeka vezu, ne izmišljen rezultat.
+- Profilni sat staje kad ekran nije vidljiv. Checkpoint se šalje na mreži, a bez nje ostaje u
+  Room-u. Generički rok koristi `deadlineAt` i offset `serverNow`. Istek predaje sam.
+- Limit saveta je `fn_hint_cap()` (3). Ako `use_hint` vrati `remaining`, taj broj važi.
+  Otključan tekst ostaje u snimku. Bez veze se ne otvara savet i ne otkriva odgovor.
+- `mark_explanations_seen` se beleži kad dete otvori objašnjenja i šalje se kad ima veze.
+- Rezultat je isključivo telo `submit_attempt`. `pendingReview` i `showResult: false` nemaju
+  ocenu. `retry.available` je isključeno dugme „stiže u sledećoj verziji“ i ne zove `start_retry`.
+- Sa Početne se, posle uspešnog osvežavanja profila, u pozadini zove samo `get_quiz_by_token`.
+- Maskota je vektorska (`core/dizajn/.../Maskota.kt`, Compose Canvas, isti oblici kao `Maskota.tsx`) sa
+  stanjima `POZDRAV`, `SAVET`, `PRAZNO` i `USPEH`. Koristi se na ulazu, čekanju predaje, rezultatu,
+  savetu, grešci i praznom stanju. Animacije maskote ostaju za fazu 8. Zvučni fajlovi nisu dodati.
+- Provera na emulatoru (API 36, avionski režim, debug `--ez probni true`): ulaz → rešavanje (odgovor
+  sačuvan lokalno, „Savet traži vezu“) → „Ostalo je 5 neodgovorenih“ → „Ipak predaj“ → ekran
+  „Predaja je sačuvana“ → „Veza se vratila“ → rezultat. **Nije provereno:** stvarni kviz na probnom
+  profilu sa pravim `submit_attempt` i poređenje sa web prikazom za isti pokušaj. Probni režim prikazuje
+  ugovorni snimak (`submit_attempt.json`), pa to potvrđuje UI i red, ne pariranje sa serverom.
+- Debug `--ez probni true` otvara kviz iz ugovornih snimaka, bez mreže i bez upisa u bazu.
+  „Veza se vratila“ pušta isti red nad tim snimcima i prikazuje `submit_attempt.json`.
 
 ### Faza 4 — Ponovni pokušaj (3–4 dana)
 Danas web generiše nove verzije netačnih zadataka u pregledaču

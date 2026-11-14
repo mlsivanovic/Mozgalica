@@ -27,6 +27,7 @@ import io.github.mlsivanovic.mozgalica.podaci.povezivanje.IzborTeme
 import io.github.mlsivanovic.mozgalica.povezivanje.PovezivanjeEkran
 import io.github.mlsivanovic.mozgalica.povezivanje.porukaSkeniranja
 import io.github.mlsivanovic.mozgalica.profil.CiljObavestenja
+import io.github.mlsivanovic.mozgalica.kviz.KvizTok
 import io.github.mlsivanovic.mozgalica.profil.FokusiranEkran
 import io.github.mlsivanovic.mozgalica.profil.PocetnaEkran
 import io.github.mlsivanovic.mozgalica.profil.PodesavanjaEkran
@@ -218,11 +219,7 @@ private fun Navigacija(
                 )
             }
             composable<KvizRuta> {
-                FokusiranEkran(
-                    naslov = "Kviz",
-                    poruka = "Ovaj kviz ćeš moći da rešiš u narednoj verziji aplikacije.",
-                    onNazad = { nav.popBackStack() },
-                )
+                KvizTok(onNazad = { nav.popBackStack() })
             }
             composable<SahRuta> {
                 FokusiranEkran(

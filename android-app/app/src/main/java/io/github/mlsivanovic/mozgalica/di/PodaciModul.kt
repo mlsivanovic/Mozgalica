@@ -7,6 +7,12 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import io.github.mlsivanovic.mozgalica.BuildConfig
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
+import io.github.mlsivanovic.mozgalica.podaci.kviz.IzvorKviza
+import io.github.mlsivanovic.mozgalica.podaci.kviz.KvizPriprema
+import io.github.mlsivanovic.mozgalica.podaci.kviz.KvizSinhronizacija
+import io.github.mlsivanovic.mozgalica.podaci.kviz.SkladistePokusaja
 import io.github.mlsivanovic.mozgalica.podaci.povezivanje.IzvorProfila
 import io.github.mlsivanovic.mozgalica.podaci.povezivanje.IzvorSadrzaja
 import io.github.mlsivanovic.mozgalica.podaci.povezivanje.KesProfila
@@ -36,6 +42,9 @@ object PodaciModul {
     fun sadrzaj(lokalno: LokalnoSkladiste): KesSadrzaja = lokalno.sadrzaj
 
     @Provides
+    fun pokusaji(lokalno: LokalnoSkladiste): SkladistePokusaja = lokalno.pokusaji
+
+    @Provides
     fun podesavanja(lokalno: LokalnoSkladiste): PodesavanjaPovezivanja = lokalno.podesavanja
 
     @Provides
@@ -55,6 +64,20 @@ object PodaciModul {
     fun izvorSadrzaja(supabase: SupabaseIzvorProfila): IzvorSadrzaja = supabase
 
     @Provides
+    fun izvorKviza(supabase: SupabaseIzvorProfila): IzvorKviza = supabase
+
+    @Provides
+    @Singleton
+    fun sinhronizacija(
+        skladiste: SkladistePokusaja,
+        izvor: IzvorKviza,
+        @ApplicationContext context: Context,
+    ): KvizSinhronizacija = KvizSinhronizacija(skladiste, izvor, veza = { imaVezu(context) })
+
+    @Provides
+    fun priprema(izvor: IzvorKviza, kes: SkladistePokusaja): KvizPriprema = KvizPriprema(izvor, kes)
+
+    @Provides
     @Singleton
     fun repozitorijum(
         kes: KesProfila,
@@ -63,5 +86,13 @@ object PodaciModul {
         podesavanja: PodesavanjaPovezivanja,
         sadrzaj: KesSadrzaja,
         izvorSadrzaja: IzvorSadrzaja,
-    ): ProfilRepozitorijum = ProfilRepozitorijum(kes, tokeni, izvor, podesavanja, sadrzaj, izvorSadrzaja)
+        pokusaji: SkladistePokusaja,
+    ): ProfilRepozitorijum = ProfilRepozitorijum(kes, tokeni, izvor, podesavanja, sadrzaj, izvorSadrzaja, pokusaji)
+}
+
+internal fun imaVezu(context: Context): Boolean {
+    val mreza = context.getSystemService(ConnectivityManager::class.java)
+    val aktivna = mreza.activeNetwork ?: return false
+    val mogucnosti = mreza.getNetworkCapabilities(aktivna) ?: return false
+    return mogucnosti.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
 }

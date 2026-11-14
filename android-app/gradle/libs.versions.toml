@@ -22,6 +22,7 @@ coroutines = "1.11.0"
 code-scanner = "16.1.0"
 robolectric = "4.15.1"
 androidx-test = "1.6.1"
+work = "2.10.5"
 
 [libraries]
 compose-bom = { module = "androidx.compose:compose-bom", version.ref = "compose-bom" }
@@ -53,6 +54,7 @@ coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", ve
 code-scanner = { module = "com.google.android.gms:play-services-code-scanner", version.ref = "code-scanner" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 androidx-test-core = { module = "androidx.test:core", version.ref = "androidx-test" }
+work-runtime = { module = "androidx.work:work-runtime-ktx", version.ref = "work" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

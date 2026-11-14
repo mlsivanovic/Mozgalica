@@ -194,7 +194,7 @@ class MigracijaKesTest {
         sqlite.close()
 
         val baza = Room.databaseBuilder(context, MozgalicaBaza::class.java, ime)
-            .addMigrations(MIGRACIJA_1_2)
+            .addMigrations(MIGRACIJA_1_2, MIGRACIJA_2_3)
             .allowMainThreadQueries()
             .build()
         val profil = RoomKesProfila(baza.profilDao()).posmatraj().first()

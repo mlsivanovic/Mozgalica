@@ -14,6 +14,8 @@ import io.github.mlsivanovic.mozgalica.podaci.AktivnaPartija
 import io.github.mlsivanovic.mozgalica.podaci.AktivniKviz
 import io.github.mlsivanovic.mozgalica.podaci.IstorijaKviza
 import io.github.mlsivanovic.mozgalica.podaci.IstorijaPartije
+import io.github.mlsivanovic.mozgalica.podaci.kviz.PokusajRed
+import io.github.mlsivanovic.mozgalica.podaci.kviz.PokusajDao
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.Serializable
@@ -55,6 +57,14 @@ val MIGRACIJA_1_2 = object : Migration(1, 2) {
     }
 }
 
+val MIGRACIJA_2_3 = object : Migration(2, 3) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `pokusaj` (`kvizToken` TEXT NOT NULL, `json` TEXT NOT NULL, PRIMARY KEY(`kvizToken`))",
+        )
+    }
+}
+
 @Dao
 interface ProfilDao {
     @Query("SELECT * FROM profil LIMIT 1")
@@ -67,10 +77,11 @@ interface ProfilDao {
     suspend fun obrisi()
 }
 
-@Database(entities = [ProfilRed::class, SnimakRed::class], version = 2, exportSchema = false)
+@Database(entities = [ProfilRed::class, SnimakRed::class, PokusajRed::class], version = 3, exportSchema = false)
 abstract class MozgalicaBaza : RoomDatabase() {
     abstract fun profilDao(): ProfilDao
     abstract fun snimakDao(): SnimakDao
+    abstract fun pokusajDao(): PokusajDao
 }
 
 @Dao

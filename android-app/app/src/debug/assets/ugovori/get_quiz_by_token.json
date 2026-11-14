@@ -1,0 +1,19 @@
+{
+  "accessMode": "profile",
+  "answeredCount": 0,
+  "attemptState": "new",
+  "attemptsLeft": 1,
+  "childAvatar": "🦊",
+  "childName": "Proba Native",
+  "description": "Probni kviz za snimak ugovora.",
+  "maxAttempts": 1,
+  "ok": true,
+  "profileToken": "nativeugovorprofil000001",
+  "questionCount": 6,
+  "remainingSeconds": null,
+  "requireLabel": false,
+  "requireName": false,
+  "timeLimitSeconds": 600,
+  "title": "Matematika — Proba Native",
+  "totalPoints": 6
+}

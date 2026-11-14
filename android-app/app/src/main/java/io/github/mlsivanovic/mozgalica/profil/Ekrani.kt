@@ -1,5 +1,7 @@
 package io.github.mlsivanovic.mozgalica.profil
 
+import io.github.mlsivanovic.mozgalica.dizajn.Maskota
+import io.github.mlsivanovic.mozgalica.dizajn.StanjeMaskote
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -35,7 +37,7 @@ fun PraznoStanje(naslov: String, opis: String) {
         verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(text = "🦊", style = MaterialTheme.typography.headlineMedium)
+        Maskota(StanjeMaskote.PRAZNO, velicina = 72.dp)
         Text(
             text = naslov,
             style = MaterialTheme.typography.titleLarge,

@@ -1,0 +1,185 @@
+{
+  "accessMode": "profile",
+  "alreadySubmitted": false,
+  "attemptsLeft": 0,
+  "correctCount": 4,
+  "incorrectCount": 2,
+  "maxPoints": 6,
+  "ok": true,
+  "passThresholdPct": 50,
+  "passed": true,
+  "pendingReview": false,
+  "profileToken": "nativeugovorprofil000001",
+  "questions": [
+    {
+      "answer": {
+        "optionId": "a"
+      },
+      "awardedPoints": 1,
+      "correct": {
+        "optionId": "a"
+      },
+      "explanation": "2 + 2 = 4.",
+      "id": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbb01",
+      "isCorrect": true,
+      "options": [
+        {
+          "id": "a",
+          "text": "4"
+        },
+        {
+          "id": "b",
+          "text": "5"
+        }
+      ],
+      "points": 1,
+      "text": "Koliko je 2 + 2?",
+      "topicSlug": "brojevi-do-100-2",
+      "type": "single"
+    },
+    {
+      "answer": {
+        "optionIds": [
+          "a"
+        ]
+      },
+      "awardedPoints": 0,
+      "correct": {
+        "optionIds": [
+          "a",
+          "b"
+        ]
+      },
+      "explanation": "2 i 4 su parni.",
+      "id": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbb02",
+      "isCorrect": false,
+      "options": [
+        {
+          "id": "a",
+          "text": "2"
+        },
+        {
+          "id": "b",
+          "text": "4"
+        },
+        {
+          "id": "c",
+          "text": "5"
+        }
+      ],
+      "points": 1,
+      "text": "Koji brojevi su parni?",
+      "topicSlug": "brojevi-do-100-2",
+      "type": "multi"
+    },
+    {
+      "answer": {
+        "value": "12"
+      },
+      "awardedPoints": 1,
+      "correct": {
+        "value": 12
+      },
+      "explanation": "7 + 5 = 12.",
+      "id": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbb03",
+      "isCorrect": true,
+      "options": null,
+      "points": 1,
+      "text": "Koliko je 7 + 5?",
+      "topicSlug": "brojevi-do-100-2",
+      "type": "numeric"
+    },
+    {
+      "answer": {
+        "text": "beograd"
+      },
+      "awardedPoints": 1,
+      "correct": {
+        "accept": [
+          "beograd"
+        ]
+      },
+      "explanation": "Glavni grad je Beograd.",
+      "id": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbb04",
+      "isCorrect": true,
+      "options": null,
+      "points": 1,
+      "text": "Kako se zove glavni grad Srbije?",
+      "topicSlug": "brojevi-do-100-2",
+      "type": "text"
+    },
+    {
+      "answer": {
+        "value": true
+      },
+      "awardedPoints": 1,
+      "correct": {
+        "value": true
+      },
+      "explanation": "8 se deli sa 2.",
+      "id": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbb05",
+      "isCorrect": true,
+      "options": null,
+      "points": 1,
+      "text": "Broj 8 je paran.",
+      "topicSlug": "brojevi-do-100-2",
+      "type": "truefalse"
+    },
+    {
+      "answer": {
+        "pairs": {
+          "l1": "r2",
+          "l2": "r1"
+        }
+      },
+      "awardedPoints": 0,
+      "correct": {
+        "pairs": {
+          "l1": "r1",
+          "l2": "r2"
+        }
+      },
+      "explanation": "3+3 je 6, a 4+4 je 8.",
+      "id": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbb06",
+      "isCorrect": false,
+      "options": {
+        "left": [
+          {
+            "id": "l1",
+            "text": "3+3"
+          },
+          {
+            "id": "l2",
+            "text": "4+4"
+          }
+        ],
+        "right": [
+          {
+            "id": "r1",
+            "text": "6"
+          },
+          {
+            "id": "r2",
+            "text": "8"
+          }
+        ]
+      },
+      "points": 1,
+      "text": "Poveži zbir i rezultat.",
+      "topicSlug": "brojevi-do-100-2",
+      "type": "matching"
+    }
+  ],
+  "retry": {
+    "allCorrect": null,
+    "available": true,
+    "explanationsSeen": false,
+    "started": false,
+    "submitted": false
+  },
+  "scorePct": 66.7,
+  "showCorrect": true,
+  "showResult": true,
+  "starsAwarded": 1,
+  "totalPoints": 4
+}
