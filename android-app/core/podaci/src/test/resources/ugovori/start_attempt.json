@@ -1,0 +1,115 @@
+{
+  "accessMode": "profile",
+  "attemptId": "475fd181-bab6-4c24-8467-f20f49e34a9a",
+  "attemptNo": 1,
+  "attemptToken": "tB_4TdToRkcYvVwXHAVSfzaS2cfk29Mk",
+  "childName": "Proba Native",
+  "deadlineAt": null,
+  "hintsUnlocked": [],
+  "hintsUsed": 0,
+  "ok": true,
+  "profileToken": "nativeugovorprofil000001",
+  "questions": [
+    {
+      "hasHint": true,
+      "hint": null,
+      "id": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbb01",
+      "options": [
+        {
+          "id": "a",
+          "text": "4"
+        },
+        {
+          "id": "b",
+          "text": "5"
+        }
+      ],
+      "points": 1,
+      "text": "Koliko je 2 + 2?",
+      "type": "single"
+    },
+    {
+      "hasHint": true,
+      "hint": null,
+      "id": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbb02",
+      "options": [
+        {
+          "id": "a",
+          "text": "2"
+        },
+        {
+          "id": "b",
+          "text": "4"
+        },
+        {
+          "id": "c",
+          "text": "5"
+        }
+      ],
+      "points": 1,
+      "text": "Koji brojevi su parni?",
+      "type": "multi"
+    },
+    {
+      "hasHint": true,
+      "hint": null,
+      "id": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbb03",
+      "options": null,
+      "points": 1,
+      "text": "Koliko je 7 + 5?",
+      "type": "numeric"
+    },
+    {
+      "hasHint": true,
+      "hint": null,
+      "id": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbb04",
+      "options": null,
+      "points": 1,
+      "text": "Kako se zove glavni grad Srbije?",
+      "type": "text"
+    },
+    {
+      "hasHint": false,
+      "hint": null,
+      "id": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbb05",
+      "options": null,
+      "points": 1,
+      "text": "Broj 8 je paran.",
+      "type": "truefalse"
+    },
+    {
+      "hasHint": true,
+      "hint": null,
+      "id": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbb06",
+      "options": {
+        "left": [
+          {
+            "id": "l1",
+            "text": "3+3"
+          },
+          {
+            "id": "l2",
+            "text": "4+4"
+          }
+        ],
+        "right": [
+          {
+            "id": "r1",
+            "text": "6"
+          },
+          {
+            "id": "r2",
+            "text": "8"
+          }
+        ]
+      },
+      "points": 1,
+      "text": "Poveži zbir i rezultat.",
+      "type": "matching"
+    }
+  ],
+  "remainingSeconds": 600,
+  "resumed": false,
+  "savedAnswers": {},
+  "serverNow": "2026-11-14T11:08:09.73283+00:00"
+}

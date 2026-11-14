@@ -33,6 +33,12 @@ android/app-release-signed.apk
 android/app-release-bundle.aab
 android/app-release-unsigned-aligned.apk
 
+# Native Android skelet. Potpis i lokalni SDK put ostaju van gita.
+android-app/local.properties
+android-app/.gradle/
+android-app/.kotlin/
+android-app/**/build/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "408320896802",
+    "project_id": "mozgalica-decja",
+    "storage_bucket": "mozgalica-decja.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:408320896802:android:189411722edaeacb0c3f7b",
+        "android_client_info": {
+          "package_name": "io.github.mlsivanovic.mozgalica"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBWyQ5rFdqFGcYBnUkG2JK7_yS-tYJ_t4w"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

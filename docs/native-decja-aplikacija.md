@@ -48,9 +48,27 @@ Native aplikacija koristi isti skup poziva kao dečji web:
 | Push | `register_child_push`, `unregister_child_push`, `get_child_push_status` (proširuje se za FCM) |
 
 **Ugovorni testovi:** za svaki RPC se jednom snimi stvarni JSON odgovor
-(`supabase db query --linked`, sa probnim profilom) u `src/test/resources/ugovori/`.
-Kotlin testovi proveravaju da se svaki snimak parsira. Kada se RPC promeni u migraciji,
-test pada i podseća da se ažurira i native klijent.
+(`supabase db query --linked`, sa probnim profilom) u
+`android-app/core/podaci/src/test/resources/ugovori/`.
+Kotlin testovi proveravaju da se svaki snimak parsira, i to strogo: novo polje obara test.
+Kada se RPC promeni u migraciji, test pada i podseća da se ažurira i native klijent.
+
+Snimci su uzeti 2026-11-14. RPC pozivi su išli nad probnim profilom „Proba Native“
+u transakciji koja je poništena, pa u bazi ništa nije ostalo i obaveštenja nisu poslata.
+`play-chess` akcija `state` je snimljena kratkotrajnim redom koji je odmah obrisan;
+nije bilo redova u `notification_deliveries`.
+
+`supabase-kt` 3.9 (`KotlinXSerializer`) parsira sve snimke. Polja `options`, `answer` i
+`correct` su unije bez diskriminatora, pa imaju poseban serializer. Jedna obična
+data klasa ih ne pokriva.
+
+Živi JSON se razlikuje od nekih opcionih polja u `src/types/kviz.ts`. Native modeli
+prate snimak, ne stariji TypeScript tip:
+
+- `submit_attempt` ne vraća `childName`, `starsEarned`, `totalStars`, `titleProgress`
+  ni `newlyUnlockedTitle`. Vraća `starsAwarded`.
+- `get_quiz_by_token` za profilni link ne vraća `titleProgress`, `totalStars`,
+  `fixedChildName` ni `labelName`.
 
 ## Arhitektura
 
@@ -71,8 +89,8 @@ android-app/
   baselineprofile/        Macrobenchmark i Baseline Profile
 ```
 
-Moduli po funkcijama ubrzavaju inkrementalni build i drže granice čistim. Ako to zakomplikuje
-početak, kreće se od jednog `app` modula sa istim paketima, pa se deli kasnije.
+Moduli po funkcijama ubrzavaju inkrementalni build i drže granice čistim. Faza 0 otvara
+`app`, `core/dizajn` i `core/podaci`. Ostali moduli se dodaju kad dobiju kod.
 
 | Sloj | Izbor | Zašto |
 |---|---|---|
@@ -86,7 +104,7 @@ početak, kreće se od jednog `app` modula sa istim paketima, pa se deli kasnije
 | Pozadina | WorkManager | Pouzdano slanje odgovora i kad se aplikacija zatvori |
 | Šah | `chesslib` (bhlangonijr) za legalne poteze | Optimističan prikaz poteza bez čekanja servera |
 | Push | Firebase Cloud Messaging | Native kanali, data poruke za tiho osvežavanje |
-| Min / target SDK | 24 / 36 | Isto kao TWA, da niko ne ostane bez nadogradnje. Core library desugaring za `java.time` |
+| Min / target SDK | 24 / 36 | Isto kao TWA, da niko ne ostane bez nadogradnje. Core library desugaring za `java.time`. `compileSdk` ostaje 36. Compose BOM 2026.09 i `core-ktx` 1.19 traže API 37, pa skelet koristi BOM 2026.06 i `core-ktx` 1.18 |
 
 Obrazac je **UDF**: `ViewModel` izlaže `StateFlow<UiStanje>`, a ekrani su čiste Compose
 funkcije. Repozitorijumi rade po principu **keš pa mreža**: odmah emituju Room podatke,
@@ -206,6 +224,10 @@ Procena je za jednog programera sa AI pomoći, u radnim danima.
 - Snimiti JSON ugovore za sve RPC funkcije iz tabele iznad.
 - Prevesti dizajn tokene iz `theme.css` u Compose `ColorScheme` (svetla i tamna) i tipografiju.
 - Napraviti Firebase projekat za FCM (samo Messaging, bez Analytics-a).
+  Urađeno: projekat `mozgalica-decja`, Android aplikacija sa istim `applicationId`,
+  uključen Firebase Cloud Messaging API. Google Analytics nije povezan.
+  Klijentski `google-services.json` je u `android-app/app/`. Service account ključ
+  nije pravljen i ne ide u git.
 - Postaviti skelet projekta `android-app/`, Gradle version catalog, CI za build, lint i testove.
 - **Gotovo kada:** prazna aplikacija sa temom se gradi u CI-ju, a ugovorni testovi prolaze.
 
@@ -245,8 +267,13 @@ Native ne treba da nosi generator od ~10.000 linija.
 
 - Nova Edge funkcija `pripremi-ponovni`: prima token pokušaja, učitava netačne zadatke,
   generiše nove verzije **istim TypeScript generatorom** i sama poziva `start_retry`.
-  Generator se kopira u `supabase/functions/_shared/generator/` skriptom pre deploy-a, jer Edge
-  bundler ne mora da prati uvoze van `supabase/functions/`. Ovo treba proveriti na početku faze.
+  Provera iz faze 0: produkcijski `play-chess` već uvozi `../../../src/sah/engine.ts`, van
+  `supabase/functions/`, i `state` je vratio 200. `deno check` prolazi i za uvoz
+  `src/generator/index.ts`. Naivna kopija u `_shared/generator` ne prolazi, jer
+  `../types/db.ts` i `../../types/db.ts` posle kopiranja ne pokazuju na isti fajl.
+  Faza 4 zato uvozi generator iz `src/generator`, isto kao što šah uvozi engine.
+  Kopija u `_shared` ostaje rezerva ako bundler prestane da prati spoljne uvoze, uz
+  prepravku tih putanja.
 - Web prelazi na istu funkciju. Usput se zatvara slabost: tačni odgovori za ponovni pokušaj
   više ne dolaze od klijenta.
 - Native: rešavanje ponovnog pokušaja (`resume_retry`, `submit_retry`) koristi komponente iz faze 3.
@@ -347,7 +374,7 @@ Web Push danas ide preko VAPID-a i tabele `push_subscriptions` (`endpoint`, `p25
 | Rizik | Ublažavanje |
 |---|---|
 | Dva dečja klijenta (web i native) se razilaze | Ugovorni testovi, tačka „native" u kontrolnoj listi za svaku migraciju koja menja dečji RPC |
-| Edge funkcija ne može da uveze generator | Prvo proveriti u fazi 4. Rezerva: esbuild bundle generatora u `_shared` |
+| Edge funkcija ne može da uveze generator | Provereno u fazi 0: bundler prati uvoz van `supabase/functions/` (`play-chess` → `src/sah/engine.ts`, a `deno check` prolazi i za `src/generator`). Naivna kopija u `_shared` lomi relativne uvoze `types/db.ts`. Rezerva i dalje: esbuild bundle ili kopija uz prepravku putanja |
 | FCM service account ključ | Samo u Supabase secrets, uz najuža ovlašćenja (Firebase Cloud Messaging API) |
 | Ponovno povezivanje posle prelaska sa TWA | QR je brz. Napomena u release notes-u i na profilu deteta |
 | Tajmer se razlikuje od weba | Testovi za oba režima, sa veštačkim satom (`TestScheduler`) |

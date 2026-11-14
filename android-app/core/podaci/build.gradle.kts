@@ -1,0 +1,14 @@
+plugins {
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.kotlin.serialization)
+}
+
+kotlin {
+    jvmToolchain(17)
+}
+
+dependencies {
+    implementation(libs.serialization.json)
+    implementation(libs.supabase.kt)
+    testImplementation(libs.junit)
+}

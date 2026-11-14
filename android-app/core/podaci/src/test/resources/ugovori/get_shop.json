@@ -1,0 +1,118 @@
+{
+  "avatar": "🦊",
+  "balance": 6,
+  "items": [
+    {
+      "awaitingConsumption": false,
+      "cost": 99,
+      "description": null,
+      "emoji": "🥽",
+      "iconUrl": null,
+      "id": "2aea1d81-3042-4fb1-9c6e-04398b1d57a7",
+      "previousCount": 0,
+      "purchased": false,
+      "repeatable": false,
+      "title": "Another World VR Arena"
+    },
+    {
+      "awaitingConsumption": false,
+      "cost": 59,
+      "description": null,
+      "emoji": "🧆",
+      "iconUrl": null,
+      "id": "6885af39-0eb4-481b-ab13-da0fa454a92a",
+      "previousCount": 0,
+      "purchased": false,
+      "repeatable": true,
+      "title": "Walter cevapi"
+    },
+    {
+      "awaitingConsumption": false,
+      "cost": 1,
+      "description": "Probna nagrada za snimak ugovora.",
+      "emoji": "⭐",
+      "iconUrl": null,
+      "id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa8",
+      "previousCount": 0,
+      "purchased": true,
+      "repeatable": false,
+      "title": "Nalepnica"
+    },
+    {
+      "awaitingConsumption": false,
+      "cost": 59,
+      "description": null,
+      "emoji": "🍕",
+      "iconUrl": null,
+      "id": "94d238dd-26d7-44f2-aebc-d986e09af285",
+      "previousCount": 0,
+      "purchased": false,
+      "repeatable": true,
+      "title": "Inferno Pizza"
+    },
+    {
+      "awaitingConsumption": false,
+      "cost": 139,
+      "description": null,
+      "emoji": "🌊",
+      "iconUrl": null,
+      "id": "182064da-4413-431b-b6d8-152b6970ad0a",
+      "previousCount": 0,
+      "purchased": false,
+      "repeatable": false,
+      "title": "Aqua Park Ada"
+    },
+    {
+      "awaitingConsumption": false,
+      "cost": 14,
+      "description": null,
+      "emoji": "🍦",
+      "iconUrl": null,
+      "id": "3190501e-5074-46dd-917b-7dbcd52be559",
+      "previousCount": 0,
+      "purchased": false,
+      "repeatable": false,
+      "title": "Sladoled"
+    },
+    {
+      "awaitingConsumption": false,
+      "cost": 19,
+      "description": null,
+      "emoji": "🥤",
+      "iconUrl": null,
+      "id": "21c22b8a-6f29-4ca7-b6aa-07ad036473a8",
+      "previousCount": 0,
+      "purchased": false,
+      "repeatable": false,
+      "title": "Milkshake"
+    },
+    {
+      "awaitingConsumption": false,
+      "cost": 29,
+      "description": null,
+      "emoji": "🍕",
+      "iconUrl": null,
+      "id": "092fc924-2340-4f08-9395-7d08ee3b97ee",
+      "previousCount": 0,
+      "purchased": false,
+      "repeatable": false,
+      "title": "Pizza Ada"
+    }
+  ],
+  "name": "Proba Native",
+  "ok": true,
+  "purchases": [
+    {
+      "consumedAt": null,
+      "cost": 1,
+      "emoji": "⭐",
+      "iconUrl": null,
+      "id": "25fd2d9a-cd4a-4b98-928c-bf0d5c81de6c",
+      "isRepeatable": false,
+      "requestedAt": "2026-11-14T11:08:09.73283+00:00",
+      "status": "requested",
+      "title": "Nalepnica"
+    }
+  ],
+  "totalStars": 7
+}

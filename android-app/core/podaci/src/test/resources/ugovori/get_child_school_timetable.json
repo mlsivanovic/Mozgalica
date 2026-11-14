@@ -1,0 +1,109 @@
+{
+  "childName": "Proba Native",
+  "exists": true,
+  "includeSaturday": true,
+  "ok": true,
+  "overrideShift": null,
+  "rotationMode": "fixed",
+  "serverNow": "2026-11-14T11:08:09.73283+00:00",
+  "sharedSlots": true,
+  "thisWeekShift": "morning",
+  "today": {
+    "date": "2026-11-14",
+    "isBreak": false,
+    "lessons": [
+      {
+        "color": "#4F46E5",
+        "endsAt": "08:45",
+        "isCurrent": false,
+        "isNext": null,
+        "note": null,
+        "periodNo": 1,
+        "room": null,
+        "startsAt": "08:00",
+        "subject": "Matematika",
+        "teacher": null
+      }
+    ],
+    "shift": "morning",
+    "weekday": 6
+  },
+  "tomorrow": {
+    "date": "2026-11-15",
+    "isBreak": true,
+    "lessons": [],
+    "shift": null,
+    "weekday": 7
+  },
+  "week": [
+    {
+      "date": "2026-11-09",
+      "isBreak": false,
+      "lessons": [
+        {
+          "color": "#4F46E5",
+          "endsAt": "08:45",
+          "isCurrent": false,
+          "isNext": false,
+          "note": null,
+          "periodNo": 1,
+          "room": null,
+          "startsAt": "08:00",
+          "subject": "Matematika",
+          "teacher": null
+        }
+      ],
+      "shift": "morning",
+      "weekday": 1
+    },
+    {
+      "date": "2026-11-10",
+      "isBreak": false,
+      "lessons": [],
+      "shift": "morning",
+      "weekday": 2
+    },
+    {
+      "date": "2026-11-11",
+      "isBreak": false,
+      "lessons": [],
+      "shift": "morning",
+      "weekday": 3
+    },
+    {
+      "date": "2026-11-12",
+      "isBreak": false,
+      "lessons": [],
+      "shift": "morning",
+      "weekday": 4
+    },
+    {
+      "date": "2026-11-13",
+      "isBreak": false,
+      "lessons": [],
+      "shift": "morning",
+      "weekday": 5
+    },
+    {
+      "date": "2026-11-14",
+      "isBreak": false,
+      "lessons": [
+        {
+          "color": "#4F46E5",
+          "endsAt": "08:45",
+          "isCurrent": false,
+          "isNext": null,
+          "note": null,
+          "periodNo": 1,
+          "room": null,
+          "startsAt": "08:00",
+          "subject": "Matematika",
+          "teacher": null
+        }
+      ],
+      "shift": "morning",
+      "weekday": 6
+    }
+  ],
+  "weekMonday": "2026-11-09"
+}

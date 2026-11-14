@@ -1,0 +1,66 @@
+{
+  "allCorrect": null,
+  "ok": true,
+  "questions": [
+    {
+      "answer": null,
+      "correct": null,
+      "explanation": null,
+      "id": "5c57ec6c-7bcf-4ac4-b868-a75dbad41062",
+      "isCorrect": null,
+      "options": [
+        {
+          "id": "a",
+          "text": "2"
+        },
+        {
+          "id": "b",
+          "text": "4"
+        },
+        {
+          "id": "c",
+          "text": "5"
+        }
+      ],
+      "points": 1,
+      "position": 0,
+      "text": "Koji brojevi su parni? (nova verzija)",
+      "type": "multi"
+    },
+    {
+      "answer": null,
+      "correct": null,
+      "explanation": null,
+      "id": "5b624569-9449-475c-afcd-a1e44457a688",
+      "isCorrect": null,
+      "options": {
+        "left": [
+          {
+            "id": "l1",
+            "text": "3+3"
+          },
+          {
+            "id": "l2",
+            "text": "4+4"
+          }
+        ],
+        "right": [
+          {
+            "id": "r1",
+            "text": "6"
+          },
+          {
+            "id": "r2",
+            "text": "8"
+          }
+        ]
+      },
+      "points": 1,
+      "position": 1,
+      "text": "Poveži zbir i rezultat. (nova verzija)",
+      "type": "matching"
+    }
+  ],
+  "starsAwarded": 1,
+  "submitted": false
+}

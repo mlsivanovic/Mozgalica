@@ -1,0 +1,66 @@
+{
+  "activeChessGames": [
+    {
+      "approximateElo": 700,
+      "blackRemainingMs": null,
+      "childColor": "white",
+      "clockSeconds": null,
+      "createdAt": "2026-11-14T11:08:09.73283+00:00",
+      "fen": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1",
+      "playToken": "nativeugovorsah000000001",
+      "status": "in_progress",
+      "turnColor": "black",
+      "whiteRemainingMs": null
+    }
+  ],
+  "activeQuizzes": [
+    {
+      "answeredCount": 0,
+      "attemptState": "new",
+      "description": "Kviz koji još nije započet.",
+      "questionCount": 1,
+      "quizToken": "nativeugovorkviz00000002",
+      "remainingSeconds": null,
+      "timeLimitSeconds": null,
+      "title": "Matematika — Proba Native"
+    }
+  ],
+  "avatar": "🦊",
+  "chessHistory": [
+    {
+      "approximateElo": 700,
+      "childColor": "black",
+      "completedAt": "2026-11-14T11:08:09.73283+00:00",
+      "gameId": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa7",
+      "playToken": "nativeugovorsah000000002",
+      "result": "child_win",
+      "starsAwarded": 2,
+      "termination": "checkmate"
+    }
+  ],
+  "currentTitle": {
+    "avatar": null,
+    "minStars": 5,
+    "name": "ShadowNoob Empowered"
+  },
+  "history": [
+    {
+      "attemptId": "475fd181-bab6-4c24-8467-f20f49e34a9a",
+      "pendingReview": false,
+      "scorePct": 66.7,
+      "starsAwarded": 5,
+      "submittedAt": "2026-11-14T11:08:09.73283+00:00",
+      "title": "Matematika — Proba Native"
+    }
+  ],
+  "name": "Proba Native",
+  "nextTitle": {
+    "avatar": null,
+    "minStars": 10,
+    "name": "ShadowNoob Unbound",
+    "starsNeeded": 3
+  },
+  "ok": true,
+  "spendableStars": 6,
+  "totalStars": 7
+}

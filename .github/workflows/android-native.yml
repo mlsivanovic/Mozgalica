@@ -1,0 +1,39 @@
+# Provera native dečje aplikacije. Ne pravi APK za objavu i ne dira TWA workflow.
+name: Native Android
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "android-app/**"
+      - ".github/workflows/android-native.yml"
+  pull_request:
+    paths:
+      - "android-app/**"
+      - ".github/workflows/android-native.yml"
+
+concurrency:
+  group: native-android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  provera:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Java
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: platforms;android-36 build-tools;36.0.0
+
+      - name: Gradnja, testovi i lint
+        working-directory: android-app
+        run: chmod +x ./gradlew && ./gradlew build --stacktrace
