@@ -11,4 +11,20 @@ plugins {
     alias(libs.plugins.kotlin.jvm) apply false
     alias(libs.plugins.kotlin.compose) apply false
     alias(libs.plugins.kotlin.serialization) apply false
+    alias(libs.plugins.ksp) apply false
+    alias(libs.plugins.hilt) apply false
+}
+
+// Compose BOM 2026.06 poravna lifecycle na 2.11, a taj traži compileSdk 37.
+subprojects {
+    configurations.configureEach {
+        resolutionStrategy {
+            eachDependency {
+                if (requested.group == "androidx.lifecycle") {
+                    useVersion("2.9.4")
+                    because("compileSdk 36 ne podnosi lifecycle 2.11")
+                }
+            }
+        }
+    }
 }

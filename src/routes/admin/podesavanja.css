@@ -114,6 +114,22 @@
   box-shadow: none;
 }
 
+.profil-qr {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  margin-top: 0.9rem;
+}
+
+.profil-qr canvas {
+  width: 148px;
+  height: 148px;
+  padding: 0.35rem;
+  border: 1px solid var(--boja-ivica);
+  border-radius: 16px;
+  background: #fff;
+}
+
 .profil-admin-istorija {
   margin-top: 1rem;
   padding-top: 0.8rem;
@@ -152,6 +168,11 @@
 }
 
 @media (max-width: 640px) {
+  .profil-qr {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
   .podesavanja-tab {
     flex-direction: column;
     gap: 0.2rem;

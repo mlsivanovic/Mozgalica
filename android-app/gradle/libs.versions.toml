@@ -1,25 +1,58 @@
 [versions]
 agp = "9.5.1"
 kotlin = "2.4.21"
+ksp = "2.3.14"
 compose-bom = "2026.06.01"
 serialization = "1.13.0"
 supabase = "3.9.0"
+ktor = "3.6.0"
 activity = "1.13.0"
 core = "1.18.0"
 junit = "4.13.2"
 desugar = "2.1.5"
+hilt = "2.60.1"
+hilt-compose = "1.3.0"
+room = "2.8.5"
+navigation = "2.9.8"
+datastore = "1.3.0"
+splash = "1.2.0"
+lifecycle = "2.9.4"
+tink = "1.24.0"
+coroutines = "1.11.0"
+code-scanner = "16.1.0"
+robolectric = "4.15.1"
+androidx-test = "1.6.1"
 
 [libraries]
 compose-bom = { module = "androidx.compose:compose-bom", version.ref = "compose-bom" }
 compose-ui = { module = "androidx.compose.ui:ui" }
+compose-foundation = { module = "androidx.compose.foundation:foundation" }
 compose-material3 = { module = "androidx.compose.material3:material3" }
 compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
 activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activity" }
 core-ktx = { module = "androidx.core:core-ktx", version.ref = "core" }
+core-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "splash" }
 desugar = { module = "com.android.tools:desugar_jdk_libs", version.ref = "desugar" }
 serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
 supabase-kt = { module = "io.github.jan-tennert.supabase:supabase-kt", version.ref = "supabase" }
+supabase-postgrest = { module = "io.github.jan-tennert.supabase:postgrest-kt", version.ref = "supabase" }
+ktor-android = { module = "io.ktor:ktor-client-android", version.ref = "ktor" }
 junit = { module = "junit:junit", version.ref = "junit" }
+hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }
+hilt-compiler = { module = "com.google.dagger:hilt-android-compiler", version.ref = "hilt" }
+hilt-compose = { module = "androidx.hilt:hilt-lifecycle-viewmodel-compose", version.ref = "hilt-compose" }
+room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
+room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
+navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigation" }
+datastore = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
+lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
+lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
+tink-android = { module = "com.google.crypto.tink:tink-android", version.ref = "tink" }
+coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
+coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
+code-scanner = { module = "com.google.android.gms:play-services-code-scanner", version.ref = "code-scanner" }
+robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
+androidx-test-core = { module = "androidx.test:core", version.ref = "androidx-test" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
@@ -27,3 +60,5 @@ android-library = { id = "com.android.library", version.ref = "agp" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }

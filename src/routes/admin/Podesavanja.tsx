@@ -22,6 +22,8 @@ import {
 import type { JavniProfilPayload } from '../../types/kviz'
 import { izborTeme, postaviIzborTeme, type IzborTeme } from '../../lib/tema'
 import { Ikona } from '../../components/Ikona'
+import { QrKod } from '../../components/QrKod'
+import { profilniLink } from '../../lib/profilniLink'
 import './podesavanja.css'
 
 const BAZA_URL = typeof window !== 'undefined' ? `${window.location.origin}${import.meta.env.BASE_URL}` : ''
@@ -390,7 +392,7 @@ export function Podesavanja({ sekcija = 'obavestenja' }: { sekcija?: Sekcija }) 
   }
 
   async function kopirajProfilniLink(profil: ProfilDeteta) {
-    await navigator.clipboard.writeText(`${BAZA_URL}#/dete/${profil.public_token}`)
+    await navigator.clipboard.writeText(profilniLink(BAZA_URL, profil.public_token))
     setPoruka(`Profilni link za ${profil.name} je kopiran.`)
   }
 
@@ -737,6 +739,13 @@ export function Podesavanja({ sekcija = 'obavestenja' }: { sekcija?: Sekcija }) 
                   >
                     {briseProfil === profil.id ? 'Brišem…' : 'Obriši'}
                   </button>
+                </div>
+                <div className="profil-qr">
+                  <QrKod
+                    vrednost={profilniLink(BAZA_URL, profil.public_token)}
+                    oznaka={`QR kod profilnog linka za ${profil.name}`}
+                  />
+                  <p className="malo blago">Skeniraj kod u dečjoj aplikaciji. To je isti link kao na dugmetu.</p>
                 </div>
                 <details className="profil-admin-istorija">
                   <summary>

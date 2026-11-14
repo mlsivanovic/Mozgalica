@@ -92,6 +92,10 @@ android-app/
 Moduli po funkcijama ubrzavaju inkrementalni build i drže granice čistim. Faza 0 otvara
 `app`, `core/dizajn` i `core/podaci`. Ostali moduli se dodaju kad dobiju kod.
 
+Faza 1 nije otvorila `funkcije/povezivanje`. Ekrani povezivanja i ljuska su u `app`
+(paketi `povezivanje`, `navigacija`, `profil`), a klijent, Room, DataStore i Tink u
+`core/podaci`. Tako Hilt i KSP ostaju na jednom application modulu. Tok za dete je isti.
+
 | Sloj | Izbor | Zašto |
 |---|---|---|
 | UI | Jetpack Compose + Material 3 | Moderan standard, animacije i prelazi bez muke |
@@ -237,6 +241,28 @@ Procena je za jednog programera sa AI pomoći, u radnim danima.
 - Povezivanje: QR skener + nalepljeni link, provera preko `get_child_profile`, promena profila.
 - **Roditeljski web:** u upravljanju decom dodati prikaz QR koda profilnog linka.
 - **Gotovo kada:** nova instalacija se poveže QR-om, a ponovno pokretanje otvara profil bez mreže.
+
+**Urađeno u fazi 1:**
+
+- `core/podaci` je Android biblioteka (više nije čist JVM modul). Ugovorni testovi i dalje
+  rade kao JVM unit testovi. supabase-kt ide preko `postgrest-kt` i Ktor Android engine-a.
+  `ktor-client-okhttp` 3.6 vuče `okhttp-android` 5.5, a taj artefakt traži compileSdk 37.
+  Plan drži 36, pa je engine `ktor-client-android`. HTTP/2 zagrevanje veze ostaje za kad
+  compileSdk sme na 37. Isti razlog drži lifecycle na 2.9.4: BOM bi uzeo 2.11, a taj traži
+  API 37. `functions-kt` nije dodat.
+- Profilni token je u Tink skladištu, ključ je u Android Keystore-u. DataStore čuva samo
+  lokalnu oznaku izabranog profila (`aktivan`), ne bearer token. Room čuva ime, avatar,
+  zvezdice i titulu za offline prikaz. Supabase i Tink se ne dižu u `Application.onCreate`.
+- URL i anon ključ se pri gradnji čitaju iz `.env.local` (`VITE_SUPABASE_URL`,
+  `VITE_SUPABASE_ANON_KEY`) u `BuildConfig`. Ne idu u git i ne smeju u log. CI bez tog
+  fajla i dalje gradi aplikaciju; povezivanje tada javlja da baza nije podešena.
+- Navigacija je type-safe (Navigation Compose 2.9): četiri taba i fokusirane rute kviza i
+  šaha bez donje trake. U debug gradnji postoje probni ulazi samo da se vidi da traka
+  nestaje. To nisu kviz ni šah.
+- QR skener je Google Code Scanner, bez dozvole `CAMERA`. Ako je zavisnost doda u spojeni
+  manifest, aplikacija je uklanja. Isto važi za `AD_ID`.
+- Roditeljski QR crta se u pregledaču (`qrcode`) od istog stringa kao „Kopiraj link“:
+  `BAZA_URL + #/dete/ + public_token`.
 
 ### Faza 2 — Početna, Raspored, Rezultati, Podešavanja (5–6 dana)
 - Početna: zaglavlje profila, aktivni kvizovi i šah, prazno stanje, zvonce sa obaveštenjima.

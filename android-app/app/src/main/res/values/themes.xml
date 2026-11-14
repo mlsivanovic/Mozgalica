@@ -5,4 +5,10 @@
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
     </style>
+
+    <style name="Theme.Mozgalica.Pocetna" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/pozadina</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_ikona</item>
+        <item name="postSplashScreenTheme">@style/Theme.Mozgalica</item>
+    </style>
 </resources>
