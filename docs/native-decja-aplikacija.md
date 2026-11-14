@@ -345,9 +345,16 @@ Procena je za jednog programera sa AI pomoći, u radnim danima.
   savetu, grešci i praznom stanju. Animacije maskote ostaju za fazu 8. Zvučni fajlovi nisu dodati.
 - Provera na emulatoru (API 36, avionski režim, debug `--ez probni true`): ulaz → rešavanje (odgovor
   sačuvan lokalno, „Savet traži vezu“) → „Ostalo je 5 neodgovorenih“ → „Ipak predaj“ → ekran
-  „Predaja je sačuvana“ → „Veza se vratila“ → rezultat. **Nije provereno:** stvarni kviz na probnom
-  profilu sa pravim `submit_attempt` i poređenje sa web prikazom za isti pokušaj. Probni režim prikazuje
-  ugovorni snimak (`submit_attempt.json`), pa to potvrđuje UI i red, ne pariranje sa serverom.
+  „Predaja je sačuvana“ → „Veza se vratila“ → rezultat. Probni režim prikazuje ugovorni snimak
+  (`submit_attempt.json`), pa to potvrđuje UI i red, ne pariranje sa serverom.
+- Pravi probni kviz (2026-11-14): profil „Proba Native“ i kviz „Probni native kviz“ (6 pitanja,
+  matematika 5. razred, jedan pokušaj, 10 minuta). Kviz je pokrenut na mreži, pa je wifi isključen
+  pre odgovora. Svi odgovori su ostali lokalno (na serveru `attempt_answers` je bio 0), predaja je
+  prikazala „Predaja je sačuvana“, a posle uključivanja wifija WorkManager je poslao `save_answers`
+  i `submit_attempt`. Native rezultat: 50%, 9 / 18 poena, 3 tačna i 3 netačna, 0 zvezdica.
+  Web `#/kviz/<token>/rezultat` za isti `attemptToken` prikazuje iste brojeve i isti ishod po
+  pitanju. Probni profil nema mejl, pa `fn_notify_result` nije poslao poruku detetu. Profil i kviz
+  ostaju u bazi za proveru faze 4.
 - Debug `--ez probni true` otvara kviz iz ugovornih snimaka, bez mreže i bez upisa u bazu.
   „Veza se vratila“ pušta isti red nad tim snimcima i prikazuje `submit_attempt.json`.
 
