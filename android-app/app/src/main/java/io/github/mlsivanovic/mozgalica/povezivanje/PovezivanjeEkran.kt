@@ -14,6 +14,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -32,6 +33,7 @@ fun PovezivanjeEkran(
     radi: Boolean,
     onPovezi: (String) -> Unit,
     onGreskaSkenera: () -> Unit,
+    onProbniPrikaz: (() -> Unit)? = null,
 ) {
     var unos by rememberSaveable { mutableStateOf("") }
     val kontekst = LocalContext.current
@@ -97,6 +99,15 @@ fun PovezivanjeEkran(
             modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
         ) {
             Text(if (radi) "Povezujem…" else "Poveži profil")
+        }
+        if (onProbniPrikaz != null) {
+            TextButton(
+                onClick = onProbniPrikaz,
+                enabled = !radi,
+                modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
+            ) {
+                Text("Prikaži probni profil")
+            }
         }
     }
 }

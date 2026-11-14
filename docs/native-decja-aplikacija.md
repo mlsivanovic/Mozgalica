@@ -272,6 +272,38 @@ Procena je za jednog programera sa AI pomoći, u radnim danima.
 - Keš pa mreža, osvežavanje na `ON_START`, povlačenje nadole.
 - **Gotovo kada:** svi prikazi rade offline sa poslednjim podacima, bez prozivanja.
 
+**Urađeno u fazi 2:**
+
+- Ekrani su i dalje u `app` (paketi `profil` i `navigacija`), kao u fazi 1, da Hilt ostane
+  na jednom modulu. `funkcije/*` nije otvoren.
+- Room je verzija 2. Postojeći red profila ostaje; dodata je kolona `listoviJson` (aktivni
+  kvizovi, partije i istorija) i tabela `snimak` za raspored i obaveštenja. Migracija ne
+  briše sačuvano ime i zvezdice.
+- Prvi kadar ide iz Room-a. Osvežavanje je na `ON_START` i na povlačenje nadole. Nema
+  tajmera od 30 sekundi. Traka osvežavanja se vidi samo kad dete povuče; povratak u
+  aplikaciju ne treperi.
+- Zvonce čita `get_child_notifications`. Oznaka pročitanog je odmah lokalna. Ako
+  `mark_child_notifications_read` ne uspe, stavka ostaje pročitana, a ponovo slanje čeka
+  sledeći `ON_START`. WorkManager nije dodat: čeka se jedan RPC, a stanje je već u Room-u.
+- Bedž je broj nepročitanih redova u lokalnom inboxu (najviše 50), ne poseban brojač.
+- `get_child_school_timetable` bez unetog rasporeda vraća samo `ok` i `exists: false`.
+  To nije pun `RasporedOdgovor`, pa se parsira posebno. Izvoz rasporeda nije prenet.
+- Nedelja je uspravna lista dana, ne zbijena tabela. Čas i dalje ima predmet, vreme,
+  učionicu, nastavnika i boju.
+- Podešavanja su zupčanik na Početnoj, ne peti tab. Tema (svetla, tamna, sistem), zvuk i
+  haptika stoje u istom DataStore-u kao oznaka profila, ne pored tokena. Zvuk i haptika su
+  podrazumevano uključeni. Sistemsko „ukloni animacije" gasi samo animacije, preko
+  `LocalEfekti`. Zvučni fajlovi nisu dodati.
+- Push kontrole sa weba nisu kopirane. Nema FCM-a, nema `register_child_push`.
+- Tab Nagrade je i dalje prazan. Na Početnoj je samo ime titule iz profila.
+- `get_quiz_by_token` se ne učitava unapred. Dodir na kviz ili šah otvara fokusiranu rutu
+  sa tokenom, ali ne rešava zadatak i ne zove `start_attempt`. Istorija rezultata je samo
+  lista; ne otvara detalj.
+- Debug gradnja može lokalno da napuni keš ugovornim snimkom, bez upisa u bazu:
+  `adb shell am start -n io.github.mlsivanovic.mozgalica/.MainActivity --ez probni true`.
+  Dok je taj prikaz uključen, osvežavanje ne ide na mrežu. Gašenje:
+  `--ez kraj_probnog true`.
+
 ### Faza 3 — Kviz (9–11 dana)
 - Ulaz (`get_quiz_by_token`, `start_attempt`) i nastavak (`resume_attempt`) sa spajanjem lokalnih
   i serverskih odgovora. Logika iz [`offlineQueue.ts`](../src/lib/offlineQueue.ts) se prenosi

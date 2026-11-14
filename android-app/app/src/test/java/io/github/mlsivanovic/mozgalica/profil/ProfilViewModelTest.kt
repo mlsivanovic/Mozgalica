@@ -1,13 +1,16 @@
 package io.github.mlsivanovic.mozgalica.profil
 
 import io.github.mlsivanovic.mozgalica.podaci.povezivanje.IshodUcitavanja
+import io.github.mlsivanovic.mozgalica.podaci.povezivanje.IzborTeme
 import io.github.mlsivanovic.mozgalica.podaci.povezivanje.IzvorProfila
 import io.github.mlsivanovic.mozgalica.podaci.povezivanje.KesProfila
+import io.github.mlsivanovic.mozgalica.podaci.povezivanje.PodesavanjaAplikacije
 import io.github.mlsivanovic.mozgalica.podaci.povezivanje.PodesavanjaPovezivanja
 import io.github.mlsivanovic.mozgalica.podaci.povezivanje.PovezivanjeKonstante
 import io.github.mlsivanovic.mozgalica.podaci.povezivanje.ProfilRepozitorijum
 import io.github.mlsivanovic.mozgalica.podaci.povezivanje.SacuvaniProfil
 import io.github.mlsivanovic.mozgalica.podaci.povezivanje.SkladisteTokena
+import io.github.mlsivanovic.mozgalica.podaci.povezivanje.StanjePodesavanja
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -62,11 +65,23 @@ class ProfilViewModelTest {
             },
         )
 
-        val model = ProfilViewModel(repo)
+        val model = ProfilViewModel(repo, LaznaPodesavanja())
 
         assertTrue(model.stanje.value is UiStanje.Profil)
         assertTrue(mrezaKrenula)
         assertFalse(kapija.isCompleted)
         kapija.complete(Unit)
     }
+}
+
+private class LaznaPodesavanja : PodesavanjaAplikacije {
+    private val stanje = MutableStateFlow(StanjePodesavanja())
+    private val probni = MutableStateFlow(false)
+    override fun stanje(): Flow<StanjePodesavanja> = stanje
+    override suspend fun postaviTemu(tema: IzborTeme) { stanje.value = stanje.value.copy(tema = tema) }
+    override suspend fun postaviZvuk(ukljucen: Boolean) { stanje.value = stanje.value.copy(zvuk = ukljucen) }
+    override suspend fun postaviHaptiku(ukljucena: Boolean) { stanje.value = stanje.value.copy(haptika = ukljucena) }
+    override fun probniPrikaz(): Flow<Boolean> = probni
+    override suspend fun postaviProbniPrikaz(ukljucen: Boolean, bezTokena: Boolean) { probni.value = ukljucen }
+    override suspend fun probniJeBezTokena(): Boolean = false
 }

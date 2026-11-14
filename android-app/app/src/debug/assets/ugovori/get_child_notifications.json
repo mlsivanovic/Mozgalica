@@ -1,0 +1,42 @@
+{
+  "notifications": [
+    {
+      "body": "Proba Native, stigao ti je novi kviz „Matematika — Proba Native”.",
+      "createdAt": "2026-11-14T11:08:09.73283+00:00",
+      "eventType": "new_quiz",
+      "id": "db477fb4-91ec-42b3-9425-f3782c8a3d18",
+      "readAt": null,
+      "targetUrl": "/kviz/nativeugovorkviz00000001",
+      "title": "Novi kviz: Matematika — Proba Native"
+    },
+    {
+      "body": "Proba Native, stigao ti je novi kviz „Matematika — Proba Native”.",
+      "createdAt": "2026-11-14T11:08:09.73283+00:00",
+      "eventType": "new_quiz",
+      "id": "e7df674e-3944-4739-9acb-04922b43fcd9",
+      "readAt": null,
+      "targetUrl": "/kviz/nativeugovorkviz00000002",
+      "title": "Novi kviz: Matematika — Proba Native"
+    },
+    {
+      "body": "Proba Native, čeka te partija protiv računara jačine ELO 700.",
+      "createdAt": "2026-11-14T11:08:09.73283+00:00",
+      "eventType": "new_chess_game",
+      "id": "d20f1c0f-e3ca-4cd5-9b8a-f4ea309da217",
+      "readAt": null,
+      "targetUrl": "/sah/nativeugovorsah000000001",
+      "title": "Nova šahovska partija"
+    },
+    {
+      "body": "Proba Native, čeka te partija protiv računara jačine ELO 700.",
+      "createdAt": "2026-11-14T11:08:09.73283+00:00",
+      "eventType": "new_chess_game",
+      "id": "43801473-b74a-444f-8e8d-6c705b0046c0",
+      "readAt": null,
+      "targetUrl": "/sah/nativeugovorsah000000002",
+      "title": "Nova šahovska partija"
+    }
+  ],
+  "ok": true,
+  "unreadCount": 4
+}

@@ -18,7 +18,10 @@ data object NagradeRuta
 data object RezultatiRuta
 
 @Serializable
-data object KvizRuta
+data object PodesavanjaRuta
 
 @Serializable
-data object SahRuta
+data class KvizRuta(val token: String)
+
+@Serializable
+data class SahRuta(val token: String)

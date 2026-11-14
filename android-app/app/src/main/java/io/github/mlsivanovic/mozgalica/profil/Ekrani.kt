@@ -3,25 +3,15 @@ package io.github.mlsivanovic.mozgalica.profil
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import io.github.mlsivanovic.mozgalica.BuildConfig
-import io.github.mlsivanovic.mozgalica.podaci.povezivanje.SacuvaniProfil
 
 @Composable
 fun ProveraEkran() {
@@ -39,79 +29,22 @@ fun ProveraEkran() {
 }
 
 @Composable
-fun PocetnaEkran(
-    profil: SacuvaniProfil,
-    osvezava: Boolean,
-    greskaMreze: String?,
-    onPromeniProfil: () -> Unit,
-    onKviz: () -> Unit,
-    onSah: () -> Unit,
-) {
-    var pitaj by rememberSaveable { mutableStateOf(false) }
+fun PraznoStanje(naslov: String, opis: String) {
     Column(
-        modifier = Modifier.fillMaxSize().padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = Modifier.fillMaxSize().padding(vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        if (osvezava) {
-            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-        }
-        Text(text = profil.avatar, style = MaterialTheme.typography.headlineMedium)
+        Text(text = "🦊", style = MaterialTheme.typography.headlineMedium)
         Text(
-            text = profil.ime,
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.primary,
-        )
-        Text(
-            text = "⭐ ${profil.ukupnoZvezdica} zvezdica",
+            text = naslov,
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onBackground,
         )
         Text(
-            text = "Raspoloživo: ${profil.raspolozivoZvezdica}",
+            text = opis,
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        val titula = profil.titula
-        if (titula != null) {
-            Text(
-                text = titula,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onBackground,
-            )
-        }
-        if (greskaMreze != null) {
-            Text(
-                text = greskaMreze,
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodyLarge,
-            )
-        }
-        TextButton(onClick = { pitaj = true }) {
-            Text("Promeni profil")
-        }
-        if (BuildConfig.DEBUG) {
-            TextButton(onClick = onKviz, modifier = Modifier.heightIn(min = 48.dp)) {
-                Text("Probni prikaz kviza")
-            }
-            TextButton(onClick = onSah, modifier = Modifier.heightIn(min = 48.dp)) {
-                Text("Probni prikaz šaha")
-            }
-        }
-    }
-    if (pitaj) {
-        AlertDialog(
-            onDismissRequest = { pitaj = false },
-            title = { Text("Promena profila") },
-            text = { Text("Obrisati sačuvani profil sa ovog uređaja i povezati drugi?") },
-            confirmButton = {
-                TextButton(onClick = {
-                    pitaj = false
-                    onPromeniProfil()
-                }) { Text("Promeni") }
-            },
-            dismissButton = {
-                TextButton(onClick = { pitaj = false }) { Text("Ostani") }
-            },
         )
     }
 }
@@ -137,19 +70,19 @@ fun PrazanTab(naziv: String) {
 }
 
 @Composable
-fun FokusiranEkran(naziv: String, onNazad: () -> Unit) {
+fun FokusiranEkran(naslov: String, poruka: String, onNazad: () -> Unit) {
     Column(
         modifier = Modifier.fillMaxSize().padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
-            text = naziv,
+            text = naslov,
             style = MaterialTheme.typography.headlineMedium,
             color = MaterialTheme.colorScheme.primary,
         )
         Text(
-            text = "Donja navigacija je sakrivena.",
+            text = poruka,
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onBackground,
         )

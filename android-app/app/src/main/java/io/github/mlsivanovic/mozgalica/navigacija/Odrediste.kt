@@ -6,11 +6,12 @@ enum class Odrediste {
     RASPORED,
     NAGRADE,
     REZULTATI,
+    PODESAVANJA,
     KVIZ,
     SAH,
 }
 
 fun prikazujeDonjuNavigaciju(odrediste: Odrediste): Boolean = when (odrediste) {
     Odrediste.POCETNA, Odrediste.RASPORED, Odrediste.NAGRADE, Odrediste.REZULTATI -> true
-    Odrediste.POVEZIVANJE, Odrediste.KVIZ, Odrediste.SAH -> false
+    Odrediste.POVEZIVANJE, Odrediste.PODESAVANJA, Odrediste.KVIZ, Odrediste.SAH -> false
 }

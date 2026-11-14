@@ -18,6 +18,11 @@ class ProtumaciProfilTest {
         assertEquals(7, profil.ukupnoZvezdica)
         assertEquals(6, profil.raspolozivoZvezdica)
         assertEquals("ShadowNoob Empowered", profil.titula)
+        assertEquals("Matematika — Proba Native", profil.aktivniKvizovi.single().title)
+        assertEquals(1, profil.istorijaKvizova.size)
+        assertEquals(false, profil.istorijaKvizova.single().pendingReview)
+        assertEquals(1, profil.aktivnePartije.size)
+        assertEquals(1, profil.istorijaSaha.size)
     }
 
     @Test

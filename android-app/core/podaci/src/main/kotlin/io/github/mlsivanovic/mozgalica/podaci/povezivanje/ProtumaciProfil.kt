@@ -26,4 +26,8 @@ private fun ProfilOdgovor.uSacuvani(): SacuvaniProfil = SacuvaniProfil(
     ukupnoZvezdica = totalStars,
     raspolozivoZvezdica = spendableStars,
     titula = currentTitle?.name,
+    aktivniKvizovi = activeQuizzes,
+    aktivnePartije = activeChessGames,
+    istorijaKvizova = history,
+    istorijaSaha = chessHistory,
 )

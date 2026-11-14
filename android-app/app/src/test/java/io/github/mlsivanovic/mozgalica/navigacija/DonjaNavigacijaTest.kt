@@ -14,5 +14,6 @@ class DonjaNavigacijaTest {
         assertFalse(prikazujeDonjuNavigaciju(Odrediste.KVIZ))
         assertFalse(prikazujeDonjuNavigaciju(Odrediste.SAH))
         assertFalse(prikazujeDonjuNavigaciju(Odrediste.POVEZIVANJE))
+        assertFalse(prikazujeDonjuNavigaciju(Odrediste.PODESAVANJA))
     }
 }

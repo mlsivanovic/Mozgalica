@@ -8,6 +8,7 @@ import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.TextStyle
@@ -132,6 +133,17 @@ private val oblici = Shapes(
     large = RoundedCornerShape(24.dp),
     extraLarge = RoundedCornerShape(24.dp),
 )
+
+data class Efekti(
+    val zvuk: Boolean,
+    val haptika: Boolean,
+    val animacije: Boolean,
+)
+
+// Zvuk i haptika dolaze iz podešavanja. Animacije prate sistemsko „ukloni animacije", ne prekidač zvuka.
+val LocalEfekti = staticCompositionLocalOf {
+    Efekti(zvuk = true, haptika = true, animacije = true)
+}
 
 @Composable
 fun MozgalicaTema(
