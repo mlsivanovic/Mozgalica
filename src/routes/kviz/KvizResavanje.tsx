@@ -22,6 +22,8 @@ import './kviz.css'
 
 const DEBOUNCE_MS = 2000
 const BELEZKA_DEBOUNCE_MS = 900
+// Isto ograničenje kao u save_attempt_notes (server skraćuje na 2000 znakova)
+const BELEZKA_MAKS = 2000
 
 export function KvizResavanje() {
   const { token = '' } = useParams<{ token: string }>()
@@ -354,7 +356,7 @@ export function KvizResavanje() {
           <textarea
             className="kviz-radni-list-polje"
             value={belezkaTrenutnog}
-            onChange={(e) => promeniBelezku(trenutno.id, e.target.value)}
+            onChange={(e) => promeniBelezku(trenutno.id, e.target.value.slice(0, BELEZKA_MAKS))}
             placeholder="Ovde računaj: npr. 24 + 17 = 41…"
             spellCheck={false}
             autoCapitalize="off"

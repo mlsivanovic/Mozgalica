@@ -57,6 +57,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
+// Isto ograničenje kao u save_attempt_notes (server skraćuje na 2000 znakova)
+private const val MAKS_BELEZKA = 2000
+
 data class KvizUi(
     val faza: FazaKviza = FazaKviza.ULAZ,
     val ucitavaMeta: Boolean = true,
@@ -166,7 +169,7 @@ class KvizViewModel @Inject constructor(
         viewModelScope.launch {
             skladiste.izmeni(token) { snimak ->
                 val stanje = snimak.stanje ?: return@izmeni snimak
-                snimak.copy(stanje = upisiBelezkuCisto(stanje, pitanjeId, tekst))
+                snimak.copy(stanje = upisiBelezkuCisto(stanje, pitanjeId, tekst.take(MAKS_BELEZKA)))
             }
             if (!probni) KvizRad.zakazi(context, odmah = false)
         }
