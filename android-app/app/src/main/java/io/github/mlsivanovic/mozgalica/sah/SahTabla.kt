@@ -42,7 +42,9 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.github.bhlangonijr.chesslib.Board
@@ -171,13 +173,37 @@ fun SahTabla(
             }
         }
 
+        val mojeFigure = Square.values().filter { mojaFigura(it) }
+        val akcijePristupacnosti = when {
+            !mozeIgrati -> emptyList()
+            izabrano == null -> mojeFigure.map { sq ->
+                CustomAccessibilityAction("Izaberi ${sq.value().lowercase()}, ${opisFigure(tabla, sq)}") {
+                    izabrano = sq
+                    true
+                }
+            }
+            else -> dostupniPotezi.map { potez ->
+                CustomAccessibilityAction("Odigraj na ${potez.to.value().lowercase()}") {
+                    pokusaj(potez.from, potez.to)
+                    true
+                }
+            }
+        }
+        val opisTablice = buildString {
+            append("Šahovska tabla. ")
+            append(if (belaNaDnu) "Beli" else "Crni")
+            append(" su na dnu.")
+            izabrano?.let { append(" Izabrano ${it.value().lowercase()}, ${opisFigure(tabla, it)}.") }
+            if (uSahu) append(" Šah.")
+        }
         Canvas(
             modifier = Modifier
                 .size(strana)
                 .clip(RoundedCornerShape(16.dp))
                 .background(svetloPolje)
                 .semantics {
-                    contentDescription = "Šahovska tabla. ${if (belaNaDnu) "Beli" else "Crni"} su na dnu."
+                    contentDescription = opisTablice
+                    customActions = akcijePristupacnosti
                 }
                 .pointerInput(fen, mozeIgrati, belaNaDnu) {
                     detectTapGestures { offset ->
@@ -511,4 +537,20 @@ private fun putanjaFigure(tip: PieceType): Path {
         else -> Unit
     }
     return p
+}
+
+private fun opisFigure(tabla: Board, sq: Square): String {
+    val figura = tabla.getPiece(sq)
+    if (figura == Piece.NONE) return "prazno polje"
+    val boja = if (figura.pieceSide == Side.WHITE) "beli" else "crni"
+    val tip = when (figura.pieceType) {
+        PieceType.PAWN -> "pešak"
+        PieceType.KNIGHT -> "skakač"
+        PieceType.BISHOP -> "lovac"
+        PieceType.ROOK -> "top"
+        PieceType.QUEEN -> "dama"
+        PieceType.KING -> "kralj"
+        else -> "figura"
+    }
+    return "$boja $tip"
 }

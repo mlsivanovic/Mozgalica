@@ -7,6 +7,9 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -17,6 +20,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination.Companion.hasRoute
+import androidx.navigation.toRoute
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -39,6 +43,8 @@ import io.github.mlsivanovic.mozgalica.sah.SahTok
 import io.github.mlsivanovic.mozgalica.nagrade.NagradeEkran
 import io.github.mlsivanovic.mozgalica.nagrade.ProdavnicaTok
 import io.github.mlsivanovic.mozgalica.push.PushRad
+import io.github.mlsivanovic.mozgalica.vidzet.VidzetRad
+import io.github.mlsivanovic.mozgalica.precice.Precice
 import io.github.mlsivanovic.mozgalica.profil.UiStanje
 import io.github.mlsivanovic.mozgalica.profil.ciljObavestenja
 import kotlinx.coroutines.flow.StateFlow
@@ -69,10 +75,16 @@ fun MozgalicaLjuska(
     LifecycleStartEffect(Unit) {
         viewModel.osvezi()
         PushRad.zakaziRegistraciju(kontekst)
+        VidzetRad.osvezi(kontekst)
         onStopOrDispose { }
     }
     val stanje by viewModel.stanje.collectAsStateWithLifecycle()
     val podesavanja by viewModel.podesavanja.collectAsStateWithLifecycle()
+    val vidzetProfil = (stanje as? UiStanje.Profil)?.podaci
+    LaunchedEffect(vidzetProfil) {
+        if (vidzetProfil != null) VidzetRad.osvezi(kontekst)
+        Precice.azuriraj(kontekst, vidzetProfil)
+    }
     when (val trenutno = stanje) {
         UiStanje.Provera -> Scaffold { margina ->
             Box(Modifier.fillMaxSize().padding(margina)) {
@@ -161,11 +173,13 @@ private fun Navigacija(
             }
         },
     ) { margina ->
-        NavHost(
-            navController = nav,
-            startDestination = if (povezan) PocetnaRuta else PovezivanjeRuta,
-            modifier = Modifier.padding(margina),
-        ) {
+        SharedTransitionLayout {
+            val sharedScope = this
+            NavHost(
+                navController = nav,
+                startDestination = if (povezan) PocetnaRuta else PovezivanjeRuta,
+                modifier = Modifier.padding(margina),
+            ) {
             composable<PovezivanjeRuta> {
                 val povezivanje = stanje as? UiStanje.Povezivanje
                 PovezivanjeEkran(
@@ -214,6 +228,8 @@ private fun Navigacija(
                                 null -> Unit
                             }
                         },
+                        sharedScope = sharedScope,
+                        animatedScope = this,
                     )
                 }
             }
@@ -255,7 +271,17 @@ private fun Navigacija(
                 )
             }
             composable<KvizRuta> {
-                KvizTok(onNazad = { nav.popBackStack() })
+                val ruta = it.toRoute<KvizRuta>()
+                val animScope: AnimatedVisibilityScope = this
+                KvizTok(
+                    onNazad = { nav.popBackStack() },
+                    modifier = with(sharedScope) {
+                        Modifier.sharedElement(
+                            rememberSharedContentState("kviz-${ruta.token}"),
+                            animatedVisibilityScope = animScope,
+                        )
+                    },
+                )
             }
             composable<SahRuta> {
                 SahTok(
@@ -267,6 +293,7 @@ private fun Navigacija(
                         }
                     },
                 )
+            }
             }
         }
     }

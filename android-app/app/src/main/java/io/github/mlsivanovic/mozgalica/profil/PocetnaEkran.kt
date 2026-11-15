@@ -1,5 +1,7 @@
 package io.github.mlsivanovic.mozgalica.profil
 
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -43,6 +45,8 @@ fun PocetnaEkran(
     onSah: (String) -> Unit,
     onOznaciProcitanim: (List<String>?) -> Unit,
     onObavestenje: (String) -> Unit,
+    sharedScope: SharedTransitionScope? = null,
+    animatedScope: AnimatedVisibilityScope? = null,
 ) {
     val brojAktivnih = profil.aktivniKvizovi.size + profil.aktivnePartije.size
     var zvonceOtvoreno by rememberSaveable { mutableStateOf(false) }
@@ -141,7 +145,20 @@ fun PocetnaEkran(
                     PartijaKartica(partija, onClick = { onSah(partija.playToken) })
                 }
                 profil.aktivniKvizovi.forEach { kviz ->
-                    KvizKartica(kviz, onClick = { onKviz(kviz.quizToken) })
+                    KvizKartica(
+                        kviz = kviz,
+                        onClick = { onKviz(kviz.quizToken) },
+                        modifier = if (sharedScope != null && animatedScope != null) {
+                            with(sharedScope) {
+                                Modifier.sharedElement(
+                                    rememberSharedContentState("kviz-${kviz.quizToken}"),
+                                    animatedVisibilityScope = animatedScope,
+                                )
+                            }
+                        } else {
+                            Modifier
+                        },
+                    )
                 }
             }
         }
@@ -166,9 +183,9 @@ private fun PartijaKartica(partija: AktivnaPartija, onClick: () -> Unit) {
 }
 
 @Composable
-private fun KvizKartica(kviz: AktivniKviz, onClick: () -> Unit) {
+private fun KvizKartica(kviz: AktivniKviz, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val uToku = kviz.attemptState == "in_progress"
-    Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
+    Card(onClick = onClick, modifier = modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(if (uToku) "U toku" else "Novi kviz", color = MaterialTheme.colorScheme.primary)
             Text(kviz.title, style = MaterialTheme.typography.titleLarge)

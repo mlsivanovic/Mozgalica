@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
@@ -31,6 +32,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -41,9 +43,11 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import io.github.mlsivanovic.mozgalica.dizajn.Konfete
 import io.github.mlsivanovic.mozgalica.dizajn.LocalEfekti
 import io.github.mlsivanovic.mozgalica.dizajn.Maskota
 import io.github.mlsivanovic.mozgalica.dizajn.StanjeMaskote
+import io.github.mlsivanovic.mozgalica.dizajn.VisinaKonfeta
 import io.github.mlsivanovic.mozgalica.podaci.PonovnoPitanje
 import io.github.mlsivanovic.mozgalica.podaci.RezultatOdgovor
 import io.github.mlsivanovic.mozgalica.podaci.RezultatPitanja
@@ -65,7 +69,11 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 
 @Composable
-fun KvizTok(onNazad: () -> Unit, model: KvizViewModel = hiltViewModel()) {
+fun KvizTok(
+    onNazad: () -> Unit,
+    modifier: Modifier = Modifier,
+    model: KvizViewModel = hiltViewModel(),
+) {
     val ui by model.stanje.collectAsStateWithLifecycle()
     val vlasnik = LocalLifecycleOwner.current
     DisposableEffect(vlasnik) {
@@ -79,6 +87,7 @@ fun KvizTok(onNazad: () -> Unit, model: KvizViewModel = hiltViewModel()) {
         vlasnik.lifecycle.addObserver(posmatrac)
         onDispose { vlasnik.lifecycle.removeObserver(posmatrac) }
     }
+    Box(modifier.fillMaxSize()) {
     when {
         ui.ucitavaMeta && ui.meta == null && ui.greska == null -> Centrirano("Učitavanje kviza…")
         ui.greska != null && ui.meta == null && ui.faza == FazaKviza.ULAZ -> GreskaEkran(ui.greska ?: "", onNazad)
@@ -88,6 +97,7 @@ fun KvizTok(onNazad: () -> Unit, model: KvizViewModel = hiltViewModel()) {
         ui.faza == FazaKviza.REZULTAT -> RezultatEkran(ui, onNazad, model::otvoriObjasnjenja, model::noviPokusaj, model::pokreniPonovni)
         ui.faza == FazaKviza.RESAVANJE && ui.pitanja.isNotEmpty() && ui.stanje != null -> ResavanjeEkran(ui, onNazad, model)
         else -> UlazEkran(ui, onNazad, model)
+    }
     }
 }
 
@@ -340,9 +350,16 @@ private fun RezultatEkran(
     val procenat = prikazaniProcenat(rezultat)
     val zvezdice = prikazaneZvezdice(rezultat) ?: return
     val efekti = LocalEfekti.current
+    val kontekst = LocalContext.current
+    val zvuk = remember { ZvukKviza(kontekst, efekti.zvuk) }
+    DisposableEffect(zvuk) { onDispose { zvuk.otpusti() } }
+    LaunchedEffect(rezultat) { zvuk.zavrsen(zvezdice > 0) }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         if (efekti.animacije && procenat >= 90.0) {
-            Text("🎉 🎊 ✨", modifier = Modifier.semantics { contentDescription = "Konfete" })
+            Konfete(
+                ukljucene = true,
+                modifier = Modifier.fillMaxWidth().height(VisinaKonfeta).semantics { contentDescription = "Konfete" },
+            )
         }
         Maskota(if (zvezdice > 0) StanjeMaskote.USPEH else StanjeMaskote.PRAZNO, velicina = 88.dp)
         val ime = ui.stanje?.childName?.takeIf { it.isNotBlank() }

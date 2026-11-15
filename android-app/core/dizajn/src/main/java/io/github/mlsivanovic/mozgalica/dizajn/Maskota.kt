@@ -1,5 +1,11 @@
 package io.github.mlsivanovic.mozgalica.dizajn
 
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
@@ -9,6 +15,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.Dp
@@ -25,6 +32,35 @@ private fun putanja(d: String) = PathParser().parsePathString(d).toPath()
 // Isti oblici kao `src/components/Maskota.tsx` (viewBox 84x84).
 @Composable
 fun Maskota(stanje: StanjeMaskote = StanjeMaskote.POZDRAV, modifier: Modifier = Modifier, velicina: Dp = 88.dp) {
+    val efekti = LocalEfekti.current
+    val animacija = rememberInfiniteTransition(label = "maskota")
+    val treptaj = if (efekti.animacije) {
+        animacija.animateFloat(
+            initialValue = 1f,
+            targetValue = 0.12f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(durationMillis = 130, easing = LinearEasing),
+                repeatMode = RepeatMode.Reverse,
+                initialStartOffset = androidx.compose.animation.core.StartOffset(1800),
+            ),
+            label = "treptaj",
+        ).value
+    } else {
+        1f
+    }
+    val mahanje = if (efekti.animacije) {
+        animacija.animateFloat(
+            initialValue = -8f,
+            targetValue = 10f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(durationMillis = 900),
+                repeatMode = RepeatMode.Reverse,
+            ),
+            label = "mahanje",
+        ).value
+    } else {
+        0f
+    }
     Canvas(modifier.size(velicina).clearAndSetSemantics { }) {
         val k = size.width / 84f
         fun t(x: Float, y: Float) = Offset(x * k, y * k)
@@ -39,8 +75,8 @@ fun Maskota(stanje: StanjeMaskote = StanjeMaskote.POZDRAV, modifier: Modifier = 
         )
         val telo = putanja("M31 61h22v5a8 8 0 0 1-8 8h-6a8 8 0 0 1-8-8Z")
         crtaj(k) { drawPath(telo, Indigo) }
-        drawCircle(Tamna, 2.7f * k, t(33f, 40f))
-        drawCircle(Tamna, 2.7f * k, t(51f, 40f))
+        drawCircle(Tamna, 2.7f * k, t(33f, 40f), alpha = treptaj)
+        drawCircle(Tamna, 2.7f * k, t(51f, 40f), alpha = treptaj)
         val usta = putanja(if (stanje == StanjeMaskote.PRAZNO) "M34 49q8 6 16 0" else "M34 49q8 9 16 0")
         crtaj(k) { drawPath(usta, Tamna, style = Stroke(3f, cap = StrokeCap.Round)) }
         when (stanje) {
@@ -54,7 +90,11 @@ fun Maskota(stanje: StanjeMaskote = StanjeMaskote.POZDRAV, modifier: Modifier = 
             }
             StanjeMaskote.POZDRAV -> {
                 val ruka = putanja("M67 43q10 4 6 14")
-                crtaj(k) { drawPath(ruka, Indigo, style = Stroke(4f, cap = StrokeCap.Round)) }
+                crtaj(k) {
+                    rotate(mahanje, pivot = t(67f, 43f)) {
+                        drawPath(ruka, Indigo, style = Stroke(4f, cap = StrokeCap.Round))
+                    }
+                }
             }
             StanjeMaskote.PRAZNO -> Unit
         }

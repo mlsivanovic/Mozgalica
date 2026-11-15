@@ -46,6 +46,16 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
+        <receiver
+            android:name=".vidzet.MozgalicaVidzetReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/mozgalica_vidzet" />
+        </receiver>
         <service
             android:name=".push.MozgalicaFcmServis"
             android:exported="false">

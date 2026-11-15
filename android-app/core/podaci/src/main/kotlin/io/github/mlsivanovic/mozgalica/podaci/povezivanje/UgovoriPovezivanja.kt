@@ -1,6 +1,7 @@
 package io.github.mlsivanovic.mozgalica.podaci.povezivanje
 
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 
 fun interface IzvorProfila {
     suspend fun ucitaj(token: String): IshodUcitavanja
@@ -15,6 +16,7 @@ sealed interface IshodUcitavanja {
 
 interface KesProfila {
     fun posmatraj(): Flow<SacuvaniProfil?>
+    suspend fun procitaj(): SacuvaniProfil? = posmatraj().first()
     suspend fun upisi(profil: SacuvaniProfil)
     suspend fun obrisi()
 }

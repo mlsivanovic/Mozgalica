@@ -58,5 +58,6 @@ class HladanStartRoomTest {
         )
 
         assertEquals(sacuvan, repo.posmatraj().first())
+        assertEquals(sacuvan, noviKes.procitaj())
     }
 }

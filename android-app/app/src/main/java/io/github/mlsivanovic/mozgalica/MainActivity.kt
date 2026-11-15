@@ -2,6 +2,7 @@ package io.github.mlsivanovic.mozgalica
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -12,6 +13,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.metrics.performance.JankStats
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dagger.hilt.android.AndroidEntryPoint
 import io.github.mlsivanovic.mozgalica.dizajn.Efekti
@@ -24,6 +26,7 @@ import io.github.mlsivanovic.mozgalica.podaci.povezivanje.ProfilRepozitorijum
 import io.github.mlsivanovic.mozgalica.podaci.povezivanje.jeTamna
 import io.github.mlsivanovic.mozgalica.profil.ProfilViewModel
 import io.github.mlsivanovic.mozgalica.push.PushObavestenja
+import io.github.mlsivanovic.mozgalica.vidzet.VidzetRad
 import kotlinx.coroutines.flow.MutableStateFlow
 import javax.inject.Inject
 import kotlinx.coroutines.runBlocking
@@ -33,13 +36,29 @@ class MainActivity : ComponentActivity() {
     @Inject lateinit var repo: ProfilRepozitorijum
     @Inject lateinit var podesavanjaAplikacije: PodesavanjaAplikacije
     private val cilj = MutableStateFlow<String?>(null)
+    private var jankStats: JankStats? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         cilj.value = primaCilj(intent)
-        if (BuildConfig.DEBUG) obradiProbniIntent()
+        VidzetRad.zakazi(this)
+        if (BuildConfig.DEBUG) {
+            var jankFrames = 0
+            jankStats = JankStats.createAndTrack(window) { stanje ->
+                if (stanje.isJank) {
+                    jankFrames += 1
+                    if (jankFrames % 10 == 0) {
+                        Log.w(
+                            "MozgalicaJank",
+                            "jank=$jankFrames frame=${stanje.frameDurationUiNanos / 1_000_000}ms",
+                        )
+                    }
+                }
+            }
+            obradiProbniIntent()
+        }
         setContent {
             val viewModel: ProfilViewModel = hiltViewModel()
             val podesavanja by viewModel.podesavanja.collectAsStateWithLifecycle()
@@ -61,6 +80,12 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onDestroy() {
+        jankStats?.isTrackingEnabled = false
+        jankStats = null
+        super.onDestroy()
     }
 
     override fun onNewIntent(intent: Intent) {

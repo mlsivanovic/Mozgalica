@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
     alias(libs.plugins.google.services) apply false
+    alias(libs.plugins.androidx.baselineprofile)
 }
 
 // Bez google-services.json (javni repo/CI bez Firebase tajni) build i dalje prolazi;
@@ -40,7 +41,18 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
+        }
+        create("benchmark") {
+            initWith(getByName("release"))
+            signingConfig = signingConfigs.getByName("debug")
+            matchingFallbacks += listOf("release")
+            isDebuggable = false
         }
     }
 
@@ -58,6 +70,10 @@ android {
     lint {
         abortOnError = true
     }
+}
+
+baselineProfile {
+    saveInSrc = true
 }
 
 dependencies {
@@ -82,6 +98,9 @@ dependencies {
     implementation(libs.firebase.messaging)
     implementation(libs.chesslib)
     implementation(libs.work.runtime)
+    implementation(libs.glance.appwidget)
+    implementation(libs.metrics.performance)
+    baselineProfile(project(":baselineprofile"))
     ksp(libs.hilt.compiler)
     coreLibraryDesugaring(libs.desugar)
 

@@ -1,5 +1,7 @@
 package io.github.mlsivanovic.mozgalica.push
 
+import androidx.glance.appwidget.updateAll
+
 import android.content.Context
 import androidx.work.BackoffPolicy
 import androidx.work.Configuration
@@ -19,6 +21,7 @@ import io.github.mlsivanovic.mozgalica.podaci.povezivanje.IshodOsvezavanja
 import io.github.mlsivanovic.mozgalica.podaci.povezivanje.PodesavanjaAplikacije
 import io.github.mlsivanovic.mozgalica.podaci.povezivanje.ProfilRepozitorijum
 import io.github.mlsivanovic.mozgalica.podaci.push.IshodRegistracijePush
+import io.github.mlsivanovic.mozgalica.vidzet.MozgalicaVidzet
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.flow.first
 
@@ -58,7 +61,9 @@ class PushOsvezavanjeRadnik(
         val repo = EntryPointAccessors
             .fromApplication(applicationContext, PushRadniUlaz::class.java)
             .repo()
-        return when (repo.osvezi()) {
+        val ishod = repo.osvezi()
+        MozgalicaVidzet().updateAll(applicationContext)
+        return when (ishod) {
             IshodOsvezavanja.Osvezen, IshodOsvezavanja.NemaTokena -> Result.success()
             is IshodOsvezavanja.ProfilObrisan -> Result.failure()
             is IshodOsvezavanja.Greska -> Result.retry()

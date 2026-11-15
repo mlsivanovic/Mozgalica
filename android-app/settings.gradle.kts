@@ -16,4 +16,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "mozgalica-native"
-include(":app", ":core:dizajn", ":core:podaci")
+include(":app", ":core:dizajn", ":core:podaci", ":baselineprofile", ":macrobenchmark")

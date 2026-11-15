@@ -539,6 +539,39 @@ Videti [Push](#7-push-fcm-umesto-web-push) ispod.
 - Test na slabom telefonu i ispravke.
 - **Gotovo kada:** postignuti ciljevi iz odeljka o brzini, bez janka u benchmark-u.
 
+#### Urađeno u fazi 8
+- **R8 full mode** je uključen za `release`, uz uklanjanje neiskorišćenih resursa i
+  `proguard-rules.pro` za kotlinx.serialization. Release APK je oko 3,9 MB, debug oko 24 MB.
+- **Glance vidžet** prikazuje `Danas: N zadataka` i zvezdice iz Room keša. Osvežava se
+  periodičnim WorkManager poslom (30 min), pri pokretanju aplikacije i posle FCM osvežavanja;
+  dodir otvara aplikaciju. Ima i preview za izbor vidžeta.
+- **Prečice na ikoni:** dinamičke „Nastavi kviz” i „Nastavi šah” vode pravo na aktivni
+  kviz, odnosno partiju preko postojećeg `targetUrl` mehanizma.
+- **Pokretanje i prelazi:** kviz kartica sa Početne ima shared-element prelaz u ekran kviza.
+  Rezultat ≥ 90% dobija prave Compose konfete (Canvas, bez slika), maskota treperi i maše
+  uz poštovanje sistemskog „ukloni animacije”, a završetak kviza daje kratak ton preko
+  `ToneGenerator`-a (bez audio fajlova).
+- **Pristupačnost:** šahovska tabla ima TalkBack akcije za izbor figure i odigravanje
+  legalnog poteza, uz opis figure i šaha. Proveren je veliki font (1,3×) bez lomljenja
+  osnovnih ekrana; svi tasteri ostaju najmanje 56 dp.
+- **Merenje:** `baselineprofile` modul sadrži `BaselineProfileGenerator`, a `macrobenchmark`
+  modul `StartupBenchmark` (hladan start) i `FrameTimingBenchmark` (skrol Početne); debug
+  build beleži JankStats.
+  CI workflow [`android-native.yml`](../.github/workflows/android-native.yml) gradi, testira
+  i lintuje native aplikaciju, a na zahtev/periodično generiše Baseline Profile na emulatoru.
+- **Provereno:** `./gradlew :app:testDebugUnitTest :app:assembleDebug :app:lintDebug`
+  (85 testova, 0 padova), `:app:assembleRelease` (R8, 3,9 MB, profil u
+  `assets/dexopt/baseline.prof`), `:baselineprofile:assemble` i
+  `:macrobenchmark:assembleBenchmark`. Baseline Profile je generisan direktnim pokretanjem
+  `BaselineProfileGenerator`-a (1 test, 114 s) i sačuvan u `app/src/main/baseline-prof.txt`;
+  Gradle zadatak `:app:generateBaselineProfile` nije završen u ovom okruženju u razumnom
+  vremenu, pa je profil preuzet direktno iz instrumentacije.
+- **Nije provereno do kraja:** merenja hladnog starta i FrameTiming izveštaji nisu pokrenuti
+  na ovom emulatoru (fizički uređaj je merodavan); CI workflow ih pokreće na zahtev.
+  Vidžet nije dodat na launcher kroz automatizaciju, samo je proveren provider/preview;
+  shared-element prelaz je implementiran za karticu kviza, a navigacija na šah je proverena
+  bez shared-element prelaza.
+
 ### Faza 9 — Izdanje na GitHub-u (2–3 dana)
 - Workflow [`android.yml`](../.github/workflows/android.yml) prelazi sa `android/` (TWA) na
   `android-app/`. Potpisivanje i GitHub Release ostaju isti.
