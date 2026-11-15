@@ -40,3 +40,20 @@ export function prikaziAndroidPreuzimanje(ulaz: {
   if (/Macintosh/i.test(ulaz.userAgent) && /Mobile/i.test(ulaz.userAgent)) return false
   return true
 }
+
+export function jeAndroidUredjaj(userAgent: string): boolean {
+  return /Android/i.test(userAgent)
+}
+
+export const KLJUC_SKRIVEN_ANDROID_BANER = 'mozgalica.androidBanerSkriven'
+
+/** Istaknut poziv na Početnoj: samo na Android telefonu, van aplikacije i dok ga dete ne zatvori. */
+export function prikaziAndroidBaner(ulaz: {
+  userAgent: string
+  referrer: string
+  search: string
+  skriven: boolean
+}): boolean {
+  if (ulaz.skriven) return false
+  return jeAndroidUredjaj(ulaz.userAgent) && prikaziAndroidPreuzimanje(ulaz)
+}

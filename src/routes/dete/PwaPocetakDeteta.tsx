@@ -8,6 +8,7 @@ import {
   ucitajProfilZaInstalaciju, zaboraviPovezaniProfil, zaboraviProfilZaInstalaciju,
 } from '../../lib/profilPwa'
 import { postaviDecjiManifest } from '../../pwa'
+import { AndroidPreuzimanjeKartica } from '../../components/AndroidPreuzimanje'
 import './profil.css'
 
 export function PwaPocetakDeteta() {
@@ -112,6 +113,7 @@ export function PwaPocetakDeteta() {
             </button>
           </form>
         </section>
+        <AndroidPreuzimanjeKartica />
       </div>
     </main>
   )

@@ -3,6 +3,7 @@ import {
   ANDROID_PAKET,
   adresaDecjeAplikacije,
   hashDecjeAplikacije,
+  prikaziAndroidBaner,
   prikaziAndroidPreuzimanje,
 } from './decjaAplikacija'
 
@@ -58,5 +59,21 @@ describe('dugme za preuzimanje APK-a', () => {
       referrer: '',
       search: '?aplikacija=dete',
     })).toBe(false)
+  })
+})
+
+describe('baner za Android aplikaciju', () => {
+  const android = 'Mozilla/5.0 (Linux; Android 14; Pixel) AppleWebKit/537.36 Chrome/120.0.0.0 Mobile'
+  const racunar = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/120.0.0.0'
+  const ulaz = { userAgent: android, referrer: '', search: '', skriven: false }
+
+  it('prikazuje se u Android pregledaču', () => {
+    expect(prikaziAndroidBaner(ulaz)).toBe(true)
+  })
+
+  it('ne prikazuje se na računaru, u aplikaciji ni kad ga dete zatvori', () => {
+    expect(prikaziAndroidBaner({ ...ulaz, userAgent: racunar })).toBe(false)
+    expect(prikaziAndroidBaner({ ...ulaz, search: '?aplikacija=dete' })).toBe(false)
+    expect(prikaziAndroidBaner({ ...ulaz, skriven: true })).toBe(false)
   })
 })
