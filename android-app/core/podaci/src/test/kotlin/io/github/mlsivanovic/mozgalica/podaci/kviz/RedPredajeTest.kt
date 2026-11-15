@@ -132,6 +132,7 @@ private open class PrazanIzvor : IzvorKviza {
     override suspend fun zapocni(token: String, ime: String, oznaka: String?) = IshodPokusaja.Neuspesan
     override suspend fun nastavi(attemptToken: String) = IshodPokusaja.Neuspesan
     override suspend fun sacuvaj(attemptToken: String, odgovori: Map<String, OdgovorDeteta>) = IshodCuvanja.Neuspesno
+    override suspend fun sacuvajBelezke(attemptToken: String, belezke: Map<String, String>) = IshodCuvanja.Neuspesno
     override suspend fun tajmer(attemptToken: String, sekunde: Int) = IshodTajmera.Neuspesan
     override suspend fun savet(attemptToken: String, pitanjeId: String) = IshodSaveta.Neuspesan
     override suspend fun predaj(attemptToken: String) = IshodPredaje.Neuspesna

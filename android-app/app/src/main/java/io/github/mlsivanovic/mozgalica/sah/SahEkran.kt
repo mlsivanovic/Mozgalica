@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -255,6 +256,25 @@ private fun PartijaEkran(
     val deteBeli = stanje.childColor == "white"
     val uToku = stanje.status == "in_progress"
 
+    // Završena partija se gleda u jednom ekranu: rezultat, tabla, lista poteza i
+    // kontrole reda radi, bez skrolovanja — inače tabla izlazi van vidnog polja.
+    if (rezultat) {
+        PregledPartije(
+            ui = ui,
+            stanje = stanje,
+            potezi = potezi,
+            fen = prikazaniFen,
+            poslednjiPotez = prikazaniPoslednji,
+            aktivniPly = aktivniPly,
+            opisPoteza = pregled?.san,
+            animacije = efekti.animacije,
+            trajanjeAnimacije = ui.trajanjeAnimacije,
+            model = model,
+            onNazad = onNazad,
+        )
+        return
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -262,31 +282,7 @@ private fun PartijaEkran(
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            DugmeNazad(onNazad)
-            Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
-                Text("Šah protiv računara", style = MaterialTheme.typography.titleMedium)
-                Text(
-                    if (rezultat) "Pregled partije" else "ELO ${stanje.approximateElo}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            IconButton(onClick = model::osvezi, enabled = !ui.radi) {
-                Icon(Icons.Rounded.Refresh, contentDescription = "Osveži partiju")
-            }
-        }
-
-        if (!ui.naMrezi) Baner("Nema veze — partija se osvežava kada se veza vrati.", Icons.Rounded.CloudOff)
-        ui.greska?.let { Baner(it, Icons.Rounded.ErrorOutline) }
-        ui.obavestenje?.let {
-            Baner(
-                it,
-                Icons.Rounded.Info,
-                boja = MaterialTheme.colorScheme.tertiaryContainer,
-                naBoji = MaterialTheme.colorScheme.onTertiaryContainer,
-            )
-        }
+        ZaglavljePartije(ui, stanje, false, onNazad, model)
 
         IgracTraka(
             ime = "Računar",
@@ -330,16 +326,9 @@ private fun PartijaEkran(
             naPotezu = deteNaPotezu,
         )
 
-        if (rezultat) {
-            RezultatPartije(ui, stanje, model)
-        } else {
-            StatusPartije(ui, stanje, deteNaPotezu, uSahu, pregled == null, model)
-        }
+        StatusPartije(ui, stanje, deteNaPotezu, uSahu, pregled == null, model)
 
-        if (potezi.isNotEmpty()) {
-            ListaPoteza(potezi, rezultat, aktivniPly, model::idiNaPly)
-            if (rezultat) KontrolePregleda(aktivniPly, potezi.size, pregled?.san, model::idiNaPly)
-        }
+        if (potezi.isNotEmpty()) ListaPoteza(potezi, false, aktivniPly, model::idiNaPly)
         Spacer(Modifier.height(8.dp))
     }
 }
@@ -503,47 +492,174 @@ private fun StatusPartije(
 }
 
 @Composable
-private fun RezultatPartije(ui: SahUi, stanje: SahStanjeOdgovor, model: SahViewModel) {
+private fun ZaglavljePartije(
+    ui: SahUi,
+    stanje: SahStanjeOdgovor,
+    pregled: Boolean,
+    onNazad: () -> Unit,
+    model: SahViewModel,
+) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        DugmeNazad(onNazad)
+        Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
+            Text("Šah protiv računara", style = MaterialTheme.typography.titleMedium)
+            Text(
+                if (pregled) "Pregled partije" else "ELO ${stanje.approximateElo}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        IconButton(onClick = model::osvezi, enabled = !ui.radi) {
+            Icon(Icons.Rounded.Refresh, contentDescription = "Osveži partiju")
+        }
+    }
+    if (!ui.naMrezi) Baner("Nema veze — partija se osvežava kada se veza vrati.", Icons.Rounded.CloudOff)
+    ui.greska?.let { Baner(it, Icons.Rounded.ErrorOutline) }
+    ui.obavestenje?.let {
+        Baner(
+            it,
+            Icons.Rounded.Info,
+            boja = MaterialTheme.colorScheme.tertiaryContainer,
+            naBoji = MaterialTheme.colorScheme.onTertiaryContainer,
+        )
+    }
+}
+
+// Završena partija: rezultat, tabla, lista poteza i kontrole staju u jedan ekran.
+// Tabla je kvadrat koji se prilagođava preostaloj visini, a lista poteza ide u svom
+// redu — nikad ne izgura tablu iznad ivice ekrana.
+@Composable
+private fun PregledPartije(
+    ui: SahUi,
+    stanje: SahStanjeOdgovor,
+    potezi: List<io.github.mlsivanovic.mozgalica.podaci.SahPotez>,
+    fen: String,
+    poslednjiPotez: PotezPolja?,
+    aktivniPly: Int,
+    opisPoteza: String?,
+    animacije: Boolean,
+    trajanjeAnimacije: Int,
+    model: SahViewModel,
+    onNazad: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        ZaglavljePartije(ui, stanje, true, onNazad, model)
+        RezultatTraka(ui, stanje, model)
+        BoxWithConstraints(
+            modifier = Modifier.weight(1f).fillMaxWidth(),
+            contentAlignment = Alignment.Center,
+        ) {
+            val strana = minOf(maxWidth, maxHeight)
+            SahTabla(
+                fen = fen,
+                orijentacija = stanje.childColor,
+                mozeIgrati = false,
+                poslednjiPotez = poslednjiPotez,
+                najavljeniPotez = null,
+                animacija = null,
+                trajanjeAnimacije = if (animacije) trajanjeAnimacije else 0,
+                onPotez = {},
+                modifier = Modifier.size(strana),
+            )
+        }
+        if (potezi.isNotEmpty()) {
+            ListaPoteza(potezi, true, aktivniPly, model::idiNaPly)
+            KontrolePregleda(aktivniPly, potezi.size, opisPoteza, model::idiNaPly)
+        }
+    }
+    if (ui.biraElo && stanje.retryAvailable) PonudaZaPonovniDijalog(ui, stanje, model)
+}
+
+@Composable
+private fun RezultatTraka(ui: SahUi, stanje: SahStanjeOdgovor, model: SahViewModel) {
     val boje = MaterialTheme.colorScheme
     val (ikona, boja) = when (stanje.result) {
         "child_win" -> Icons.Rounded.EmojiEvents to Mozgalica.boje.zvezda
         "draw" -> Icons.Rounded.Handshake to boje.tertiary
         else -> Icons.Rounded.SmartToy to boje.onSurfaceVariant
     }
+    val zvezdice = (stanje.starsAwarded ?: 0).coerceIn(0, 5)
     Surface(shape = MaterialTheme.shapes.large, color = boje.surfaceContainerLow, modifier = Modifier.fillMaxWidth()) {
-        Column(
-            Modifier.padding(20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+        Row(
+            Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            if (stanje.result == "child_win") {
-                Maskota(StanjeMaskote.USPEH, velicina = 88.dp)
-            } else {
-                IkonaZnak(ikona, boja, velicina = 64.dp)
+            IkonaZnak(ikona, boja, velicina = 40.dp)
+            Column(Modifier.weight(1f)) {
+                Text(rezultatTekst(stanje.result), style = MaterialTheme.typography.titleMedium)
+                val razlog = razlogTekst(stanje.termination)
+                if (razlog.isNotBlank()) {
+                    Text(
+                        razlog.replaceFirstChar { it.uppercase() },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = boje.onSurfaceVariant,
+                    )
+                }
             }
-            Text(rezultatTekst(stanje.result), style = MaterialTheme.typography.headlineSmall)
-            razlogTekst(stanje.termination).takeIf { it.isNotBlank() }?.let {
-                Text(it.replaceFirstChar { c -> c.uppercase() }, color = boje.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
-            }
-            val zvezdice = (stanje.starsAwarded ?: 0).coerceIn(0, 5)
             Row(
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                modifier = Modifier.semantics(mergeDescendants = true) { contentDescription = "$zvezdice od 5 zvezdica" },
+                horizontalArrangement = Arrangement.spacedBy(1.dp),
+                modifier = Modifier.semantics(mergeDescendants = true) {
+                    contentDescription = "$zvezdice od 5 zvezdica"
+                },
             ) {
                 repeat(5) { i ->
                     Icon(
                         if (i < zvezdice) Icons.Rounded.Star else Icons.Rounded.StarOutline,
                         null,
                         tint = if (i < zvezdice) Mozgalica.boje.zvezda else boje.outlineVariant,
-                        modifier = Modifier.size(36.dp),
+                        modifier = Modifier.size(20.dp),
                     )
                 }
             }
-            if (stanje.result == "child_loss") {
-                PonudaZaPonovni(ui, stanje, model)
+            if (stanje.result == "child_loss" && stanje.retryAvailable) {
+                FilledTonalButton(
+                    onClick = { model.biraElo(true) },
+                    enabled = !ui.radi,
+                    modifier = Modifier.heightIn(min = 44.dp).semantics { contentDescription = "Pokušaj ponovo" },
+                ) { Text("Ponovo") }
             }
         }
     }
+}
+
+@Composable
+private fun PonudaZaPonovniDijalog(ui: SahUi, stanje: SahStanjeOdgovor, model: SahViewModel) {
+    AlertDialog(
+        onDismissRequest = { if (!ui.radi) model.biraElo(false) },
+        title = { Text("Pokušaj ponovo") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Izaberi jačinu protivnika.")
+                dozvoljeniEloZaPokusaj(stanje.approximateElo).forEach { elo ->
+                    val ista = elo == stanje.approximateElo
+                    FilledTonalButton(
+                        onClick = { model.pokusajPonovo(elo) },
+                        enabled = !ui.radi,
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                    ) {
+                        Text("ELO $elo", modifier = Modifier.weight(1f))
+                        Text(if (ista) "ista jačina" else "lakše", style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+                Text(
+                    if (preostaloPokusaja(stanje.retriesUsed) == 1) {
+                        "Preostao ti je još 1 pokušaj, protiv istog ili slabijeg protivnika."
+                    } else {
+                        "Preostalo ti je još ${preostaloPokusaja(stanje.retriesUsed)} pokušaja, protiv istog ili slabijeg protivnika."
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        },
+        confirmButton = { TextButton(onClick = { model.biraElo(false) }, enabled = !ui.radi) { Text("Odustani") } },
+    )
 }
 
 @Composable
@@ -621,58 +737,6 @@ private fun KontrolePregleda(aktivniPly: Int, ukupno: Int, san: String?, onPly: 
         FilledTonalIconButton(onClick = { onPly(ukupno) }, enabled = aktivniPly < ukupno) {
             Icon(Icons.Rounded.LastPage, contentDescription = "Na kraj")
         }
-    }
-}
-
-@Composable
-private fun PonudaZaPonovni(ui: SahUi, stanje: SahStanjeOdgovor, model: SahViewModel) {
-    if (!stanje.retryAvailable) {
-        if ((stanje.retriesUsed ?: 0) >= MAKSIMALNO_PONOVNIH_SAHA) {
-            Text(
-                "Za ovu partiju više nemaš pravo na ponovni pokušaj.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        return
-    }
-    if (ui.biraElo) {
-        Text("Izaberi jačinu protivnika", style = MaterialTheme.typography.titleSmall)
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-            dozvoljeniEloZaPokusaj(stanje.approximateElo).forEach { elo ->
-                val ista = elo == stanje.approximateElo
-                FilledTonalButton(
-                    onClick = { model.pokusajPonovo(elo) },
-                    enabled = !ui.radi,
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
-                ) {
-                    Text("ELO $elo", style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
-                    Text(if (ista) "ista jačina" else "lakše", style = MaterialTheme.typography.bodySmall)
-                }
-            }
-        }
-        TextButton(onClick = { model.biraElo(false) }) { Text("Odustani") }
-    } else {
-        Button(
-            onClick = { model.biraElo(true) },
-            enabled = !ui.radi,
-            modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).semantics { contentDescription = "Pokušaj ponovo" },
-        ) {
-            Icon(Icons.Rounded.Replay, null)
-            Spacer(Modifier.width(8.dp))
-            Text(if (ui.radi) "Pravim novu partiju…" else "Pokušaj ponovo", style = MaterialTheme.typography.titleSmall)
-        }
-        val preostalo = preostaloPokusaja(stanje.retriesUsed)
-        Text(
-            if (preostalo == 1) {
-                "Preostao ti je još 1 pokušaj, protiv istog ili slabijeg protivnika."
-            } else {
-                "Preostalo ti je još $preostalo pokušaja, protiv istog ili slabijeg protivnika."
-            },
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-        )
     }
 }
 

@@ -40,6 +40,8 @@ class KvizSinhronizacija(
                 }
                 snimak = skladiste.procitaj(kvizToken) ?: return IshodReda.Privremeno
             }
+            if (!posaljiBelezke(kvizToken, snimak)) return IshodReda.Privremeno
+            snimak = skladiste.procitaj(kvizToken) ?: snimak
         }
 
         val checkpoint = snimak.checkpointSekunde
@@ -71,6 +73,9 @@ class KvizSinhronizacija(
         }
 
         if (snimak.predajaCeka && snimak.stanje != null) {
+            // Beležke ne blokiraju predaju — šalju se najbolje što može pre nje.
+            if (!posaljiBelezke(kvizToken, snimak)) return IshodReda.Privremeno
+            snimak = skladiste.procitaj(kvizToken) ?: snimak
             snimak = dopuniAkoTreba(kvizToken, snimak) ?: return IshodReda.Privremeno
             val spremno = snimak.stanje ?: return IshodReda.Privremeno
             if (!sveSinhronizovano(spremno)) return IshodReda.Privremeno
@@ -117,9 +122,29 @@ class KvizSinhronizacija(
         return skladiste.procitaj(kvizToken)
     }
 
+    // Vraća false samo kad slanje nije uspelo (bez veze se izlazi ranije).
+    private suspend fun posaljiBelezke(kvizToken: String, snimak: SnimakPokusaja): Boolean {
+        val stanje = snimak.stanje ?: return true
+        val belezke = belezkeZaSinhronizaciju(stanje) ?: return true
+        if (!veza()) return false
+        val vreme = sat()
+        return when (izvor.sacuvajBelezke(stanje.attemptToken, belezke)) {
+            is IshodCuvanja.Potvrdeno -> {
+                skladiste.izmeni(kvizToken) { sveze ->
+                    val osnova = sveze.stanje ?: return@izmeni sveze
+                    sveze.copy(stanje = oznaciBelezkeSinhronizovaneCisto(osnova, vreme))
+                }
+                true
+            }
+            else -> false
+        }
+    }
+
     private fun imaPosla(snimak: SnimakPokusaja): Boolean {
         val stanje = snimak.stanje
         val neposlati = stanje != null && nesinhronizovani(stanje).isNotEmpty()
-        return neposlati || snimak.predajaCeka || snimak.checkpointSekunde != null || snimak.objasnjenjaCekaju
+        val belezkeCekaju = stanje != null && belezkeZaSinhronizaciju(stanje) != null
+        return neposlati || belezkeCekaju || snimak.predajaCeka || snimak.checkpointSekunde != null ||
+            snimak.objasnjenjaCekaju
     }
 }

@@ -13,6 +13,7 @@ fun spojiOdgovore(
     hintsUsed: Int?,
     savedAnswers: Map<String, OdgovorDeteta>,
     hintoviSaPitanja: Map<String, String>,
+    belezkeSaServera: Map<String, String> = emptyMap(),
 ): StanjePokusaja {
     val answers = lokalno.answers.toMutableMap()
     for ((qid, odgovor) in savedAnswers) {
@@ -24,6 +25,13 @@ fun spojiOdgovore(
     for ((qid, hint) in hintoviSaPitanja) {
         hintovi[qid] = hint
     }
+    // Lokalna (još neposlata) beležka je novija od one na serveru.
+    val belezke = (lokalno.belezke ?: emptyMap()).toMutableMap()
+    for ((qid, tekst) in belezkeSaServera) {
+        if (belezke[qid]?.tekst.isNullOrEmpty()) {
+            belezke[qid] = LokalnaBelezka(tekst = tekst, changedAt = 0, synced = true)
+        }
+    }
     return lokalno.copy(
         accessMode = accessMode ?: lokalno.accessMode,
         profileToken = profileToken ?: lokalno.profileToken,
@@ -31,6 +39,7 @@ fun spojiOdgovore(
         answers = answers,
         hintsUsed = hintsUsed ?: lokalno.hintsUsed ?: 0,
         hintovi = hintovi,
+        belezke = belezke,
     )
 }
 
@@ -48,6 +57,7 @@ fun spojiSaServerom(lokalno: StanjePokusaja, server: PokusajOdgovor): StanjePoku
         hintsUsed = server.hintsUsed,
         savedAnswers = server.savedAnswers,
         hintoviSaPitanja = hintovi,
+        belezkeSaServera = server.notes,
     )
 }
 

@@ -9,6 +9,7 @@ import androidx.compose.material.icons.rounded.Cancel
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.CloudOff
+import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.GridView
 import androidx.compose.material.icons.rounded.Lightbulb
 import androidx.compose.material.icons.rounded.Star
@@ -32,6 +33,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -56,6 +58,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -73,6 +76,7 @@ import io.github.mlsivanovic.mozgalica.podaci.PonovnoPitanje
 import io.github.mlsivanovic.mozgalica.podaci.RezultatOdgovor
 import io.github.mlsivanovic.mozgalica.podaci.RezultatPitanja
 import io.github.mlsivanovic.mozgalica.podaci.kviz.FazaKviza
+import io.github.mlsivanovic.mozgalica.podaci.kviz.brojNesinhronizovanihBelezki
 import io.github.mlsivanovic.mozgalica.podaci.kviz.MAKSIMALNO_ZVEZDICA
 import io.github.mlsivanovic.mozgalica.podaci.kviz.dozvoljenSwipe
 import io.github.mlsivanovic.mozgalica.podaci.kviz.formatOdbrojavanje
@@ -220,10 +224,17 @@ private fun ResavanjeEkran(ui: KvizUi, onNazad: () -> Unit, model: KvizViewModel
             visina = 8.dp,
         )
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            TextButton(onClick = { model.pregled(true) }) {
-                Icon(Icons.Rounded.GridView, null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(6.dp))
-                Text("Pregled pitanja")
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                TextButton(onClick = { model.pregled(true) }) {
+                    Icon(Icons.Rounded.GridView, null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("Pregled pitanja")
+                }
+                TextButton(onClick = { model.radniList(!ui.radniList) }) {
+                    Icon(Icons.Rounded.Edit, null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("Radni listić")
+                }
             }
             if (ui.pitanja.any { it.hasHint }) {
                 val ostalo = preostaloSaveta(stanje.hintsUsed ?: 0, ui.preostaloSavetaSaServera)
@@ -265,7 +276,7 @@ private fun ResavanjeEkran(ui: KvizUi, onNazad: () -> Unit, model: KvizViewModel
                 }
             }
         }
-        val ceka = nesinhronizovani(stanje).size
+        val ceka = nesinhronizovani(stanje).size + brojNesinhronizovanihBelezki(stanje)
         Text(
             when {
                 ui.probni -> "Sačuvano na uređaju"
@@ -275,6 +286,20 @@ private fun ResavanjeEkran(ui: KvizUi, onNazad: () -> Unit, model: KvizViewModel
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         ui.greska?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+    }
+    if (ui.radniList) {
+        val pitanje = trenutni
+        if (pitanje != null) {
+            val belezka = stanje.belezke?.get(pitanje.id)
+            RadniList(
+                naslov = "Pitanje ${pager.currentPage + 1} · računaj korak po korak",
+                tekst = belezka?.tekst.orEmpty(),
+                sacuvano = belezka == null || belezka.synced || ui.probni,
+                onTekst = { model.belezka(pitanje.id, it) },
+                onObrisi = { model.belezka(pitanje.id, "") },
+                onZatvori = { model.radniList(false) },
+            )
+        }
     }
     if (ui.pregled) {
         DonjiList(onZatvori = { model.pregled(false) }) {
@@ -685,6 +710,67 @@ private fun DonjiList(onZatvori: () -> Unit, sadrzaj: @Composable () -> Unit) {
         ) {
             sadrzaj()
             TextButton(onClick = onZatvori) { Text("Zatvori") }
+        }
+    }
+}
+
+// Radni listić: dete piše međukorake dok rešava zadatak, a tekst ide uz pokušaj
+// da roditelj u pregledu rezultata vidi kako je računalo.
+@Composable
+private fun RadniList(
+    naslov: String,
+    tekst: String,
+    sacuvano: Boolean,
+    onTekst: (String) -> Unit,
+    onObrisi: () -> Unit,
+    onZatvori: () -> Unit,
+) {
+    Box(
+        Modifier.fillMaxSize().imePadding().background(MaterialTheme.colorScheme.scrim),
+        contentAlignment = Alignment.BottomCenter,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+                .background(MaterialTheme.colorScheme.surface)
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("Radni listić", style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        naslov,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                if (tekst.isNotEmpty()) TextButton(onClick = onObrisi) { Text("Obriši") }
+                IconButton(onClick = onZatvori) {
+                    Icon(Icons.Rounded.Close, contentDescription = "Zatvori radni listić")
+                }
+            }
+            OutlinedTextField(
+                value = tekst,
+                onValueChange = onTekst,
+                modifier = Modifier.fillMaxWidth().heightIn(min = 140.dp),
+                textStyle = MaterialTheme.typography.bodyLarge.copy(
+                    fontFamily = FontFamily.Monospace,
+                    fontSize = 18.sp,
+                ),
+                placeholder = { Text("Ovde računaj: npr. 24 + 17 = 41…") },
+                maxLines = 8,
+            )
+            Text(
+                if (sacuvano) {
+                    "Roditelj vidi tvoj rad u pregledu rezultata."
+                } else {
+                    "Čeka slanje — tekst se čuva na uređaju i biće poslat kad se veza vrati."
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }

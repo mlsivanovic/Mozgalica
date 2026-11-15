@@ -109,6 +109,14 @@ fun parametriCuvanja(token: String, odgovori: Map<String, OdgovorDeteta>): JsonO
     )
 }
 
+fun parametriBelezaka(token: String, belezke: Map<String, String>): JsonObject = buildJsonObject {
+    put("p_attempt_token", token)
+    put(
+        "p_notes",
+        strogo.encodeToJsonElement(MapSerializer(String.serializer(), String.serializer()), belezke),
+    )
+}
+
 fun parametriPredaje(token: String): JsonObject = buildJsonObject {
     put("p_attempt_token", token)
     put("p_answers", JsonNull)

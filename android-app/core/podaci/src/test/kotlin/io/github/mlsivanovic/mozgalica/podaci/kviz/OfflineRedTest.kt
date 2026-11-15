@@ -111,6 +111,45 @@ class OfflineRedTest {
     }
 
     @Test
+    fun radniListicSeCuvaLokalnoICekaSlanje() {
+        val s = memorija()
+        var stanje = zapocniStanje(s, "kvizR", "t", "Miloš")
+        stanje = upisiBelezku(s, "kvizR", stanje, "q1", "24 + 17 = 41")
+        assertEquals(1, brojNesinhronizovanihBelezki(stanje))
+        assertEquals(mapOf("q1" to "24 + 17 = 41"), belezkeZaSinhronizaciju(stanje))
+
+        stanje = upisiBelezku(s, "kvizR", stanje, "q2", "7 · 8 = 56")
+        assertEquals(
+            mapOf("q1" to "24 + 17 = 41", "q2" to "7 · 8 = 56"),
+            belezkeZaSinhronizaciju(stanje),
+        )
+
+        stanje = oznaciBelezkeSinhronizovane(s, "kvizR", stanje, System.currentTimeMillis() + 1)
+        assertEquals(0, brojNesinhronizovanihBelezki(stanje))
+        assertNull(belezkeZaSinhronizaciju(stanje))
+    }
+
+    @Test
+    fun belezkaPromenjenaPosleSlanjaOstajeNesinhronizovana() {
+        val s = memorija()
+        var stanje = zapocniStanje(s, "kvizR2", "t", "Ana")
+        stanje = upisiBelezku(s, "kvizR2", stanje, "q1", "prvi korak")
+        stanje = oznaciBelezkeSinhronizovane(s, "kvizR2", stanje, System.currentTimeMillis() - 1000)
+        assertEquals(1, brojNesinhronizovanihBelezki(stanje))
+    }
+
+    @Test
+    fun radniListicPrezivljavaUcitavanjeAStaroStanjeBezNjegaSeCita() {
+        val s = memorija()
+        var stanje = zapocniStanje(s, "kvizR3", "t", "Ana")
+        stanje = upisiBelezku(s, "kvizR3", stanje, "q5", "5 + 5 = 10")
+        assertEquals("5 + 5 = 10", ucitajStanje(s, "kvizR3")?.belezke?.get("q5")?.tekst)
+
+        s.setItem(kljucPokusaja("bezradnog"), """{"attemptToken":"t","childName":"A","answers":{}}""")
+        assertNull(ucitajStanje(s, "bezradnog")?.belezke)
+    }
+
+    @Test
     fun staroStanjeBezSavetaSeUcitava() {
         val s = memorija()
         s.setItem(kljucPokusaja("star"), """{"attemptToken":"t","childName":"A","answers":{}}""")

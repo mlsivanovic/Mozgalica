@@ -15,6 +15,14 @@ data class LokalniOdgovor(
     val synced: Boolean,
 )
 
+// Radni listić: tekst koji dete piše uz jedno pitanje (računanje, međukoraci)
+@Serializable
+data class LokalnaBelezka(
+    val tekst: String,
+    val changedAt: Long,
+    val synced: Boolean,
+)
+
 @Serializable
 data class StanjePokusaja(
     val attemptToken: String,
@@ -24,6 +32,7 @@ data class StanjePokusaja(
     val profileToken: String? = null,
     val hintsUsed: Int? = null,
     val hintovi: Map<String, String>? = null,
+    val belezke: Map<String, LokalnaBelezka>? = null,
 )
 
 interface Skladiste {
@@ -167,6 +176,61 @@ fun oznaciSinhronizovane(
 }
 
 fun sveSinhronizovano(stanje: StanjePokusaja): Boolean = stanje.answers.values.all { it.synced }
+
+// ---- Radni listić (beležke uz pitanje) ----
+
+fun upisiBelezkuCisto(
+    stanje: StanjePokusaja,
+    questionId: String,
+    tekst: String,
+    sada: Long = System.currentTimeMillis(),
+): StanjePokusaja {
+    val belezke = (stanje.belezke ?: emptyMap()).toMutableMap()
+    belezke[questionId] = LokalnaBelezka(tekst = tekst, changedAt = sada, synced = false)
+    return stanje.copy(belezke = belezke)
+}
+
+fun upisiBelezku(
+    skladiste: Skladiste,
+    kvizToken: String,
+    stanje: StanjePokusaja,
+    questionId: String,
+    tekst: String,
+    sada: Long = System.currentTimeMillis(),
+): StanjePokusaja {
+    val novo = upisiBelezkuCisto(stanje, questionId, tekst, sada)
+    sacuvajStanje(skladiste, kvizToken, novo)
+    return novo
+}
+
+// RPC upisuje celu mapu, pa se šalju i već sinhronizovane beležke čim se bar
+// jedna promenila.
+fun belezkeZaSinhronizaciju(stanje: StanjePokusaja): Map<String, String>? {
+    val sve = stanje.belezke ?: return null
+    if (sve.values.all { it.synced }) return null
+    return sve.mapValues { it.value.tekst }
+}
+
+fun oznaciBelezkeSinhronizovaneCisto(stanje: StanjePokusaja, vremePoslato: Long): StanjePokusaja {
+    val belezke = (stanje.belezke ?: return stanje).mapValues { (_, belezka) ->
+        if (belezka.changedAt <= vremePoslato) belezka.copy(synced = true) else belezka
+    }
+    return stanje.copy(belezke = belezke)
+}
+
+fun oznaciBelezkeSinhronizovane(
+    skladiste: Skladiste,
+    kvizToken: String,
+    stanje: StanjePokusaja,
+    vremePoslato: Long,
+): StanjePokusaja {
+    val novo = oznaciBelezkeSinhronizovaneCisto(stanje, vremePoslato)
+    sacuvajStanje(skladiste, kvizToken, novo)
+    return novo
+}
+
+fun brojNesinhronizovanihBelezki(stanje: StanjePokusaja): Int =
+    stanje.belezke?.values?.count { !it.synced } ?: 0
 
 fun obrisiStanje(skladiste: Skladiste, kvizToken: String) {
     bezbedno(Unit) { skladiste.removeItem(kljucPokusaja(kvizToken)) }

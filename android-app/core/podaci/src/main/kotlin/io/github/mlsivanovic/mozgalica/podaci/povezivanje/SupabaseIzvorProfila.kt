@@ -19,6 +19,7 @@ import io.github.mlsivanovic.mozgalica.podaci.kviz.IshodPredaje
 import io.github.mlsivanovic.mozgalica.podaci.kviz.IshodSaveta
 import io.github.mlsivanovic.mozgalica.podaci.kviz.IshodTajmera
 import io.github.mlsivanovic.mozgalica.podaci.kviz.IzvorKviza
+import io.github.mlsivanovic.mozgalica.podaci.kviz.parametriBelezaka
 import io.github.mlsivanovic.mozgalica.podaci.kviz.parametriCuvanja
 import io.github.mlsivanovic.mozgalica.podaci.kviz.parametriMeta
 import io.github.mlsivanovic.mozgalica.podaci.kviz.parametriNastavka
@@ -167,6 +168,9 @@ class SupabaseIzvorProfila(
 
     override suspend fun sacuvaj(attemptToken: String, odgovori: Map<String, OdgovorDeteta>): IshodCuvanja =
         pozoviKviz(parametriCuvanja(attemptToken, odgovori), "save_answers", ::protumaciCuvanje, IshodCuvanja.Neuspesno)
+
+    override suspend fun sacuvajBelezke(attemptToken: String, belezke: Map<String, String>): IshodCuvanja =
+        pozoviKviz(parametriBelezaka(attemptToken, belezke), "save_attempt_notes", ::protumaciCuvanje, IshodCuvanja.Neuspesno)
 
     override suspend fun tajmer(attemptToken: String, sekunde: Int): IshodTajmera =
         pozoviKviz(parametriTajmera(attemptToken, sekunde), "checkpoint_attempt_timer", ::protumaciTajmer, IshodTajmera.Neuspesan)

@@ -110,6 +110,8 @@ interface IzvorKviza {
     suspend fun zapocni(token: String, ime: String, oznaka: String?): IshodPokusaja
     suspend fun nastavi(attemptToken: String): IshodPokusaja
     suspend fun sacuvaj(attemptToken: String, odgovori: Map<String, OdgovorDeteta>): IshodCuvanja
+    // Radni listić (beležke) — čuva se uz pokušaj, ne utiče na ocenjivanje
+    suspend fun sacuvajBelezke(attemptToken: String, belezke: Map<String, String>): IshodCuvanja
     suspend fun tajmer(attemptToken: String, sekunde: Int): IshodTajmera
     suspend fun savet(attemptToken: String, pitanjeId: String): IshodSaveta
     suspend fun predaj(attemptToken: String): IshodPredaje

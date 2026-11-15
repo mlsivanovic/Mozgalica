@@ -123,6 +123,8 @@ data class PokusajOdgovor(
     val serverNow: String,
     val questions: List<PitanjeZaDete>,
     val savedAnswers: Map<String, OdgovorDeteta>,
+    // Radni listić (beležke) po pitanju — server vraća samo kod resume/start-a.
+    val notes: Map<String, String> = emptyMap(),
     val hintsUsed: Int,
     val hintsUnlocked: List<String>,
     val remainingSeconds: Int?,

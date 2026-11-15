@@ -42,6 +42,7 @@ import io.github.mlsivanovic.mozgalica.podaci.kviz.rezimTajmera
 import io.github.mlsivanovic.mozgalica.podaci.kviz.serverOffsetMs
 import io.github.mlsivanovic.mozgalica.podaci.kviz.spojiPreostalo
 import io.github.mlsivanovic.mozgalica.podaci.kviz.spojiSaServerom
+import io.github.mlsivanovic.mozgalica.podaci.kviz.upisiBelezkuCisto
 import io.github.mlsivanovic.mozgalica.podaci.kviz.upisiHintCisto
 import io.github.mlsivanovic.mozgalica.podaci.kviz.upisiOdgovorCisto
 import io.github.mlsivanovic.mozgalica.podaci.kviz.isoUMilisekunde
@@ -85,6 +86,7 @@ data class KvizUi(
     val ponovniOdgovori: Map<String, OdgovorDeteta> = emptyMap(),
     val ponovniIshod: PonovniOdgovor? = null,
     val ponovniZapocet: Boolean = false,
+    val radniList: Boolean = false,
     val ponovniOtvoren: Boolean = false,
     val ponovniIndeks: Int = 0,
     val ponovniRadi: Boolean = false,
@@ -155,6 +157,20 @@ class KvizViewModel @Inject constructor(
     fun tekstFokus(fokus: Boolean) = ui.update { it.copy(tekstFokus = fokus) }
 
     fun pregled(otvoren: Boolean) = ui.update { it.copy(pregled = otvoren) }
+
+    fun radniList(otvoren: Boolean) = ui.update { it.copy(radniList = otvoren) }
+
+    // Radni listić se upisuje odmah u Room; slanje ide kroz isti offline red kao
+    // odgovori, pa tekst preživljava prekid i bez veze.
+    fun belezka(pitanjeId: String, tekst: String) {
+        viewModelScope.launch {
+            skladiste.izmeni(token) { snimak ->
+                val stanje = snimak.stanje ?: return@izmeni snimak
+                snimak.copy(stanje = upisiBelezkuCisto(stanje, pitanjeId, tekst))
+            }
+            if (!probni) KvizRad.zakazi(context, odmah = false)
+        }
+    }
 
     fun zatvoriUpozorenje() = ui.update { it.copy(upozorenje = false) }
 

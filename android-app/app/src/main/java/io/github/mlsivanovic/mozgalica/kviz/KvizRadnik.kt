@@ -94,6 +94,9 @@ class SnimakIzvor(
     override suspend fun sacuvaj(attemptToken: String, odgovori: Map<String, OdgovorDeteta>) =
         protumaciCuvanje(ucitaj("save_answers.json"))
 
+    override suspend fun sacuvajBelezke(attemptToken: String, belezke: Map<String, String>) =
+        protumaciCuvanje(ucitaj("save_answers.json"))
+
     override suspend fun tajmer(attemptToken: String, sekunde: Int) =
         protumaciTajmer(ucitaj("checkpoint_attempt_timer.json"))
 
