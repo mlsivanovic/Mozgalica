@@ -99,13 +99,24 @@
 .roditelj-metrike { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin:12px 0; }
 .roditelj-metrike strong { display:block; font-size:24px; }
 .roditelj-metrike span { display:block; font-size:13px; color:var(--boja-tekst-blagi); }
-.roditelj-lista { list-style:none; border:1px solid var(--boja-ivica); background:var(--boja-kartica); border-radius:14px; overflow:hidden; }
+.roditelj-lista { list-style:none; margin:0; padding:0; border:1px solid var(--boja-ivica); background:var(--boja-kartica); border-radius:14px; overflow:hidden; }
 .roditelj-red { padding:16px; display:flex; justify-content:space-between; align-items:center; gap:14px; color:var(--boja-tekst); }
 .roditelj-red + .roditelj-red, li + li > .roditelj-red { border-top:1px solid var(--boja-ivica); }
 .roditelj-red small { display:block; color:var(--boja-tekst-blagi); margin-top:4px; }
 .roditelj-red > div { min-width:0; overflow-wrap:anywhere; }
 .roditelj-red-ikona { width:42px; height:42px; flex:0 0 42px; display:grid; place-items:center; border-radius:13px; color:var(--boja-primarna); background:var(--boja-primarna-svetla); }
 .roditelj-red:hover { text-decoration:none; background:var(--boja-hover-red); }
+.roditelj-lista > li + li { border-top:1px solid var(--boja-ivica); }
+.roditelj-stavka { display:flex; align-items:center; gap:4px; padding:6px 8px 6px 10px; }
+.roditelj-stavka-izbor { display:flex; align-items:center; justify-content:center; min-height:48px; min-width:48px; cursor:pointer; }
+.roditelj-stavka-izbor input { width:22px; height:22px; accent-color:var(--boja-primarna); cursor:pointer; }
+.roditelj-red-veza { flex:1; min-width:0; display:flex; align-items:center; gap:14px; padding:6px; border-radius:12px; color:var(--boja-tekst); }
+.roditelj-red-veza:hover { text-decoration:none; background:var(--boja-hover-red); }
+.roditelj-red-veza > div { flex:1; min-width:0; overflow-wrap:anywhere; }
+.roditelj-red-veza small { display:block; color:var(--boja-tekst-blagi); margin-top:4px; }
+.roditelj-filteri-red { display:flex; flex-wrap:wrap; align-items:center; gap:10px 14px; }
+.roditelj-filteri-red label { display:inline-flex; align-items:center; gap:8px; font-weight:700; }
+.roditelj-filteri-red input[type='search'] { min-width:170px; }
 .roditelj-paznja { border-left:4px solid var(--boja-upozorenje); }
 .roditelj-mirno { padding:14px 16px; background:var(--boja-uspeh-svetla); color:var(--boja-uspeh-tekst); border-radius:12px; }
 .roditelj-tabovi { display:flex; gap:6px; padding-bottom:16px; margin-bottom:8px; flex-wrap:wrap; }

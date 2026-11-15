@@ -87,7 +87,7 @@ a:hover { text-decoration: underline; }
 .polje .napomena { font-size: 0.85rem; color: var(--boja-tekst-blagi); }
 
 input[type='text'], input[type='number'], input[type='email'], input[type='password'],
-input[type='date'], input[type='datetime-local'], textarea, select {
+input[type='search'], input[type='date'], input[type='datetime-local'], textarea, select {
   font-family: inherit;
   font-size: 1rem;
   padding: 0.6rem 0.8rem;
