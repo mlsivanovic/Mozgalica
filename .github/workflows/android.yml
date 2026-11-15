@@ -6,14 +6,14 @@ on:
   workflow_dispatch:
     inputs:
       version_name:
-        description: versionName, npr. 1.0.1
+        description: versionName, npr. 1.0.4
         required: true
-        default: "1.0.1"
+        default: "1.0.4"
         type: string
       version_code:
         description: versionCode, ceo broj koji raste
         required: true
-        default: "2"
+        default: "5"
         type: string
 
 permissions:
@@ -125,6 +125,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           VERSION_NAME: ${{ inputs.version_name }}
+          VERSION_CODE: ${{ inputs.version_code }}
         run: |
           gh release create "android-v${VERSION_NAME}" "${RUNNER_TEMP}/Mozgalica.apk" \
             --title "Android ${VERSION_NAME}" \
@@ -139,5 +140,7 @@ jobs:
           U Family Link-u izaberi dete, pa Vreme ispred ekrana → Ograničenja → Ograničenja za aplikacije → Moja Mozgalica → Neograničeno vreme. Tada se aplikacija ne računa u dnevni limit. Ne važi u Google Kids Space-u.
 
           Ako želiš obaveštenja, posle instalacije ih uključi u Podešavanjima aplikacije i dozvoli ih na telefonu.
+
+          Verzija koda: ${VERSION_CODE}
           EOF
           )"

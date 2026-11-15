@@ -59,10 +59,17 @@ Posle instalacije, u Family Link-u tu aplikaciju stavi na neograničeno vreme. T
 računa u dnevni limit (Android 7+, van Google Kids Space-a). Posle prelaska sa starog TWA
 omotača dete jednom skenira QR iz profila, jer se token iz Chrome skladišta ne prenosi.
 
+U samoj aplikaciji, u **Podešavanja → Aplikacija**, dugme „Proveri ažuriranja" čita
+najnovije GitHub izdanje. Kada je verzija novija, APK se preuzima unutar aplikacije,
+proveravaju se SHA-256 koji GitHub navodi uz fajl, naziv paketa i potpis, pa se otvara
+sistemski instalater. Prvi put Android traži dozvolu „Instaliraj nepoznate aplikacije"
+za Mozgalicu. Workflow u opis izdanja upisuje `Verzija koda: N`, pa se verzije porede
+i po `versionCode` (starija izdanja bez tog reda porede se po imenu verzije).
+
 Novi APK:
 
 ```bash
-gh workflow run "Android APK" -f version_name=1.0.1 -f version_code=2
+gh workflow run "Android APK" -f version_name=1.0.4 -f version_code=5
 ```
 
 `version_code` mora da raste. Workflow preuzima `google-services.json` iz GitHub secret-a

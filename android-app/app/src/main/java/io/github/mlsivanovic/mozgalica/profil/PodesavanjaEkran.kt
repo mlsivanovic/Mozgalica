@@ -45,6 +45,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import io.github.mlsivanovic.mozgalica.azuriranje.AzuriranjeKartica
 import io.github.mlsivanovic.mozgalica.dizajn.EkranZaglavlje
 import io.github.mlsivanovic.mozgalica.dizajn.IkonaZnak
 import io.github.mlsivanovic.mozgalica.dizajn.Razmak
@@ -114,6 +115,9 @@ fun PodesavanjaEkran(
             }
         }
         PushKartica(pushModel)
+
+        Naslov("Aplikacija")
+        AzuriranjeKartica()
 
         Naslov("Profil")
         OutlinedButton(
