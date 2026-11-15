@@ -16,3 +16,8 @@
 
 # Neke tranzitivne biblioteke ostavljaju opcione SLF4J reference.
 -dontwarn org.slf4j.**
+
+# Code Scanner iz Play usluga: R8 full mode spaja i skraćuje interne ML Kit klase, pa
+# GmsBarcodeScanning.startScan() u release-u pada sa NPE (debug radi). Ne skraćivati ih.
+-keep class com.google.mlkit.** { *; }
+-keep class com.google.android.gms.internal.mlkit_code_scanner.** { *; }
