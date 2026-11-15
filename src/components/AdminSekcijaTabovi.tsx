@@ -12,7 +12,7 @@ function TaboviSekcije({ naziv, tabovi }: { naziv: string; tabovi: TabSekcije[] 
 
   return (
     <>
-      <nav className="admin-sekcioni-tabovi" aria-label={naziv}>
+      <nav className="admin-sekcioni-tabovi roditelj-segment" aria-label={naziv}>
         {tabovi.map((tab) => {
           const izabran = tab.aktivna(lokacija.pathname)
           return (

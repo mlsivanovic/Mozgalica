@@ -70,12 +70,8 @@ export function RasporedCasova() {
 
   return (
     <div>
-      <div className="roditelj-naslov">
-        <div>
-          <h1>Raspored časova</h1>
-          <p className="blago malo">Školski raspored vidi i dete na svom profilu. Ovo nije raspored kvizova.</p>
-        </div>
-      </div>
+      <h1 className="sr-only">Raspored časova</h1>
+      <p className="blago malo razmak-dole">Školski raspored vidi i dete na svom profilu. Ovo nije raspored kvizova.</p>
       {greska && <p className="poruka poruka--greska" role="alert">{greska}</p>}
       {radi && <Loader tekst="Učitavam raspored…" />}
       {!radi && !deteId && <ListaDece />}

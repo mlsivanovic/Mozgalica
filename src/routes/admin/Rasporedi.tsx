@@ -9,12 +9,10 @@ import { DnevniRasporediSaha } from './DnevniRasporediSaha'
 import { Loader } from '../../components/Zajednicke'
 import { NAZIVI_PREDMETA, type Predmet } from '../../types/db'
 import { formatDatum } from '../../lib/format'
+import { Ikona } from '../../components/Ikona'
 
-function AkcijaIkona({ ime }: { ime: 'uredi' | 'pauziraj' | 'nastavi' | 'obrisi' }) {
+function AkcijaIkona({ ime }: { ime: 'obrisi' }) {
   const crtezi = {
-    uredi: <path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />,
-    pauziraj: <><rect x="6" y="5" width="4" height="14" rx="1" /><rect x="14" y="5" width="4" height="14" rx="1" /></>,
-    nastavi: <path d="M8 5v14l11-7Z" />,
     obrisi: <><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" /><path d="M10 11v6M14 11v6" /></>,
   }
   return (
@@ -54,34 +52,44 @@ export function Rasporedi() {
   if (id) {
     const lista = vrsta === 'chess' ? podaci.sah : podaci.kvizovi
     if (id !== 'novi' && !lista.some(r => r.id === id && (!deteId || r.child_profile_id === deteId))) return <p className="poruka poruka--greska">Raspored nije dostupan. <Link to="/admin/vezbanje/rasporedi">Nazad</Link></p>
-    return <><p className="razmak-dole">Primalac je prikazan u formi. <button className="dugme dugme--senka dugme--malo" onClick={zatvori}>← Svi rasporedi</button></p>{vrsta === 'chess'
+    return <>{vrsta === 'chess'
       ? <DnevniRasporediSaha profili={profili} rasporedi={podaci.sah} onPromena={sacuvano} otvoriId={id} pocetnoDete={deteId} samoForma onZatvori={zatvori} />
       : <DnevniRasporedi rasporedi={podaci.kvizovi} onPromena={sacuvano} otvoriId={id} pocetnoDete={deteId} samoForma onZatvori={zatvori} />}</>
   }
   const rasporedi = podaci.pregled.schedules.filter(s => !problemi || s.error)
   return <>
-    <div className="roditelj-alati"><div className="red"><Link className="dugme dugme--senka" to="/admin/vezbanje/rasporedi?raspored=novi&vrsta=quiz">+ Raspored kviza</Link><Link className="dugme dugme--senka" to="/admin/vezbanje/rasporedi?raspored=novi&vrsta=chess">+ Raspored šaha</Link></div>
-      <label className="stiklir"><input type="checkbox" checked={problemi} onChange={e => setParams(p => { if(e.target.checked) p.set('problemi','1'); else p.delete('problemi'); return p })} />Samo problemi</label>
+    <div className="roditelj-cipovi" role="group" aria-label="Rasporedi">
+      <Link className="roditelj-cip roditelj-cip--akcija" to="/admin/vezbanje/rasporedi?raspored=novi&vrsta=quiz"><Ikona ime="dodaj" velicina={18} />Kviz</Link>
+      <Link className="roditelj-cip roditelj-cip--akcija" to="/admin/vezbanje/rasporedi?raspored=novi&vrsta=chess"><Ikona ime="dodaj" velicina={18} />Šah</Link>
+      <span className="roditelj-cipovi-razdelnik" aria-hidden="true" />
+      <button type="button" aria-pressed={problemi} className={`roditelj-cip${problemi ? ' aktivan' : ''}`}
+        onClick={() => setParams(p => { if (!problemi) p.set('problemi', '1'); else p.delete('problemi'); return p })}>
+        {problemi && <Ikona ime="potvrda" velicina={16} />}Samo problemi
+      </button>
     </div>
     {(greska || greskaIzmene) && <p className="poruka poruka--greska" role="alert">{greskaIzmene || greska}</p>}
-    {rasporedi.length === 0 ? <p className="kartica">{problemi ? 'Nema problema sa rasporedima.' : 'Nema rasporeda. Dodaj kviz ili šah u željenom dnevnom terminu.'}</p> : <div className="roditelj-kartice">{rasporedi.map(s => {
-      const pauzaLabel = s.active ? 'Pauziraj' : 'Uključi'
+    {rasporedi.length === 0 ? <p className="kartica">{problemi ? 'Nema problema sa rasporedima.' : 'Nema rasporeda. Dodaj kviz ili šah u željenom dnevnom terminu.'}</p> : <ul className="roditelj-lista roditelj-gusta-lista">{rasporedi.map(s => {
+      const naziv = `${s.childName} · ${NAZIVI_PREDMETA[s.title as Predmet] ?? s.title}`
       return (
-        <article key={s.id} className="kartica roditelj-dete">
-          <div className="roditelj-alati">
-            <h2>{s.childName}</h2>
-            <span className={`bedz ${s.active ? 'bedz--uspeh' : 'bedz--neutral'}`}>{s.active ? 'Uključen' : 'Pauziran'}</span>
-          </div>
-          <p>{NAZIVI_PREDMETA[s.title as Predmet] ?? s.title}</p>
-          <p className="blago malo razmak-gore">{s.active ? `Sledeći termin: ${formatDatum(s.nextAt)}` : 'Ne šalje nove aktivnosti.'}</p>
-          {s.error && <div className="poruka poruka--greska"><strong>Poslednje izvršavanje nije uspelo</strong><p className="malo">{s.error}</p></div>}
-          <div className="red razmak-gore raspored-akcije" role="group" aria-label="Akcije rasporeda">
-            <Link to={`/admin/vezbanje/rasporedi?raspored=${s.id}&vrsta=${s.kind}`} className="dugme dugme--senka dugme--ikon" aria-label="Uredi raspored" title="Uredi raspored"><AkcijaIkona ime="uredi" /></Link>
-            <button type="button" className="dugme dugme--senka dugme--ikon" disabled={!!menja} onClick={() => void promeni(s.id, s.kind, s.active)} aria-label={pauzaLabel} title={pauzaLabel}><AkcijaIkona ime={s.active ? 'pauziraj' : 'nastavi'} /></button>
-            <button type="button" className="dugme dugme--opasno dugme--ikon" disabled={!!menja} onClick={() => void promeni(s.id, s.kind, s.active, true)} aria-label="Obriši raspored" title="Obriši raspored"><AkcijaIkona ime="obrisi" /></button>
-          </div>
-        </article>
+        <li key={s.id} className="roditelj-raspored">
+          <Link to={`/admin/vezbanje/rasporedi?raspored=${s.id}&vrsta=${s.kind}`} aria-label={`Uredi raspored: ${naziv}`}>
+            <span className="roditelj-red-ikona" aria-hidden="true"><Ikona ime={s.kind === 'chess' ? 'sah' : 'raspored'} velicina={20} /></span>
+            <span className="roditelj-gusta-tekst">
+              <strong>{naziv}</strong>
+              <small>{s.active ? `Sledeći: ${formatDatum(s.nextAt)}` : 'Pauziran · ne šalje nove aktivnosti'}</small>
+              {s.error && <small className="roditelj-greska-red"><Ikona ime="upozorenje" velicina={14} />{s.error}</small>}
+            </span>
+          </Link>
+          <button type="button" role="switch" aria-checked={s.active} className="roditelj-prekidac" disabled={!!menja}
+            onClick={() => void promeni(s.id, s.kind, s.active)} aria-label={s.active ? `Pauziraj: ${naziv}` : `Uključi: ${naziv}`}>
+            <span />
+          </button>
+          <button type="button" className="roditelj-ikona-dugme roditelj-ikona-dugme--opasno" disabled={!!menja}
+            onClick={() => void promeni(s.id, s.kind, s.active, true)} aria-label={`Obriši raspored: ${naziv}`} title="Obriši raspored">
+            <AkcijaIkona ime="obrisi" />
+          </button>
+        </li>
       )
-    })}</div>}
+    })}</ul>}
   </>
 }

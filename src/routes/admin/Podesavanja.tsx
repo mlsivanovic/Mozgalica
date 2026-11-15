@@ -652,13 +652,13 @@ export function Podesavanja({ sekcija = 'obavestenja' }: { sekcija?: Sekcija }) 
 
   return (
     <div className="sadrzaj">
-      {sekcija === 'profili' ? <h1>Upravljaj decom</h1> : sekcija === 'pravila' ? <h1>Titule i pravila za zvezdice</h1> : sekcija === 'obavestenja' ? <h1>Podešavanja aplikacije</h1> : null}
+      {sekcija === 'profili' ? <h1 className="sr-only">Upravljaj decom</h1> : sekcija === 'pravila' ? <h1 className="sr-only">Titule i pravila za zvezdice</h1> : sekcija === 'obavestenja' ? <h1 className="sr-only">Podešavanja aplikacije</h1> : null}
       {poruka && <p className="poruka poruka--uspeh razmak-gore">{poruka}</p>}
       {greska && <p className="poruka poruka--greska razmak-gore" role="alert">{greska}</p>}
 
-      {sekcija === 'pravila' && <div className="red razmak-gore razmak-dole" role="group" aria-label="Pravila nagrađivanja">
-        <button className="dugme dugme--senka" aria-pressed={pravilo === 'titule'} onClick={() => promeniTab('titule')}>Titule</button>
-        <button className="dugme dugme--senka" aria-pressed={pravilo === 'sah'} onClick={() => promeniTab('sah')}>Zvezdice za šah</button>
+      {sekcija === 'pravila' && <div className="roditelj-segment-dugmad roditelj-segment-dugmad--puno razmak-dole" role="group" aria-label="Pravila nagrađivanja">
+        <button type="button" aria-pressed={pravilo === 'titule'} onClick={() => promeniTab('titule')}>Titule</button>
+        <button type="button" aria-pressed={pravilo === 'sah'} onClick={() => promeniTab('sah')}>Zvezdice za šah</button>
       </div>}
 
       {aktivanTab === 'profili' && (
@@ -1283,14 +1283,14 @@ export function Podesavanja({ sekcija = 'obavestenja' }: { sekcija?: Sekcija }) 
 
         </>}
         {sekcija !== 'katalog' && (
-        <div style={{ marginTop: '2rem', borderTop: '1px solid var(--boja-ivica)', paddingTop: '1.2rem' }}>
-          <h2>{sekcija === 'isporuka' ? 'Za isporuku' : 'Istorija nagrada'}</h2>
-          <p className="blago malo">
+        <div>
+          <h2 className="sr-only">{sekcija === 'isporuka' ? 'Za isporuku' : 'Istorija nagrada'}</h2>
+          <p className="blago malo" hidden={sekcija !== 'isporuka'}>
             Označi nagradu kao ostvarenu kada je isporučiš detetu. Otkazivanje vraća potrošene
             zvezdice u detetov raspoloživi balans.
           </p>
 
-          <div hidden={sekcija === 'isporuka'} className="prodavnica-filteri razmak-gore" role="group" aria-label="Filter po statusu">
+          <div hidden={sekcija === 'isporuka'} className="roditelj-cipovi" role="group" aria-label="Filter po statusu">
             {([
               ['sve', 'Sve'],
 
@@ -1304,7 +1304,8 @@ export function Podesavanja({ sekcija = 'obavestenja' }: { sekcija?: Sekcija }) 
                 <button
                   key={id}
                   type="button"
-                  className={`dugme dugme--malo ${filterKupovina === id ? 'dugme--akcenat' : 'dugme--senka'}`}
+                  aria-pressed={filterKupovina === id}
+                  className={`roditelj-cip${filterKupovina === id ? ' aktivan' : ''}`}
                   onClick={() => setFilterKupovina(id)}
                 >
                   {naziv} ({broj})

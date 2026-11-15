@@ -502,7 +502,7 @@ export function KvizForma({ pocetnoDete = '', onNazad }: { pocetnoDete?: string;
 
   const primalac = profiliDece.find(p => p.id === izabranoDete)
   if (potvrda) return <div>
-    <ol className="roditelj-koraci"><li>1. Dete i aktivnost</li><li>2. Sadržaj</li><li aria-current="step">3. Potvrda</li></ol>
+    <ol className="roditelj-koraci"><li>Dete i aktivnost</li><li>Sadržaj</li><li aria-current="step">Potvrda</li></ol>
     <h2>Pregled pre potvrde</h2>
     <div className="kartica razmak-gore"><h3>{mod === 'manual' ? manualTitle || 'Ručni kviz' : cfg.title}</h3>
       <p className="razmak-gore">Za: <strong>{primalac?.name ?? 'Bez dodele — priprema kviza'}</strong></p>
@@ -521,7 +521,7 @@ export function KvizForma({ pocetnoDete = '', onNazad }: { pocetnoDete?: string;
         <h2>Sadržaj kviza</h2>
       </div>
 
-      <ol className="roditelj-koraci"><li>1. Dete i aktivnost</li><li aria-current="step">2. Sadržaj</li><li>3. Potvrda</li></ol>
+      <ol className="roditelj-koraci"><li>Dete i aktivnost</li><li aria-current="step">Sadržaj</li><li>Potvrda</li></ol>
       <p className="razmak-dole">Za: <strong>{primalac?.name ?? 'Bez dodele'}</strong> {onNazad && <button className="dugme dugme--senka dugme--malo" onClick={onNazad}>Promeni dete ili aktivnost</button>}</p>
       {/* Segmentirani kontroler za izbor MODA (Standardni vs Slobodan) */}
       <div className="segment razmak-dole" role="tablist">

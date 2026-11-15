@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { sacuvajKontekstPutanje, saDetetom, glavnaSekcija, zajednickaStranica, uredjivanjeAktivnosti } from './roditeljskePutanje'
+import { sacuvajKontekstPutanje, saDetetom, glavnaSekcija, zajednickaStranica, uredjivanjeAktivnosti, korenskaStrana, naslovStrane, roditeljNazad } from './roditeljskePutanje'
 import { procitajPeriod } from './periodNapretka'
 
 describe('roditeljski kontekst u URL-u', () => {
@@ -26,6 +26,25 @@ describe('roditeljski kontekst u URL-u', () => {
     expect(glavnaSekcija('/admin/sah')).toBe('vezbanje')
     expect(glavnaSekcija('/admin/raspored-casova')).toBe('danas')
     expect(glavnaSekcija('/admin/vezbanje/rasporedi')).toBe('vezbanje')
+  })
+})
+
+describe('gornja traka roditeljskog prikaza', () => {
+  it('razlikuje odredišta navigacije od detalja koji traže dugme nazad', () => {
+    for (const p of ['/admin', '/admin/vezbanje', '/admin/pitanja/generator', '/admin/napredak/rezultati', '/admin/nagrade/pravila']) expect(korenskaStrana(p)).toBe(true)
+    for (const p of ['/admin/zadaj', '/admin/kvizovi/abc', '/admin/rezultati/abc', '/admin/deca', '/admin/podesavanja', '/admin/sah']) expect(korenskaStrana(p)).toBe(false)
+    expect(korenskaStrana('/admin/vezbanje/rasporedi', '?raspored=novi&vrsta=quiz')).toBe(false)
+  })
+  it('daje naslov ekrana i rezervni povratak bez istorije', () => {
+    expect(naslovStrane('/admin')).toBe('Danas')
+    expect(naslovStrane('/admin/pitanja')).toBe('Zadaci')
+    expect(naslovStrane('/admin/nagrade/katalog')).toBe('Nagrade')
+    expect(naslovStrane('/admin/kvizovi/abc')).toBe('Kviz')
+    expect(naslovStrane('/admin/vezbanje/rasporedi', '?raspored=novi')).toBe('Novi raspored')
+    expect(roditeljNazad('/admin/rezultati/abc')).toBe('/admin/napredak/rezultati')
+    expect(roditeljNazad('/admin/kvizovi/abc')).toBe('/admin/vezbanje')
+    expect(roditeljNazad('/admin/vezbanje/rasporedi', '?raspored=s1')).toBe('/admin/vezbanje/rasporedi')
+    expect(roditeljNazad('/admin/podesavanja')).toBe('/admin')
   })
 })
 

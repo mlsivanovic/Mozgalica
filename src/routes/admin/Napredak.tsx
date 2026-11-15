@@ -8,6 +8,8 @@ import { StatistikaDetetaDetalj } from './StatistikaDetetaDetalj'
 import { Loader } from '../../components/Zajednicke'
 import type { StatistikaDetetaPayload } from '../../types/kviz'
 import { danasUBeogradu, validirajPrilagodjeniPeriod } from '../../lib/statistikaDeteta'
+import { RoditeljTabovi } from '../../components/RoditeljskeSekcije'
+import { Ikona } from '../../components/Ikona'
 export function NapredakSekcija() {
   const { pathname, search } = useLocation()
   const { period, from, to, promeni, greska } = usePeriodNapretka()
@@ -20,13 +22,25 @@ export function NapredakSekcija() {
   const parametri = new URLSearchParams()
   for(const key of ['period','od','do']) if(aktivniPeriod.has(key)) parametri.set(key,aktivniPeriod.get(key)!)
   const upit = parametri.toString() ? `?${parametri}` : ''
-  return <><div className="roditelj-naslov"><h1>Napredak</h1></div><nav className="roditelj-tabovi" aria-label="Napredak"><Link to={'/admin/napredak'+upit} aria-current={!pathname.includes('/rezultati') ? 'page' : undefined}>Pregled</Link><Link to={'/admin/napredak/rezultati'+upit} aria-current={pathname.includes('/rezultati') ? 'page' : undefined}>Rezultati</Link></nav>
-    <div className="roditelj-alati"><label>Period <select aria-label="Period napretka" value={prilagodi ? 'custom' : period} onChange={e => { if(e.target.value === 'custom') setPrilagodi(true); else {setPrilagodi(false); promeni(e.target.value)} }}><option value="today">Danas</option><option value="7d">7 dana</option><option value="30d">30 dana</option><option value="all">Sve vreme</option><option value="custom">Prilagođeno</option></select></label><small className="blago">{from && to ? `${from} — ${to}` : 'Sve vreme'} · Beograd</small></div>
-    {prilagodi && <form className="red-polja" onSubmit={e => {e.preventDefault(); const problem=validirajPrilagodjeniPeriod(od,kraj); setGreskaUnosa(problem); if(!problem) promeni('custom',od,kraj)}}><div className="polje"><label htmlFor="period-od">Od</label><input id="period-od" type="date" value={od} onChange={e => setOd(e.target.value)} /></div><div className="polje"><label htmlFor="period-do">Do</label><input id="period-do" type="date" value={kraj} onChange={e => setKraj(e.target.value)} /></div><button className="dugme">Primeni</button></form>}
+  const izabran = prilagodi ? 'custom' : period
+  return <><h1 className="sr-only">Napredak</h1>
+    <RoditeljTabovi naziv="Napredak" aktivan={pathname.includes('/rezultati') ? 'rezultati' : 'pregled'} tabovi={[
+      { id: 'pregled', to: '/admin/napredak' + upit, naziv: 'Pregled' },
+      { id: 'rezultati', to: '/admin/napredak/rezultati' + upit, naziv: 'Rezultati' },
+    ]} />
+    <div className="roditelj-cipovi" role="radiogroup" aria-label="Period napretka">
+      {PERIODI.map(([vrednost, naziv]) => <button key={vrednost} type="button" role="radio" aria-checked={izabran === vrednost}
+        className={`roditelj-cip${izabran === vrednost ? ' aktivan' : ''}`}
+        onClick={() => { if (vrednost === 'custom') setPrilagodi(true); else { setPrilagodi(false); promeni(vrednost) } }}>
+        {izabran === vrednost && <Ikona ime="potvrda" velicina={16} />}{naziv}
+      </button>)}
+    </div>
+    {prilagodi && <form className="roditelj-period-forma" onSubmit={e => {e.preventDefault(); const problem=validirajPrilagodjeniPeriod(od,kraj); setGreskaUnosa(problem); if(!problem) promeni('custom',od,kraj)}}><div className="polje"><label htmlFor="period-od">Od</label><input id="period-od" type="date" value={od} onChange={e => setOd(e.target.value)} /></div><div className="polje"><label htmlFor="period-do">Do</label><input id="period-do" type="date" value={kraj} onChange={e => setKraj(e.target.value)} /></div><button className="dugme">Primeni</button></form>}
     {(greska || greskaUnosa) && <p role="alert" className="poruka poruka--greska">{greska || greskaUnosa}</p>}
     {!greska && <Outlet />}
   </>
 }
+const PERIODI = [['today', 'Danas'], ['7d', '7 dana'], ['30d', '30 dana'], ['all', 'Sve vreme'], ['custom', 'Prilagođeno']] as const
 export function Napredak() {
   const { deteId } = useRoditelj()
   return deteId ? <StatistikaDetetaDetalj key={deteId} profilId={deteId} /> : <PregledSveDece />
@@ -46,5 +60,5 @@ function PregledSveDece() {
   if(ucitava) return <Loader />
   if(greska) return <p role="alert">{greska} <button className="dugme" onClick={() => setPonovo(x=>x+1)}>Pokušaj ponovo</button></p>
   if(!profili.length) return <p className="kartica">Dodaj profil da pratiš napredak. <Link to="/admin/deca">Upravljaj decom</Link></p>
-  return <><p className="blago razmak-dole">Statistika kvizova obuhvata potpuno ocenjene rezultate. Šah je u zasebnoj istoriji rezultata.</p><div className="roditelj-kartice">{podaci.map(p => <Link className="kartica roditelj-dete" to={`/admin/napredak?dete=${p.id}`} key={p.id}><div className="roditelj-identitet"><span className="roditelj-avatar">{p.avatar}</span><h2>{p.name}</h2></div><div className="roditelj-metrike"><div><strong>{p.statistika.summary?.completedAttempts ?? 0}</strong><span>ocenjenih kvizova</span></div><div><strong>{formatProcenat(p.statistika.summary?.avgScorePct)}</strong><span>prosečan rezultat</span></div></div><p className="malo blago">{p.statistika.practiceTopics?.length ? `Za vežbu: ${p.statistika.practiceTopics.map(o => o.topicName).join(', ')}` : 'Još nema izdvojenih oblasti za dodatnu vežbu.'}</p><p className="razmak-gore">Otvori napredak →</p></Link>)}</div></>
+  return <><div className="roditelj-kartice">{podaci.map(p => <Link className="kartica roditelj-dete" to={`/admin/napredak?dete=${p.id}`} key={p.id}><div className="roditelj-identitet"><span className="roditelj-avatar">{p.avatar}</span><h2>{p.name}</h2><Ikona ime="desno" /></div><div className="roditelj-metrike"><div><strong>{p.statistika.summary?.completedAttempts ?? 0}</strong><span>ocenjenih kvizova</span></div><div><strong>{formatProcenat(p.statistika.summary?.avgScorePct)}</strong><span>prosečan rezultat</span></div></div><p className="malo blago">{p.statistika.practiceTopics?.length ? `Za vežbu: ${p.statistika.practiceTopics.map(o => o.topicName).join(', ')}` : 'Još nema izdvojenih oblasti za dodatnu vežbu.'}</p></Link>)}</div><p className="malo blago razmak-gore">Statistika obuhvata potpuno ocenjene kvizove. Šah je u istoriji rezultata.</p></>
 }
