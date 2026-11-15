@@ -409,6 +409,14 @@ Native ne treba da nosi generator od ~10.000 linija.
   - Pokušaj 3: web je pokrenuo retry preko Edge funkcije (3 nova zadatka), predao odgovore
     i dobio server ocenu 1 / 3. Time je potvrđen i web deo toka; native i web za isti
     pokušaj prikazuju isti ishod (provereno u prva dva pokušaja).
+- **Bezbednosna ispravka (2026-11-15):** `start_retry` više ne mogu da izvrše `anon` ni
+  `authenticated`; pravo je zadržao samo `service_role`. Migracija
+  `20261115130000_start_retry_samo_server.sql` samo menja privilegije, bez izmene tela ili
+  potpisa funkcije. Web i native šalju isključivo `attemptToken` u `pripremi-ponovni`, a ta
+  Edge funkcija zove `start_retry` service role klijentom. `resume_retry` i `submit_retry`
+  ostaju dostupni klijentima.
+  Stara keširana web verzija koja još direktno zove `start_retry` dobiće „permission denied”
+  pri pokretanju ponovnog pokušaja dok service worker ne preuzme novu verziju.
 - Probni profil „Proba Native“ i probni kvizovi ostaju u bazi za fazu 5. Profil nema mejl,
   pa obaveštenja o rezultatu idu samo na admin pretplate, ne deci. Probni podaci se brišu
   kada više ne budu potrebni, uz backup.
@@ -518,7 +526,7 @@ Videti [Push](#7-push-fcm-umesto-web-push) ispod.
   povezan sa Firebase Android aplikacijom. `google-services.json` je u `.gitignore`;
   service account `mozgalica-fcm@mozgalica-decja.iam.gserviceaccount.com` ima samo
   `roles/firebasecloudmessaging.admin`, a ključ je samo u Supabase secrets.
-- **Provereno:** `./gradlew testDebugUnitTest assembleDebug lintDebug` (85 testa, 0 padova;
+- **Provereno:** `./gradlew testDebugUnitTest assembleDebug lintDebug` (81 test, 0 padova;
   lint samo postojeća upozorenja o verzijama), `npx vitest run` (51 fajl, 403 testa) i
   `npm run build`.
 - **E2E na probnom profilu `Proba Native`:** FCM token je aktivan u `push_subscriptions`;
@@ -560,7 +568,7 @@ Videti [Push](#7-push-fcm-umesto-web-push) ispod.
   CI workflow [`android-native.yml`](../.github/workflows/android-native.yml) gradi, testira
   i lintuje native aplikaciju, a na zahtev/periodično generiše Baseline Profile na emulatoru.
 - **Provereno:** `./gradlew :app:testDebugUnitTest :app:assembleDebug :app:lintDebug`
-  (85 testova, 0 padova), `:app:assembleRelease` (R8, 3,9 MB, profil u
+  (81 test, 0 padova), `:app:assembleRelease` (R8, 3,9 MB, profil u
   `assets/dexopt/baseline.prof`), `:baselineprofile:assemble` i
   `:macrobenchmark:assembleBenchmark`. Baseline Profile je generisan direktnim pokretanjem
   `BaselineProfileGenerator`-a (1 test, 114 s) i sačuvan u `app/src/main/baseline-prof.txt`;
@@ -575,6 +583,10 @@ Videti [Push](#7-push-fcm-umesto-web-push) ispod.
 ### Faza 9 — Izdanje na GitHub-u (2–3 dana)
 - Workflow [`android.yml`](../.github/workflows/android.yml) prelazi sa `android/` (TWA) na
   `android-app/`. Potpisivanje i GitHub Release ostaju isti.
+- U CI ubaciti `google-services.json` iz GitHub secret-a pre gradnje (nikad u repozitorijum);
+  build bez njega ostaje ispravan, ali push je tada nedostupan.
+- Pre izdanja obrisati probne podatke uz backup: profil „Proba Native“, probne kvizove i
+  probnu stavku u prodavnici.
 - `versionCode` nastavlja od 2, pa se instalira preko TWA verzije 1.0.0.
 - **Jednokratno ponovno povezivanje:** TWA je čuvao token u Chrome skladištu, koje native
   aplikacija ne može da pročita. Posle nadogradnje dete jednom skenira QR.
