@@ -17,6 +17,9 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import io.github.mlsivanovic.mozgalica.push.PushKartica
+import io.github.mlsivanovic.mozgalica.push.PushViewModel
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -37,6 +40,7 @@ fun PodesavanjaEkran(
     onZvuk: (Boolean) -> Unit,
     onHaptiku: (Boolean) -> Unit,
     onPromeniProfil: () -> Unit,
+    pushModel: PushViewModel = hiltViewModel(),
 ) {
     var pitaj by rememberSaveable { mutableStateOf(false) }
     Column(
@@ -59,6 +63,7 @@ fun PodesavanjaEkran(
         }
         Prekidac("Zvuk", stanje.zvuk, onZvuk)
         Prekidac("Vibracija", stanje.haptika, onHaptiku)
+        PushKartica(pushModel)
         OutlinedButton(
             onClick = { pitaj = true },
             modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),

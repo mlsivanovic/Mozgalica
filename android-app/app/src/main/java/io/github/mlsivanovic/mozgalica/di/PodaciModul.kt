@@ -25,6 +25,7 @@ import io.github.mlsivanovic.mozgalica.podaci.povezivanje.SkladisteTokena
 import io.github.mlsivanovic.mozgalica.podaci.povezivanje.SupabaseIzvorProfila
 import io.github.mlsivanovic.mozgalica.podaci.sah.IzvorSaha
 import io.github.mlsivanovic.mozgalica.podaci.prodavnica.IzvorProdavnice
+import io.github.mlsivanovic.mozgalica.podaci.push.IzvorPush
 import javax.inject.Singleton
 
 @Module
@@ -75,6 +76,9 @@ object PodaciModul {
     fun izvorProdavnice(supabase: SupabaseIzvorProfila): IzvorProdavnice = supabase
 
     @Provides
+    fun izvorPush(supabase: SupabaseIzvorProfila): IzvorPush = supabase
+
+    @Provides
     @Singleton
     fun sinhronizacija(
         skladiste: SkladistePokusaja,
@@ -96,8 +100,9 @@ object PodaciModul {
         izvorSadrzaja: IzvorSadrzaja,
         pokusaji: SkladistePokusaja,
         izvorProdavnice: IzvorProdavnice,
+        izvorPush: IzvorPush,
     ): ProfilRepozitorijum = ProfilRepozitorijum(
-        kes, tokeni, izvor, podesavanja, sadrzaj, izvorSadrzaja, pokusaji, izvorProdavnice,
+        kes, tokeni, izvor, podesavanja, sadrzaj, izvorSadrzaja, pokusaji, izvorProdavnice, izvorPush,
     )
 }
 

@@ -39,6 +39,13 @@ import io.github.mlsivanovic.mozgalica.podaci.prodavnica.IshodProdavnice
 import io.github.mlsivanovic.mozgalica.podaci.prodavnica.IzvorProdavnice
 import io.github.mlsivanovic.mozgalica.podaci.prodavnica.protumaciKupovinu
 import io.github.mlsivanovic.mozgalica.podaci.prodavnica.protumaciProdavnicu
+import io.github.mlsivanovic.mozgalica.podaci.push.IshodRegistracijePush
+import io.github.mlsivanovic.mozgalica.podaci.push.IshodStatusaPush
+import io.github.mlsivanovic.mozgalica.podaci.push.IshodPotvrdePush
+import io.github.mlsivanovic.mozgalica.podaci.push.IzvorPush
+import io.github.mlsivanovic.mozgalica.podaci.push.protumaciRegistracijuPush
+import io.github.mlsivanovic.mozgalica.podaci.push.protumaciStatusPush
+import io.github.mlsivanovic.mozgalica.podaci.push.protumaciPotvrduPush
 import io.github.mlsivanovic.mozgalica.podaci.sah.IshodSaha
 import io.github.mlsivanovic.mozgalica.podaci.sah.IzvorSaha
 import io.github.mlsivanovic.mozgalica.podaci.sah.SahAkcija
@@ -58,7 +65,7 @@ import kotlinx.serialization.json.put
 class SupabaseIzvorProfila(
     private val url: String,
     private val anonKljuc: String,
-) : IzvorProfila, IzvorSadrzaja, IzvorKviza, IzvorSaha, IzvorProdavnice {
+) : IzvorProfila, IzvorSadrzaja, IzvorKviza, IzvorSaha, IzvorProdavnice, IzvorPush {
     private val json = Json { ignoreUnknownKeys = false }
 
     // Klijent se pravi tek na prvi mrežni poziv, posle crtanja keša.
@@ -237,6 +244,65 @@ class SupabaseIzvorProfila(
             throw e
         } catch (_: Exception) {
             IshodKupovine.Neuspesna
+        }
+    }
+
+    override suspend fun registrujFcm(
+        profileToken: String,
+        fcmToken: String,
+        userAgent: String?,
+    ): IshodRegistracijePush {
+        if (url.isBlank() || anonKljuc.isBlank()) return IshodRegistracijePush.Neuspesna
+        return try {
+            val telo = klijent.postgrest.rpc(
+                "register_child_fcm_push",
+                buildJsonObject {
+                    put("p_profile_token", profileToken)
+                    put("p_fcm_token", fcmToken)
+                    put("p_user_agent", userAgent ?: "")
+                },
+            ).data
+            protumaciRegistracijuPush(telo)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            IshodRegistracijePush.Neuspesna
+        }
+    }
+
+    override suspend fun odjaviFcm(profileToken: String, fcmToken: String): IshodPotvrdePush {
+        if (url.isBlank() || anonKljuc.isBlank()) return IshodPotvrdePush.Neuspesna
+        return try {
+            val telo = klijent.postgrest.rpc(
+                "unregister_child_fcm_push",
+                buildJsonObject {
+                    put("p_profile_token", profileToken)
+                    put("p_fcm_token", fcmToken)
+                },
+            ).data
+            protumaciPotvrduPush(telo)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            IshodPotvrdePush.Neuspesna
+        }
+    }
+
+    override suspend fun statusFcm(profileToken: String, fcmToken: String): IshodStatusaPush {
+        if (url.isBlank() || anonKljuc.isBlank()) return IshodStatusaPush.Neuspesan
+        return try {
+            val telo = klijent.postgrest.rpc(
+                "get_child_fcm_push_status",
+                buildJsonObject {
+                    put("p_profile_token", profileToken)
+                    put("p_fcm_token", fcmToken)
+                },
+            ).data
+            protumaciStatusPush(telo)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            IshodStatusaPush.Neuspesan
         }
     }
 

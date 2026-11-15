@@ -8,6 +8,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
@@ -37,8 +38,10 @@ import io.github.mlsivanovic.mozgalica.profil.RezultatiEkran
 import io.github.mlsivanovic.mozgalica.sah.SahTok
 import io.github.mlsivanovic.mozgalica.nagrade.NagradeEkran
 import io.github.mlsivanovic.mozgalica.nagrade.ProdavnicaTok
+import io.github.mlsivanovic.mozgalica.push.PushRad
 import io.github.mlsivanovic.mozgalica.profil.UiStanje
 import io.github.mlsivanovic.mozgalica.profil.ciljObavestenja
+import kotlinx.coroutines.flow.StateFlow
 import java.io.IOException
 
 private data class Tab(
@@ -56,9 +59,16 @@ private val tabovi = listOf(
 )
 
 @Composable
-fun MozgalicaLjuska(viewModel: ProfilViewModel = hiltViewModel()) {
+fun MozgalicaLjuska(
+    viewModel: ProfilViewModel = hiltViewModel(),
+    spoljniCilj: StateFlow<String?>,
+    onCiljPotrosen: () -> Unit,
+) {
+    val cilj by spoljniCilj.collectAsStateWithLifecycle()
+    val kontekst = LocalContext.current
     LifecycleStartEffect(Unit) {
         viewModel.osvezi()
+        PushRad.zakaziRegistraciju(kontekst)
         onStopOrDispose { }
     }
     val stanje by viewModel.stanje.collectAsStateWithLifecycle()
@@ -85,6 +95,8 @@ fun MozgalicaLjuska(viewModel: ProfilViewModel = hiltViewModel()) {
                 onTemu = viewModel::postaviTemu,
                 onZvuk = viewModel::postaviZvuk,
                 onHaptiku = viewModel::postaviHaptiku,
+                spoljniCilj = cilj,
+                onCiljPotrosen = onCiljPotrosen,
                 onProbni = if (BuildConfig.DEBUG) {
                     { telo ->
                         viewModel.napuniProbniPrikaz(telo.profil, telo.raspored, telo.obavestenja)
@@ -116,8 +128,19 @@ private fun Navigacija(
     onZvuk: (Boolean) -> Unit,
     onHaptiku: (Boolean) -> Unit,
     onProbni: ((ProbnaTela) -> Unit)?,
+    spoljniCilj: String?,
+    onCiljPotrosen: () -> Unit,
 ) {
     val nav = rememberNavController()
+    LaunchedEffect(povezan, spoljniCilj) {
+        if (!povezan || spoljniCilj == null) return@LaunchedEffect
+        when (val cilj = ciljObavestenja(spoljniCilj)) {
+            is CiljObavestenja.Kviz -> nav.navigate(KvizRuta(cilj.token)) { launchSingleTop = true }
+            is CiljObavestenja.Sah -> nav.navigate(SahRuta(cilj.token)) { launchSingleTop = true }
+            null -> Unit
+        }
+        onCiljPotrosen()
+    }
     val unos = nav.currentBackStackEntryAsState()
     val odrediste = unos.value?.destination.odrediste()
     val traka = odrediste != null && prikazujeDonjuNavigaciju(odrediste)

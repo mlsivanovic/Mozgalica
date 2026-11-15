@@ -53,4 +53,6 @@ interface PodesavanjaAplikacije {
     fun probniPrikaz(): Flow<Boolean>
     suspend fun postaviProbniPrikaz(ukljucen: Boolean, bezTokena: Boolean = false)
     suspend fun probniJeBezTokena(): Boolean
+    fun pushUkljucen(): Flow<Boolean> = kotlinx.coroutines.flow.flowOf(false)
+    suspend fun postaviPush(ukljucen: Boolean) = Unit
 }

@@ -495,6 +495,42 @@ Videti [Push](#7-push-fcm-umesto-web-push) ispod.
 - **Gotovo kada:** novi kviz dodeljen u roditeljskom webu stigne kao obaveštenje za par sekundi,
   a dodir otvara taj kviz.
 
+#### Urađeno u fazi 7
+- Migracija `20261115120000_fcm_push.sql` je aditivna: `transport` (podrazumevano `webpush`),
+  `fcm_token`, uslovni `check` za oblik pretplate, FCM jedinstveni indeksi i backup tabela
+  `push_subscriptions_backup_20261115` (bez pristupa za `anon`/`authenticated`). Postojeći
+  Web Push redovi i RPC-ji nisu menjani. Umesto dodavanja `p_transport` u postojeće RPC-je,
+  dodati su odvojeni `register_child_fcm_push`, `unregister_child_fcm_push` i
+  `get_child_fcm_push_status`; time web klijent ostaje potpuno nepromenjen.
+- `dispatch-notifications` grana po `transport`. FCM koristi HTTP v1 i OAuth iz
+  `FCM_SERVICE_ACCOUNT`; token se kešira do isteka. Poruka nosi `notification` i `data`
+  (`eventType`, `targetUrl`, `refresh=1`, `channel`), a `UNREGISTERED`/404 deaktivira
+  pretplatu. Web Push putanja je zadržana.
+- Native ima kanale „Novi zadaci” (visok prioritet) i „Rezultati i nagrade”, dozvolu
+  `POST_NOTIFICATIONS` posle objašnjenja u Podešavanjima, registraciju tokena preko
+  WorkManager-a (`onNewToken` i ponovno povezivanje), FCM servis i obradu poruka.
+  `targetUrl` se preko `MainActivity` mapira na postojeće `KvizRuta`/`SahRuta` rute; data
+  poruka zakazuje osvežavanje Room keša; uz glavnu notifikaciju ide i tihi data-only
+  signal, jer FCM u pozadini ne poziva servis za notification poruku. Ako `google-services.json` nije u gradnji,
+  aplikacija se i dalje gradi, a kartica obaveštenja jasno kaže da push nije podešen.
+- Firebase projekat `mozgalica-decja` (postojeći, samo Messaging — bez Firebase baze, Auth-a,
+  Analytics-a ili tracking SDK-a). Stari Android API ključ je istekao; napravljen je novi i
+  povezan sa Firebase Android aplikacijom. `google-services.json` je u `.gitignore`;
+  service account `mozgalica-fcm@mozgalica-decja.iam.gserviceaccount.com` ima samo
+  `roles/firebasecloudmessaging.admin`, a ključ je samo u Supabase secrets.
+- **Provereno:** `./gradlew testDebugUnitTest assembleDebug lintDebug` (85 testa, 0 padova;
+  lint samo postojeća upozorenja o verzijama), `npx vitest run` (51 fajl, 403 testa) i
+  `npm run build`.
+- **E2E na probnom profilu `Proba Native`:** FCM token je aktivan u `push_subscriptions`;
+  novi probni kviz je kroz trigger i `dispatch-notifications` isporučen sa statusom `sent`.
+  Obaveštenje se pojavilo u senci sa naslovom kviza, a dodir je otvorio baš taj kviz
+  (`/kviz/<token>`). Provereni su i kanal `novi_zadaci`, prikaz u pozadini (FCM auto-notification)
+  i u prvom planu (native servis), kao i dozvola na Androidu 13+.
+- **Nije provereno na uređaju:** prinudno zaustavljena aplikacija (force-stop), rotacija tokena
+  kroz stvarni `onNewToken`, release potpis/CI unos `google-services.json` i ponašanje na
+  realnom dečjem telefonu. Deaktivacija nevažećeg FCM tokena je pokrivena kodom, ali nije
+  izazvana pravim `UNREGISTERED` odgovorom.
+
 ### Faza 8 — Brzina, polish, vidžet (5–6 dana)
 - Baseline Profile u CI-ju, Macrobenchmark izveštaji, R8.
 - Shared element prelazi, konfete, animacije maskote, zvukovi.
@@ -540,14 +576,17 @@ Web Push danas ide preko VAPID-a i tabele `push_subscriptions` (`endpoint`, `p25
 - Kolona `fcm_token text`. `endpoint`, `p256dh` i `auth_key` postaju obavezni samo za `webpush`
   (zamena `not null` i `check` ograničenja uslovnim `check`-om).
 - Jedinstveni indeks `(child_profile_id, fcm_token) where transport = 'fcm'`.
-- `register_child_push`, `unregister_child_push` i `get_child_push_status` dobijaju `p_transport`, sa
-  podrazumevanom vrednošću `webpush`, pa postojeći web klijent radi bez izmene.
+- Web Push RPC-ji (`register_child_push`, `unregister_child_push`, `get_child_push_status`)
+  ostaju nepromenjeni. Za native su dodati `register_child_fcm_push`,
+  `unregister_child_fcm_push` i `get_child_fcm_push_status`, pa nema rizika od dvosmislenosti
+  ili promene ponašanja web klijenta.
 - Pre migracije: `CREATE TABLE push_subscriptions_backup_<datum> AS SELECT * FROM push_subscriptions;`
 
 **`dispatch-notifications`:**
 - Grananje po `transport`. FCM ide preko HTTP v1 API-ja, a OAuth token se dobija iz service
   account ključa u Supabase Edge secrets (`FCM_SERVICE_ACCOUNT`). Nikad u git.
 - Poruka nosi `notification` (naslov, tekst) i `data` (`eventType`, `targetUrl`, `refresh=1`).
+- Uz nju ide i tihi data-only signal (`silent=1`) da Room keš bude svež i kad FCM u pozadini sam prikaže notifikaciju.
 - Neispravan token (`UNREGISTERED`) deaktivira pretplatu, isto kao trajne Web Push greške danas.
 
 **Native:**

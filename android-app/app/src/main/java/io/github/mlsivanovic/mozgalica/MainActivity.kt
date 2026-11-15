@@ -1,5 +1,6 @@
 package io.github.mlsivanovic.mozgalica
 
+import android.content.Intent
 import android.os.Bundle
 import android.provider.Settings
 import androidx.activity.ComponentActivity
@@ -22,6 +23,8 @@ import io.github.mlsivanovic.mozgalica.podaci.povezivanje.PodesavanjaAplikacije
 import io.github.mlsivanovic.mozgalica.podaci.povezivanje.ProfilRepozitorijum
 import io.github.mlsivanovic.mozgalica.podaci.povezivanje.jeTamna
 import io.github.mlsivanovic.mozgalica.profil.ProfilViewModel
+import io.github.mlsivanovic.mozgalica.push.PushObavestenja
+import kotlinx.coroutines.flow.MutableStateFlow
 import javax.inject.Inject
 import kotlinx.coroutines.runBlocking
 
@@ -29,11 +32,13 @@ import kotlinx.coroutines.runBlocking
 class MainActivity : ComponentActivity() {
     @Inject lateinit var repo: ProfilRepozitorijum
     @Inject lateinit var podesavanjaAplikacije: PodesavanjaAplikacije
+    private val cilj = MutableStateFlow<String?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        cilj.value = primaCilj(intent)
         if (BuildConfig.DEBUG) obradiProbniIntent()
         setContent {
             val viewModel: ProfilViewModel = hiltViewModel()
@@ -48,11 +53,24 @@ class MainActivity : ComponentActivity() {
                         animacije = animacije,
                     ),
                 ) {
-                    MozgalicaLjuska(viewModel)
+                    MozgalicaLjuska(
+                        viewModel = viewModel,
+                        spoljniCilj = cilj,
+                        onCiljPotrosen = { cilj.value = null },
+                    )
                 }
             }
         }
     }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        cilj.value = primaCilj(intent)
+    }
+
+    private fun primaCilj(intent: Intent?): String? =
+        intent?.getStringExtra(PushObavestenja.DODATNO_CILJ)?.takeIf { it.isNotBlank() }
 
     private fun obradiProbniIntent() {
         if (intent.getBooleanExtra("kraj_probnog", false)) {

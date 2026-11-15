@@ -4,6 +4,10 @@ import io.github.mlsivanovic.mozgalica.podaci.kviz.SkladistePokusaja
 import io.github.mlsivanovic.mozgalica.podaci.prodavnica.IshodKupovine
 import io.github.mlsivanovic.mozgalica.podaci.prodavnica.IshodProdavnice
 import io.github.mlsivanovic.mozgalica.podaci.prodavnica.IzvorProdavnice
+import io.github.mlsivanovic.mozgalica.podaci.push.IshodPotvrdePush
+import io.github.mlsivanovic.mozgalica.podaci.push.IshodRegistracijePush
+import io.github.mlsivanovic.mozgalica.podaci.push.IshodStatusaPush
+import io.github.mlsivanovic.mozgalica.podaci.push.IzvorPush
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
@@ -18,6 +22,7 @@ class ProfilRepozitorijum(
     private val izvorSadrzaja: IzvorSadrzaja = PrazanIzvorSadrzaja,
     private val pokusaji: SkladistePokusaja? = null,
     private val izvorProdavnice: IzvorProdavnice = PrazanIzvorProdavnice,
+    private val izvorPush: IzvorPush = PrazanIzvorPush,
 ) {
     // Samo lokalni podaci. Mreža se ne zove dok neko ne pozove osvezi ili povezi.
     fun posmatraj(): Flow<SacuvaniProfil?> = combine(kes.posmatraj(), podesavanja.izabrani()) { profil, izabrani ->
@@ -82,6 +87,21 @@ class ProfilRepozitorijum(
     suspend fun azurirajBalans(noviBalans: Int) {
         val profil = kes.posmatraj().first() ?: return
         kes.upisi(profil.copy(raspolozivoZvezdica = noviBalans.coerceAtLeast(0)))
+    }
+
+    suspend fun registrujFcm(fcmToken: String, userAgent: String?): IshodRegistracijePush {
+        val token = tokeni.procitaj() ?: return IshodRegistracijePush.Odbijena("no_token")
+        return izvorPush.registrujFcm(token, fcmToken, userAgent)
+    }
+
+    suspend fun odjaviFcm(fcmToken: String): IshodPotvrdePush {
+        val token = tokeni.procitaj() ?: return IshodPotvrdePush.Odbijena("no_token")
+        return izvorPush.odjaviFcm(token, fcmToken)
+    }
+
+    suspend fun statusFcm(fcmToken: String): IshodStatusaPush {
+        val token = tokeni.procitaj() ?: return IshodStatusaPush.Odbijen("no_token")
+        return izvorPush.statusFcm(token, fcmToken)
     }
 
     suspend fun napuniIzSnimka(profilTelo: String, rasporedTelo: String, obavestenjaTelo: String): IshodSnimka {
@@ -161,6 +181,13 @@ private fun SacuvanoObavestenje.uDeteta() = io.github.mlsivanovic.mozgalica.poda
     readAt = readAt,
     createdAt = createdAt,
 )
+
+private object PrazanIzvorPush : IzvorPush {
+    override suspend fun registrujFcm(profileToken: String, fcmToken: String, userAgent: String?) =
+        IshodRegistracijePush.Neuspesna
+    override suspend fun odjaviFcm(profileToken: String, fcmToken: String) = IshodPotvrdePush.Neuspesna
+    override suspend fun statusFcm(profileToken: String, fcmToken: String) = IshodStatusaPush.Neuspesan
+}
 
 private object PrazanIzvorProdavnice : IzvorProdavnice {
     override suspend fun prodavnica(profileToken: String) = IshodProdavnice.Neuspesna

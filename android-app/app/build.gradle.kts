@@ -4,6 +4,13 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
+    alias(libs.plugins.google.services) apply false
+}
+
+// Bez google-services.json (javni repo/CI bez Firebase tajni) build i dalje prolazi;
+// push se tada prijavljuje kao nedostupan na uređaju.
+if (rootProject.file("app/google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
 }
 
 // Anon ključ je javan po dizajnu, ali ne ide u git. CI bez .env.local i dalje gradi.
@@ -71,6 +78,8 @@ dependencies {
     implementation(libs.hilt.android)
     implementation(libs.hilt.compose)
     implementation(libs.code.scanner)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.messaging)
     implementation(libs.chesslib)
     implementation(libs.work.runtime)
     ksp(libs.hilt.compiler)

@@ -1,4 +1,4 @@
-// Obrađuje trajni outbox za Brevo mejlove i standardni Web Push.
+// Obrađuje trajni outbox za Brevo mejlove, Web Push i FCM.
 // Funkciju pozivaju samo autentifikovani Database Webhook i Supabase Cron.
 import { buildPushPayload } from 'npm:@block65/webcrypto-web-push@1.0.2'
 import { createClient } from 'jsr:@supabase/supabase-js@2'
@@ -37,11 +37,22 @@ interface Obavestenje {
 
 interface PushPretplata {
   id: string
-  endpoint: string
-  p256dh: string
-  auth_key: string
+  transport: 'webpush' | 'fcm'
+  endpoint: string | null
+  p256dh: string | null
+  auth_key: string | null
+  fcm_token: string | null
   is_active: boolean
 }
+
+interface FcmNalog {
+  project_id: string
+  client_email: string
+  private_key: string
+}
+
+let fcmNalog: FcmNalog | null = null
+let fcmPristup: { token: string; istice: number } | null = null
 
 class GreskaIsporuke extends Error {
   constructor(
@@ -157,22 +168,36 @@ async function posaljiPush(
   obavestenje: Obavestenje,
   subscriptionId: string,
 ): Promise<string | null> {
-  const vapidSubject = Deno.env.get('VAPID_SUBJECT')
-  const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY')
-  const vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY')
-  if (!vapidSubject || !vapidPublicKey || !vapidPrivateKey) {
-    throw new GreskaIsporuke('VAPID tajne nisu podešene.', false)
-  }
-
   const { data, error } = await supabase
     .from('push_subscriptions')
-    .select('id, endpoint, p256dh, auth_key, is_active')
+    .select('id, transport, endpoint, p256dh, auth_key, fcm_token, is_active')
     .eq('id', subscriptionId)
     .single()
 
   if (error || !data) throw new GreskaIsporuke(`Push pretplata nije pronađena: ${error?.message}`, false)
   const pretplata = data as PushPretplata
   if (!pretplata.is_active) throw new GreskaIsporuke('Push pretplata više nije aktivna.', false)
+
+  if (pretplata.transport === 'fcm') {
+    return posaljiFcm(supabase, obavestenje, pretplata)
+  }
+  return posaljiWebPush(supabase, obavestenje, pretplata)
+}
+
+async function posaljiWebPush(
+  supabase: ReturnType<typeof createClient>,
+  obavestenje: Obavestenje,
+  pretplata: PushPretplata,
+): Promise<string | null> {
+  const vapidSubject = Deno.env.get('VAPID_SUBJECT')
+  const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY')
+  const vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY')
+  if (!vapidSubject || !vapidPublicKey || !vapidPrivateKey) {
+    throw new GreskaIsporuke('VAPID tajne nisu podešene.', false)
+  }
+  if (!pretplata.endpoint || !pretplata.p256dh || !pretplata.auth_key) {
+    throw new GreskaIsporuke('Web Push pretplata nema potrebne ključeve.', false)
+  }
 
   const upitZaBroj = supabase.from('notifications').select('id', { count: 'exact', head: true })
     .is('read_at', null)
@@ -215,6 +240,166 @@ async function posaljiPush(
     `Push greška ${ishod.status}: ${ishod.detalj}`,
     ishod.ponoviti,
     ishod.deaktiviratiPretplatu,
+  )
+}
+
+function fcmKanal(eventType: Obavestenje['event_type']): string {
+  return eventType === 'new_quiz' || eventType === 'new_chess_game'
+    ? 'novi_zadaci'
+    : 'rezultati_nagrade'
+}
+
+function base64Url(vrednost: string | Uint8Array): string {
+  const bajtovi = typeof vrednost === 'string' ? new TextEncoder().encode(vrednost) : vrednost
+  let binarno = ''
+  for (const bajt of bajtovi) binarno += String.fromCharCode(bajt)
+  return btoa(binarno).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+}
+
+function ucitajFcmNalog(): FcmNalog {
+  if (fcmNalog) return fcmNalog
+  const sirovo = Deno.env.get('FCM_SERVICE_ACCOUNT')
+  if (!sirovo) throw new GreskaIsporuke('FCM_SERVICE_ACCOUNT nije podešen.', false)
+  let nalog: FcmNalog
+  try {
+    nalog = JSON.parse(sirovo) as FcmNalog
+  } catch {
+    throw new GreskaIsporuke('FCM_SERVICE_ACCOUNT nije ispravan JSON.', false)
+  }
+  if (!nalog.project_id || !nalog.client_email || !nalog.private_key) {
+    throw new GreskaIsporuke('FCM_SERVICE_ACCOUNT nema project_id, client_email i private_key.', false)
+  }
+  fcmNalog = nalog
+  return nalog
+}
+
+async function fcmPristupniToken(): Promise<{ token: string; projectId: string }> {
+  const nalog = ucitajFcmNalog()
+  if (fcmPristup && fcmPristup.istice > Math.floor(Date.now() / 1000) + 60) {
+    return { token: fcmPristup.token, projectId: nalog.project_id }
+  }
+
+  const sada = Math.floor(Date.now() / 1000)
+  const zaglavlje = base64Url(JSON.stringify({ alg: 'RS256', typ: 'JWT' }))
+  const tvrdnje = base64Url(JSON.stringify({
+    iss: nalog.client_email,
+    scope: 'https://www.googleapis.com/auth/firebase.messaging',
+    aud: 'https://oauth2.googleapis.com/token',
+    iat: sada,
+    exp: sada + 3600,
+  }))
+  const pem = nalog.private_key
+    .replace(/-----BEGIN PRIVATE KEY-----/, '')
+    .replace(/-----END PRIVATE KEY-----/, '')
+    .replace(/\s/g, '')
+  const kljuc = Uint8Array.from(atob(pem), (znak) => znak.charCodeAt(0))
+  const kriptoKljuc = await crypto.subtle.importKey(
+    'pkcs8',
+    kljuc,
+    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  )
+  const potpis = await crypto.subtle.sign(
+    'RSASSA-PKCS1-v1_5',
+    kriptoKljuc,
+    new TextEncoder().encode(`${zaglavlje}.${tvrdnje}`),
+  )
+  const assertion = `${zaglavlje}.${tvrdnje}.${base64Url(new Uint8Array(potpis))}`
+  const odgovor = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'content-type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+      assertion,
+    }),
+  })
+  if (!odgovor.ok) {
+    throw new GreskaIsporuke(`FCM OAuth greška ${odgovor.status}: ${(await odgovor.text()).slice(0, 1000)}`, true)
+  }
+  const podaci = await odgovor.json() as { access_token?: string; expires_in?: number }
+  if (!podaci.access_token) throw new GreskaIsporuke('FCM OAuth nije vratio access_token.', true)
+  fcmPristup = {
+    token: podaci.access_token,
+    istice: sada + (podaci.expires_in ?? 3600),
+  }
+  return { token: podaci.access_token, projectId: nalog.project_id }
+}
+
+async function posaljiFcm(
+  supabase: ReturnType<typeof createClient>,
+  obavestenje: Obavestenje,
+  pretplata: PushPretplata,
+): Promise<string | null> {
+  if (!pretplata.fcm_token) throw new GreskaIsporuke('FCM pretplata nema token.', false)
+  const { token, projectId } = await fcmPristupniToken()
+  const kanal = fcmKanal(obavestenje.event_type)
+  const odgovor = await fetch(
+    `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`,
+    {
+      method: 'POST',
+      headers: {
+        authorization: `Bearer ${token}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        message: {
+          token: pretplata.fcm_token,
+          notification: {
+            title: obavestenje.title,
+            body: obavestenje.body,
+          },
+          data: {
+            eventType: obavestenje.event_type,
+            targetUrl: obavestenje.target_url,
+            refresh: '1',
+            channel: kanal,
+          },
+          android: {
+            priority: 'high',
+            notification: {
+              channel_id: kanal,
+              click_action: 'io.github.mlsivanovic.mozgalica.OPEN',
+              icon: 'ic_obavestenje',
+            },
+          },
+        },
+      }),
+    },
+  )
+
+  if (odgovor.ok) {
+    await supabase.from('push_subscriptions').update({
+      failure_count: 0,
+      last_seen_at: new Date().toISOString(),
+    }).eq('id', pretplata.id)
+    // FCM u pozadini sam prikazuje notification poruku i ne poziva servis.
+    // Zato ide i tihi data-only signal da Room keš (i budući vidžet) bude svež.
+    await fetch(`https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`, {
+      method: 'POST',
+      headers: {
+        authorization: `Bearer ${token}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        message: {
+          token: pretplata.fcm_token,
+          data: { refresh: '1', silent: '1' },
+          android: { priority: 'high' },
+        },
+      }),
+    }).catch(() => undefined)
+    const podaci = await odgovor.json() as { name?: string }
+    return podaci.name ?? null
+  }
+
+  const detalj = (await odgovor.text()).slice(0, 2000)
+  const deaktiviraj = odgovor.status === 404 ||
+    /UNREGISTERED|NOT_FOUND|SENDER_ID_MISMATCH/.test(detalj)
+  throw new GreskaIsporuke(
+    `FCM greška ${odgovor.status}: ${detalj}`,
+    !deaktiviraj && (odgovor.status === 429 || odgovor.status >= 500),
+    deaktiviraj,
   )
 }
 

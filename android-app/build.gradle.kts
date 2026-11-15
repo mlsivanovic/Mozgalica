@@ -13,6 +13,7 @@ plugins {
     alias(libs.plugins.kotlin.serialization) apply false
     alias(libs.plugins.ksp) apply false
     alias(libs.plugins.hilt) apply false
+    alias(libs.plugins.google.services) apply false
 }
 
 // Compose BOM 2026.06 poravna lifecycle na 2.11, a taj traži compileSdk 37.

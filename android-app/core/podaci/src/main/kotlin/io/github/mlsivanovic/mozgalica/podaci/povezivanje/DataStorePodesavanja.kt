@@ -77,6 +77,14 @@ class DataStorePodesavanja(private val context: Context) : PodesavanjaPovezivanj
     override suspend fun probniJeBezTokena(): Boolean =
         context.podesavanjaPovezivanja.data.map { it[PROBNI_BEZ_TOKENA] == true }.first()
 
+    override fun pushUkljucen(): Flow<Boolean> = context.podesavanjaPovezivanja.data.map { prefs ->
+        prefs[PUSH] == true
+    }
+
+    override suspend fun postaviPush(ukljucen: Boolean) {
+        context.podesavanjaPovezivanja.edit { prefs -> prefs[PUSH] = ukljucen }
+    }
+
     private companion object {
         val KLJUC = stringPreferencesKey("izabrani_profil")
         val TEMA = stringPreferencesKey("tema")
@@ -84,5 +92,6 @@ class DataStorePodesavanja(private val context: Context) : PodesavanjaPovezivanj
         val HAPTIKA = booleanPreferencesKey("haptika")
         val PROBNI = booleanPreferencesKey("probni_prikaz")
         val PROBNI_BEZ_TOKENA = booleanPreferencesKey("probni_bez_tokena")
+        val PUSH = booleanPreferencesKey("push_ukljucen")
     }
 }
