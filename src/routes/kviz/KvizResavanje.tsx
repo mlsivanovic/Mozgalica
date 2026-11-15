@@ -8,17 +8,20 @@ import { Ikona } from '../../components/Ikona'
 import { StatusIkona } from '../../components/ui'
 import { PitanjeRenderer, odgovorJePrazan } from '../../components/pitanja/PitanjeRenderer'
 import {
-  iskoristiSavet, nastaviPokusaj, posaljiOdgovore, potvrdiTajmer, predajKviz,
+  iskoristiSavet, nastaviPokusaj, posaljiOdgovore, potvrdiTajmer, predajKviz, sacuvajBelezke,
 } from '../../lib/api'
 import {
-  nesinhronizovani, oznaciSinhronizovane, sacuvajStanje, sveSinhronizovano,
-  ucitajStanje, upisiHint, upisiOdgovor, type StanjePokusaja,
+  belezkeZaSinhronizaciju, brojNesinhronizovanihBelezki, nesinhronizovani,
+  oznaciBelezkeSinhronizovane, oznaciSinhronizovane, sacuvajStanje, sveSinhronizovano,
+  ucitajStanje, upisiBelezku, upisiHint, upisiOdgovor,
+  type LokalnaBelezka, type StanjePokusaja,
 } from '../../lib/offlineQueue'
 import type { OdgovorDeteta } from '../../types/db'
 import type { PitanjeZaDete } from '../../types/kviz'
 import './kviz.css'
 
 const DEBOUNCE_MS = 2000
+const BELEZKA_DEBOUNCE_MS = 900
 
 export function KvizResavanje() {
   const { token = '' } = useParams<{ token: string }>()
@@ -39,8 +42,10 @@ export function KvizResavanje() {
   const [trazimSavet, setTrazimSavet] = useState(false)
   const [porukaSavet, setPorukaSavet] = useState<string | null>(null)
   const [pregledOtvoren, setPregledOtvoren] = useState(false)
+  const [radniListOtvoren, setRadniListOtvoren] = useState(false)
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const debounceListaRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // ---- Učitavanje / nastavak pokušaja ----
   useEffect(() => {
@@ -78,6 +83,13 @@ export function KvizResavanje() {
       for (const q of r.questions) {
         if (q.hint) spojeno.hintovi![q.id] = q.hint
       }
+      // Radni listić: lokalni (neposlati) tekst ima prednost nad onim koji je server
+      // već dobio; inače preuzmi tekst sa servera (npr. drugi uređaj).
+      const belezke: Record<string, LokalnaBelezka> = { ...(lokalno.belezke ?? {}) }
+      for (const [qid, tekst] of Object.entries(r.notes ?? {})) {
+        if (!belezke[qid]?.tekst) belezke[qid] = { tekst, changedAt: 0, synced: true }
+      }
+      spojeno.belezke = belezke
       const prviNeodgovoren = r.questions.findIndex((p) =>
         odgovorJePrazan(spojeno.answers[p.id]?.answer ?? null))
       setIndeks(prviNeodgovoren >= 0 ? prviNeodgovoren : Math.max(0, r.questions.length - 1))
@@ -111,13 +123,22 @@ export function KvizResavanje() {
 
   const sinhronizuj = useCallback(async (trenutno: StanjePokusaja) => {
     const neposlati = nesinhronizovani(trenutno)
-    if (Object.keys(neposlati).length === 0) return
+    const belezke = belezkeZaSinhronizaciju(trenutno)
+    if (Object.keys(neposlati).length === 0 && !belezke) return
     setSinhronizuje(true)
     const vremeSlanja = Date.now()
     try {
-      const r = await posaljiOdgovore(trenutno.attemptToken, neposlati)
-      if (r.ok) {
-        setStanje((prethodno) => prethodno && oznaciSinhronizovane(localStorage, token, prethodno, neposlati, vremeSlanja))
+      if (Object.keys(neposlati).length > 0) {
+        const r = await posaljiOdgovore(trenutno.attemptToken, neposlati)
+        if (r.ok) {
+          setStanje((prethodno) => prethodno && oznaciSinhronizovane(localStorage, token, prethodno, neposlati, vremeSlanja))
+        }
+      }
+      if (belezke) {
+        const r = await sacuvajBelezke(trenutno.attemptToken, belezke)
+        if (r.ok) {
+          setStanje((prethodno) => prethodno && oznaciBelezkeSinhronizovane(localStorage, token, prethodno, vremeSlanja))
+        }
       }
     } catch {
       // Bez veze — ostaje nesinhronizovano, pokušaće se ponovo
@@ -157,6 +178,18 @@ export function KvizResavanje() {
       const novo = upisiOdgovor(localStorage, token, prethodno, questionId, odgovor)
       if (debounceRef.current) clearTimeout(debounceRef.current)
       debounceRef.current = setTimeout(() => sinhronizuj(novo), DEBOUNCE_MS)
+      return novo
+    })
+  }
+
+  // Radni listić se upisuje odmah lokalno, a ka serveru ide kraći debounce —
+  // dete može da računa i bez veze, tekst se šalje čim se veza vrati.
+  function promeniBelezku(questionId: string, tekst: string) {
+    setStanje((prethodno) => {
+      if (!prethodno) return prethodno
+      const novo = upisiBelezku(localStorage, token, prethodno, questionId, tekst)
+      if (debounceListaRef.current) clearTimeout(debounceListaRef.current)
+      debounceListaRef.current = setTimeout(() => sinhronizuj(novo), BELEZKA_DEBOUNCE_MS)
       return novo
     })
   }
@@ -224,7 +257,9 @@ export function KvizResavanje() {
 
   const trenutno = pitanja[indeks]
   const nesinhronizovanoBroj = Object.keys(nesinhronizovani(stanje)).length
-  const svePotvrdjeno = sveSinhronizovano(stanje)
+    + brojNesinhronizovanihBelezki(stanje)
+  const belezkaTrenutnog = stanje.belezke?.[trenutno.id]?.tekst ?? ''
+  const svePotvrdjeno = sveSinhronizovano(stanje) && brojNesinhronizovanihBelezki(stanje) === 0
   const imaSavetaZaBiloKoje = pitanja.some((p) => p.hasHint)
   const pocetnaRuta = stanje.accessMode === 'profile' && stanje.profileToken
     ? `/dete/${stanje.profileToken}`
@@ -256,6 +291,12 @@ export function KvizResavanje() {
 
       <div className="red red--razmak kviz-meta-red">
         <button type="button" className="dugme dugme--tekst dugme--malo" onClick={() => setPregledOtvoren(true)}><Ikona ime="pregled" velicina={18} />Pregled pitanja</button>
+        <button
+          type="button" className="dugme dugme--tekst dugme--malo kviz-radni-list-dugme"
+          aria-pressed={radniListOtvoren} onClick={() => setRadniListOtvoren((otvoren) => !otvoren)}
+        >
+          <Ikona ime="uredi" velicina={18} />Radni listić
+        </button>
         {imaSavetaZaBiloKoje && (
           <span className="bedz kviz-saveti-bedz" title="Preostali saveti za ceo pokušaj">
             💡 {Math.max(0, 3 - (stanje.hintsUsed ?? 0))}/3
@@ -293,6 +334,36 @@ export function KvizResavanje() {
           </div>
         )}
       </div>
+
+      {radniListOtvoren && (
+        <section className="kviz-radni-list" aria-label="Radni listić">
+          <div className="kviz-radni-list-zaglavlje">
+            <div className="kviz-radni-list-naslov">
+              <strong>Radni listić</strong>
+              <span className="malo blago">Pitanje {indeks + 1} · računaj korak po korak</span>
+            </div>
+            {belezkaTrenutnog !== '' && (
+              <button type="button" className="kviz-radni-list-brisi malo" onClick={() => promeniBelezku(trenutno.id, '')}>
+                Obriši
+              </button>
+            )}
+            <button type="button" className="ui-ikona-dugme" aria-label="Zatvori radni listić" onClick={() => setRadniListOtvoren(false)}>
+              <Ikona ime="zatvori" />
+            </button>
+          </div>
+          <textarea
+            className="kviz-radni-list-polje"
+            value={belezkaTrenutnog}
+            onChange={(e) => promeniBelezku(trenutno.id, e.target.value)}
+            placeholder="Ovde računaj: npr. 24 + 17 = 41…"
+            spellCheck={false}
+            autoCapitalize="off"
+            autoCorrect="off"
+            aria-label={`Radni listić za pitanje ${indeks + 1}`}
+          />
+          <p className="malo blago kviz-radni-list-napomena">Roditelj vidi tvoj rad u pregledu rezultata.</p>
+        </section>
+      )}
 
       <div className="red red--razmak razmak-gore kviz-navigacija">
         <button type="button" className="dugme dugme--senka" disabled={indeks === 0} onClick={() => setIndeks(indeks - 1)}>

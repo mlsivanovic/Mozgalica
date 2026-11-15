@@ -868,6 +868,16 @@ export async function posaljiOdgovore(attemptToken: string, answers: Record<stri
   return data as SavePotvrda
 }
 
+// Radni listić (beležke) deteta uz pitanja — čuva se uz pokušaj da roditelj
+// posle vidi kako je dete računalo. Ne utiče na ocenjivanje.
+export async function sacuvajBelezke(attemptToken: string, belezke: Record<string, string>): Promise<SavePotvrda> {
+  const { data, error } = await supabase().rpc('save_attempt_notes', {
+    p_attempt_token: attemptToken, p_notes: belezke,
+  })
+  if (error) return { ok: false, error: opisiGresku(error)! }
+  return data as SavePotvrda
+}
+
 export async function predajKviz(attemptToken: string, answers: Record<string, OdgovorDeteta> | null): Promise<RezultatPayload> {
   const { data, error } = await supabase().rpc('submit_attempt', {
     p_attempt_token: attemptToken, p_answers: answers,

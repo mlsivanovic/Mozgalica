@@ -307,6 +307,14 @@ table.tabela { width: 100%; border-collapse: collapse; background: var(--boja-ka
 .podesavanja-tema { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; padding:6px; border-radius:16px; background:var(--boja-povrsina-niska); }
 .podesavanja-tema button { min-height:52px; display:flex; align-items:center; justify-content:center; gap:7px; border:0; border-radius:12px; color:var(--boja-tekst-blagi); background:transparent; font:inherit; font-weight:750; cursor:pointer; }
 .podesavanja-tema button.aktivna { color:var(--boja-primarna); background:var(--boja-kartica); box-shadow:var(--senka); }
+/* Radni listić deteta u pregledu rezultata (admin/roditelj) */
+.radni-list-prikaz {
+  margin: 0.35rem 0 0; padding: 0.7rem 0.9rem;
+  border-radius: var(--radius); background: var(--boja-neutral);
+  border-left: 4px solid var(--boja-primarna);
+  white-space: pre-wrap; word-break: break-word;
+  font: 600 0.95rem/1.6 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
 @keyframes skeleton-sjaj { to { background-position: -140% 0; } }
 @keyframes maskota-uspeh { 50% { transform: translateY(-5px) rotate(2deg); } }
 

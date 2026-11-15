@@ -138,6 +138,36 @@
   font-size: 1.5rem; font-weight: 900;
 }
 
+/* ---------- Radni listić (beležke uz zadatak) ---------- */
+.kviz-radni-list-dugme[aria-pressed="true"] {
+  background: var(--boja-primarna-svetla); color: var(--boja-primarna-tamna); border-radius: 999px;
+}
+.kviz-radni-list {
+  position: fixed; left: 12px; right: 12px; z-index: 30;
+  bottom: calc(84px + env(safe-area-inset-bottom));
+  max-height: min(58dvh, 420px);
+  display: flex; flex-direction: column; gap: 6px; padding: 12px;
+  background: var(--boja-kartica); border: 1px solid var(--boja-ivica);
+  border-radius: 20px; box-shadow: var(--senka-jaka);
+}
+.kviz-radni-list-zaglavlje { display: flex; align-items: center; gap: 8px; }
+.kviz-radni-list-naslov { display: grid; flex: 1; min-width: 0; }
+.kviz-radni-list-brisi {
+  border: none; background: none; padding: 4px 6px; cursor: pointer;
+  color: var(--boja-tekst-blagi); text-decoration: underline;
+}
+.kviz-radni-list-polje {
+  flex: 1; width: 100%; min-height: 132px; resize: none; padding: 10px 12px;
+  border-radius: var(--radius); border: 2px solid var(--boja-ivica);
+  background: var(--boja-neutral); color: var(--boja-tekst);
+  font: 600 1.05rem/1.6 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.kviz-radni-list-polje:focus { border-color: var(--boja-primarna); outline: none; }
+.kviz-radni-list-napomena { margin: 0; }
+@media (min-width: 900px) {
+  .kviz-radni-list { left: auto; right: 24px; bottom: 96px; width: 380px; }
+}
+
 .kviz-konfete {
   position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 5;
 }

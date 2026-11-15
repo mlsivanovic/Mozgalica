@@ -9,6 +9,13 @@ export interface LokalniOdgovor {
   synced: boolean
 }
 
+// Radni listić: tekst koji dete piše uz jedno pitanje (računanje, međukoraci)
+export interface LokalnaBelezka {
+  tekst: string
+  changedAt: number
+  synced: boolean
+}
+
 export interface StanjePokusaja {
   attemptToken: string
   childName: string
@@ -19,6 +26,8 @@ export interface StanjePokusaja {
   // (ucitajStanje ih ne zahteva) — tekst otključanih saveta ostaje vidljiv i offline.
   hintsUsed?: number
   hintovi?: Record<string, string>
+  // Beležke po pitanju — opciono da staro sačuvano stanje ostane čitljivo
+  belezke?: Record<string, LokalnaBelezka>
 }
 
 // Apstrakcija skladišta radi testiranja (u testovima Map umesto localStorage)
@@ -136,6 +145,54 @@ export function oznaciSinhronizovane(
 
 export function sveSinhronizovano(stanje: StanjePokusaja): boolean {
   return Object.values(stanje.answers).every((o) => o.synced)
+}
+
+// ---- Radni listić (beležke uz pitanje) ----
+
+// Upiši beležku lokalno i označi je kao nesinhronizovanu
+export function upisiBelezku(
+  skladiste: Skladiste,
+  kvizToken: string,
+  stanje: StanjePokusaja,
+  questionId: string,
+  tekst: string,
+): StanjePokusaja {
+  const novo: StanjePokusaja = {
+    ...stanje,
+    belezke: {
+      ...(stanje.belezke ?? {}),
+      [questionId]: { tekst, changedAt: Date.now(), synced: false },
+    },
+  }
+  sacuvajStanje(skladiste, kvizToken, novo)
+  return novo
+}
+
+// Cela mapa beležaka čeka slanje kada se bar jedna promenila; RPC upisuje mapu
+// kao celinu pa se šalju i već sinhronizovane beležke.
+export function belezkeZaSinhronizaciju(stanje: StanjePokusaja): Record<string, string> | null {
+  const sve = Object.entries(stanje.belezke ?? {})
+  if (!sve.some(([, b]) => !b.synced)) return null
+  return Object.fromEntries(sve.map(([id, b]) => [id, b.tekst]))
+}
+
+export function oznaciBelezkeSinhronizovane(
+  skladiste: Skladiste,
+  kvizToken: string,
+  stanje: StanjePokusaja,
+  vremePoslato: number,
+): StanjePokusaja {
+  const belezke = { ...(stanje.belezke ?? {}) }
+  for (const [id, b] of Object.entries(belezke)) {
+    if (b.changedAt <= vremePoslato) belezke[id] = { ...b, synced: true }
+  }
+  const novo = { ...stanje, belezke }
+  sacuvajStanje(skladiste, kvizToken, novo)
+  return novo
+}
+
+export function brojNesinhronizovanihBelezki(stanje: StanjePokusaja): number {
+  return Object.values(stanje.belezke ?? {}).filter((b) => !b.synced).length
 }
 
 export function obrisiStanje(skladiste: Skladiste, kvizToken: string): void {

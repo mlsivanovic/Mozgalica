@@ -1,8 +1,9 @@
 // Testovi offline reda: lokalni upis, sinhronizacija, otpornost na pokvareno skladište
 import { describe, expect, it } from 'vitest'
 import {
-  nesinhronizovani, obrisiStanje, oznaciSinhronizovane, sveSinhronizovano,
-  ucitajStanje, upisiHint, upisiOdgovor, zapocniStanje, type Skladiste,
+  belezkeZaSinhronizaciju, brojNesinhronizovanihBelezki, nesinhronizovani, obrisiStanje,
+  oznaciBelezkeSinhronizovane, oznaciSinhronizovane, sveSinhronizovano,
+  ucitajStanje, upisiBelezku, upisiHint, upisiOdgovor, zapocniStanje, type Skladiste,
 } from './offlineQueue'
 
 function memorijskoSkladiste(): Skladiste {
@@ -111,6 +112,39 @@ describe('offline red', () => {
     stanje = upisiHint(s, 'kvizH2', stanje, 'q2', 'Savet 2', 2)
     expect(stanje.hintsUsed).toBe(2)
     expect(stanje.hintovi).toEqual({ q1: 'Savet 1', q2: 'Savet 2' })
+  })
+
+  it('radni listić se čuva lokalno i čeka slanje kao celina', () => {
+    const s = memorijskoSkladiste()
+    let stanje = zapocniStanje(s, 'kvizR', 't', 'Miloš')
+    stanje = upisiBelezku(s, 'kvizR', stanje, 'q1', '24 + 17 = 41')
+    expect(brojNesinhronizovanihBelezki(stanje)).toBe(1)
+    expect(belezkeZaSinhronizaciju(stanje)).toEqual({ q1: '24 + 17 = 41' })
+
+    stanje = upisiBelezku(s, 'kvizR', stanje, 'q2', '7 · 8 = 56')
+    expect(belezkeZaSinhronizaciju(stanje)).toEqual({ q1: '24 + 17 = 41', q2: '7 · 8 = 56' })
+
+    stanje = oznaciBelezkeSinhronizovane(s, 'kvizR', stanje, Date.now() + 1)
+    expect(brojNesinhronizovanihBelezki(stanje)).toBe(0)
+    expect(belezkeZaSinhronizaciju(stanje)).toBeNull()
+  })
+
+  it('beležka promenjena POSLE slanja ostaje nesinhronizovana', () => {
+    const s = memorijskoSkladiste()
+    let stanje = zapocniStanje(s, 'kvizR2', 't', 'Ana')
+    stanje = upisiBelezku(s, 'kvizR2', stanje, 'q1', 'prvi korak')
+    stanje = oznaciBelezkeSinhronizovane(s, 'kvizR2', stanje, Date.now() - 1000)
+    expect(brojNesinhronizovanihBelezki(stanje)).toBe(1)
+  })
+
+  it('radni listić preživljava ponovno učitavanje, a staro stanje bez njega se čita', () => {
+    const s = memorijskoSkladiste()
+    let stanje = zapocniStanje(s, 'kvizR3', 't', 'Ana')
+    stanje = upisiBelezku(s, 'kvizR3', stanje, 'q5', '5 + 5 = 10')
+    expect(ucitajStanje(s, 'kvizR3')?.belezke?.q5.tekst).toBe('5 + 5 = 10')
+
+    s.setItem('mozgalica:pokusaj:bezradnog', JSON.stringify({ attemptToken: 't', childName: 'A', answers: {} }))
+    expect(ucitajStanje(s, 'bezradnog')?.belezke).toBeUndefined()
   })
 
   it('staro sačuvano stanje bez polja za savete se i dalje ispravno učitava', () => {

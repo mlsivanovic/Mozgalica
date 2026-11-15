@@ -189,6 +189,8 @@ export interface Pokusaj {
   stars_earned: number | null
   stars_awarded: number | null
   remaining_seconds: number | null
+  // Radni listić deteta: quiz_question_id -> tekst koji je pisalo uz zadatak
+  notes?: Record<string, string> | null
 }
 
 export interface PokusajOdgovor {

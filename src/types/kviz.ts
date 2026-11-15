@@ -68,6 +68,7 @@ export interface PokusajPayload {
   serverNow?: string
   questions?: PitanjeZaDete[]
   savedAnswers?: Record<string, OdgovorDeteta> // samo kod resume
+  notes?: Record<string, string> // radni listić (beležke) po pitanju — samo kod resume
   hintsUsed?: number
   hintsUnlocked?: string[] // id-jevi quiz_questions čiji je savet već otključan
   remainingSeconds?: number | null

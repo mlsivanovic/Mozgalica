@@ -419,9 +419,9 @@ export function SahPartija() {
   }))
 
   return (
-    <main className="sah-strana">
+    <main className={`sah-strana${uPregledu ? ' sah-strana--pregled' : ''}`}>
       {prikazujeRezultat && (stanje.starsAwarded ?? 0) > 0 && <Konfete />}
-      <div className="sah-omot">
+      <div className={`sah-omot${uPregledu ? ' sah-omot--pregled' : ''}`}>
         <div className="red red--razmak razmak-dole sah-zaglavlje">
           <div className="red sah-zaglavlje-identitet">
             {stanje.profileToken && <Link to={`/dete/${stanje.profileToken}`} className="ui-ikona-dugme" aria-label="Nazad na profil"><Ikona ime="nazad" /></Link>}
@@ -435,6 +435,31 @@ export function SahPartija() {
 
         {greska && <p className="poruka poruka--greska" role="alert">{greska}</p>}
         {obavestenje && <p className="poruka poruka--uspeh" role="status">{obavestenje}</p>}
+
+        {prikazujeRezultat && (
+          <section className={`sah-kraj${stanje.result === 'child_loss' ? ' sah-kraj--poraz' : ''}`} aria-label="Rezultat partije">
+            <div className="sah-kraj-tekst">
+              <strong>{rezultatTekst(stanje)}</strong>
+              <span className="malo blago">
+                {razlogTekst(stanje.termination)}
+                {stanje.result === 'child_loss' && !stanje.retryAvailable && (stanje.retriesUsed ?? 0) >= 3
+                  ? ' · nema više pokušaja'
+                  : ''}
+              </span>
+            </div>
+            <p className="sah-kraj-zvezde" aria-label={`${stanje.starsAwarded ?? 0} zvezdica`}>
+              {'⭐'.repeat(stanje.starsAwarded ?? 0) || '☆'}
+            </p>
+            {stanje.result === 'child_loss' && stanje.retryAvailable && (
+              <button
+                type="button" className="dugme dugme--akcenat dugme--malo"
+                disabled={radi} onClick={() => setBiraElo(true)}
+              >
+                Pokušaj ponovo
+              </button>
+            )}
+          </section>
+        )}
 
         {stanje.status === 'assigned' ? (
           <section className="kartica centar sadrzaj--usko sah-spremna">
@@ -450,8 +475,8 @@ export function SahPartija() {
             </button>
           </section>
         ) : (
-          <div className="sah-igra">
-            <section>
+          <div className={`sah-igra${uPregledu ? ' sah-igra--pregled' : ''}`}>
+            <section className={uPregledu ? 'sah-tabla-zona' : undefined}>
               <SahTabla
                 fen={tablaFen}
                 orientation={stanje.childColor}
@@ -464,8 +489,8 @@ export function SahPartija() {
               />
             </section>
 
-            <aside className="sah-panel">
-              {stanje.clockSeconds != null && (
+            <aside className={`sah-panel${uPregledu ? ' sah-panel--pregled' : ''}`}>
+              {!uPregledu && stanje.clockSeconds != null && (
                 <section className="kartica sah-satovi" aria-label="Šahovski satovi">
                   <div className={`sah-sat ${stanje.status === 'in_progress' && stanje.turnColor === 'white' ? 'sah-sat--aktivan' : ''}`}>
                     Beli<strong>{formatSat(satovi.white)}</strong>
@@ -476,59 +501,9 @@ export function SahPartija() {
                 </section>
               )}
 
-              <section className="kartica">
-                {prikazujeRezultat ? (
-                  <div className={`sah-rezultat ${stanje.result === 'child_loss' ? 'sah-rezultat--poraz' : ''}`}>
-                    <h2>{rezultatTekst(stanje)}</h2>
-                    <p className="blago">{razlogTekst(stanje.termination)}</p>
-                    <p style={{ fontSize: '1.5rem' }}>{'⭐'.repeat(stanje.starsAwarded ?? 0) || '☆'}</p>
-                    <strong>{stanje.starsAwarded ?? 0} zvezdica</strong>
-                    {stanje.result === 'child_loss' && (
-                      <div className="sah-pokusaj">
-                        {stanje.retryAvailable ? (
-                          biraElo ? (
-                            <>
-                              <p className="blago malo">Izaberi jačinu protivnika:</p>
-                              <div className="sah-pokusaj__opcije">
-                                {dozvoljeniEloZaPokusaj(stanje.approximateElo ?? 700).map((nivo) => (
-                                  <button
-                                    key={nivo} type="button" className="dugme dugme--senka dugme--malo"
-                                    disabled={radi} onClick={() => void pokusajPonovo(nivo)}
-                                  >
-                                    ELO {nivo}{nivo === stanje.approximateElo ? ' · ista jačina' : ' · lakše'}
-                                  </button>
-                                ))}
-                              </div>
-                              <button type="button" className="sah-pokusaj__otkazi malo" disabled={radi} onClick={() => setBiraElo(false)}>
-                                Odustani od izbora
-                              </button>
-                            </>
-                          ) : (
-                            <>
-                              <button
-                                type="button" className="dugme dugme--akcenat"
-                                disabled={radi} onClick={() => setBiraElo(true)}
-                              >
-                                <Ikona ime="ponovi" /> Pokušaj ponovo
-                              </button>
-                              <p className="malo blago">
-                                {radi
-                                  ? 'Pravim novu partiju…'
-                                  : preostaloPokusaja(stanje.retriesUsed) === 1
-                                    ? 'Preostao ti je još 1 pokušaj, protiv istog ili slabijeg protivnika.'
-                                    : `Preostalo ti je još ${preostaloPokusaja(stanje.retriesUsed)} pokušaja, protiv istog ili slabijeg protivnika.`}
-                              </p>
-                            </>
-                          )
-                        ) : stanje.retriesUsed != null && stanje.retriesUsed >= 3 ? (
-                          <p className="malo blago">Za ovu partiju više nemaš pravo na ponovni pokušaj.</p>
-                        ) : null}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <>
-                    <h2>{
+              {!uPregledu && (
+                <section className="kartica">
+                  <h2>{
                       faza === 'cuvanje' ? 'Čuvam potez…'
                         : faza === 'ponistavanje' ? 'Poništavam potez…'
                           : faza === 'najava' ? 'Računar će odigrati…'
@@ -562,19 +537,18 @@ export function SahPartija() {
                     >
                       Predaj partiju
                     </button>
-                  </>
-                )}
-              </section>
+                </section>
+              )}
 
-              <section className="kartica">
+              <section className={`kartica${uPregledu ? ' sah-potezi-kartica' : ''}`}>
                 <h2>Potezi</h2>
                 {uPregledu && potezi.length > 0 && (
-                  <p className="blago malo razmak-gore">
+                  <p className="blago malo razmak-gore sah-pregled-hint">
                     Pregled partije — idi nazad i napred ili dodirni potez.
                   </p>
                 )}
                 {redoviPoteza.length === 0 ? <p className="blago">Još nema poteza.</p> : (
-                  <div className="sah-potezi razmak-gore" aria-label="Lista poteza">
+                  <div className={`sah-potezi razmak-gore${uPregledu ? ' sah-potezi--pregled' : ''}`} aria-label="Lista poteza">
                     {redoviPoteza.map((red) => {
                       const beliPly = red.broj * 2 - 1
                       const crniPly = red.broj * 2
@@ -652,7 +626,7 @@ export function SahPartija() {
                 )}
               </section>
 
-              {stanje.profileToken && (
+              {!uPregledu && stanje.profileToken && (
                 <Link className="dugme dugme--senka" to={`/dete/${stanje.profileToken}`}>
                   ← Nazad na profil
                 </Link>
@@ -661,6 +635,37 @@ export function SahPartija() {
           </div>
         )}
       </div>
+
+      {biraElo && prikazujeRezultat && (
+        <div className="modal-pozadina" role="presentation" onClick={() => { if (!radi) setBiraElo(false) }}>
+          <div className="modal" role="dialog" aria-modal="true" aria-label="Novi pokušaj" onClick={(e) => e.stopPropagation()}>
+            <h2>Pokušaj ponovo</h2>
+            <p className="blago malo razmak-gore">Izaberi jačinu protivnika.</p>
+            <div className="sah-pokusaj__opcije razmak-gore">
+              {dozvoljeniEloZaPokusaj(stanje.approximateElo ?? 700).map((nivo) => (
+                <button
+                  key={nivo} type="button" className="dugme dugme--senka dugme--malo"
+                  disabled={radi} onClick={() => void pokusajPonovo(nivo)}
+                >
+                  ELO {nivo}{nivo === stanje.approximateElo ? ' · ista jačina' : ' · lakše'}
+                </button>
+              ))}
+            </div>
+            <p className="malo blago razmak-gore">
+              {radi
+                ? 'Pravim novu partiju…'
+                : preostaloPokusaja(stanje.retriesUsed) === 1
+                  ? 'Preostao ti je još 1 pokušaj, protiv istog ili slabijeg protivnika.'
+                  : `Preostalo ti je još ${preostaloPokusaja(stanje.retriesUsed)} pokušaja, protiv istog ili slabijeg protivnika.`}
+            </p>
+            <div className="red red--kraj razmak-gore">
+              <button type="button" className="dugme dugme--senka" disabled={radi} onClick={() => setBiraElo(false)}>
+                Odustani
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   )
 }

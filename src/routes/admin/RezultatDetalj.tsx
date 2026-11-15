@@ -125,6 +125,12 @@ export function RezultatDetalj() {
                 <p className="malo razmak-gore blago">Referentni odgovor: {referentniOdgovor.join(', ')}</p>
               )}
               {q.explanation && <p className="malo razmak-gore blago">💡 {q.explanation}</p>}
+              {pokusaj.notes?.[q.id] && (
+                <div className="razmak-gore">
+                  <p className="malo blago">🧮 Radni listić deteta</p>
+                  <pre className="radni-list-prikaz">{pokusaj.notes[q.id]}</pre>
+                </div>
+              )}
 
               {odg && (
                 <div className="red razmak-gore">
