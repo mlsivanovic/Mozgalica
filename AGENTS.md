@@ -84,10 +84,19 @@ src/lib/               Supabase klijent, tipizirani API pozivi, offline red
 src/routes/admin/      Administratorski panel (zaštićen AuthContext-om)
 src/routes/kviz/       Dečji tok kviza bez naloga: ulaz → rešavanje → rezultat
 src/routes/sah/        Dečja šahovska partija bez naloga (preko play tokena)
+android-app/            Native dečja Android aplikacija (Kotlin, Compose, Room, FCM)
 ```
 
 Detaljan opis modela baze, bezbednosnog modela i faza razvoja: videti plan
 projekta (`Context`/`Arhitektura` odeljci pisani pre implementacije).
+
+## Android izdanje
+
+Native APK se pravi ručnim workflow-om `Android APK` iz `android-app/`. Pre potpisivanja
+workflow ubacuje `google-services.json` iz GitHub secret-a `GOOGLE_SERVICES_JSON_BASE64`
+i Supabase podatke iz repository variables `VITE_SUPABASE_URL` i `VITE_SUPABASE_ANON_KEY`;
+taj fajl i potpisni ključ nikad ne idu u git. `versionCode` mora da raste i podrazumevano
+počinje od 2, da bi se instalirao preko starog TWA omotača.
 
 ## Testiranje
 

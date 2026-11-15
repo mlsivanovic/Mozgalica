@@ -33,8 +33,8 @@ android {
         applicationId = "io.github.mlsivanovic.mozgalica"
         minSdk = 24
         targetSdk = 36
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 2
+        versionName = "1.0.1"
         buildConfigField("String", "SUPABASE_URL", zaBuildConfig(vrednostIzEnv("VITE_SUPABASE_URL")))
         buildConfigField("String", "SUPABASE_ANON_KLJUC", zaBuildConfig(vrednostIzEnv("VITE_SUPABASE_ANON_KEY")))
     }

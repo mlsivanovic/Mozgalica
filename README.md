@@ -49,26 +49,28 @@ koraci za povezivanje Supabase/Brevo naloga i Web Push-a su u [SETUP.md](./SETUP
 
 ## Android aplikacija (sideload)
 
-Dečja verzija ima Android omotač „Moja Mozgalica” u `android/` (Bubblewrap / Trusted Web
-Activity). Otvara živi sajt, pa izmene kvizova i šaha ne traže novi APK. Aplikacija se ne
-objavljuje na Play Store-u. Na podešavanjima profila deteta postoji dugme koje vodi na:
+Native dečja aplikacija je u `android-app/` (Kotlin, Jetpack Compose, Supabase, FCM).
+Aplikacija se ne objavljuje na Play Store-u. Na podešavanjima profila deteta postoji dugme
+koje vodi na:
 
 `https://github.com/mlsivanovic/Mozgalica/releases/latest/download/Mozgalica.apk`
 
 Posle instalacije, u Family Link-u tu aplikaciju stavi na neograničeno vreme. Tada se ne
-računa u dnevni limit (Android 7+, van Google Kids Space-a).
+računa u dnevni limit (Android 7+, van Google Kids Space-a). Posle prelaska sa starog TWA
+omotača dete jednom skenira QR iz profila, jer se token iz Chrome skladišta ne prenosi.
 
-Novi APK, samo kad se menja omotač:
+Novi APK:
 
 ```bash
 gh workflow run "Android APK" -f version_name=1.0.1 -f version_code=2
 ```
 
-`version_code` mora da raste. Potpisni ključ je van gita, u `~/.mozgalica/android/`.
-Bez istog ključa nova verzija ne može da se instalira preko stare.
-
-Digital Asset Links (da omotač nema adresnu traku) stoje na
-`https://mlsivanovic.github.io/.well-known/assetlinks.json`.
+`version_code` mora da raste. Workflow preuzima `google-services.json` iz GitHub secret-a
+`GOOGLE_SERVICES_JSON_BASE64` (nikad se ne commituje), uz repository variables
+`VITE_SUPABASE_URL` i `VITE_SUPABASE_ANON_KEY`, i potpisuje APK postojećim ključem.
+Potpisni ključ i njegove lozinke su van gita; za lokalnu proveru koristi `~/.mozgalica/android/`.
+Bez istog ključa nova verzija ne može da se instalira preko stare. `google-services.json`
+se u secret postavlja kao base64, npr. `base64 -i android-app/app/google-services.json | gh secret set GOOGLE_SERVICES_JSON_BASE64`.
 
 ## Pokretanje lokalno
 

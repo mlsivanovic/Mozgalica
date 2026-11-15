@@ -25,14 +25,6 @@ tmp_analiza/
 # Android potpis i lokalni build. Ključ živi van repoa (~/.mozgalica/android/).
 *.keystore
 *.jks
-android/local.properties
-android/.gradle/
-android/app/build/
-android/build/
-android/app-release-signed.apk
-android/app-release-bundle.aab
-android/app-release-unsigned-aligned.apk
-
 # Native Android skelet. Potpis i lokalni SDK put ostaju van gita.
 android-app/local.properties
 android-app/.gradle/

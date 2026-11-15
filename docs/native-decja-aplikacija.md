@@ -594,6 +594,29 @@ Videti [Push](#7-push-fcm-umesto-web-push) ispod.
 - `android/` (TWA) se briše iz repozitorijuma kada native verzija prođe testiranje.
   Ostaje u git istoriji.
 
+#### Urađeno u fazi 9
+- Release workflow [`android.yml`](../.github/workflows/android.yml) sada gradi
+  `android-app`, upisuje `versionName`/`versionCode` iz ulaza (podrazumevano 1.0.1 / 2),
+  ubacuje `google-services.json` iz GitHub secret-a `GOOGLE_SERVICES_JSON_BASE64`, Supabase
+  podatke iz repository variables `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY` i potpisuje
+  APK postojećim keystore secret-ima. Bez Firebase secret-a ili Supabase promenljivih release
+  namerno pada, da se ne objavi neispravan build.
+- `versionCode` je 2, pa se native APK instalira preko TWA verzije 1.0.0 sa istim potpisom; prvo native izdanje je 1.0.1 jer je tag 1.0.0 već zauzet.
+  Release notes sadrže jednokratno ponovno povezivanje QR-om, Family Link i uključivanje
+  obaveštenja.
+- README je prepisan sa TWA/Bubblewrap opisa na native aplikaciju i GitHub secret-e.
+- Probni podaci su obrisani posle backup-a u `backup_faza9_*` tabele (bez pristupa za
+  `anon`/`authenticated`): profil „Proba Native“ (1), attempts (8), odgovori (118), retry
+  pitanja (50), linkovi (12), šah partije (3), obaveštenja (15), push pretplate (2), kupovina
+  (1), tri isključivo probna kviza (18 pitanja) i probna stavka prodavnice. Realni profili
+  Andrej, Filip i Milos nisu dirani.
+- `android/` TWA direktorijum je uklonjen iz radnog stabla; ostaje u git istoriji.
+- **Provereno lokalno:** release build sa verzijom 2/1.0.0, R8 i baseline profilom; APK je
+  potpisan debug ključem samo za smoke test i normalno se pokreće. Workflow sa pravim
+  GitHub secret-ima nije pokretan u ovom okruženju.
+- **Nije provereno:** stvarni GitHub Release, potpisivanje produkcijskim ključem i instalacija
+  preko TWA verzije na fizičkom telefonu.
+
 | Faza | Dani |
 |---|---|
 | 0 Priprema | 2–3 |

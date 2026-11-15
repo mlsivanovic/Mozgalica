@@ -1,20 +1,19 @@
-# Ručni release Android omotača. Ne ide na svaki push: sajt se ažurira sam,
-# a novi APK treba samo kad se menja omotač (ikona, start adresa, dozvole).
-# version_code mora da raste, inače telefon odbija instalaciju preko stare.
+# Ručni release native dečje Android aplikacije. Sajt se ažurira sam, a APK se
+# pravi samo kada treba nova verzija. version_code mora da raste.
 name: Android APK
 
 on:
   workflow_dispatch:
     inputs:
       version_name:
-        description: versionName, npr. 1.0.0
+        description: versionName, npr. 1.0.1
         required: true
-        default: "1.0.0"
+        default: "1.0.1"
         type: string
       version_code:
         description: versionCode, ceo broj koji raste
         required: true
-        default: "1"
+        default: "2"
         type: string
 
 permissions:
@@ -42,41 +41,63 @@ jobs:
         with:
           packages: platform-tools platforms;android-36 build-tools;36.0.0
 
-      - name: Verzija i keystore
+      - name: Verzija, Firebase i keystore
         env:
           VERSION_NAME: ${{ inputs.version_name }}
           VERSION_CODE: ${{ inputs.version_code }}
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
         run: |
+          set -euo pipefail
+          if [ -z "${VITE_SUPABASE_URL}" ] || [ -z "${VITE_SUPABASE_ANON_KEY}" ]; then
+            echo "Repository variables VITE_SUPABASE_URL i VITE_SUPABASE_ANON_KEY moraju biti podešene." >&2
+            exit 1
+          fi
+          printf 'VITE_SUPABASE_URL=%s\nVITE_SUPABASE_ANON_KEY=%s\n' \
+            "${VITE_SUPABASE_URL}" "${VITE_SUPABASE_ANON_KEY}" > .env.local
           python3 - << 'PY'
-          import base64, os, pathlib, re
+          import base64, json, os, pathlib, re
           name = os.environ["VERSION_NAME"].strip()
           code = os.environ["VERSION_CODE"].strip()
           if not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", name):
               raise SystemExit("version_name mora biti npr. 1.0.0")
           if not re.fullmatch(r"[1-9][0-9]*", code):
               raise SystemExit("version_code mora biti pozitivan ceo broj")
-          gradle = pathlib.Path("android/app/build.gradle")
+          gradle = pathlib.Path("android-app/app/build.gradle.kts")
           text = gradle.read_text()
-          text, n1 = re.subn(r"versionCode \d+", f"versionCode {code}", text, count=1)
-          text, n2 = re.subn(r'versionName "[^"]*"', f'versionName "{name}"', text, count=1)
+          text, n1 = re.subn(r"versionCode = \d+", f"versionCode = {code}", text, count=1)
+          text, n2 = re.subn(r'versionName = "[^"]*"', f'versionName = "{name}"', text, count=1)
           if n1 != 1 or n2 != 1:
               raise SystemExit("versionCode ili versionName nije pronađen")
           gradle.write_text(text)
-          manifest = pathlib.Path("android/twa-manifest.json")
-          raw = manifest.read_text()
-          raw, a = re.subn(r'"appVersion": "[^"]*"', f'"appVersion": "{name}"', raw, count=1)
-          raw, b = re.subn(r'"appVersionCode": \d+', f'"appVersionCode": {code}', raw, count=1)
-          if a != 1 or b != 1:
-              raise SystemExit("verzija nije pronađena u twa-manifest.json")
-          manifest.write_text(raw)
+
+          google = os.environ.get("GOOGLE_SERVICES_JSON_BASE64", "").strip()
+          if not google:
+              raise SystemExit("GitHub secret GOOGLE_SERVICES_JSON_BASE64 nije podešen.")
+          try:
+              config = json.loads(base64.b64decode(google).decode("utf-8"))
+          except Exception as exc:
+              raise SystemExit(f"GOOGLE_SERVICES_JSON_BASE64 nije ispravan base64 JSON: {exc}")
+          package_name = "io.github.mlsivanovic.mozgalica"
+          packages = {
+              client.get("client_info", {}).get("android_client_info", {}).get("package_name")
+              for client in config.get("client", [])
+          }
+          if package_name not in packages:
+              raise SystemExit("google-services.json ne sadrži paket " + package_name)
+          pathlib.Path("android-app/app/google-services.json").write_text(
+              json.dumps(config, ensure_ascii=False, indent=2) + "\n"
+          )
+
           keystore = pathlib.Path(os.environ["RUNNER_TEMP"]) / "mozgalica.keystore"
           keystore.write_bytes(base64.b64decode(os.environ["ANDROID_KEYSTORE_BASE64"]))
           print(f"verzija {name} ({code})")
           PY
 
       - name: Sastavi APK
-        working-directory: android
+        working-directory: android-app
         run: chmod +x ./gradlew && ./gradlew assembleRelease --stacktrace
 
       - name: Potpiši APK
@@ -87,7 +108,7 @@ jobs:
         run: |
           set -euo pipefail
           BT="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)"
-          UNSIGNED="android/app/build/outputs/apk/release/app-release-unsigned.apk"
+          UNSIGNED="android-app/app/build/outputs/apk/release/app-release-unsigned.apk"
           ALIGNED="${RUNNER_TEMP}/app-aligned.apk"
           OUT="${RUNNER_TEMP}/Mozgalica.apk"
           "$BT/zipalign" -f -p 4 "$UNSIGNED" "$ALIGNED"
@@ -109,12 +130,14 @@ jobs:
             --title "Android ${VERSION_NAME}" \
             --latest \
             --notes "$(cat <<EOF
-          Android aplikacija Moja Mozgalica, za instalaciju van Play Store-a.
+          Native Android aplikacija Moja Mozgalica, za instalaciju van Play Store-a.
 
           Preuzmi Mozgalica.apk i otvori ga na telefonu. Dozvoli instalaciju nepoznatih aplikacija samo za pregledač ili Files, pa tu dozvolu posle isključi.
 
+          Posle prelaska sa starog omotača potrebno je da dete jednom skenira QR iz profila, jer se token iz Chrome skladišta ne prenosi u native aplikaciju.
+
           U Family Link-u izaberi dete, pa Vreme ispred ekrana → Ograničenja → Ograničenja za aplikacije → Moja Mozgalica → Neograničeno vreme. Tada se aplikacija ne računa u dnevni limit. Ne važi u Google Kids Space-u.
 
-          Kvizovi i šah i dalje dolaze sa sajta. Novi APK treba samo kad se menja ovaj omotač.
+          Ako želiš obaveštenja, posle instalacije ih uključi u Podešavanjima aplikacije i dozvoli ih na telefonu.
           EOF
           )"
