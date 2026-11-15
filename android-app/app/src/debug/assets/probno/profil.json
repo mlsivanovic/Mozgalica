@@ -1,0 +1,150 @@
+{
+  "ok": true,
+  "name": "Mila",
+  "avatar": "🦊",
+  "totalStars": 47,
+  "spendableStars": 21,
+  "currentTitle": {
+    "avatar": null,
+    "minStars": 40,
+    "name": "ShadowNoob Empowered"
+  },
+  "nextTitle": {
+    "avatar": null,
+    "minStars": 60,
+    "name": "ShadowNoob Unbound",
+    "starsNeeded": 13
+  },
+  "activeChessGames": [
+    {
+      "approximateElo": 900,
+      "blackRemainingMs": 412000,
+      "childColor": "white",
+      "clockSeconds": 600,
+      "createdAt": "2026-11-15T09:08:00+00:00",
+      "fen": "r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3",
+      "playToken": "nativeugovorsah000000001",
+      "status": "in_progress",
+      "turnColor": "white",
+      "whiteRemainingMs": 503000
+    },
+    {
+      "approximateElo": 700,
+      "blackRemainingMs": null,
+      "childColor": "black",
+      "clockSeconds": null,
+      "createdAt": "2026-11-15T10:08:00+00:00",
+      "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+      "playToken": "nativeugovorsah000000003",
+      "status": "assigned",
+      "turnColor": "white",
+      "whiteRemainingMs": null
+    }
+  ],
+  "activeQuizzes": [
+    {
+      "answeredCount": 4,
+      "attemptState": "in_progress",
+      "description": "Sabiranje i oduzimanje do 1000.",
+      "questionCount": 10,
+      "quizToken": "nativeugovorkviz00000001",
+      "remainingSeconds": 412,
+      "timeLimitSeconds": 900,
+      "title": "Matematika — Sabiranje do 1000"
+    },
+    {
+      "answeredCount": 0,
+      "attemptState": "new",
+      "description": "Imenice, glagoli i pridevi.",
+      "questionCount": 8,
+      "quizToken": "nativeugovorkviz00000002",
+      "remainingSeconds": null,
+      "timeLimitSeconds": null,
+      "title": "Srpski jezik — Vrste reči"
+    }
+  ],
+  "history": [
+    {
+      "attemptId": "a1",
+      "pendingReview": false,
+      "scorePct": 92.5,
+      "starsAwarded": 5,
+      "submittedAt": "2026-11-15T08:08:00+00:00",
+      "title": "Matematika — Množenje"
+    },
+    {
+      "attemptId": "a2",
+      "pendingReview": true,
+      "scorePct": 0,
+      "starsAwarded": 0,
+      "submittedAt": "2026-11-14T17:08:00+00:00",
+      "title": "Srpski — Sastav „Moj grad”"
+    },
+    {
+      "attemptId": "a3",
+      "pendingReview": false,
+      "scorePct": 66.7,
+      "starsAwarded": 3,
+      "submittedAt": "2026-11-12T12:08:00+00:00",
+      "title": "Priroda i društvo — Biljke"
+    },
+    {
+      "attemptId": "a4",
+      "pendingReview": false,
+      "scorePct": 45.0,
+      "starsAwarded": 1,
+      "submittedAt": "2026-11-03T12:08:00+00:00",
+      "title": "Matematika — Razlomci"
+    },
+    {
+      "attemptId": "a5",
+      "pendingReview": false,
+      "scorePct": 100.0,
+      "starsAwarded": 5,
+      "submittedAt": "2026-10-06T12:08:00+00:00",
+      "title": "Srpski — Ćirilica"
+    }
+  ],
+  "chessHistory": [
+    {
+      "approximateElo": 900,
+      "childColor": "black",
+      "completedAt": "2026-11-14T18:08:00+00:00",
+      "gameId": "g1",
+      "playToken": "nativeugovorsah000000002",
+      "result": "child_win",
+      "starsAwarded": 4,
+      "termination": "checkmate"
+    },
+    {
+      "approximateElo": 900,
+      "childColor": "white",
+      "completedAt": "2026-11-11T12:08:00+00:00",
+      "gameId": "g2",
+      "playToken": "nativeugovorsah000000004",
+      "result": "draw",
+      "starsAwarded": 2,
+      "termination": "stalemate"
+    },
+    {
+      "approximateElo": 1100,
+      "childColor": "white",
+      "completedAt": "2026-11-06T12:08:00+00:00",
+      "gameId": "g3",
+      "playToken": "nativeugovorsah000000005",
+      "result": "child_loss",
+      "starsAwarded": 0,
+      "termination": "resignation"
+    },
+    {
+      "approximateElo": 700,
+      "childColor": "black",
+      "completedAt": "2026-10-26T12:08:00+00:00",
+      "gameId": "g4",
+      "playToken": "nativeugovorsah000000006",
+      "result": "child_win",
+      "starsAwarded": 3,
+      "termination": "timeout"
+    }
+  ]
+}

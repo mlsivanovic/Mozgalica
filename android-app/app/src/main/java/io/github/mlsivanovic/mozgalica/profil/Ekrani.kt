@@ -2,7 +2,10 @@ package io.github.mlsivanovic.mozgalica.profil
 
 import io.github.mlsivanovic.mozgalica.dizajn.Maskota
 import io.github.mlsivanovic.mozgalica.dizajn.StanjeMaskote
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.heightIn
@@ -22,6 +25,7 @@ fun ProveraEkran() {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        Maskota(StanjeMaskote.POZDRAV, velicina = 112.dp)
         Text(
             text = "Moja Mozgalica",
             style = MaterialTheme.typography.headlineMedium,
@@ -31,22 +35,27 @@ fun ProveraEkran() {
 }
 
 @Composable
-fun PraznoStanje(naslov: String, opis: String) {
+fun PraznoStanje(naslov: String, opis: String, stanje: StanjeMaskote = StanjeMaskote.PRAZNO) {
     Column(
-        modifier = Modifier.fillMaxSize().padding(vertical = 12.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.surfaceContainerLow, MaterialTheme.shapes.large)
+            .padding(horizontal = 20.dp, vertical = 28.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Maskota(StanjeMaskote.PRAZNO, velicina = 72.dp)
+        Maskota(stanje, velicina = 88.dp)
         Text(
             text = naslov,
             style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onBackground,
+            color = MaterialTheme.colorScheme.onSurface,
+            textAlign = TextAlign.Center,
         )
         Text(
             text = opis,
-            style = MaterialTheme.typography.bodyLarge,
+            style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
         )
     }
 }
@@ -78,6 +87,7 @@ fun FokusiranEkran(naslov: String, poruka: String, onNazad: () -> Unit) {
         verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        Maskota(StanjeMaskote.SAVET, velicina = 96.dp)
         Text(
             text = naslov,
             style = MaterialTheme.typography.headlineMedium,

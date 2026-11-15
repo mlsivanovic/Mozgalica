@@ -1,0 +1,461 @@
+{
+  "childName": "Mila",
+  "exists": true,
+  "includeSaturday": true,
+  "ok": true,
+  "overrideShift": null,
+  "rotationMode": "fixed",
+  "serverNow": "2026-11-15T14:19:44.213987+00:00",
+  "sharedSlots": true,
+  "thisWeekShift": "morning",
+  "today": {
+    "date": "2026-11-15",
+    "isBreak": false,
+    "lessons": [
+      {
+        "color": "#BE123C",
+        "endsAt": "08:45",
+        "isCurrent": false,
+        "isNext": null,
+        "note": null,
+        "periodNo": 1,
+        "room": "12",
+        "startsAt": "08:00",
+        "subject": "Srpski jezik",
+        "teacher": "Jelena Petrović"
+      },
+      {
+        "color": "#4F46E5",
+        "endsAt": "09:35",
+        "isCurrent": false,
+        "isNext": null,
+        "note": "Poneti svesku za domaći",
+        "periodNo": 2,
+        "room": "12",
+        "startsAt": "08:50",
+        "subject": "Matematika",
+        "teacher": "Jelena Petrović"
+      },
+      {
+        "color": "#0F766E",
+        "endsAt": "10:40",
+        "isCurrent": true,
+        "isNext": null,
+        "note": null,
+        "periodNo": 3,
+        "room": "12",
+        "startsAt": "09:55",
+        "subject": "Priroda i društvo",
+        "teacher": "Jelena Petrović"
+      },
+      {
+        "color": "#0369A1",
+        "endsAt": "11:30",
+        "isCurrent": false,
+        "isNext": true,
+        "note": null,
+        "periodNo": 4,
+        "room": "7",
+        "startsAt": "10:45",
+        "subject": "Engleski jezik",
+        "teacher": "Ana Ilić"
+      },
+      {
+        "color": "#EA580C",
+        "endsAt": "12:20",
+        "isCurrent": false,
+        "isNext": null,
+        "note": null,
+        "periodNo": 5,
+        "room": "sala",
+        "startsAt": "11:35",
+        "subject": "Fizičko vaspitanje",
+        "teacher": "Marko Jović"
+      }
+    ],
+    "shift": "morning",
+    "weekday": 7
+  },
+  "tomorrow": {
+    "date": "2026-11-16",
+    "isBreak": false,
+    "lessons": [
+      {
+        "color": "#BE123C",
+        "endsAt": "08:45",
+        "isCurrent": false,
+        "isNext": null,
+        "note": null,
+        "periodNo": 1,
+        "room": "12",
+        "startsAt": "08:00",
+        "subject": "Srpski jezik",
+        "teacher": "Jelena Petrović"
+      },
+      {
+        "color": "#4F46E5",
+        "endsAt": "09:35",
+        "isCurrent": false,
+        "isNext": null,
+        "note": null,
+        "periodNo": 2,
+        "room": "12",
+        "startsAt": "08:50",
+        "subject": "Matematika",
+        "teacher": "Jelena Petrović"
+      },
+      {
+        "color": "#0F766E",
+        "endsAt": "10:40",
+        "isCurrent": false,
+        "isNext": null,
+        "note": null,
+        "periodNo": 3,
+        "room": "12",
+        "startsAt": "09:55",
+        "subject": "Priroda i društvo",
+        "teacher": "Jelena Petrović"
+      },
+      {
+        "color": "#0369A1",
+        "endsAt": "11:30",
+        "isCurrent": false,
+        "isNext": null,
+        "note": null,
+        "periodNo": 4,
+        "room": "7",
+        "startsAt": "10:45",
+        "subject": "Engleski jezik",
+        "teacher": "Ana Ilić"
+      },
+      {
+        "color": "#EA580C",
+        "endsAt": "12:20",
+        "isCurrent": false,
+        "isNext": null,
+        "note": null,
+        "periodNo": 5,
+        "room": "sala",
+        "startsAt": "11:35",
+        "subject": "Fizičko vaspitanje",
+        "teacher": "Marko Jović"
+      }
+    ],
+    "shift": "morning",
+    "weekday": 1
+  },
+  "week": [
+    {
+      "date": "2026-11-09",
+      "isBreak": false,
+      "lessons": [
+        {
+          "color": "#BE123C",
+          "endsAt": "08:45",
+          "isCurrent": false,
+          "isNext": null,
+          "note": null,
+          "periodNo": 1,
+          "room": "12",
+          "startsAt": "08:00",
+          "subject": "Srpski jezik",
+          "teacher": "Jelena Petrović"
+        },
+        {
+          "color": "#4F46E5",
+          "endsAt": "09:35",
+          "isCurrent": false,
+          "isNext": null,
+          "note": null,
+          "periodNo": 2,
+          "room": "12",
+          "startsAt": "08:50",
+          "subject": "Matematika",
+          "teacher": "Jelena Petrović"
+        },
+        {
+          "color": "#0F766E",
+          "endsAt": "10:40",
+          "isCurrent": false,
+          "isNext": null,
+          "note": null,
+          "periodNo": 3,
+          "room": "12",
+          "startsAt": "09:55",
+          "subject": "Priroda i društvo",
+          "teacher": "Jelena Petrović"
+        },
+        {
+          "color": "#0369A1",
+          "endsAt": "11:30",
+          "isCurrent": false,
+          "isNext": null,
+          "note": null,
+          "periodNo": 4,
+          "room": "7",
+          "startsAt": "10:45",
+          "subject": "Engleski jezik",
+          "teacher": "Ana Ilić"
+        },
+        {
+          "color": "#EA580C",
+          "endsAt": "12:20",
+          "isCurrent": false,
+          "isNext": null,
+          "note": null,
+          "periodNo": 5,
+          "room": "sala",
+          "startsAt": "11:35",
+          "subject": "Fizičko vaspitanje",
+          "teacher": "Marko Jović"
+        }
+      ],
+      "shift": "morning",
+      "weekday": 1
+    },
+    {
+      "date": "2026-11-10",
+      "isBreak": false,
+      "lessons": [
+        {
+          "color": "#4F46E5",
+          "endsAt": "08:45",
+          "isCurrent": false,
+          "isNext": null,
+          "note": null,
+          "periodNo": 1,
+          "room": "12",
+          "startsAt": "08:00",
+          "subject": "Matematika",
+          "teacher": "Jelena Petrović"
+        },
+        {
+          "color": "#BE123C",
+          "endsAt": "09:35",
+          "isCurrent": false,
+          "isNext": null,
+          "note": null,
+          "periodNo": 2,
+          "room": "12",
+          "startsAt": "08:50",
+          "subject": "Srpski jezik",
+          "teacher": "Jelena Petrović"
+        },
+        {
+          "color": "#9333EA",
+          "endsAt": "10:40",
+          "isCurrent": false,
+          "isNext": null,
+          "note": null,
+          "periodNo": 3,
+          "room": "4",
+          "startsAt": "09:55",
+          "subject": "Likovna kultura",
+          "teacher": null
+        },
+        {
+          "color": "#0F766E",
+          "endsAt": "11:30",
+          "isCurrent": false,
+          "isNext": null,
+          "note": null,
+          "periodNo": 4,
+          "room": "12",
+          "startsAt": "10:45",
+          "subject": "Priroda i društvo",
+          "teacher": "Jelena Petrović"
+        }
+      ],
+      "shift": "morning",
+      "weekday": 2
+    },
+    {
+      "date": "2026-11-11",
+      "isBreak": false,
+      "lessons": [
+        {
+          "color": "#BE123C",
+          "endsAt": "08:45",
+          "isCurrent": false,
+          "isNext": null,
+          "note": null,
+          "periodNo": 1,
+          "room": "12",
+          "startsAt": "08:00",
+          "subject": "Srpski jezik",
+          "teacher": "Jelena Petrović"
+        },
+        {
+          "color": "#4F46E5",
+          "endsAt": "09:35",
+          "isCurrent": false,
+          "isNext": null,
+          "note": null,
+          "periodNo": 2,
+          "room": "12",
+          "startsAt": "08:50",
+          "subject": "Matematika",
+          "teacher": "Jelena Petrović"
+        },
+        {
+          "color": "#0369A1",
+          "endsAt": "10:40",
+          "isCurrent": false,
+          "isNext": null,
+          "note": null,
+          "periodNo": 3,
+          "room": "7",
+          "startsAt": "09:55",
+          "subject": "Engleski jezik",
+          "teacher": "Ana Ilić"
+        },
+        {
+          "color": "#EA580C",
+          "endsAt": "11:30",
+          "isCurrent": false,
+          "isNext": null,
+          "note": null,
+          "periodNo": 4,
+          "room": "sala",
+          "startsAt": "10:45",
+          "subject": "Fizičko vaspitanje",
+          "teacher": "Marko Jović"
+        },
+        {
+          "color": "#DB2777",
+          "endsAt": "12:20",
+          "isCurrent": false,
+          "isNext": null,
+          "note": null,
+          "periodNo": 5,
+          "room": null,
+          "startsAt": "11:35",
+          "subject": "Muzička kultura",
+          "teacher": null
+        }
+      ],
+      "shift": "morning",
+      "weekday": 3
+    },
+    {
+      "date": "2026-11-12",
+      "isBreak": false,
+      "lessons": [
+        {
+          "color": "#4F46E5",
+          "endsAt": "08:45",
+          "isCurrent": false,
+          "isNext": null,
+          "note": null,
+          "periodNo": 1,
+          "room": "12",
+          "startsAt": "08:00",
+          "subject": "Matematika",
+          "teacher": "Jelena Petrović"
+        },
+        {
+          "color": "#BE123C",
+          "endsAt": "09:35",
+          "isCurrent": false,
+          "isNext": null,
+          "note": null,
+          "periodNo": 2,
+          "room": "12",
+          "startsAt": "08:50",
+          "subject": "Srpski jezik",
+          "teacher": "Jelena Petrović"
+        },
+        {
+          "color": "#0F766E",
+          "endsAt": "10:40",
+          "isCurrent": false,
+          "isNext": null,
+          "note": null,
+          "periodNo": 3,
+          "room": "12",
+          "startsAt": "09:55",
+          "subject": "Priroda i društvo",
+          "teacher": "Jelena Petrović"
+        },
+        {
+          "color": "#9333EA",
+          "endsAt": "11:30",
+          "isCurrent": false,
+          "isNext": null,
+          "note": null,
+          "periodNo": 4,
+          "room": "4",
+          "startsAt": "10:45",
+          "subject": "Likovna kultura",
+          "teacher": null
+        }
+      ],
+      "shift": "morning",
+      "weekday": 4
+    },
+    {
+      "date": "2026-11-13",
+      "isBreak": false,
+      "lessons": [
+        {
+          "color": "#BE123C",
+          "endsAt": "08:45",
+          "isCurrent": false,
+          "isNext": null,
+          "note": null,
+          "periodNo": 1,
+          "room": "12",
+          "startsAt": "08:00",
+          "subject": "Srpski jezik",
+          "teacher": "Jelena Petrović"
+        },
+        {
+          "color": "#4F46E5",
+          "endsAt": "09:35",
+          "isCurrent": false,
+          "isNext": null,
+          "note": null,
+          "periodNo": 2,
+          "room": "12",
+          "startsAt": "08:50",
+          "subject": "Matematika",
+          "teacher": "Jelena Petrović"
+        },
+        {
+          "color": "#0369A1",
+          "endsAt": "10:40",
+          "isCurrent": false,
+          "isNext": null,
+          "note": null,
+          "periodNo": 3,
+          "room": "7",
+          "startsAt": "09:55",
+          "subject": "Engleski jezik",
+          "teacher": "Ana Ilić"
+        },
+        {
+          "color": "#DB2777",
+          "endsAt": "11:30",
+          "isCurrent": false,
+          "isNext": null,
+          "note": null,
+          "periodNo": 4,
+          "room": null,
+          "startsAt": "10:45",
+          "subject": "Muzička kultura",
+          "teacher": null
+        }
+      ],
+      "shift": "morning",
+      "weekday": 5
+    },
+    {
+      "date": "2026-11-14",
+      "isBreak": true,
+      "lessons": [],
+      "shift": null,
+      "weekday": 6
+    }
+  ],
+  "weekMonday": "2026-11-09"
+}

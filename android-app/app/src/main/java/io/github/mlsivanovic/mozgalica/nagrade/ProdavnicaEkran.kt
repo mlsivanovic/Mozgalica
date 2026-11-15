@@ -1,5 +1,18 @@
 package io.github.mlsivanovic.mozgalica.nagrade
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ShoppingBag
+import androidx.compose.material.icons.rounded.Star
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import io.github.mlsivanovic.mozgalica.dizajn.EkranZaglavlje
+import io.github.mlsivanovic.mozgalica.dizajn.Mozgalica
+import io.github.mlsivanovic.mozgalica.dizajn.Razmak
+import io.github.mlsivanovic.mozgalica.dizajn.SekcijaNaslov
+import io.github.mlsivanovic.mozgalica.dizajn.StatPlocica
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -62,16 +75,21 @@ private fun ProdavnicaEkran(
 ) {
     val podaci = ui.podaci
     Column(
-        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = Razmak.ivica, vertical = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(Razmak.stavka),
     ) {
-        TextButton(onClick = onNazad, modifier = Modifier.heightIn(min = 52.dp)) { Text("← Nagrade") }
-        Text("Prodavnica", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary)
+        EkranZaglavlje(
+            nadnaslov = podaci?.let { "${it.avatar} ${it.name}" } ?: "Nagrade",
+            naslov = "Prodavnica",
+            onNazad = onNazad,
+        )
         if (podaci != null) {
-            Text("${podaci.avatar} ${podaci.name}", style = MaterialTheme.typography.titleLarge)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("🛒 Raspoloživo: ${podaci.balance}⭐", style = MaterialTheme.typography.titleMedium)
-                Text("· ⭐ Ukupno: ${podaci.totalStars}", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+                StatPlocica("${podaci.balance}", "Raspoloživo", Icons.Rounded.ShoppingBag, Mozgalica.boje.upozorenje, Modifier.weight(1f))
+                StatPlocica("${podaci.totalStars}", "Ukupno zvezdica", Icons.Rounded.Star, Mozgalica.boje.zvezda, Modifier.weight(1f))
             }
         }
         if (ui.poruka != null) {
@@ -99,7 +117,7 @@ private fun ProdavnicaEkran(
 
 @Composable
 private fun Katalog(podaci: ProdavnicaOdgovor, kupuje: Boolean, model: ProdavnicaViewModel) {
-    Text("Katalog nagrada", style = MaterialTheme.typography.titleLarge)
+    SekcijaNaslov("Katalog nagrada", broj = podaci.items.size)
     if (podaci.items.isEmpty()) {
         Text("Prodavnica je trenutno prazna. Nove nagrade će se pojaviti uskoro.")
         return
@@ -110,26 +128,41 @@ private fun Katalog(podaci: ProdavnicaOdgovor, kupuje: Boolean, model: Prodavnic
         val dovoljno = podaci.balance >= stavka.cost
         val onemoguceno = kupljeno || ceka || !dovoljno || kupuje
         val tekstDugmeta = when {
-            kupljeno -> "✓ Kupljeno"
+            kupljeno -> "Kupljeno"
             ceka -> "Čeka isporuku"
-            !dovoljno -> "Potrebno ${stavka.cost}⭐"
-            else -> "Kupi · ${stavka.cost}⭐"
+            !dovoljno -> "Potrebno ${stavka.cost} ★"
+            else -> "Kupi · ${stavka.cost} ★"
         }
-        Card(Modifier.fillMaxWidth()) {
+        Card(
+            Modifier.fillMaxWidth(),
+            shape = MaterialTheme.shapes.large,
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+        ) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(stavka.emoji.ifBlank { "🎁" }, fontSize = 34.sp)
-                    Spacer(Modifier.width(12.dp))
+                    Box(
+                        Modifier
+                            .size(60.dp)
+                            .background(Mozgalica.boje.upozorenjeKontejner, MaterialTheme.shapes.medium),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(stavka.emoji.ifBlank { "🎁" }, fontSize = 32.sp)
+                    }
+                    Spacer(Modifier.width(14.dp))
                     Column(Modifier.weight(1f)) {
-                        Text(stavka.title, style = MaterialTheme.typography.titleLarge)
-                        Text("${stavka.cost}⭐", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stavka.title, style = MaterialTheme.typography.titleMedium)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Rounded.Star, null, tint = Mozgalica.boje.zvezda, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("${stavka.cost}", style = MaterialTheme.typography.labelLarge)
+                        }
                     }
                 }
                 stavka.description?.takeIf { it.isNotBlank() }?.let {
                     Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 if (stavka.repeatable) {
-                    Text("🔁 Može više puta", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("Može više puta", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 if (stavka.repeatable && stavka.previousCount > 0 && !ceka) {
                     Text("Ranije isporučeno: ${stavka.previousCount}×", color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -225,7 +258,7 @@ private fun PotvrdaKupovine(
                 onClick = onKupi,
                 enabled = !kupuje,
                 modifier = Modifier.semantics { contentDescription = "Potvrdi kupovinu" },
-            ) { Text(if (kupuje) "Kupujem…" else "Kupi za ${stavka.cost}⭐") }
+            ) { Text(if (kupuje) "Kupujem…" else "Kupi za ${stavka.cost} ★") }
         },
         dismissButton = {
             TextButton(onClick = onOtkazi, enabled = !kupuje) { Text("Otkaži") }

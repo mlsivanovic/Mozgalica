@@ -1,5 +1,26 @@
 package io.github.mlsivanovic.mozgalica.kviz
 
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Cancel
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.CloudOff
+import androidx.compose.material.icons.rounded.GridView
+import androidx.compose.material.icons.rounded.Lightbulb
+import androidx.compose.material.icons.rounded.Star
+import androidx.compose.material.icons.rounded.StarOutline
+import androidx.compose.material.icons.rounded.Timer
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import io.github.mlsivanovic.mozgalica.dizajn.Baner
+import io.github.mlsivanovic.mozgalica.dizajn.DugmeNazad
+import io.github.mlsivanovic.mozgalica.dizajn.Mozgalica
+import io.github.mlsivanovic.mozgalica.dizajn.TrakaNapretka
+import io.github.mlsivanovic.mozgalica.dizajn.Znacka
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -108,7 +129,7 @@ private fun UlazEkran(ui: KvizUi, onNazad: () -> Unit, model: KvizViewModel) {
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        TextButton(onClick = onNazad, modifier = Modifier.heightIn(min = 56.dp)) { Text("← Nazad") }
+        DugmeNazad(onNazad)
         Maskota(StanjeMaskote.POZDRAV, velicina = 72.dp)
         if (meta == null) {
             if (ui.greska != null) Text(ui.greska, color = MaterialTheme.colorScheme.error)
@@ -120,7 +141,7 @@ private fun UlazEkran(ui: KvizUi, onNazad: () -> Unit, model: KvizViewModel) {
         Text(meta.title, style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary)
         meta.description?.takeIf { it.isNotBlank() }?.let { Text(it) }
         Text("${meta.questionCount} pitanja · ${meta.totalPoints} poena")
-        meta.timeLimitSeconds?.let { Text("⏱ ${it / 60} min") }
+        meta.timeLimitSeconds?.let { Znacka("${it / 60} min", ikona = Icons.Rounded.Timer) }
         if (meta.accessMode != "profile" && meta.requireName) {
             OutlinedTextField(ui.ime, model::ime, label = { Text("Kako se zoveš?") }, modifier = Modifier.fillMaxWidth())
         } else if (meta.accessMode != "profile") {
@@ -167,29 +188,51 @@ private fun ResavanjeEkran(ui: KvizUi, onNazad: () -> Unit, model: KvizViewModel
     Box(Modifier.fillMaxSize()) {
     Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            TextButton(onClick = onNazad, modifier = Modifier.semantics { contentDescription = "Izađi iz kviza" }) { Text("←") }
+            IconButton(onClick = onNazad) { Icon(Icons.Rounded.Close, contentDescription = "Izađi iz kviza") }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(stanje.childName.ifBlank { "Kviz" }, style = MaterialTheme.typography.bodyLarge)
                 Text("Pitanje ${pager.currentPage + 1} od ${ui.pitanja.size}")
             }
-            Text(
-                text = ui.preostaloSekundi?.let { "⏱ ${formatOdbrojavanje(it)}" } ?: "",
-                color = if ((ui.preostaloSekundi ?: 61) <= 60) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
-            )
+            val sekunde = ui.preostaloSekundi
+            if (sekunde != null) {
+                val malo = sekunde <= 60
+                Znacka(
+                    formatOdbrojavanje(sekunde),
+                    ikona = Icons.Rounded.Timer,
+                    boja = if (malo) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
+                    naBoji = if (malo) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSurface,
+                )
+            } else {
+                Spacer(Modifier.width(48.dp))
+            }
         }
         if (!ui.naMrezi || ui.probni) {
-            Text("Radiš bez interneta — odgovori se čuvaju na uređaju i poslaće se čim se veza vrati.")
+            Baner(
+                "Radiš bez interneta — odgovori se čuvaju na uređaju i poslaće se čim se veza vrati.",
+                Icons.Rounded.CloudOff,
+                boja = MaterialTheme.colorScheme.surfaceContainerHigh,
+                naBoji = MaterialTheme.colorScheme.onSurface,
+            )
         }
         val odgovoreno = ui.pitanja.count { !odgovorJePrazan(stanje.answers[it.id]?.answer) }
-        LinearProgressIndicator(
-            progress = { if (ui.pitanja.isEmpty()) 0f else odgovoreno.toFloat() / ui.pitanja.size },
-            modifier = Modifier.fillMaxWidth(),
+        TrakaNapretka(
+            udeo = if (ui.pitanja.isEmpty()) 0f else odgovoreno.toFloat() / ui.pitanja.size,
+            visina = 8.dp,
         )
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            TextButton(onClick = { model.pregled(true) }) { Text("Pregled pitanja") }
+            TextButton(onClick = { model.pregled(true) }) {
+                Icon(Icons.Rounded.GridView, null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(6.dp))
+                Text("Pregled pitanja")
+            }
             if (ui.pitanja.any { it.hasHint }) {
                 val ostalo = preostaloSaveta(stanje.hintsUsed ?: 0, ui.preostaloSavetaSaServera)
-                Text("💡 $ostalo")
+                Znacka(
+                    "$ostalo",
+                    ikona = Icons.Rounded.Lightbulb,
+                    boja = Mozgalica.boje.upozorenjeKontejner,
+                    naBoji = Mozgalica.boje.naUpozorenjeKontejneru,
+                )
             }
         }
         HorizontalPager(
@@ -368,7 +411,20 @@ private fun RezultatEkran(
         Text(porukaOhrabrenja(zvezdice))
         AnimiraniProcenat(procenat, efekti.animacije)
         Text("${rezultat.totalPoints} / ${rezultat.maxPoints} poena")
-        Text("✓ ${rezultat.correctCount} tačnih    ✗ ${rezultat.incorrectCount} netačnih")
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Znacka(
+                "${rezultat.correctCount} tačnih",
+                ikona = Icons.Rounded.CheckCircle,
+                boja = Mozgalica.boje.uspehKontejner,
+                naBoji = Mozgalica.boje.naUspehKontejneru,
+            )
+            Znacka(
+                "${rezultat.incorrectCount} netačnih",
+                ikona = Icons.Rounded.Cancel,
+                boja = MaterialTheme.colorScheme.errorContainer,
+                naBoji = MaterialTheme.colorScheme.onErrorContainer,
+            )
+        }
         val netacni = rezultat.questions.filter { !it.isCorrect }
         if (rezultat.showCorrect && netacni.isNotEmpty() && !rezultat.retry.submitted) {
             Button(onClick = onObjasnjenja) { Text("Objasni netačne") }
@@ -425,7 +481,7 @@ private fun PonovniEkran(ui: KvizUi, onNazad: () -> Unit, model: KvizViewModel) 
     val odgovoreno = pitanja.count { !odgovorJePrazan(ui.ponovniOdgovori[it.id]) }
     Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            TextButton(onClick = onNazad, modifier = Modifier.semantics { contentDescription = "Nazad na rezultat" }) { Text("←") }
+            IconButton(onClick = onNazad) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Nazad na rezultat") }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text("Ponovni pokušaj", style = MaterialTheme.typography.bodyLarge)
                 Text("Pitanje ${indeks + 1} od ${pitanja.size}")
@@ -504,7 +560,7 @@ private fun PonovniRezultatEkran(ui: KvizUi, onNazad: () -> Unit) {
             if (ishod.allCorrect == true) "Svi netačni zadaci su sada tačni!" else "Ponovni pokušaj je predat",
             style = MaterialTheme.typography.headlineMedium,
         )
-        Text("Na ovom pokušaju: ${ishod.starsAwarded ?: 0} / $MAKSIMALNO_ZVEZDICA ⭐")
+        Text("Na ovom pokušaju: ${ishod.starsAwarded ?: 0} / $MAKSIMALNO_ZVEZDICA ★")
         if (ishod.allCorrect == false) {
             Text("Neki zadaci i dalje nisu tačni. Pogledaj tačne odgovore ispod.")
         }
@@ -532,7 +588,19 @@ private fun ponovnoURezultat(pitanje: PonovnoPitanje): RezultatPitanja = Rezulta
 @Composable
 private fun PregledPitanja(pitanje: RezultatPitanja, indeks: Int, prikaziTacan: Boolean) {
     Column(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text("${if (pitanje.isCorrect) "✓" else "✗"} Pitanje ${indeks + 1} · ${pitanje.awardedPoints} / ${pitanje.points} poena")
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                if (pitanje.isCorrect) Icons.Rounded.CheckCircle else Icons.Rounded.Cancel,
+                contentDescription = if (pitanje.isCorrect) "Tačno" else "Netačno",
+                tint = if (pitanje.isCorrect) Mozgalica.boje.uspeh else MaterialTheme.colorScheme.error,
+                modifier = Modifier.size(22.dp),
+            )
+            Spacer(Modifier.width(6.dp))
+            Text(
+                "Pitanje ${indeks + 1} · ${pitanje.awardedPoints} / ${pitanje.points} poena",
+                style = MaterialTheme.typography.titleSmall,
+            )
+        }
         Text(pitanje.text, style = MaterialTheme.typography.bodyLarge)
         PitanjePrikaz(
             pitanje = io.github.mlsivanovic.mozgalica.podaci.PitanjeZaDete(
@@ -550,8 +618,22 @@ private fun PregledPitanja(pitanje: RezultatPitanja, indeks: Int, prikaziTacan: 
             onTekstFokus = {},
         )
         if (prikaziTacan) {
-            tekstTacnog(pitanje)?.let { Text("✔ Tačan odgovor: $it") }
-            pitanje.explanation?.let { Text("💡 $it") }
+            tekstTacnog(pitanje)?.let {
+                Baner(
+                    "Tačan odgovor: $it",
+                    Icons.Rounded.CheckCircle,
+                    boja = Mozgalica.boje.uspehKontejner,
+                    naBoji = Mozgalica.boje.naUspehKontejneru,
+                )
+            }
+            pitanje.explanation?.let {
+                Baner(
+                    it,
+                    Icons.Rounded.Lightbulb,
+                    boja = Mozgalica.boje.upozorenjeKontejner,
+                    naBoji = Mozgalica.boje.naUpozorenjeKontejneru,
+                )
+            }
         }
     }
 }
@@ -563,13 +645,20 @@ private fun Zvezdice(broj: Int, animacije: Boolean) {
         if (animacije) prikaz.animateTo(broj.toFloat(), tween(700)) else prikaz.snapTo(broj.toFloat())
     }
     val otvorene = prikaz.value.toInt().coerceIn(0, MAKSIMALNO_ZVEZDICA)
-    Text(
-        text = buildString {
-            repeat(MAKSIMALNO_ZVEZDICA) { indeks -> append(if (indeks < otvorene) "⭐" else "☆") }
-        },
-        modifier = Modifier.semantics { contentDescription = "$broj od $MAKSIMALNO_ZVEZDICA zvezdica" },
-        style = MaterialTheme.typography.headlineMedium,
-    )
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        modifier = Modifier.semantics(mergeDescendants = true) { contentDescription = "$broj od $MAKSIMALNO_ZVEZDICA zvezdica" },
+    ) {
+        repeat(MAKSIMALNO_ZVEZDICA) { indeks ->
+            val puna = indeks < otvorene
+            Icon(
+                if (puna) Icons.Rounded.Star else Icons.Rounded.StarOutline,
+                contentDescription = null,
+                tint = if (puna) Mozgalica.boje.zvezda else MaterialTheme.colorScheme.outlineVariant,
+                modifier = Modifier.size(44.dp),
+            )
+        }
+    }
 }
 
 @Composable

@@ -3,7 +3,24 @@ package io.github.mlsivanovic.mozgalica.navigacija
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.EmojiEvents
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Insights
+import androidx.compose.material.icons.rounded.CalendarMonth
+import androidx.compose.material.icons.rounded.EmojiEvents
+import androidx.compose.material.icons.rounded.Home
+import androidx.compose.material.icons.rounded.Insights
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -53,15 +70,16 @@ import java.io.IOException
 private data class Tab(
     val odrediste: Odrediste,
     val naziv: String,
-    val oznaka: String,
+    val izabrana: ImageVector,
+    val obicna: ImageVector,
     val ruta: Any,
 )
 
 private val tabovi = listOf(
-    Tab(Odrediste.POCETNA, "Početna", "🏠", PocetnaRuta),
-    Tab(Odrediste.RASPORED, "Raspored", "📅", RasporedRuta),
-    Tab(Odrediste.NAGRADE, "Nagrade", "⭐", NagradeRuta),
-    Tab(Odrediste.REZULTATI, "Rezultati", "📊", RezultatiRuta),
+    Tab(Odrediste.POCETNA, "Početna", Icons.Rounded.Home, Icons.Outlined.Home, PocetnaRuta),
+    Tab(Odrediste.RASPORED, "Raspored", Icons.Rounded.CalendarMonth, Icons.Outlined.CalendarMonth, RasporedRuta),
+    Tab(Odrediste.NAGRADE, "Nagrade", Icons.Rounded.EmojiEvents, Icons.Outlined.EmojiEvents, NagradeRuta),
+    Tab(Odrediste.REZULTATI, "Rezultati", Icons.Rounded.Insights, Icons.Outlined.Insights, RezultatiRuta),
 )
 
 @Composable
@@ -160,13 +178,36 @@ private fun Navigacija(
     Scaffold(
         bottomBar = {
             if (traka) {
-                NavigationBar {
+                val profil = stanje as? UiStanje.Profil
+                val aktivnih = profil?.let { it.podaci.aktivniKvizovi.size + it.podaci.aktivnePartije.size } ?: 0
+                NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainer) {
                     tabovi.forEach { tab ->
+                        val izabran = odrediste == tab.odrediste
                         NavigationBarItem(
-                            selected = odrediste == tab.odrediste,
+                            selected = izabran,
                             onClick = { otvoriTab(nav, tab.ruta) },
-                            icon = { Text(tab.oznaka) },
-                            label = { Text(tab.naziv) },
+                            icon = {
+                                BadgedBox(
+                                    badge = {
+                                        if (tab.odrediste == Odrediste.POCETNA && aktivnih > 0) {
+                                            Badge { Text("$aktivnih") }
+                                        }
+                                    },
+                                ) {
+                                    Icon(
+                                        if (izabran) tab.izabrana else tab.obicna,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(26.dp),
+                                    )
+                                }
+                            },
+                            label = {
+                                Text(
+                                    tab.naziv,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = if (izabran) FontWeight.ExtraBold else FontWeight.SemiBold,
+                                )
+                            },
                         )
                     }
                 }
@@ -192,8 +233,8 @@ private fun Navigacija(
                             try {
                                 predaj(
                                     ProbnaTela(
-                                        profil = kontekst.ucitajUgovor("get_child_profile.json"),
-                                        raspored = kontekst.ucitajUgovor("get_child_school_timetable.json"),
+                                        profil = kontekst.ucitajProbno("profil.json"),
+                                        raspored = kontekst.ucitajProbno("raspored.json"),
                                         obavestenja = kontekst.ucitajUgovor("get_child_notifications.json"),
                                     ),
                                 )
@@ -211,13 +252,14 @@ private fun Navigacija(
                 } else {
                     PocetnaEkran(
                         profil = profil.podaci,
-                        rasporedPostoji = profil.raspored?.postoji == true,
+                        raspored = profil.raspored,
                         obavestenja = profil.obavestenja,
                         osvezava = profil.osvezava,
                         greskaMreze = profil.greskaMreze,
                         onOsvezi = onOsvezi,
                         onPodesavanja = { nav.navigate(PodesavanjaRuta) },
                         onRaspored = { otvoriTab(nav, RasporedRuta) },
+                        onNagrade = { otvoriTab(nav, NagradeRuta) },
                         onKviz = { token -> nav.navigate(KvizRuta(token)) },
                         onSah = { token -> nav.navigate(SahRuta(token)) },
                         onOznaciProcitanim = onOznaciProcitanim,
@@ -320,6 +362,10 @@ private fun androidx.navigation.NavDestination?.odrediste(): Odrediste? = when {
     hasRoute<SahRuta>() -> Odrediste.SAH
     else -> null
 }
+
+// Bogatiji probni profil i raspored (samo debug) za vizuelnu proveru svih stanja ekrana.
+internal fun android.content.Context.ucitajProbno(ime: String): String =
+    assets.open("probno/$ime").bufferedReader().use { it.readText() }
 
 internal fun android.content.Context.ucitajUgovor(ime: String): String =
     assets.open("ugovori/$ime").bufferedReader().use { it.readText() }

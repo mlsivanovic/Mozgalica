@@ -1,5 +1,18 @@
 package io.github.mlsivanovic.mozgalica.povezivanje
 
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ErrorOutline
+import androidx.compose.material.icons.rounded.Link
+import androidx.compose.material.icons.rounded.QrCodeScanner
+import androidx.compose.material3.Icon
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.style.TextAlign
+import io.github.mlsivanovic.mozgalica.dizajn.Baner
+import io.github.mlsivanovic.mozgalica.dizajn.Maskota
+import io.github.mlsivanovic.mozgalica.dizajn.StanjeMaskote
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -41,24 +54,29 @@ fun PovezivanjeEkran(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(24.dp),
+            .padding(horizontal = 24.dp, vertical = 32.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        Maskota(StanjeMaskote.POZDRAV, velicina = 128.dp)
         Text(
             text = "Moja Mozgalica",
-            style = MaterialTheme.typography.titleLarge,
+            style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.primary,
         )
         Text(
             text = "Poveži profil deteta",
             style = MaterialTheme.typography.headlineMedium,
             color = MaterialTheme.colorScheme.onBackground,
+            textAlign = TextAlign.Center,
         )
         Text(
             text = "Skeniraj QR kod sa roditeljskog ekrana ili nalepi profilni link.",
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
         )
+        Spacer(Modifier.height(8.dp))
         Button(
             onClick = {
                 pokreniQrSkener(
@@ -68,10 +86,14 @@ fun PovezivanjeEkran(
                 )
             },
             enabled = !radi,
-            modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
+            modifier = Modifier.fillMaxWidth().heightIn(min = 64.dp),
+            shape = MaterialTheme.shapes.large,
         ) {
-            Text("Skeniraj QR kod")
+            Icon(Icons.Rounded.QrCodeScanner, null)
+            Spacer(Modifier.width(10.dp))
+            Text("Skeniraj QR kod", style = MaterialTheme.typography.titleMedium)
         }
+        Text("ili", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
         OutlinedTextField(
             value = unos,
             onValueChange = { unos = it },
@@ -80,6 +102,8 @@ fun PovezivanjeEkran(
             placeholder = { Text("https://…/#/dete/…") },
             singleLine = true,
             enabled = !radi,
+            leadingIcon = { Icon(Icons.Rounded.Link, null) },
+            shape = MaterialTheme.shapes.medium,
             keyboardOptions = KeyboardOptions(
                 capitalization = KeyboardCapitalization.None,
                 autoCorrectEnabled = false,
@@ -87,11 +111,7 @@ fun PovezivanjeEkran(
             ),
         )
         if (greska != null) {
-            Text(
-                text = greska,
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodyLarge,
-            )
+            Baner(greska, Icons.Rounded.ErrorOutline)
         }
         OutlinedButton(
             onClick = { onPovezi(unos) },

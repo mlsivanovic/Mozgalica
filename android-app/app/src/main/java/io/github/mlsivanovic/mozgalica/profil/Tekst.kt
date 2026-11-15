@@ -71,3 +71,28 @@ fun ciljObavestenja(url: String): CiljObavestenja? {
     if (!sah.isNullOrBlank()) return CiljObavestenja.Sah(sah)
     return null
 }
+
+/** Čas koji se upravo odvija, a ako ga nema — sledeći čas tog dana. */
+fun istaknutCas(dan: io.github.mlsivanovic.mozgalica.podaci.DanRasporeda): io.github.mlsivanovic.mozgalica.podaci.CasUDanu? =
+    dan.lessons.firstOrNull { it.isCurrent } ?: dan.lessons.firstOrNull { it.isNext == true }
+
+fun tekstCasova(broj: Int): String = when {
+    broj % 10 == 1 && broj % 100 != 11 -> "čas"
+    else -> "časova"
+}
+
+private val DANI_KRATKO = listOf("Pon", "Uto", "Sre", "Čet", "Pet", "Sub", "Ned")
+
+fun kratakNazivDana(weekday: Int): String = DANI_KRATKO.getOrNull(weekday - 1).orEmpty()
+
+fun danUMesecu(isoDatum: String): String =
+    isoDatum.split("-").getOrNull(2)?.trimStart('0')?.ifEmpty { "0" } ?: isoDatum
+
+/** Udeo proteklog dela časa (0..1) za traku „Sada"; null ako vreme nije čitljivo. */
+fun napredakCasa(pocetak: String, kraj: String, sada: java.time.LocalTime = java.time.LocalTime.now()): Float? {
+    val od = runCatching { java.time.LocalTime.parse(pocetak) }.getOrNull() ?: return null
+    val doK = runCatching { java.time.LocalTime.parse(kraj) }.getOrNull() ?: return null
+    val ukupno = java.time.Duration.between(od, doK).seconds
+    if (ukupno <= 0) return null
+    return (java.time.Duration.between(od, sada).seconds.toFloat() / ukupno).coerceIn(0f, 1f)
+}

@@ -16,6 +16,22 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowForward
+import androidx.compose.material.icons.rounded.Lightbulb
+import androidx.compose.material.icons.rounded.ShoppingBag
+import androidx.compose.material.icons.rounded.Star
+import androidx.compose.material.icons.rounded.Storefront
+import io.github.mlsivanovic.mozgalica.dizajn.EkranZaglavlje
+import io.github.mlsivanovic.mozgalica.dizajn.IkonaZnak
+import io.github.mlsivanovic.mozgalica.dizajn.Mozgalica
+import io.github.mlsivanovic.mozgalica.dizajn.Razmak
+import io.github.mlsivanovic.mozgalica.dizajn.StatPlocica
+import io.github.mlsivanovic.mozgalica.dizajn.TrakaNapretka
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -56,21 +72,32 @@ fun NagradeEkran(
 
     Osveziv(osvezava = osvezava, onOsvezi = onOsvezi) {
         Column(
-            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = Razmak.ivica, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(Razmak.stavka),
         ) {
-            Text("Moj rad", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text("Nagrade", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary)
-            Text("⭐ ${profil.ukupnoZvezdica} zvezdica · 🛒 raspoloživo ${profil.raspolozivoZvezdica}")
+            EkranZaglavlje(nadnaslov = "Moj rad", naslov = "Nagrade")
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+                StatPlocica("${profil.ukupnoZvezdica}", "Ukupno zvezdica", Icons.Rounded.Star, Mozgalica.boje.zvezda, Modifier.weight(1f))
+                StatPlocica(
+                    "${profil.raspolozivoZvezdica}",
+                    "Za prodavnicu",
+                    Icons.Rounded.ShoppingBag,
+                    Mozgalica.boje.upozorenje,
+                    Modifier.weight(1f),
+                )
+            }
 
-            Card(Modifier.fillMaxWidth()) {
+            Card(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large, colors = kartica()) {
                 Column(
                     modifier = Modifier.padding(20.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Text("Trenutna titula", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    TitulaAvatar(ime = naslov, avatar = avatar, velicina = 96.dp)
+                    Text("Trenutna titula", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    TitulaAvatar(ime = naslov, avatar = avatar, velicina = 112.dp)
                     Text(naslov, style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.primary)
                     Text(
                         "Rang: ${nazivRanga(parsirajTitulu(naslov).rang)}",
@@ -79,9 +106,9 @@ fun NagradeEkran(
                 }
             }
 
-            Card(Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("Napredak do sledeće titule", style = MaterialTheme.typography.titleLarge)
+            Card(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large, colors = kartica()) {
+                Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text("Napredak do sledeće titule", style = MaterialTheme.typography.titleMedium)
                     val sledeca = profil.sledecaTitula
                     if (sledeca != null) {
                         Row(
@@ -98,24 +125,14 @@ fun NagradeEkran(
                                 )
                             }
                         }
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(12.dp)
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(MaterialTheme.colorScheme.surfaceVariant)
-                                .semantics {
-                                    contentDescription = "Napredak do titule ${sledeca.name}: $napredak posto"
-                                },
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth(napredak / 100f)
-                                    .height(12.dp)
-                                    .clip(RoundedCornerShape(6.dp))
-                                    .background(MaterialTheme.colorScheme.primary),
-                            )
-                        }
+                        TrakaNapretka(
+                            udeo = napredak / 100f,
+                            boja = Mozgalica.boje.zvezda,
+                            visina = 12.dp,
+                            modifier = Modifier.semantics {
+                                contentDescription = "Napredak do titule ${sledeca.name}: $napredak posto"
+                            },
+                        )
                         Text(
                             "Još ${sledeca.starsNeeded ?: (sledeca.minStars - profil.ukupnoZvezdica).coerceAtLeast(0)} zvezdica do titule „${sledeca.name}”.",
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -126,25 +143,49 @@ fun NagradeEkran(
                 }
             }
 
-            Card(Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Zameni zvezdice za nagrade", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text("Prodavnica", style = MaterialTheme.typography.headlineSmall)
-                    Text(
-                        "Raspoloživo: ${profil.raspolozivoZvezdica}⭐",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+            Card(
+                Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.large,
+                colors = CardDefaults.cardColors(
+                    containerColor = Mozgalica.boje.upozorenjeKontejner,
+                    contentColor = Mozgalica.boje.naUpozorenjeKontejneru,
+                ),
+            ) {
+                Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IkonaZnak(
+                            Icons.Rounded.Storefront,
+                            Mozgalica.boje.naUpozorenjeKontejneru,
+                            pozadina = MaterialTheme.colorScheme.surface.copy(alpha = 0.6f),
+                        )
+                        Spacer(Modifier.width(14.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text("Prodavnica", style = MaterialTheme.typography.titleLarge)
+                            Text(
+                                "Zameni zvezdice za nagrade · imaš ${profil.raspolozivoZvezdica} ★",
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                        }
+                    }
                     Button(
                         onClick = onProdavnica,
                         modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)
                             .semantics { contentDescription = "Otvori prodavnicu" },
-                    ) { Text("Otvori prodavnicu →") }
+                    ) {
+                        Text("Otvori prodavnicu", style = MaterialTheme.typography.titleSmall)
+                        Spacer(Modifier.width(8.dp))
+                        Icon(Icons.AutoMirrored.Rounded.ArrowForward, null)
+                    }
                 }
             }
 
-            Card(Modifier.fillMaxWidth()) {
+            Card(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large, colors = kartica()) {
                 Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text("Kako do nove titule?", style = MaterialTheme.typography.titleLarge)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Rounded.Lightbulb, null, tint = Mozgalica.boje.zvezda)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Kako do nove titule?", style = MaterialTheme.typography.titleMedium)
+                    }
                     Text(
                         "Zvezdice dobijaš za rešene kvizove i šahovske partije. Kada skupiš dovoljno, " +
                             "automatski prelaziš na sledeći rang.",
@@ -184,6 +225,9 @@ fun NagradeEkran(
         )
     }
 }
+
+@Composable
+private fun kartica() = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)
 
 private fun nazivRanga(rang: RangTitule): String = when (rang) {
     RangTitule.AWAKENED -> "Awakened"

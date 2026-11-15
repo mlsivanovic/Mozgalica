@@ -138,3 +138,30 @@ fun tekstFaze(faza: SahFaza, deteNaPotezu: Boolean): String = when (faza) {
     SahFaza.RAZMISLJANJE -> "Računar razmišlja…"
     SahFaza.MIRUJE -> if (deteNaPotezu) "Tvoj potez" else "Kratka pauza"
 }
+
+/** Figure koje je strana uzela (redom od najvrednije) i materijalna prednost belog u pešacima. */
+data class UzeteFigure(
+    val uzeoBeli: List<Char>,
+    val uzeoCrni: List<Char>,
+    val prednostBelog: Int,
+)
+
+private val POCETNO = mapOf('p' to 8, 'n' to 2, 'b' to 2, 'r' to 2, 'q' to 1)
+private val VREDNOST = mapOf('p' to 1, 'n' to 3, 'b' to 3, 'r' to 5, 'q' to 9)
+private val REDOSLED = listOf('q', 'r', 'b', 'n', 'p')
+
+// Brojimo figure iz FEN-a; promocija može da „vrati" figuru, pa negativne razlike odsecamo.
+fun uzeteFigure(fen: String): UzeteFigure {
+    val raspored = fen.substringBefore(' ')
+    fun broj(c: Char) = raspored.count { it == c }
+    fun nedostaje(beli: Boolean) = REDOSLED.flatMap { tip ->
+        val c = if (beli) tip.uppercaseChar() else tip
+        List((POCETNO.getValue(tip) - broj(c)).coerceAtLeast(0)) { tip }
+    }
+    fun materijal(beli: Boolean) = VREDNOST.entries.sumOf { (tip, v) -> v * broj(if (beli) tip.uppercaseChar() else tip) }
+    return UzeteFigure(
+        uzeoBeli = nedostaje(beli = false),
+        uzeoCrni = nedostaje(beli = true),
+        prednostBelog = materijal(true) - materijal(false),
+    )
+}

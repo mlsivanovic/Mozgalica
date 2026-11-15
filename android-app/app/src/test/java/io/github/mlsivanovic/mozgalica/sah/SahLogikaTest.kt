@@ -20,6 +20,18 @@ import org.junit.Test
 
 class SahLogikaTest {
     @Test
+    fun uzeteFigureIPrednost() {
+        val pocetak = uzeteFigure(POCETNI_FEN)
+        assertTrue(pocetak.uzeoBeli.isEmpty() && pocetak.uzeoCrni.isEmpty())
+        assertEquals(0, pocetak.prednostBelog)
+        // Beli je uzeo damu i pešaka, crni skakača.
+        val r = uzeteFigure("rnb1kbnr/ppp1pppp/8/8/8/8/PPPPPPPP/R1BQKBNR w KQkq - 0 5")
+        assertEquals(listOf('q', 'p'), r.uzeoBeli)
+        assertEquals(listOf('n'), r.uzeoCrni)
+        assertEquals(7, r.prednostBelog)
+    }
+
+    @Test
     fun formatSataPrikazujeMinuteISekunde() {
         assertEquals("∞", formatSat(null))
         assertEquals("0:00", formatSat(0))

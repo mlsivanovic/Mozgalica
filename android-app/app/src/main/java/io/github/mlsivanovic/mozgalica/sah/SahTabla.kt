@@ -32,15 +32,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.lerp
-import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.withTransform
+import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.foundation.Image
+import io.github.mlsivanovic.mozgalica.R
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.contentDescription
@@ -57,16 +62,13 @@ import com.github.bhlangonijr.chesslib.Square
 import com.github.bhlangonijr.chesslib.move.Move
 import io.github.mlsivanovic.mozgalica.podaci.sah.SahPotezUnos
 
-private val svetloPolje = Color(0xFFE8EDF5)
-private val tamnoPolje = Color(0xFF7187A8)
-private val bojaSelekcije = Color(0xFF4F46E5)
-private val bojaPoslednjeg = Color(0xFFFFD64A)
+// Klasična braon tabla (ista kao u PWA / react-chessboard), sa isticanjima u stilu lichess-a.
+private val svetloPolje = Color(0xFFF0D9B5)
+private val tamnoPolje = Color(0xFFB58863)
+private val bojaSelekcije = Color(0xFF14551E)
+private val bojaPoslednjeg = Color(0xFF9BC700)
 private val bojaNajave = Color(0xFFEF554F)
-private val bojaSaha = Color(0xFFD92D20)
-private val bojaBelihFigura = Color(0xFFF7F4EA)
-private val bojaCrnihFigura = Color(0xFF23262F)
-private val ivicaBeleFigure = Color(0xFF2B2B33)
-private val ivicaCrneFigure = Color(0xFFF1EBDD)
+private val bojaSaha = Color(0xFFFF0000)
 
 private data class Promocija(val from: Square, val to: Square)
 
@@ -83,6 +85,9 @@ fun SahTabla(
     modifier: Modifier = Modifier,
 ) {
     val belaNaDnu = orijentacija != "black"
+    val figure = figurePaintera()
+    val merac = rememberTextMeasurer()
+    val stilKoordinata = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.ExtraBold)
     val tabla = remember(fen) { Board().apply { loadFromFen(fen) } }
     val legalni = remember(fen) { tabla.legalMoves() }
     var izabrano by remember(fen) { mutableStateOf<Square?>(null) }
@@ -199,7 +204,8 @@ fun SahTabla(
         Canvas(
             modifier = Modifier
                 .size(strana)
-                .clip(RoundedCornerShape(16.dp))
+                .shadow(6.dp, RoundedCornerShape(10.dp))
+                .clip(RoundedCornerShape(10.dp))
                 .background(svetloPolje)
                 .semantics {
                     contentDescription = opisTablice
@@ -247,75 +253,69 @@ fun SahTabla(
                     )
                 },
         ) {
+            val kvadrat = androidx.compose.ui.geometry.Size(poPolju, poPolju)
+            fun gore(sq: Square) = centar(sq) - Offset(poPolju / 2, poPolju / 2)
+
             for (red in 0..7) {
                 for (kolona in 0..7) {
                     val svetlo = (red + kolona) % 2 == 0
                     drawRect(
                         color = if (svetlo) svetloPolje else tamnoPolje,
                         topLeft = Offset(kolona * poPolju, red * poPolju),
-                        size = androidx.compose.ui.geometry.Size(poPolju, poPolju),
+                        size = kvadrat,
                     )
                 }
+            }
+
+            // Koordinate na ivici, u boji suprotnog polja (kao lichess/chess.com).
+            for (i in 0..7) {
+                val brojReda = if (belaNaDnu) 8 - i else i + 1
+                val bojaReda = if (i % 2 == 0) tamnoPolje else svetloPolje
+                drawText(
+                    merac, "$brojReda",
+                    topLeft = Offset(poPolju * 0.06f, i * poPolju + poPolju * 0.03f),
+                    style = stilKoordinata.copy(color = bojaReda),
+                )
+                val slovo = ('a' + if (belaNaDnu) i else 7 - i).toString()
+                val bojaKolone = if ((7 + i) % 2 == 0) tamnoPolje else svetloPolje
+                val izmereno = merac.measure(slovo, stilKoordinata)
+                drawText(
+                    izmereno,
+                    color = bojaKolone,
+                    topLeft = Offset(
+                        (i + 1) * poPolju - izmereno.size.width - poPolju * 0.06f,
+                        stranaPx - izmereno.size.height - poPolju * 0.02f,
+                    ),
+                )
             }
 
             poslednjiPotez?.let { potez ->
                 listOf(potez.from, potez.to).forEach { ime ->
-                    square(ime)?.let { sq ->
-                        drawRect(
-                            color = bojaPoslednjeg.copy(alpha = if (ime == potez.to) 0.62f else 0.42f),
-                            topLeft = centar(sq) - Offset(poPolju / 2, poPolju / 2),
-                            size = androidx.compose.ui.geometry.Size(poPolju, poPolju),
-                        )
-                    }
+                    square(ime)?.let { sq -> drawRect(bojaPoslednjeg.copy(alpha = 0.41f), gore(sq), kvadrat) }
                 }
             }
 
-            izabrano?.let { sq ->
-                drawRect(
-                    color = bojaSelekcije.copy(alpha = 0.28f),
-                    topLeft = centar(sq) - Offset(poPolju / 2, poPolju / 2),
-                    size = androidx.compose.ui.geometry.Size(poPolju, poPolju),
-                )
-                drawRect(
-                    color = bojaSelekcije,
-                    topLeft = centar(sq) - Offset(poPolju / 2, poPolju / 2),
-                    size = androidx.compose.ui.geometry.Size(poPolju, poPolju),
-                    style = Stroke(width = 5f),
-                )
-            }
-
-            izabrano?.let {
-                ciljevi.forEach { cilj ->
-                    drawCircle(
-                        color = bojaSelekcije.copy(alpha = if (tabla.getPiece(cilj) == Piece.NONE) 0.42f else 0.18f),
-                        radius = poPolju * 0.13f,
-                        center = centar(cilj),
-                    )
-                }
-            }
+            izabrano?.let { sq -> drawRect(bojaSelekcije.copy(alpha = 0.5f), gore(sq), kvadrat) }
 
             kraljUSahu?.let { kralj ->
-                drawCircle(
-                    color = bojaSaha.copy(alpha = 0.42f),
-                    radius = poPolju * 0.44f,
-                    center = centar(kralj),
+                drawRect(
+                    brush = Brush.radialGradient(
+                        0f to bojaSaha,
+                        0.25f to bojaSaha,
+                        0.9f to bojaSaha.copy(alpha = 0f),
+                        center = centar(kralj),
+                        radius = poPolju * 0.62f,
+                    ),
+                    topLeft = gore(kralj),
+                    size = kvadrat,
                 )
             }
 
             najavljeniPotez?.let { potez ->
                 listOf(potez.from, potez.to).forEach { ime ->
                     square(ime)?.let { sq ->
-                        drawRect(
-                            color = bojaNajave.copy(alpha = 0.24f),
-                            topLeft = centar(sq) - Offset(poPolju / 2, poPolju / 2),
-                            size = androidx.compose.ui.geometry.Size(poPolju, poPolju),
-                        )
-                        drawRect(
-                            color = bojaNajave,
-                            topLeft = centar(sq) - Offset(poPolju / 2, poPolju / 2),
-                            size = androidx.compose.ui.geometry.Size(poPolju, poPolju),
-                            style = Stroke(width = 6f),
-                        )
+                        drawRect(bojaNajave.copy(alpha = 0.24f), gore(sq), kvadrat)
+                        drawRect(bojaNajave, gore(sq), kvadrat, style = Stroke(width = poPolju * 0.07f))
                     }
                 }
             }
@@ -323,6 +323,7 @@ fun SahTabla(
             val animira = animacija != null && napredak.value < 1f
             val animiranoOd = if (animira) animacija?.let { square(it.from) } else null
             val animiranoDo = if (animira) animacija?.let { square(it.to) } else null
+            val velicinaFigure = poPolju * 0.94f
 
             for (sq in Square.values()) {
                 if (sq == Square.NONE) continue
@@ -330,22 +331,42 @@ fun SahTabla(
                 if (figura == Piece.NONE) continue
                 if (sq == animiranoOd || sq == animiranoDo) continue
                 if (sq == izabrano && prevuceno != null) continue
-                drawFigura(figura, centar(sq), poPolju * 0.86f)
+                figure[figura]?.let { crtajFiguru(it, centar(sq), velicinaFigure) }
+            }
+
+            // Legalni potezi: tačka na praznom polju, prsten oko figure koja može da se uzme.
+            izabrano?.let {
+                ciljevi.forEach { cilj ->
+                    if (tabla.getPiece(cilj) == Piece.NONE) {
+                        drawCircle(bojaSelekcije.copy(alpha = 0.5f), radius = poPolju * 0.16f, center = centar(cilj))
+                    } else {
+                        drawCircle(
+                            bojaSelekcije.copy(alpha = 0.5f),
+                            radius = poPolju * 0.46f,
+                            center = centar(cilj),
+                            style = Stroke(width = poPolju * 0.08f),
+                        )
+                    }
+                }
             }
 
             if (animira && animiranoOd != null && animiranoDo != null) {
                 val figura = tabla.getPiece(animiranoDo)
                 if (figura != Piece.NONE) {
                     val pozicija = lerp(centar(animiranoOd), centar(animiranoDo), napredak.value)
-                    drawFigura(figura, pozicija, poPolju * 0.86f)
+                    figure[figura]?.let { crtajFiguru(it, pozicija, velicinaFigure) }
                 }
             }
 
             prevuceno?.let { offset ->
+                polje(offset)?.let { ispod ->
+                    drawRect(Color.White.copy(alpha = 0.35f), gore(ispod), kvadrat, style = Stroke(width = poPolju * 0.06f))
+                }
                 val sq = izabrano
                 if (sq != null) {
                     val figura = tabla.getPiece(sq)
-                    if (figura != Piece.NONE) drawFigura(figura, offset, poPolju * 0.9f)
+                    // Podignuta figura je veća i malo iznad prsta, da je dete vidi dok je vuče.
+                    figure[figura]?.let { crtajFiguru(it, offset - Offset(0f, poPolju * 0.35f), poPolju * 1.25f) }
                 }
             }
         }
@@ -371,11 +392,12 @@ fun SahTabla(
                                         promocija = null
                                         if (p != null) pokusajPromociju(tabla, p, tip, onPotez)
                                     },
-                                    modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+                                    modifier = Modifier.fillMaxWidth().heightIn(min = 64.dp),
+                                    shape = MaterialTheme.shapes.medium,
                                 ) {
-                                    FiguraIkona(Piece.make(boja, tip), 28.dp)
-                                    Spacer(Modifier.width(12.dp))
-                                    Text(naziv, style = MaterialTheme.typography.titleMedium)
+                                    FiguraIkona(Piece.make(boja, tip), 44.dp)
+                                    Spacer(Modifier.width(16.dp))
+                                    Text(naziv, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
                                 }
                             }
                         }
@@ -421,122 +443,40 @@ private fun dostupniPoteziZa(
 }
 
 @Composable
-fun FiguraIkona(figura: Piece, velicina: androidx.compose.ui.unit.Dp) {
-    Canvas(Modifier.size(velicina)) {
-        drawFigura(figura, Offset(size.width / 2, size.height / 2), size.minDimension)
-    }
+fun FiguraIkona(figura: Piece, velicina: androidx.compose.ui.unit.Dp, modifier: Modifier = Modifier) {
+    val res = resursFigure(figura) ?: return
+    Image(painterResource(res), contentDescription = null, modifier = modifier.size(velicina))
 }
 
-private fun DrawScope.drawFigura(figura: Piece, centar: Offset, velicina: Float) {
-    if (figura == Piece.NONE) return
-    val putanja = putanjaFigure(figura.pieceType)
-    val bela = figura.pieceSide == Side.WHITE
-    val unutrasnjost = if (bela) bojaBelihFigura else bojaCrnihFigura
-    val ivica = if (bela) ivicaBeleFigure else ivicaCrneFigure
-    withTransform({
-        translate(centar.x - velicina / 2f, centar.y - velicina / 2f)
-        scale(velicina / 100f, velicina / 100f, Offset.Zero)
-    }) {
-        withTransform({ translate(0.8f, 2.6f) }) {
-            drawPath(putanja, Color.Black.copy(alpha = 0.22f))
-        }
-        drawPath(putanja, unutrasnjost)
-        drawPath(putanja, ivica, style = Stroke(width = 4f, join = StrokeJoin.Round))
-        if (figura.pieceType == PieceType.KNIGHT) {
-            drawCircle(if (bela) ivica else unutrasnjost, radius = 2.2f, center = Offset(60f, 38f))
-            drawCircle(if (bela) unutrasnjost else ivica, radius = 1f, center = Offset(60f, 38f))
-        }
-    }
+fun resursFigure(figura: Piece): Int? = when (figura) {
+    Piece.WHITE_PAWN -> R.drawable.figura_bela_pesak
+    Piece.WHITE_KNIGHT -> R.drawable.figura_bela_skakac
+    Piece.WHITE_BISHOP -> R.drawable.figura_bela_lovac
+    Piece.WHITE_ROOK -> R.drawable.figura_bela_top
+    Piece.WHITE_QUEEN -> R.drawable.figura_bela_dama
+    Piece.WHITE_KING -> R.drawable.figura_bela_kralj
+    Piece.BLACK_PAWN -> R.drawable.figura_crna_pesak
+    Piece.BLACK_KNIGHT -> R.drawable.figura_crna_skakac
+    Piece.BLACK_BISHOP -> R.drawable.figura_crna_lovac
+    Piece.BLACK_ROOK -> R.drawable.figura_crna_top
+    Piece.BLACK_QUEEN -> R.drawable.figura_crna_dama
+    Piece.BLACK_KING -> R.drawable.figura_crna_kralj
+    else -> null
 }
 
-private fun putanjaFigure(tip: PieceType): Path {
-    val p = Path()
-    when (tip) {
-        PieceType.PAWN -> {
-            p.addOval(Rect(34f, 12f, 66f, 44f))
-            p.moveTo(38f, 44f)
-            p.cubicTo(34f, 58f, 30f, 70f, 28f, 80f)
-            p.lineTo(72f, 80f)
-            p.cubicTo(70f, 70f, 66f, 58f, 62f, 44f)
-            p.close()
-            p.addRoundRect(RoundRect(24f, 80f, 76f, 92f, 5f, 5f))
-        }
-        PieceType.ROOK -> {
-            p.addRoundRect(RoundRect(24f, 80f, 76f, 92f, 4f, 4f))
-            p.addRect(Rect(30f, 42f, 70f, 82f))
-            p.addRect(Rect(28f, 20f, 40f, 42f))
-            p.addRect(Rect(44f, 20f, 56f, 42f))
-            p.addRect(Rect(60f, 20f, 72f, 42f))
-            p.addRect(Rect(28f, 38f, 72f, 46f))
-        }
-        PieceType.KNIGHT -> {
-            p.addRoundRect(RoundRect(24f, 80f, 76f, 92f, 4f, 4f))
-            p.moveTo(30f, 82f)
-            p.lineTo(35f, 62f)
-            p.lineTo(26f, 54f)
-            p.lineTo(30f, 38f)
-            p.lineTo(40f, 26f)
-            p.lineTo(52f, 20f)
-            p.lineTo(63f, 25f)
-            p.lineTo(69f, 36f)
-            p.lineTo(60f, 45f)
-            p.lineTo(56f, 54f)
-            p.lineTo(60f, 82f)
-            p.close()
-            p.moveTo(50f, 24f)
-            p.lineTo(54f, 9f)
-            p.lineTo(60f, 24f)
-            p.close()
-        }
-        PieceType.BISHOP -> {
-            p.addRoundRect(RoundRect(24f, 80f, 76f, 92f, 4f, 4f))
-            p.moveTo(38f, 80f)
-            p.cubicTo(40f, 60f, 38f, 48f, 44f, 40f)
-            p.lineTo(50f, 27f)
-            p.lineTo(56f, 40f)
-            p.cubicTo(62f, 48f, 60f, 60f, 62f, 80f)
-            p.close()
-            p.addOval(Rect(44f, 17f, 56f, 29f))
-        }
-        PieceType.QUEEN -> {
-            p.addRoundRect(RoundRect(22f, 80f, 78f, 92f, 4f, 4f))
-            p.moveTo(30f, 80f)
-            p.lineTo(34f, 46f)
-            p.lineTo(66f, 46f)
-            p.lineTo(70f, 80f)
-            p.close()
-            p.moveTo(32f, 46f)
-            p.lineTo(26f, 22f)
-            p.lineTo(38f, 34f)
-            p.lineTo(44f, 18f)
-            p.lineTo(50f, 32f)
-            p.lineTo(56f, 18f)
-            p.lineTo(62f, 34f)
-            p.lineTo(74f, 22f)
-            p.lineTo(68f, 46f)
-            p.close()
-        }
-        PieceType.KING -> {
-            p.addRoundRect(RoundRect(22f, 80f, 78f, 92f, 4f, 4f))
-            p.moveTo(30f, 80f)
-            p.lineTo(34f, 44f)
-            p.lineTo(66f, 44f)
-            p.lineTo(70f, 80f)
-            p.close()
-            p.moveTo(36f, 44f)
-            p.lineTo(32f, 26f)
-            p.lineTo(44f, 32f)
-            p.lineTo(50f, 18f)
-            p.lineTo(56f, 32f)
-            p.lineTo(68f, 26f)
-            p.lineTo(64f, 44f)
-            p.close()
-            p.addRect(Rect(47f, 5f, 53f, 20f))
-            p.addRect(Rect(40f, 9f, 60f, 15f))
-        }
-        else -> Unit
+private val SVE_FIGURE = listOf(
+    Piece.WHITE_PAWN, Piece.WHITE_KNIGHT, Piece.WHITE_BISHOP, Piece.WHITE_ROOK, Piece.WHITE_QUEEN, Piece.WHITE_KING,
+    Piece.BLACK_PAWN, Piece.BLACK_KNIGHT, Piece.BLACK_BISHOP, Piece.BLACK_ROOK, Piece.BLACK_QUEEN, Piece.BLACK_KING,
+)
+
+@Composable
+private fun figurePaintera(): Map<Piece, Painter> =
+    SVE_FIGURE.associateWith { painterResource(resursFigure(it)!!) }
+
+private fun DrawScope.crtajFiguru(slika: Painter, centar: Offset, velicina: Float) {
+    translate(centar.x - velicina / 2f, centar.y - velicina / 2f) {
+        with(slika) { draw(androidx.compose.ui.geometry.Size(velicina, velicina)) }
     }
-    return p
 }
 
 private fun opisFigure(tabla: Board, sq: Square): String {

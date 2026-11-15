@@ -27,7 +27,7 @@ class FrameTimingBenchmark {
         compilationMode = CompilationMode.Partial(BaselineProfileMode.Require),
     ) {
         startActivityAndWait()
-        device.wait(Until.hasObject(By.text("Moj profil")), 8_000)
+        device.wait(Until.hasObject(By.text("Moji zadaci")), 8_000)
         val lista = device.findObject(By.scrollable(true))
         lista?.setGestureMargin(device.displayWidth / 5)
         repeat(3) {

@@ -19,6 +19,6 @@ class BaselineProfileGenerator {
     ) {
         pressHome()
         startActivityAndWait()
-        device.wait(Until.hasObject(By.text("Moj profil")), 8_000)
+        device.wait(Until.hasObject(By.text("Moji zadaci")), 8_000)
     }
 }
