@@ -14,6 +14,7 @@ import { RoditeljskiLink as Link, useRoditelj } from '../../lib/roditelj'
 import { useAuth } from '../../lib/auth'
 import { MEJL_DETETU_ZA_NOVI_KVIZ, MEJL_DETETU_ZA_NOVU_PARTIJU, MEJL_RODITELJU_POSLE_KVIZA } from '../../lib/funkcije'
 import { BrisanjeNaloga } from '../../components/BrisanjeNaloga'
+import { PromenaLozinke } from '../../components/Lozinka'
 import { emailJeIspravan, normalizujEmail } from '../../lib/email'
 import { formatDatum, formatProcenat } from '../../lib/format'
 import { validirajSahNagrade } from '../../sah/nagrade'
@@ -1436,6 +1437,7 @@ export function Podesavanja({ sekcija = 'obavestenja' }: { sekcija?: Sekcija }) 
           </div>
         </div>
         <div className="roditelj-sekcija"><h2>Nalog</h2><button className="dugme dugme--senka" onClick={() => void odjavi()}><Ikona ime="odjava" />Odjavi se</button></div>
+        <PromenaLozinke />
         <BrisanjeNaloga />
       </section>
       )}

@@ -1,18 +1,18 @@
-// Prijava administratora: lozinka (primarno) ili magic link (sekundarno —
-// Supabase besplatni SMTP šalje svega par mejlova na sat)
+// Prijava administratora: lozinka (primarno), magic link ili link za novu lozinku.
 import { useState, type FormEvent } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { useAuth } from '../../lib/auth'
 import { uzmiPorukuPosleBrisanja } from '../../lib/nalog'
+import { uzmiGreskuPrijave } from '../../lib/authPovratak'
 import { backendPodesen } from '../../lib/supabase'
 import { Maskota } from '../../components/Maskota'
 
 export function Prijava() {
-  const { session, prijaviLozinkom, posaljiMagicLink } = useAuth()
-  const [nacin, setNacin] = useState<'lozinka' | 'magic'>('lozinka')
+  const { session, prijaviLozinkom, posaljiMagicLink, posaljiLinkZaLozinku } = useAuth()
+  const [nacin, setNacin] = useState<'lozinka' | 'magic' | 'zaboravljena'>('lozinka')
   const [email, setEmail] = useState('')
   const [lozinka, setLozinka] = useState('')
-  const [greska, setGreska] = useState<string | null>(null)
+  const [greska, setGreska] = useState<string | null>(() => uzmiGreskuPrijave())
   const [info, setInfo] = useState<string | null>(() => uzmiPorukuPosleBrisanja())
   const [radi, setRadi] = useState(false)
 
@@ -32,6 +32,12 @@ export function Prijava() {
     )
   }
 
+  function promeniNacin(novi: typeof nacin) {
+    setNacin(novi)
+    setGreska(null)
+    setInfo(null)
+  }
+
   async function posalji(e: FormEvent) {
     e.preventDefault()
     setGreska(null)
@@ -41,10 +47,14 @@ export function Prijava() {
       if (nacin === 'lozinka') {
         const gr = await prijaviLozinkom(email.trim(), lozinka)
         if (gr) setGreska(gr)
-      } else {
+      } else if (nacin === 'magic') {
         const gr = await posaljiMagicLink(email.trim())
         if (gr) setGreska(gr)
         else setInfo('Poslali smo ti link za prijavu na email. Otvori ga na ovom uređaju.')
+      } else {
+        const gr = await posaljiLinkZaLozinku(email.trim())
+        if (gr) setGreska(gr)
+        else setInfo('Ako nalog sa ovom adresom postoji, stiže ti mejl sa linkom za novu lozinku. Otvori ga na ovom uređaju.')
       }
     } finally {
       setRadi(false)
@@ -81,17 +91,14 @@ export function Prijava() {
           {info && <p className="poruka poruka--uspeh" role="status">{info}</p>}
 
           <button type="submit" className="dugme" disabled={radi} style={{ width: '100%' }}>
-            {radi ? 'Sačekaj…' : nacin === 'lozinka' ? 'Prijavi se' : 'Pošalji magic link'}
+            {radi ? 'Sačekaj…' : nacin === 'lozinka' ? 'Prijavi se' : nacin === 'magic' ? 'Pošalji magic link' : 'Pošalji link za novu lozinku'}
           </button>
         </form>
 
-        <p className="centar razmak-gore">
-          <button
-            type="button" className="dugme dugme--senka dugme--malo"
-            onClick={() => { setNacin(nacin === 'lozinka' ? 'magic' : 'lozinka'); setGreska(null); setInfo(null) }}
-          >
-            {nacin === 'lozinka' ? 'Prijava magic linkom umesto lozinke' : 'Prijava lozinkom'}
-          </button>
+        <p className="centar razmak-gore red" style={{ justifyContent: 'center' }}>
+          {nacin !== 'lozinka' && <DugmeNacina naziv="Prijava lozinkom" onClick={() => promeniNacin('lozinka')} />}
+          {nacin !== 'zaboravljena' && <DugmeNacina naziv="Zaboravljena lozinka" onClick={() => promeniNacin('zaboravljena')} />}
+          {nacin !== 'magic' && <DugmeNacina naziv="Prijava magic linkom" onClick={() => promeniNacin('magic')} />}
         </p>
 
         <p className="malo blago centar razmak-gore">
@@ -100,4 +107,8 @@ export function Prijava() {
       </div>
     </div>
   )
+}
+
+function DugmeNacina({ naziv, onClick }: { naziv: string; onClick: () => void }) {
+  return <button type="button" className="dugme dugme--senka dugme--malo" onClick={onClick}>{naziv}</button>
 }

@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react'
 import { HashRouter, Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom'
 import { hashDecjeAplikacije } from './lib/decjaAplikacija'
+import { jeAuthHash } from './lib/authPovratak'
 import { AdminLayout } from './components/AdminLayout'
 import { PitanjaSekcija } from './components/AdminSekcijaTabovi'
 import { VezbanjeSekcija, NagradeSekcija } from './components/RoditeljskeSekcije'
@@ -114,6 +115,8 @@ function App() {
 // čak i kad pregledač vrati #/admin posle prvog location.replace.
 function DecjiUlazOmotaca({ children }: { children: React.ReactNode }) {
   const { pathname } = useLocation()
+  // Dok supabase-js ne pročita tokene iz hash-a, ruter bi ih prikazao kao nepoznatu stranu.
+  if (jeAuthHash(window.location.hash)) return <Loader tekst="Prijava…" />
   if (hashDecjeAplikacije(window.location.search, pathname)) {
     return <Navigate to="/dete/pocetak" replace />
   }
