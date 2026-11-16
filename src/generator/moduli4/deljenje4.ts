@@ -103,23 +103,24 @@ function zavisnostKolicnika(rng: Rng, cfg: GeneratorConfig, taken: Set<string>):
 // Deljenje zbira/razlike brojem: (a ± b) : c = a:c ± b:c
 function deljenjeZbiraRazlike(rng: Rng, cfg: GeneratorConfig, taken: Set<string>): GenerisanoPitanje | null {
   const c = ceoBroj(rng, 2, 20)
-  const qa = ceoBroj(rng, 10, 999)
-  const qb = ceoBroj(rng, 10, 999)
-  const a = qa * c
-  const b = qb * c
+  let qa = ceoBroj(rng, 10, 999)
+  let qb = ceoBroj(rng, 10, 999)
   const zbir = rng() < 0.5
   if (!zbir && qa === qb) return null
-  const tacan = zbir ? qa + qb : Math.abs(qa - qb)
+  if (!zbir && qa < qb) [qa, qb] = [qb, qa]
+  const a = qa * c
+  const b = qb * c
+  const tacan = zbir ? qa + qb : qa - qb
   const signature = `deljenje4:sv:distrib:${a},${b},${c},${zbir ? 'zbir' : 'razlika'}`
   if (taken.has(signature)) return null
   return upakujRacun(cfg, rng, {
     text: `Izračunaj: (${a} ${zbir ? '+' : '−'} ${b}) : ${c} = ?`,
     tacan,
     kandidati: [a + b, qa, qb, tacan + 10],
-    explanation: `${zbir ? 'Zbir' : 'Razliku'} možemo podeliti tako što svaki broj podelimo pojedinačno, pa rezultate saberemo/oduzmemo: ${a} : ${c} = ${qa}, ${b} : ${c} = ${qb}, pa je rezultat ${qa} ${zbir ? '+' : '−'} ${qb} = ${tacan}.`,
+    explanation: `${zbir ? 'Zbir' : 'Razliku'} možemo podeliti tako što svaki broj podelimo pojedinačno, pa rezultate ${zbir ? 'saberemo' : 'oduzmemo'}: ${a} : ${c} = ${qa}, ${b} : ${c} = ${qb}, pa je rezultat ${qa} ${zbir ? '+' : '−'} ${qb} = ${tacan}.`,
     hint: 'Podeli svaki broj u zagradi pojedinačno istim deliocem, pa rezultate saberi/oduzmi.',
     signature,
-    maxDistraktor: 2_000,
+    maxDistraktor: 50_000,
   })
 }
 
@@ -242,7 +243,7 @@ export const deljenje4: TopicGenerator = {
       const delilac = delioci[0]
       const sabloni = [
         `${ime1} ima ${kolicina(deljenik, predmet, 'akuz')} i podeli ih podjednako na ${kolicina(delilac, DRUG, 'akuz')}. Koliko ${genMn(predmet)} dobije svaki?`,
-        `${kolicina(deljenik, predmet)} treba podjednako rasporediti u ${kolicina(delilac, KUTIJA, 'akuz')}. Koliko ${genMn(predmet)} ide u svaku kutiju?`,
+        `${kolicina(deljenik, predmet, 'akuz')} treba podjednako rasporediti u ${kolicina(delilac, KUTIJA, 'akuz')}. Koliko ${genMn(predmet)} ide u svaku kutiju?`,
       ]
       text = izaberi(rng, sabloni)
     }
@@ -253,7 +254,7 @@ export const deljenje4: TopicGenerator = {
     return upakujRacun(cfg, rng, {
       text, tacan, kandidati,
       explanation: objasnjenje,
-      hint: 'Deli pismeno počevši od najviše decimalne jedinice deljenika (hiljade, pa stotine, pa desetice, pa jedinice).',
+      hint: 'Deli pismeno počevši od najviše dekadne jedinice deljenika (hiljade, pa stotine, pa desetice, pa jedinice).',
       signature,
       maxDistraktor: MAX_DISTRAKTOR,
     })

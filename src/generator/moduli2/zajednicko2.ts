@@ -7,11 +7,11 @@ import { poeniZaTezinu, upakujRacun } from '../moduli/zajednicko.ts'
 export function racun(
   cfg: GeneratorConfig, rng: Rng, text: string, tacan: number,
   kandidati: number[], explanation: string, hint: string, signature: string,
-  sufiks?: string,
+  sufiks?: string, maxDistraktor?: number,
 ): GenerisanoPitanje {
   return upakujRacun(cfg, rng, {
     text, tacan, kandidati, explanation, hint, signature, sufiks,
-    maxDistraktor: Math.max(100, Math.abs(tacan) + 30),
+    maxDistraktor: maxDistraktor ?? Math.max(1000, Math.abs(tacan) * 2 + 100),
   })
 }
 
@@ -28,11 +28,6 @@ export function upakujIzbor(
   cfg: GeneratorConfig, rng: Rng, ulaz: IzborUlaz,
 ): GenerisanoPitanje {
   const netacni = [...new Set(ulaz.netacni)].filter((v) => v !== ulaz.tacan)
-  const dopune = ['Nijedno od navedenog', 'Ne može se odrediti', 'Sve navedeno']
-  for (const dopuna of dopune) {
-    if (netacni.length >= 3) break
-    if (dopuna !== ulaz.tacan && !netacni.includes(dopuna)) netacni.push(dopuna)
-  }
   const vrednosti = promesaj(rng, [ulaz.tacan, ...netacni.slice(0, 3)])
   const options: Opcija[] = vrednosti.map((text, i) => ({ id: `o${i + 1}`, text }))
   return {
@@ -50,21 +45,14 @@ export function upakujIzbor(
 }
 
 export function tvrdnja(
-  cfg: GeneratorConfig, rng: Rng, text: string, tacno: boolean,
+  cfg: GeneratorConfig, _rng: Rng, text: string, tacno: boolean,
   explanation: string, hint: string, signature: string,
 ): GenerisanoPitanje {
-  if (cfg.type === 'auto' || cfg.type === 'truefalse') {
-    return {
-      type: 'truefalse', text, options: null, correct: { value: tacno },
-      explanation, hint, points: poeniZaTezinu(cfg.difficulty), topicSlug: cfg.topicSlug,
-      difficulty: cfg.difficulty, signature,
-    }
+  return {
+    type: 'truefalse', text, options: null, correct: { value: tacno },
+    explanation, hint, points: poeniZaTezinu(cfg.difficulty), topicSlug: cfg.topicSlug,
+    difficulty: cfg.difficulty, signature,
   }
-  return upakujIzbor(cfg, rng, {
-    text, tacan: tacno ? 'Tačno' : 'Netačno',
-    netacni: tacno ? ['Netačno'] : ['Tačno'],
-    explanation, hint, signature,
-  })
 }
 
 function imaPrenos(a: number, b: number): boolean {

@@ -116,7 +116,9 @@ function distributivnostMnozenje(rng: Rng, cfg: GeneratorConfig, taken: Set<stri
   const b = ceoBroj(rng, 10, 500)
   const k = ceoBroj(rng, 2, 20)
   const zbir = rng() < 0.5
-  const unutra = zbir ? a + b : Math.abs(a - b)
+  const veci = Math.max(a, b)
+  const manji = Math.min(a, b)
+  const unutra = zbir ? a + b : veci - manji
   if (unutra === 0) return null
   const tacan = unutra * k
   const signature = `mnozenje4:sv:distrib:${a},${b},${k},${zbir ? 'zbir' : 'razlika'}`
@@ -125,7 +127,9 @@ function distributivnostMnozenje(rng: Rng, cfg: GeneratorConfig, taken: Set<stri
     text: `Koliki je broj koji je ${k} puta veći od ${zbir ? 'zbira' : 'razlike'} brojeva ${a} i ${b}?`,
     tacan,
     kandidati: [unutra, a * k + b, unutra + k, tacan + 10],
-    explanation: `${zbir ? 'Zbir' : 'Razlika'}: ${a} ${zbir ? '+' : '−'} ${b} = ${unutra}, pa ${unutra} · ${k} = ${tacan}.`,
+    explanation: zbir
+      ? `Zbir: ${a} + ${b} = ${unutra}, pa ${unutra} · ${k} = ${tacan}.`
+      : `Razlika: ${veci} − ${manji} = ${unutra}, pa ${unutra} · ${k} = ${tacan}.`,
     hint: 'Prvo izračunaj zbir/razliku u zagradi, pa tek onda pomnoži.',
     signature,
     maxDistraktor: 20_000,
@@ -227,7 +231,8 @@ export const mnozenje4: TopicGenerator = {
       const [ime1] = dvaImena(rng)
       if (cinioci.length === 2 && cinioci[1] < 1000) {
         const [a, b] = cinioci
-        text = `${ime1} u svakoj od ${b} kutija pakuje po ${kolicina(a, predmet, 'akuz')}. Koliko je ukupno ${genMn(predmet)}?`
+        const kutijaGen = b % 10 >= 1 && b % 10 <= 4 && (b % 100 < 11 || b % 100 > 14) ? 'kutije' : 'kutija'
+        text = `${ime1} u svakoj od ${b} ${kutijaGen} pakuje po ${kolicina(a, predmet, 'akuz')}. Koliko je ukupno ${genMn(predmet)}?`
       } else {
         const poslednji = cinioci[cinioci.length - 1]
         text = `Pomnoži brojeve ${cinioci.slice(0, -1).join(', ')} i ${poslednji} — koliki je proizvod?`
@@ -248,7 +253,7 @@ export const mnozenje4: TopicGenerator = {
     return upakujRacun(cfg, rng, {
       text, tacan, kandidati,
       explanation: `${cinioci.join(' · ')} = ${tacan}`,
-      hint: 'Množi pismeno: prvo jedinicama, pa desecima, pa stotinama drugog činioca, pa saberi delimične proizvode.',
+      hint: 'Množi pismeno: prvo jedinicama, pa deseticama, pa stotinama drugog činioca, pa saberi delimične proizvode.',
       signature,
       maxDistraktor: MAX_DISTRAKTOR,
     })

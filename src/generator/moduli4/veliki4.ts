@@ -7,11 +7,11 @@ import { ceoBroj, izaberi, promesaj, type Rng } from '../random.ts'
 import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types.ts'
 import { poeniZaTezinu, upakujRacun } from '../moduli/zajednicko.ts'
 
-// Nazivi mesta po poziciji cifre (0 = jedinice, računato zdesna), do milijarde.
+// Nazivi mesta po poziciji cifre u genitivu množine ("na mestu ...")
 const MESTA = [
-  'jedinice', 'desetice', 'stotine', 'hiljade',
-  'desetice hiljada', 'stotine hiljada', 'jedinice miliona',
-  'desetice miliona', 'stotine miliona', 'jedinice milijardi',
+  'jedinica', 'desetica', 'stotina', 'hiljada',
+  'desetica hiljada', 'stotina hiljada', 'jedinica miliona',
+  'desetica miliona', 'stotina miliona', 'jedinica milijardi',
 ] as const
 
 function cifraNaMestu(n: number, pozicija: number): number {
@@ -67,7 +67,7 @@ function poredi(rng: Rng, minN: number, maxN: number, cfg: GeneratorConfig, take
     options,
     correct: { optionId: correctId },
     explanation: `Brojevi imaju ${String(a).length === String(b).length ? 'isti broj cifara — upoređujemo cifru po cifru sleva' : 'različit broj cifara — veći je onaj sa više cifara'}: ${a} ${znak} ${b}.`,
-    hint: 'Prvo upoređuj broj cifara, a ako je isti, cifru po cifru sleva na desno.',
+    hint: 'Prvo upoređuj broj cifara, a ako je isti, cifru po cifru sleva nadesno.',
     points: poeniZaTezinu(cfg.difficulty),
     topicSlug: cfg.topicSlug,
     difficulty: cfg.difficulty,
@@ -108,9 +108,12 @@ function vrednostMesta(rng: Rng, minN: number, maxN: number, maksPozicija: numbe
   const signature = `veliki4:vrednost:${n}:${pozicija}`
   if (taken.has(signature)) return null
   return upakujRacun(cfg, rng, {
-    text: `Koliko iznosi cifra na mestu ${MESTA[pozicija]} u broju ${n}, izražena kao broj (ne kao cifra)?`,
+    text: `Koliko vredi cifra na mestu ${MESTA[pozicija]} u broju ${n}?`,
     tacan,
-    kandidati: [cifra, tacan + 10 ** pozicija, tacan - 10 ** pozicija, pozicija > 0 ? cifra * 10 ** (pozicija - 1) : cifra],
+    kandidati:
+      cifra === 0
+        ? [10 ** pozicija, 2 * 10 ** pozicija, pozicija > 0 ? 10 ** (pozicija - 1) : 1]
+        : [cifra, tacan + 10 ** pozicija, tacan - 10 ** pozicija, pozicija > 0 ? cifra * 10 ** (pozicija - 1) : cifra],
     explanation: `Cifra na mestu ${MESTA[pozicija]} je ${cifra}, a njena vrednost je ${cifra} · ${10 ** pozicija} = ${tacan}.`,
     hint: 'Ne pitamo se koja je cifra, već koliko ta cifra VREDI na svom mestu (cifra puta vrednost mesta).',
     signature,
@@ -250,7 +253,7 @@ export const veliki4: TopicGenerator = {
         : kolikoJedinica(rng, 10_000, 999_999, 1_000, cfg, taken)
     }
     if (cfg.difficulty === 3) {
-      return rng() < 0.5
+      return cfg.type !== 'numeric' && rng() < 0.5
         ? poredi(rng, 100_000, 9_999_999, cfg, taken)
         : izborNajveciNajmanji(rng, 100_000, 9_999_999, cfg, taken)
     }
@@ -263,7 +266,7 @@ export const veliki4: TopicGenerator = {
     // Ekspert: opseg milijardi
     const izbor = ceoBroj(rng, 0, 2)
     if (izbor === 0) return vrednostMesta(rng, 1_000_000_000, 9_999_999_999, 9, cfg, taken)
-    if (izbor === 1) return poredi(rng, 1_000_000_000, 9_999_999_999, cfg, taken)
+    if (izbor === 1 && cfg.type !== 'numeric') return poredi(rng, 1_000_000_000, 9_999_999_999, cfg, taken)
     return kolikoJedinica(rng, 1_000_000_000, 9_999_999_999, 1_000_000, cfg, taken)
   },
 }

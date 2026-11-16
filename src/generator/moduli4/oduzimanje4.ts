@@ -6,7 +6,7 @@ import { lanacOduzimanja } from '../moduli/oduzimanje.ts'
 import type { Tezina } from '../../types/db.ts'
 import { ceoBroj, izaberi, type Rng } from '../random.ts'
 import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types.ts'
-import { dvaImena, genMn, izaberiPredmet, kolicina, upakujRacun } from '../moduli/zajednicko.ts'
+import { dvaImena, genMn, izaberiPredmet, jeSu, kolicina, upakujRacun, zamenicaDativ } from '../moduli/zajednicko.ts'
 
 const MAX_DISTRAKTOR = 6_000_000
 
@@ -188,14 +188,17 @@ export const oduzimanje4: TopicGenerator = {
         const [a, b] = operandi
         const sabloni = [
           `${ime1} ima ${kolicina(a, predmet, 'akuz')} i pokloni ${ime2} ${kolicina(b, predmet, 'akuz')}. Koliko ${genMn(predmet)} ostaje?`,
-          `U skladištu se nalazi ${kolicina(a, predmet)}. Ako iz njega izvezemo ${kolicina(b, predmet, 'akuz')}, koliko ${genMn(predmet)} ostaje?`,
-          `${ime1} treba da sakupi ${kolicina(a, predmet, 'akuz')}, a već ima ${kolicina(b, predmet, 'akuz')}. Koliko mu još nedostaje?`,
+          `U skladištu ${jeSu(a)} ${kolicina(a, predmet)}. Ako iz njega izvezemo ${kolicina(b, predmet, 'akuz')}, koliko ${genMn(predmet)} ostaje?`,
+          `${ime1} treba da sakupi ${kolicina(a, predmet, 'akuz')}, a već ima ${kolicina(b, predmet, 'akuz')}. Koliko ${zamenicaDativ(ime1)} još nedostaje?`,
         ]
         text = izaberi(rng, sabloni)
       } else {
         const [a, ...koraci] = operandi
         const spisak = koraci.map((k) => kolicina(k, predmet, 'akuz'))
-        text = `${ime1} ima ${kolicina(a, predmet)}. Prvo potroši ${spisak[0]}, ${spisak.length > 1 ? `zatim još ${spisak.slice(1).join(', ')}` : ''}. Koliko ${genMn(predmet)} mu/joj ostaje?`
+        const ostatak = spisak.length > 2
+          ? `${spisak.slice(1, -1).join(', ')} i ${spisak[spisak.length - 1]}`
+          : spisak.slice(1).join('')
+        text = `${ime1} ima ${kolicina(a, predmet, 'akuz')}. Prvo potroši ${spisak[0]}${spisak.length > 1 ? `, a zatim još ${ostatak}` : ''}. Koliko ${genMn(predmet)} ${zamenicaDativ(ime1)} ostaje?`
       }
     }
 
@@ -212,7 +215,7 @@ export const oduzimanje4: TopicGenerator = {
     return upakujRacun(cfg, rng, {
       text, tacan, kandidati,
       explanation: `${operandi.join(' − ')} = ${tacan}`,
-      hint: 'Oduzimaj pismeno: jedinice, desetice, stotine, hiljade — redom sa desna na levo.',
+      hint: 'Oduzimaj pismeno: jedinice, desetice, stotine, hiljade — redom zdesna nalevo.',
       signature,
       maxDistraktor: MAX_DISTRAKTOR,
     })

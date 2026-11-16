@@ -4,7 +4,7 @@ import type { Tezina } from '../../types/db.ts'
 import { bezPrenosa, zamenaCifara } from '../distraktori.ts'
 import { ceoBroj, izaberi, type Rng } from '../random.ts'
 import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types.ts'
-import { dvaImena, genMn, izaberiPredmet, kolicina, upakujRacun } from './zajednicko.ts'
+import { dvaImena, genMn, izaberiPredmet, jeSu, kolicina, upakujRacun } from './zajednicko.ts'
 
 // Nivo 1: tačno dva sabirka sa kontrolisanim prenosom (nepromenjeno)
 function dvaSabirkaNivo1(rng: Rng): number[] {
@@ -55,7 +55,7 @@ export const sabiranje: TopicGenerator = {
         const [a, b] = operandi
         const sabloni = [
           `${ime1} ima ${kolicina(a, predmet, 'akuz')}, a ${ime2} ima ${kolicina(b, predmet, 'akuz')}. Koliko ${genMn(predmet)} imaju zajedno?`,
-          `U prvoj kutiji nalazi se ${kolicina(a, predmet)}, a u drugoj ${kolicina(b, predmet)}. Koliko je ukupno ${genMn(predmet)}?`,
+          `U prvoj kutiji ${jeSu(a)} ${kolicina(a, predmet)}, a u drugoj ${kolicina(b, predmet)}. Koliko je ukupno ${genMn(predmet)}?`,
           `${ime1} sakupi ${kolicina(a, predmet, 'akuz')}, a zatim dobije još ${kolicina(b, predmet, 'akuz')}. Koliko ${genMn(predmet)} sada ima?`,
         ]
         text = izaberi(rng, sabloni)

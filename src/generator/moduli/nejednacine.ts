@@ -106,15 +106,13 @@ export const nejednacine: TopicGenerator = {
       })
     }
 
-    // Ekspert: dvokoračna granica a·x ± c ? b — prvo se poništava ±c, tek onda deli
-    // sa a (jedna operacija više nego na nivou 4, a k (granica za x) sme biti
-    // veliko jer se b nigde ne proverava — samo k∓1 mora ostati ≤ 1000).
+    // Ekspert: dvokoračna granica a·x ± c ? b (svi brojevi ≤ 1000 za 3. razred)
     const smer = izaberi(rng, ['lt', 'gt'] as const)
     const a = ceoBroj(rng, 2, 9)
-    const k = ceoBroj(rng, 5, 900)
+    const k = ceoBroj(rng, 5, Math.floor(780 / a))
     const ax = a * k
     const plus = rng() < 0.5
-    const c = plus ? ceoBroj(rng, 3, 200) : ceoBroj(rng, 3, Math.max(3, Math.min(200, ax)))
+    const c = plus ? ceoBroj(rng, 3, 200) : ceoBroj(rng, 3, Math.min(200, ax))
     const b = plus ? ax + c : ax - c
     const signature = `nejednacine:dvokorak:${smer}:${plus ? '+' : '-'}:${a},${k},${c}`
     if (taken.has(signature)) return null

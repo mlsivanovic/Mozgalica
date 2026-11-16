@@ -72,7 +72,7 @@ function UnosBroja({ pitanje, value, onChange, disabled }: PitanjeProps) {
     <div className="polje">
       <label htmlFor={`broj-${pitanje.id}`}>Upiši odgovor (broj):</label>
       <input
-        id={`broj-${pitanje.id}`} type="text" inputMode="numeric" autoComplete="off"
+        id={`broj-${pitanje.id}`} type="text" inputMode="decimal" autoComplete="off"
         className="unos-broja" disabled={disabled} value={trenutno}
         onChange={(e) => {
           const očišćeno = e.target.value.replace(/[^0-9.,-]/g, '')

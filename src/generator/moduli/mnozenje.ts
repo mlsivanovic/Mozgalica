@@ -4,7 +4,7 @@
 import type { Tezina } from '../../types/db.ts'
 import { ceoBroj, izaberi, type Rng } from '../random.ts'
 import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types.ts'
-import { dvaImena, genMn, izaberiPredmet, kolicina, upakujRacun } from './zajednicko.ts'
+import { dvaImena, genMn, izaberiPredmet, jeSu, kolicina, upakujRacun } from './zajednicko.ts'
 
 // Dani za tekstualne zadatke: oblici su bezbedni uz sve brojeve
 const DAN: [string, string, string, string] = ['dan', 'dana', 'dana', 'dan']
@@ -66,7 +66,7 @@ export const mnozenje: TopicGenerator = {
         const poDanu = Math.max(a, b)
         const sabloni = [
           `${ime1} svakog dana sakupi po ${kolicina(poDanu, predmet, 'akuz')}. Koliko ${genMn(predmet)} sakupi za ${kolicina(dana, DAN, 'akuz')}?`,
-          `U svakom redu ${jeSuRed(poDanu)} po ${kolicina(poDanu, predmet)}. Koliko je ukupno ${genMn(predmet)} u ${dana} ${dana < 5 ? 'reda' : 'redova'}?`,
+          `U svakom redu ${jeSu(poDanu)} po ${kolicina(poDanu, predmet)}. Koliko je ukupno ${genMn(predmet)} u ${dana} ${dana % 10 === 1 && dana % 100 !== 11 ? 'red' : dana % 10 >= 2 && dana % 10 <= 4 && (dana % 100 < 12 || dana % 100 > 14) ? 'reda' : 'redova'}?`,
         ]
         text = izaberi(rng, sabloni)
       } else {
@@ -90,16 +90,9 @@ export const mnozenje: TopicGenerator = {
       text, tacan, kandidati,
       explanation: `${cinioci.join(' · ')} = ${tacan}`,
       hint: cfg.difficulty >= 4
-        ? 'Množi po ceo desetici pa dodaj ostatak — ili napiši množenje ispod crte, kolonu po kolonu.'
+        ? 'Množi po celoj desetici pa dodaj ostatak — ili napiši množenje ispod crte, kolonu po kolonu.'
         : cfg.difficulty === 3 ? 'Množi po dva činioca redom, sleva nadesno.' : 'Seti se tablice množenja.',
       signature,
     })
   },
-}
-
-// Pomoćni glagol za red („u svakom redu je / su")
-function jeSuRed(n: number): string {
-  const j = n % 10
-  const d = n % 100
-  return j >= 2 && j <= 4 && (d < 12 || d > 14) ? 'su' : 'je'
 }

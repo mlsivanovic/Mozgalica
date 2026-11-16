@@ -36,8 +36,11 @@ function proveriPitanje(p: ReturnType<typeof generisi>['questions'][number]) {
     expect(p.options).toBeNull()
   } else if (p.type === 'single') {
     const opcije = p.options as Opcija[]
-    expect(opcije).toHaveLength(4)
-    expect(new Set(opcije.map((o) => o.text)).size).toBe(4)
+    expect(opcije.length).toBeGreaterThanOrEqual(3)
+    expect(new Set(opcije.map((o) => o.text)).size).toBe(opcije.length)
+    for (const o of opcije) {
+      expect(['Nijedno od navedenog', 'Ne može se odrediti', 'Sve navedeno']).not.toContain(o.text)
+    }
     const id = (p.correct as { optionId: string }).optionId
     expect(opcije.filter((o) => o.id === id)).toHaveLength(1)
   } else if (p.type === 'truefalse') {
@@ -80,12 +83,12 @@ describe('matematika 5. razred — registar i opšti ugovor', () => {
     }
   })
 
-  it('eksplicitni numeric zahtev bez brojčanog odgovora bezbedno prelazi na single', () => {
+  it('eksplicitni numeric zahtev bez brojčanog odgovora bezbedno prelazi na single ili truefalse', () => {
     const pojmovne = ['skupovi-i-logika-5', 'prosti-brojevi-5', 'kruznica-i-krug-5', 'razlomci-5', 'osna-simetrija-5']
     for (const slug of pojmovne) {
       for (const difficulty of [1, 2, 3, 4, 5] as const) {
         const rezultat = generisi(cfg(slug, difficulty, 77, 'numeric'))
-        for (const p of rezultat.questions) expect(['numeric', 'single']).toContain(p.type)
+        for (const p of rezultat.questions) expect(['numeric', 'single', 'truefalse']).toContain(p.type)
       }
     }
   })

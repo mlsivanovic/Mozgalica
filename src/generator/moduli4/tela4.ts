@@ -48,8 +48,8 @@ const TVRDNJE: Tvrdnja[] = [
   { tekst: 'Piramida ima 5 temena.', tacno: true },
   { tekst: 'Piramida ima 8 ivica.', tacno: true },
   { tekst: 'Piramida ima 6 strana.', tacno: false },
-  { tekst: 'Piramida je obla tela.', tacno: false },
-  { tekst: 'Lopta nema ni jedno teme.', tacno: true },
+  { tekst: 'Piramida je oblo telo.', tacno: false },
+  { tekst: 'Lopta nema nijedno teme.', tacno: true },
   { tekst: 'Lopta ima ravnu stranu.', tacno: false },
   { tekst: 'Valjak je rogljasto telo.', tacno: false },
   { tekst: 'Valjak ima dve kružne (ravne) strane.', tacno: true },
@@ -69,7 +69,7 @@ interface Cinjenica {
 const SVOJSTVO_JEDNO: Cinjenica[] = [
   { tekst: 'Koje telo ima 5 temena?', tacanNaziv: 'piramida', objasnjenje: 'Piramida (sa kvadratnom osnovom) ima 5 temena: 4 u osnovi i 1 vrh.' },
   { tekst: 'Koje telo ima tačno jedno teme (vrh)?', tacanNaziv: 'kupa', objasnjenje: 'Kupa ima jedan vrh (teme), jednu kružnu ravnu stranu i jednu zakrivljenu stranu.' },
-  { tekst: 'Koje telo nema ni jedno teme ni jednu ravnu stranu?', tacanNaziv: 'lopta', objasnjenje: 'Lopta je u celosti ograničena krivom površi — nema ravnih strana, ivica ni temena.' },
+  { tekst: 'Koje telo nema nijedno teme ni ravnu stranu?', tacanNaziv: 'lopta', objasnjenje: 'Lopta je u celosti ograničena krivom površi — nema ravnih strana, ivica ni temena.' },
   { tekst: 'Koje telo ima dve kružne (ravne) strane?', tacanNaziv: 'valjak', objasnjenje: 'Valjak ima dve podudarne kružne osnove i jednu zakrivljenu bočnu stranu.' },
   { tekst: 'Koje telo ima sve strane oblika kvadrata?', tacanNaziv: 'kocka', objasnjenje: 'Kocka je ograničena sa 6 podudarnih strana oblika kvadrata.' },
   { tekst: 'Koje telo ima 12 ivica, a strane NISU sve kvadrati?', tacanNaziv: 'kvadar', objasnjenje: 'Kvadar ima 12 ivica kao kocka, ali njegove strane su pravougaonici — ne mora svaka biti kvadrat.' },
@@ -97,7 +97,7 @@ const CINJENICE: Cinjenica[] = [
     objasnjenje: 'Od rogljastih tela (kvadar, kocka, piramida), kvadar i kocka imaju po 8 temena, a piramida (sa kvadratnom osnovom) samo 5 — najmanje.',
   },
   {
-    tekst: 'Koje OBLO telo ima i ravnu i zakrivljenu stranu, ali nema ni jedno teme?',
+    tekst: 'Koje OBLO telo ima i ravnu i zakrivljenu stranu, ali nema nijedno teme?',
     tacanNaziv: 'valjak',
     objasnjenje: 'Valjak ima dve ravne (kružne) strane i jednu zakrivljenu, ali nema teme. Kupa ima teme, a lopta nema ravnu stranu.',
   },
@@ -141,11 +141,12 @@ export const tela4: TopicGenerator = {
       const signature = `tela4:${svojstvo}:${telo.naziv}`
       if (taken.has(signature)) return null
       const ostaliBrojevi = ROGLJASTA.filter((r) => r.naziv !== telo.naziv).map((r) => r[svojstvo])
+      const nazivSvojstva = svojstvo === 'temena' ? 'temena' : svojstvo === 'strane' ? 'strana' : 'ivica'
       return upakujRacun(cfg, rng, {
-        text: `Koliko ${svojstvo === 'temena' ? 'temena' : svojstvo === 'strane' ? 'strana' : 'ivica'} ima ${telo.naziv}?`,
+        text: `Koliko ${nazivSvojstva} ima ${telo.naziv}?`,
         tacan,
         kandidati: [...new Set(ostaliBrojevi)].concat([tacan + 1, tacan - 1]),
-        explanation: `${telo.naziv.charAt(0).toUpperCase() + telo.naziv.slice(1)} ima ${tacan} ${svojstvo}.`,
+        explanation: `${telo.naziv.charAt(0).toUpperCase() + telo.naziv.slice(1)} ima ${tacan} ${nazivSvojstva}.`,
         hint: 'Kvadar i kocka imaju 8 temena, 12 ivica i 6 strana. Piramida (sa kvadratnom osnovom) ima 5 temena, 8 ivica i 5 strana.',
         signature,
         maxDistraktor: 12,
@@ -184,7 +185,7 @@ export const tela4: TopicGenerator = {
         options,
         correct: { optionId: correctId },
         explanation: `Tačna tvrdnja je: „${tacnaStavka.tekst}"`,
-        hint: 'Provera svake tvrdnje jednu po jednu — samo jedna je tačna.',
+        hint: 'Proveri svaku tvrdnju jednu po jednu — samo jedna je tačna.',
         points: poeniZaTezinu(cfg.difficulty),
         topicSlug: cfg.topicSlug,
         difficulty: cfg.difficulty,
@@ -205,7 +206,7 @@ export const tela4: TopicGenerator = {
         options,
         correct: { optionId: correctId },
         explanation: `Netačna tvrdnja je: „${netacnaStavka.tekst}"`,
-        hint: 'Sve ostale tvrdnje su tačne — provera svake, pažljivo, jedne po jedne.',
+        hint: 'Sve ostale tvrdnje su tačne — pažljivo proveri svaku jednu po jednu.',
         points: poeniZaTezinu(cfg.difficulty),
         topicSlug: cfg.topicSlug,
         difficulty: cfg.difficulty,
@@ -222,14 +223,15 @@ export const tela4: TopicGenerator = {
         const signature = `tela4:klasifikacija:${oblo ? 'oblo' : 'rogljasto'}:${tacanNaziv}`
         if (taken.has(signature)) return null
         const { options, correctId } = nazivneOpcije(rng, tacanNaziv, ostali)
+        const velikoIme = tacanNaziv.charAt(0).toUpperCase() + tacanNaziv.slice(1)
         return {
           type: 'single',
           text: `Koje od navedenih tela je ${oblo ? 'OBLO' : 'ROGLJASTO'} telo?`,
           options,
           correct: { optionId: correctId },
           explanation: oblo
-            ? `${tacanNaziv} je obla tela — ograničeno je krivom (ili krivom i ravnim) površima. Ostala navedena tela su rogljasta.`
-            : `${tacanNaziv} je rogljasto telo — ograničeno je samo ravnim površima. Ostala navedena tela su obla.`,
+            ? `${velikoIme} je oblo telo — ograničeno je krivom površi (ili krivom i ravnim površima). Ostala navedena tela su rogljasta.`
+            : `${velikoIme} je rogljasto telo — ograničeno je samo ravnim površima. Ostala navedena tela su obla.`,
           hint: 'Rogljasta tela (kvadar, kocka, piramida) ograničena su samo ravnim površima. Obla tela (lopta, valjak, kupa) imaju bar jednu zakrivljenu površ.',
           points: poeniZaTezinu(cfg.difficulty),
           topicSlug: cfg.topicSlug,

@@ -3,11 +3,23 @@
 import { bezPozajmice, bezPrenosa, zamenaCifara } from '../distraktori.ts'
 import { ceoBroj, izaberi, type Rng } from '../random.ts'
 import type { GeneratorConfig, TopicGenerator } from '../types.ts'
-import { dvaImena, genMn, izaberiPredmet, kolicina } from '../moduli/zajednicko.ts'
+import { dvaImena, genMn, izaberiPredmet, kolicina, zamenicaDativ, type Imenica } from '../moduli/zajednicko.ts'
 import { uRimski } from '../moduli/rimski.ts'
 import {
   najblizaDesetica, oduzmiPar, racun, saberiPar, tablica, tvrdnja, upakujIzbor,
 } from './zajednicko2.ts'
+
+const KUTIJA2: Imenica = ['kutija', 'kutije', 'kutija', 'kutiju']
+const DESETICA_IM: Imenica = ['desetica', 'desetice', 'desetica', 'deseticu']
+const JEDINICA_IM: Imenica = ['jedinica', 'jedinice', 'jedinica', 'jedinicu']
+
+function jednakihGrupa(n: number): string {
+  const j = n % 10
+  const d = n % 100
+  if (j === 1 && d !== 11) return `${n} jednaku grupu`
+  if (j >= 2 && j <= 4 && (d < 12 || d > 14)) return `${n} jednake grupe`
+  return `${n} jednakih grupa`
+}
 
 function tekstSabiranja(
   cfg: GeneratorConfig, rng: Rng, a: number, b: number, treci?: number,
@@ -31,7 +43,7 @@ function tekstOduzimanja(cfg: GeneratorConfig, rng: Rng, a: number, b: number): 
   const predmet = izaberiPredmet(rng)
   const [ime] = dvaImena(rng)
   return izaberi(rng, [
-    `${ime} ima ${kolicina(a, predmet, 'akuz')} i da ${kolicina(b, predmet, 'akuz')}. Koliko ${genMn(predmet)} mu ostaje?`,
+    `${ime} ima ${kolicina(a, predmet, 'akuz')} i da ${kolicina(b, predmet, 'akuz')}. Koliko ${genMn(predmet)} ${zamenicaDativ(ime)} ostaje?`,
     `Na polici je bilo ${kolicina(a, predmet)}. Uzeto je ${kolicina(b, predmet, 'akuz')}. Koliko je ostalo ${genMn(predmet)}?`,
   ])
 }
@@ -57,7 +69,7 @@ export const brojeviDo100: TopicGenerator = {
       const signature = `brojevi2:desetice:${n}`
       if (taken.has(signature)) return null
       return racun(cfg, rng, `Koliko desetica ima broj ${n}?`, desetice,
-        [n % 10, desetice + 1, n], `Broj ${n} ima ${desetice} desetica i ${n % 10} jedinica.`,
+        [n % 10, desetice + 1, n], `Broj ${n} ima ${kolicina(desetice, DESETICA_IM, 'akuz')} i ${kolicina(n % 10, JEDINICA_IM, 'akuz')}.`,
         'Prva cifra dvocifrenog broja pokazuje desetice.', signature)
     }
     if (t === 3) {
@@ -80,7 +92,7 @@ export const brojeviDo100: TopicGenerator = {
       if (taken.has(signature)) return null
       return racun(cfg, rng, `Koja desetica je najbliža broju ${n}?`, tacan,
         [tacan + 10, tacan - 10, n],
-        n % 10 < 5 ? `${n} je bliže desetici ${tacan}.` : `${n} je bliže desetici ${tacan}.`,
+        `${n} je bliže desetici ${tacan}.`,
         'Pogledaj cifru jedinica: 1–4 naniže, 6–9 naviše.', signature)
     }
     const des = ceoBroj(rng, 1, 9)
@@ -88,9 +100,9 @@ export const brojeviDo100: TopicGenerator = {
     const tacan = des * 10 + jed
     const signature = `brojevi2:sastav:${des}:${jed}`
     if (taken.has(signature)) return null
-    return racun(cfg, rng, `Koji broj ima ${des} desetica i ${jed} jedinica?`, tacan,
+    return racun(cfg, rng, `Koji broj ima ${kolicina(des, DESETICA_IM, 'akuz')} i ${kolicina(jed, JEDINICA_IM, 'akuz')}?`, tacan,
       [jed * 10 + des, des + jed, des * 10],
-      `${des} desetica i ${jed} jedinica čine broj ${tacan}.`,
+      `${kolicina(des, DESETICA_IM)} i ${kolicina(jed, JEDINICA_IM)} čine broj ${tacan}.`,
       'Desetice stoje na mestu desetica, jedinice na mestu jedinica.', signature)
   },
 }
@@ -135,7 +147,7 @@ export const sabiranje2: TopicGenerator = {
     if (taken.has(signature)) return null
     return racun(cfg, rng, tekstSabiranja({ ...cfg, wordProblems: true }, rng, a, b), tacan,
       [bezPrenosa(a, b), Math.abs(a - b), tacan + 10],
-      `${a} + ${b} = ${tacan}.`, 'Iz teksta izdvoji sabirke pa ih saber.', signature)
+      `${a} + ${b} = ${tacan}.`, 'Iz teksta izdvoji sabirke pa ih saberi.', signature)
   },
 }
 
@@ -160,8 +172,10 @@ export const oduzimanje2: TopicGenerator = {
       const tacan = a - b - c
       const signature = `oduzimanje2:${a}-${b}-${c}`
       if (taken.has(signature)) return null
+      const predmet = izaberiPredmet(rng)
+      const [ime] = dvaImena(rng)
       const text = cfg.wordProblems
-        ? tekstOduzimanja(cfg, rng, a, b + c)
+        ? `${ime} ima ${kolicina(a, predmet, 'akuz')}. Prvo da ${kolicina(b, predmet, 'akuz')}, a zatim još ${kolicina(c, predmet, 'akuz')}. Koliko ${genMn(predmet)} ${zamenicaDativ(ime)} ostaje?`
         : `Izračunaj: ${a} − ${b} − ${c} = ?`
       return racun(cfg, rng, text, tacan,
         [a - b, a - c, bezPozajmice(a, b) - c],
@@ -188,7 +202,7 @@ export const mnozenje2: TopicGenerator = {
       const signature = `mnozenje2:${a}x${b}`
       if (taken.has(signature)) return null
       const text = cfg.wordProblems
-        ? `${dvaImena(rng)[0]} ima ${a} kutije sa po ${b} ${genMn(izaberiPredmet(rng))}. Koliko ih ima ukupno?`
+        ? `${dvaImena(rng)[0]} ima ${kolicina(a, KUTIJA2, 'akuz')} sa po ${b} ${genMn(izaberiPredmet(rng))}. Koliko ih ima ukupno?`
         : `Izračunaj: ${a} · ${b} = ?`
       return racun(cfg, rng, text, tacan, [a + b, a * (b + 1), Math.abs(a - b) * b],
         `${a} · ${b} = ${tacan}.`, 'Množenje je sabiranje jednakih sabiraka.', signature)
@@ -206,14 +220,17 @@ export const mnozenje2: TopicGenerator = {
           nula ? 'Sve puta nula je nula.' : 'Sve puta jedan ostaje isti broj.', signature)
       }
       const [a, b] = tablica(rng, [2, 3, 4, 5, 6, 7, 8, 9])
-      const signature = `mnozenje2:zamena:${a}x${b}`
+      const tacno = rng() < 0.5 || (a === 2 && b === 2)
+      const signature = `mnozenje2:zamena:${a}x${b}:${tacno ? 1 : 0}`
       if (taken.has(signature)) return null
-      return tvrdnja(cfg, rng, `${a} · ${b} = ${b} · ${a}`, true,
-        `Zamenom mesta činilaca proizvod se ne menja: ${a * b}.`,
-        'Redosled činilaca nije važan.', signature)
+      return tvrdnja(cfg, rng,
+        tacno ? `${a} · ${b} = ${b} · ${a}` : `${a} · ${b} = ${a} + ${b}`,
+        tacno,
+        tacno ? `Zamenom mesta činilaca proizvod se ne menja: ${a * b}.` : `${a} · ${b} = ${a * b}, dok je ${a} + ${b} = ${a + b}.`,
+        tacno ? 'Redosled činilaca nije važan.' : 'Množenje nije isto što i sabiranje.', signature)
     }
-    const a = ceoBroj(rng, 1, 8)
-    const b = ceoBroj(rng, 1, 8)
+    const a = ceoBroj(rng, 2, 4)
+    const b = ceoBroj(rng, 2, 4)
     const c = ceoBroj(rng, 2, Math.max(2, Math.floor(100 / Math.max(1, a + b))))
     const tacan = (a + b) * c
     if (tacan > 100) return null
@@ -255,7 +272,7 @@ export const deljenje2: TopicGenerator = {
       const signature = `deljenje2:veza:${proizvod}:${b}`
       if (taken.has(signature)) return null
       const text = cfg.wordProblems
-        ? `${proizvod} ${genMn(izaberiPredmet(rng))} raspoređeno je u ${b} jednakih grupa. Koliko ima u jednoj grupi?`
+        ? `${proizvod} ${genMn(izaberiPredmet(rng))} raspoređeno je u ${jednakihGrupa(b)}. Koliko ima u jednoj grupi?`
         : `Izračunaj: ${proizvod} : ${b} = ?`
       return racun(cfg, rng, text, a, [b, proizvod - b, a + 1],
         `${a} · ${b} = ${proizvod}, pa je ${proizvod} : ${b} = ${a}.`,
@@ -278,7 +295,7 @@ export const deljenje2: TopicGenerator = {
     const predmet = izaberiPredmet(rng)
     const [ime] = dvaImena(rng)
     return racun(cfg, rng,
-      `${ime} deli ${kolicina(proizvod, predmet, 'akuz')} u ${a} jednakih grupa. Koliko ${genMn(predmet)} ima u jednoj grupi?`,
+      `${ime} deli ${kolicina(proizvod, predmet, 'akuz')} u ${jednakihGrupa(a)}. Koliko ${genMn(predmet)} ima u jednoj grupi?`,
       b, [a, proizvod - a, b + 1], `${proizvod} : ${a} = ${b}.`,
       'Ukupan broj podeli brojem grupa.', signature)
   },
@@ -337,8 +354,8 @@ export const kombinovane2: TopicGenerator = {
         `(${a} + ${b}) = ${zbir}, zatim ${zbir} · ${c} = ${tacan}.`,
         'Zagrade se računaju prve.', signature)
     }
-    const a = ceoBroj(rng, 4, 20)
-    const b = ceoBroj(rng, 2, 8)
+    const a = ceoBroj(rng, 2, 10)
+    const b = ceoBroj(rng, 2, 9)
     const c = ceoBroj(rng, 1, Math.min(9, a))
     const tacan = a * b - c
     if (tacan < 0 || tacan > 100) return null
@@ -347,7 +364,7 @@ export const kombinovane2: TopicGenerator = {
     const predmet = izaberiPredmet(rng)
     const [ime] = dvaImena(rng)
     const text = cfg.wordProblems
-      ? `${ime} ima ${a} kutije sa po ${b} ${genMn(predmet)} i da ${kolicina(c, predmet, 'akuz')}. Koliko ${genMn(predmet)} mu ostaje?`
+      ? `${ime} ima ${kolicina(a, KUTIJA2, 'akuz')} sa po ${b} ${genMn(predmet)} i da ${kolicina(c, predmet, 'akuz')}. Koliko ${genMn(predmet)} ${zamenicaDativ(ime)} ostaje?`
       : `Izračunaj: ${a} · ${b} − ${c}`
     return racun(cfg, rng, text, tacan, [a * b + c, a * (b - c), a + b - c],
       `${a} · ${b} = ${a * b}, zatim ${a * b} − ${c} = ${tacan}.`,
@@ -401,7 +418,7 @@ export const jednacine2: TopicGenerator = {
       if (taken.has(signature)) return null
       const predmet = izaberiPredmet(rng)
       const text5 = cfg.wordProblems
-        ? `${kolicina(b, predmet, 'akuz')} stavljeno je u ${a} jednakih grupa. Koliko ${genMn(predmet)} ima u jednoj grupi?`
+        ? `${kolicina(b, predmet)} raspoređeno je u ${jednakihGrupa(a)}. Koliko ${genMn(predmet)} ima u jednoj grupi?`
         : `Reši: ${a} · x = ${b}`
       return racun(cfg, rng, text5, x, [a, b - a, x + 1],
         `${b} : ${a} = ${x}, pa je x = ${x}.`, 'Jednačina sa množenjem rešava se deljenjem.', signature)
@@ -420,10 +437,11 @@ export const deloviCeline2: TopicGenerator = {
       const k = ceoBroj(rng, 1, Math.floor(100 / imenilac))
       const n = k * imenilac
       const naziv = imenilac === 2 ? 'polovina' : imenilac === 3 ? 'trećina' : 'četvrtina'
+      const nazivAkuz = imenilac === 2 ? 'polovinu' : imenilac === 3 ? 'trećinu' : 'četvrtinu'
       const signature = `delovi2:${imenilac}:${n}`
       if (taken.has(signature)) return null
       const text = cfg.wordProblems
-        ? `${dvaImena(rng)[0]} ima ${n} sličica i da ${naziv}. Koliko sličica daje?`
+        ? `${dvaImena(rng)[0]} ima ${n} sličica i da ${nazivAkuz}. Koliko sličica daje?`
         : `Koliko je ${naziv} broja ${n}?`
       return racun(cfg, rng, text, k, [n - k, n / Math.max(1, imenilac - 1), k + imenilac],
         `${naziv} od ${n} je ${n} : ${imenilac} = ${k}.`,
@@ -452,9 +470,12 @@ export const deloviCeline2: TopicGenerator = {
       : `Koliko je polovina broja ${n} uvećana za četvrtinu broja ${n}?`
     return racun(cfg, rng, text, tacan, [n / 2, n / 4, n],
       `Polovina je ${n / 2}, četvrtina ${n / 4}, zbir ${tacan}.`,
-      'Izračunaj svaki deo, pa saber.', signature)
+      'Izračunaj svaki deo, pa saberi.', signature)
   },
 }
+
+const KOVANICA_IM: Imenica = ['kovanica', 'kovanice', 'kovanica', 'kovanicu']
+const NOVCANICA_IM: Imenica = ['novčanica', 'novčanice', 'novčanica', 'novčanicu']
 
 export const novac2: TopicGenerator = {
   slug: 'novac-2', supportedTypes: ['numeric', 'single'], supportsWordProblems: true,
@@ -465,9 +486,10 @@ export const novac2: TopicGenerator = {
       const k = ceoBroj(rng, 2, Math.floor(100 / apoen))
       const signature = `novac2:komadi:${apoen}x${k}`
       if (taken.has(signature)) return null
-      return racun(cfg, rng, `Koliko novčanica od ${apoen} dinara treba da se dobije ${k * apoen} dinara?`, k,
+      const naziv = apoen < 10 ? 'kovanica' : 'novčanica'
+      return racun(cfg, rng, `Koliko ${naziv} od ${apoen} dinara treba da se dobije ${k * apoen} dinara?`, k,
         [apoen, k + 1, k * apoen], `${k * apoen} : ${apoen} = ${k}.`,
-        'Podeli iznos vrednošću apoena.', signature, 'novčanica')
+        'Podeli iznos vrednošću apoena.', signature)
     }
     if (t === 2) {
       const apoen = izaberi(rng, [2, 5, 10, 20])
@@ -476,9 +498,10 @@ export const novac2: TopicGenerator = {
       const signature = `novac2:zbir:${apoen}x${k}`
       if (taken.has(signature)) return null
       const [ime] = dvaImena(rng)
-      return racun(cfg, rng, `${ime} ima ${k} novčanica od ${apoen} dinara. Koliko dinara ima?`, tacan,
+      const im = apoen < 10 ? KOVANICA_IM : NOVCANICA_IM
+      return racun(cfg, rng, `${ime} ima ${kolicina(k, im, 'akuz')} od ${apoen} dinara. Koliko dinara ima?`, tacan,
         [apoen + k, tacan + apoen, k], `${k} · ${apoen} = ${tacan} dinara.`,
-        'Pomnoži broj novčanica vrednošću jedne.', signature, 'dinara')
+        'Pomnoži broj apoena vrednošću jednog.', signature, 'dinara')
     }
     if (t === 3) {
       const placa = izaberi(rng, [20, 50, 100])
@@ -498,10 +521,10 @@ export const novac2: TopicGenerator = {
       if (tacan > 100) return null
       const signature = `novac2:mesovito:${desetice}x10+${petice}x5`
       if (taken.has(signature)) return null
-      return racun(cfg, rng, `Koliko dinara je ${desetice} novčanica od 10 i ${petice} od 5 dinara?`, tacan,
+      return racun(cfg, rng, `Koliko dinara je ${kolicina(desetice, NOVCANICA_IM)} od 10 dinara i ${kolicina(petice, KOVANICA_IM)} od 5 dinara?`, tacan,
         [desetice * 5 + petice * 10, desetice + petice, tacan + 5],
         `${desetice} · 10 + ${petice} · 5 = ${tacan}.`,
-        'Izračunaj svaku vrstu apoena, pa saber.', signature, 'dinara')
+        'Izračunaj svaku vrstu apoena, pa saberi.', signature, 'dinara')
     }
     const c1 = ceoBroj(rng, 5, 30)
     const c2 = ceoBroj(rng, 5, 30)
@@ -531,7 +554,7 @@ export const rimski2: TopicGenerator = {
     else if (t === 4) n = izaberi(rng, [4, 9, 14, 19, 24, 29, 34, 39, 40, 44, 49])
     else n = ceoBroj(rng, 1, 100)
     const rimskiZapis = uRimski(n)
-    const arabic = rng() < 0.5
+    const arabic = cfg.type === 'numeric' || rng() < 0.5
     const signature = `rimski2:${arabic ? 'ar' : 'ri'}:${n}`
     if (taken.has(signature)) return null
     if (arabic) {
@@ -539,7 +562,7 @@ export const rimski2: TopicGenerator = {
         [n + 1, n - 1, n + 10].map((x) => Math.max(1, x)),
         `${rimskiZapis} = ${n}.`, 'Saberi vrednosti znakova, pazeći na oduzimanje (IV, IX, XL).', signature)
     }
-    const netacni = [n + 1, n - 1, n + 10, n + 5]
+    const netacni = [n + 1, n - 1, n + 10, n - 10, n + 5, n - 5, n + 2, n - 2]
       .map((x) => Math.max(1, Math.min(100, x)))
       .filter((x) => x !== n)
       .map(uRimski)
@@ -587,13 +610,13 @@ export const nizovi2: TopicGenerator = {
       const p = ceoBroj(rng, 2, 8)
       const q = ceoBroj(rng, 1, p - 1)
       const start = ceoBroj(rng, q + 1, 40)
-      const clanovi = [start, start + p, start + p - q, start + 2 * p - q]
-      const sledeci = start + 2 * p - 2 * q
+      const clanovi = [start, start + p, start + p - q, start + 2 * p - q, start + 2 * p - 2 * q]
+      const sledeci = start + 3 * p - 2 * q
       if (clanovi.some((x) => x < 0 || x > 100) || sledeci < 0 || sledeci > 100) return null
       const signature = `nizovi2:naizm:${start},${p},${q}`
       if (taken.has(signature)) return null
       return racun(cfg, rng, `Nastavi niz: ${clanovi.join(', ')}, □`, sledeci,
-        [sledeci + p, clanovi[3] + p, sledeci + q],
+        [sledeci - q, clanovi[4] + p + 1, sledeci - p],
         `Naizmenično +${p} i −${q}, pa je sledeći ${sledeci}.`,
         'Pogledaj dva koraka koji se smenjuju.', signature)
     }
@@ -645,6 +668,7 @@ export const tabele2: TopicGenerator = {
     }
     if (t === 3) {
       const max = Math.max(...podaci)
+      if (podaci.filter((v) => v === max).length > 1) return null
       const dan = dani[podaci.indexOf(max)]
       return upakujIzbor(cfg, rng, {
         text: `Stubičasti dijagram ima vrednosti: ${tabela}. Koji dan ima najviši stubić?`,
@@ -675,15 +699,15 @@ export const geometrija2: TopicGenerator = {
     const t = cfg.difficulty
     if (t === 1) {
       const pojmovi = [
-        ['dva kraja i konačnu dužinu', 'duž'],
-        ['jedan početak i prostire se neograničeno u jednom smeru', 'poluprava'],
+        ['ima dva kraja i konačnu dužinu', 'duž'],
+        ['ima jedan početak i prostire se neograničeno u jednom smeru', 'poluprava'],
         ['nema ni početak ni kraj', 'prava'],
       ] as const
       const [opis, tacan] = izaberi(rng, pojmovi)
       const signature = `geometrija2:pojam:${tacan}`
       if (taken.has(signature)) return null
       return upakujIzbor(cfg, rng, {
-        text: `Koji geometrijski objekat ima ${opis}?`, tacan,
+        text: `Koji geometrijski objekat ${opis}?`, tacan,
         netacni: ['duž', 'prava', 'poluprava', 'tačka'],
         explanation: `Opis odgovara pojmu: ${tacan}.`,
         hint: 'Uporedi broj krajeva i da li se objekat prostire neograničeno.', signature,
@@ -728,7 +752,7 @@ export const geometrija2: TopicGenerator = {
       }
       const a = ceoBroj(rng, 3, 15)
       const b = ceoBroj(rng, 3, 15)
-      const c = ceoBroj(rng, 3, 15)
+      const c = ceoBroj(rng, Math.abs(a - b) + 1, Math.min(25, a + b - 1))
       const tacan = a + b + c
       const signature = `geometrija2:obim:trougao:${a}+${b}+${c}`
       if (taken.has(signature)) return null
@@ -813,7 +837,7 @@ export const merenje2: TopicGenerator = {
       return racun(cfg, rng, `Koliko je ${m} m ${dm} dm izraženo u decimetrima?`, tacan,
         [m + dm, m * 10, m * 100 + dm],
         `${m} m = ${m * 10} dm, plus ${dm} dm daje ${tacan} dm.`,
-        'Pretvori metre u decimetre, pa saber.', signature, 'dm')
+        'Pretvori metre u decimetre, pa saberi.', signature, 'dm')
     }
     const h = ceoBroj(rng, 1, 2)
     const min = izaberi(rng, [10, 15, 20, 30, 45])
@@ -822,7 +846,7 @@ export const merenje2: TopicGenerator = {
     if (taken.has(signature)) return null
     return racun(cfg, rng, `Koliko minuta je ${h} ${h === 1 ? 'čas' : 'časa'} i ${min} minuta?`, tacan,
       [h * 60, min, h + min], `${h} · 60 + ${min} = ${tacan} minuta.`,
-      'Časove pretvori u minute, pa saber.', signature, 'minuta')
+      'Časove pretvori u minute, pa saberi.', signature, 'minuta')
   },
 }
 

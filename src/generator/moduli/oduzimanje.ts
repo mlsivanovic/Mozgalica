@@ -5,7 +5,7 @@ import type { Tezina } from '../../types/db.ts'
 import { bezPozajmice, zamenaCifara } from '../distraktori.ts'
 import { ceoBroj, izaberi, type Rng } from '../random.ts'
 import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types.ts'
-import { dvaImena, genMn, izaberiPredmet, kolicina, upakujRacun } from './zajednicko.ts'
+import { dvaImena, genMn, izaberiPredmet, jeSu, kolicina, upakujRacun, zamenicaDativ } from './zajednicko.ts'
 
 // Nivo 1: tačno dva broja sa kontrolisanom pozajmicom (nepromenjeno)
 function dvaBrojaNivo1(rng: Rng): number[] {
@@ -54,14 +54,17 @@ export const oduzimanje: TopicGenerator = {
         const [a, b] = operandi
         const sabloni = [
           `${ime1} ima ${kolicina(a, predmet, 'akuz')} i pokloni ${ime2} ${kolicina(b, predmet, 'akuz')}. Koliko ${genMn(predmet)} ostaje?`,
-          `U kutiji se nalazi ${kolicina(a, predmet)}. Ako iz nje uzmemo ${kolicina(b, predmet, 'akuz')}, koliko ${genMn(predmet)} ostaje?`,
-          `${ime1} treba da sakupi ${kolicina(a, predmet, 'akuz')}, a već ima ${kolicina(b, predmet, 'akuz')}. Koliko mu još nedostaje?`,
+          `U kutiji ${jeSu(a)} ${kolicina(a, predmet)}. Ako iz nje uzmemo ${kolicina(b, predmet, 'akuz')}, koliko ${genMn(predmet)} ostaje?`,
+          `${ime1} treba da sakupi ${kolicina(a, predmet, 'akuz')}, a već ima ${kolicina(b, predmet, 'akuz')}. Koliko ${zamenicaDativ(ime1)} još nedostaje?`,
         ]
         text = izaberi(rng, sabloni)
       } else {
         const [a, ...koraci] = operandi
         const spisak = koraci.map((k) => kolicina(k, predmet, 'akuz'))
-        text = `${ime1} ima ${kolicina(a, predmet)}. Prvo potroši ${spisak[0]}, ${spisak.length > 1 ? `zatim još ${spisak.slice(1).join(', ')}` : ''}. Koliko ${genMn(predmet)} mu/joj ostaje?`
+        const ostatak = spisak.length > 2
+          ? `${spisak.slice(1, -1).join(', ')} i ${spisak[spisak.length - 1]}`
+          : spisak.slice(1).join('')
+        text = `${ime1} ima ${kolicina(a, predmet, 'akuz')}. Prvo pokloni ${spisak[0]}${spisak.length > 1 ? `, a zatim još ${ostatak}` : ''}. Koliko ${genMn(predmet)} ${zamenicaDativ(ime1)} ostaje?`
       }
     }
 

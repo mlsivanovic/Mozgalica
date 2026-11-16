@@ -18,6 +18,7 @@ function cfg(topicSlug: string, difficulty: 1 | 2 | 3 | 4 | 5, seed: number, typ
 
 function tacnaVrednost(p: { type: string; correct: unknown; options: unknown }): number {
   if (p.type === 'numeric') return (p.correct as { value: number }).value
+  if (p.type === 'truefalse') return Number.NaN
   const opcije = p.options as Opcija[]
   const id = (p.correct as { optionId: string }).optionId
   const tekst = opcije.find((o) => o.id === id)!.text
@@ -35,8 +36,8 @@ function proveriPitanje(p: ReturnType<typeof generisi>['questions'][number]) {
     expect(p.options).toBeNull()
   } else if (p.type === 'single') {
     const opcije = p.options as Opcija[]
-    expect(opcije).toHaveLength(4)
-    expect(new Set(opcije.map((o) => o.text)).size).toBe(4)
+    expect(opcije.length).toBeGreaterThanOrEqual(3)
+    expect(new Set(opcije.map((o) => o.text)).size).toBe(opcije.length)
     const id = (p.correct as { optionId: string }).optionId
     expect(opcije.filter((o) => o.id === id)).toHaveLength(1)
   } else if (p.type === 'truefalse') {

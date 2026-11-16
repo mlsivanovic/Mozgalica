@@ -58,13 +58,13 @@ function napraviIzraz(rng: Rng, tezina: 1 | 2 | 3 | 4 | 5): Izraz {
         objasnjenje: `Prvo zagrada: ${a} − ${b} = ${a - b}, zatim množenje: ${a - b} · ${c} = ${(a - b) * c}.`,
       }
     }
-    // a·b ± c·d — dva proizvoda
+    // a·b ± c·d — dva proizvoda; za oduzimanje c ≤ p1/2 garantuje p1 ≥ 2·c pa p2 ≤ p1
     const a = ceoBroj(rng, 11, 50)
     const b = ceoBroj(rng, 2, 20)
     const p1 = a * b
     const plus = rng() < 0.5
-    const c = ceoBroj(rng, 11, 50)
-    const d = plus ? ceoBroj(rng, 2, 20) : ceoBroj(rng, 2, Math.max(2, Math.min(20, Math.floor(p1 / c))))
+    const c = plus ? ceoBroj(rng, 11, 50) : ceoBroj(rng, 11, Math.min(50, Math.floor(p1 / 2)))
+    const d = plus ? ceoBroj(rng, 2, 20) : ceoBroj(rng, 2, Math.min(20, Math.floor(p1 / c)))
     const p2 = c * d
     const tacan = plus ? p1 + p2 : p1 - p2
     const naivno = plus ? (a * b + c) * d : (a * b - c) * d // zaboravio da su oba množenja pre sabiranja/oduzimanja
@@ -130,11 +130,11 @@ function napraviIzraz(rng: Rng, tezina: 1 | 2 | 3 | 4 | 5): Izraz {
     }
   }
   if (tezina === 4) {
-    // Izraz sa promenljivom: a · x ± b, dato x (veći brojevi nego t1-t3)
+    // Izraz sa promenljivom: a · x ± b, dato x (veći brojevi nego t1-t3); x ≥ 5 ⇒ a·x ≥ 10
     const a = ceoBroj(rng, 2, 80)
-    const x = ceoBroj(rng, 2, 5_000)
+    const x = ceoBroj(rng, 5, 5_000)
     const plus = rng() < 0.5
-    const b = plus ? ceoBroj(rng, 10, 50_000) : ceoBroj(rng, 10, Math.max(10, Math.min(50_000, a * x)))
+    const b = plus ? ceoBroj(rng, 10, 50_000) : ceoBroj(rng, 10, Math.min(50_000, a * x))
     const tacan = plus ? a * x + b : a * x - b
     const naivno = plus ? a * (x + b) : a * (x - b)
     return {
@@ -148,11 +148,11 @@ function napraviIzraz(rng: Rng, tezina: 1 | 2 | 3 | 4 | 5): Izraz {
   // Ekspert: 50/50 — a·(x+b)−c (promenljiva u zagradi), ili a·(x+b):c−d (ugnježdeno sa deljenjem)
   if (rng() < 0.5) {
     const a = ceoBroj(rng, 2, 20)
-    const b = ceoBroj(rng, 2, 200)
+    const b = ceoBroj(rng, 5, 200)
     const x = ceoBroj(rng, 2, 999)
     const unutra = x + b
     const proizvod = a * unutra
-    const c = ceoBroj(rng, 10, Math.max(10, Math.min(5000, proizvod)))
+    const c = ceoBroj(rng, 10, Math.min(5000, proizvod))
     const tacan = proizvod - c
     const naivno = a * x + b - c // zaboravio da b ide u zagradu pre množenja
     return {
@@ -195,28 +195,76 @@ const NAZIVI_OPERACIJA: Record<Operacija, string> = {
 
 interface SablonRedosled {
   naziv: string
-  izraz: (a: number, b: number, c: number, d: number) => string
   prva: Operacija
+  generisi: (rng: Rng) => { izraz: string; kljuc: string }
 }
 
-// Šabloni konstruisani tako da je operacija koja se PRVA računa jednoznačna
-// (zagrada, ili jedino prisutno množenje/deljenje) — nezavisno od konkretnih brojeva.
+// Šabloni konstruisani tako da je operacija koja se PRVA računa jednoznačna,
+// deljenje uvek egzaktno i svaki međurezultat nenegativan.
 const SABLONI_REDOSLED: SablonRedosled[] = [
-  { naziv: 'p1', izraz: (a, b, c, d) => `${a} + ${b} : ${c} − ${d}`, prva: 'deljenje' },
-  { naziv: 'p2', izraz: (a, b, c, d) => `${a} · ${b} + ${c} − ${d}`, prva: 'mnozenje' },
-  { naziv: 'p3', izraz: (a, b, c, d) => `(${a} + ${b}) · ${c} − ${d}`, prva: 'sabiranje' },
-  { naziv: 'p4', izraz: (a, b, c, d) => `${a} − ${b} · ${c} + ${d}`, prva: 'mnozenje' },
-  { naziv: 'p5', izraz: (a, b, c, d) => `(${a} − ${b}) : ${c} + ${d}`, prva: 'oduzimanje' },
+  {
+    naziv: 'p1',
+    prva: 'deljenje',
+    generisi: (rng) => {
+      const c = ceoBroj(rng, 2, 20)
+      const q = ceoBroj(rng, 2, 49)
+      const b = q * c
+      const a = ceoBroj(rng, 10, 999)
+      const d = ceoBroj(rng, 10, Math.min(999, a + q))
+      return { izraz: `${a} + ${b} : ${c} − ${d}`, kljuc: `${a},${b},${c},${d}` }
+    },
+  },
+  {
+    naziv: 'p2',
+    prva: 'mnozenje',
+    generisi: (rng) => {
+      const a = ceoBroj(rng, 10, 99)
+      const b = ceoBroj(rng, 2, 20)
+      const c = ceoBroj(rng, 10, 999)
+      const d = ceoBroj(rng, 10, Math.min(999, a * b + c))
+      return { izraz: `${a} · ${b} + ${c} − ${d}`, kljuc: `${a},${b},${c},${d}` }
+    },
+  },
+  {
+    naziv: 'p3',
+    prva: 'sabiranje',
+    generisi: (rng) => {
+      const a = ceoBroj(rng, 10, 499)
+      const b = ceoBroj(rng, 10, 499)
+      const c = ceoBroj(rng, 2, 20)
+      const d = ceoBroj(rng, 10, Math.min(999, (a + b) * c))
+      return { izraz: `(${a} + ${b}) · ${c} − ${d}`, kljuc: `${a},${b},${c},${d}` }
+    },
+  },
+  {
+    naziv: 'p4',
+    prva: 'mnozenje',
+    generisi: (rng) => {
+      const b = ceoBroj(rng, 10, 99)
+      const c = ceoBroj(rng, 2, 20)
+      const a = ceoBroj(rng, b * c, b * c + 500)
+      const d = ceoBroj(rng, 10, 999)
+      return { izraz: `${a} − ${b} · ${c} + ${d}`, kljuc: `${a},${b},${c},${d}` }
+    },
+  },
+  {
+    naziv: 'p5',
+    prva: 'oduzimanje',
+    generisi: (rng) => {
+      const c = ceoBroj(rng, 2, 20)
+      const q = ceoBroj(rng, 2, 45)
+      const b = ceoBroj(rng, 10, 500)
+      const a = b + q * c
+      const d = ceoBroj(rng, 10, 999)
+      return { izraz: `(${a} − ${b}) : ${c} + ${d}`, kljuc: `${a},${b},${c},${d}` }
+    },
+  },
 ]
 
 function redosledPitanje(rng: Rng, cfg: GeneratorConfig, taken: Set<string>): GenerisanoPitanje | null {
   const sablon = izaberi(rng, SABLONI_REDOSLED)
-  const a = ceoBroj(rng, 10, 999)
-  const b = ceoBroj(rng, 10, 999)
-  const c = ceoBroj(rng, 2, 20)
-  const d = ceoBroj(rng, 10, 999)
-  const izraz = sablon.izraz(a, b, c, d)
-  const signature = `kombinovane4:struktura:redosled:${sablon.naziv}:${a},${b},${c},${d}`
+  const { izraz, kljuc } = sablon.generisi(rng)
+  const signature = `kombinovane4:struktura:redosled:${sablon.naziv}:${kljuc}`
   if (taken.has(signature)) return null
   const sve: Operacija[] = ['sabiranje', 'oduzimanje', 'mnozenje', 'deljenje']
   const promesano = promesaj(rng, sve)

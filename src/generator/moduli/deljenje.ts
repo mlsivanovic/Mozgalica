@@ -62,7 +62,7 @@ export const deljenje: TopicGenerator = {
         const delilac = delioci[0]
         const sabloni = [
           `${ime1} ima ${kolicina(deljenik, predmet, 'akuz')} i podeli ih podjednako na ${kolicina(delilac, DRUG, 'akuz')}. Koliko ${genMn(predmet)} dobije svaki?`,
-          `${kolicina(deljenik, predmet)} treba podjednako rasporediti u ${kolicina(delilac, KUTIJA, 'akuz')}. Koliko ${genMn(predmet)} ide u svaku kutiju?`,
+          `${kolicina(deljenik, predmet, 'akuz')} treba podjednako rasporediti u ${kolicina(delilac, KUTIJA, 'akuz')}. Koliko ${genMn(predmet)} ide u svaku kutiju?`,
         ]
         text = izaberi(rng, sabloni)
       } else {

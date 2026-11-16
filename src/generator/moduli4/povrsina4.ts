@@ -13,17 +13,17 @@ interface Konverzija {
 
 // mm² ↔ cm² ↔ dm² ↔ m² — svaki korak je faktor 100 (10² za dužinu → 100 za površinu)
 const MALE: Konverzija[] = [
-  { iz: 'cm2', u: 'mm2', faktor: 100 },
-  { iz: 'dm2', u: 'cm2', faktor: 100 },
-  { iz: 'm2', u: 'dm2', faktor: 100 },
+  { iz: 'cm²', u: 'mm²', faktor: 100 },
+  { iz: 'dm²', u: 'cm²', faktor: 100 },
+  { iz: 'm²', u: 'dm²', faktor: 100 },
 ]
 
 // m² ↔ a ↔ ha ↔ km² — isti faktor 100 po koraku, ali veće jedinice
 const VELIKE: Konverzija[] = [
-  { iz: 'a', u: 'm2', faktor: 100 },
+  { iz: 'a', u: 'm²', faktor: 100 },
   { iz: 'ha', u: 'a', faktor: 100 },
-  { iz: 'km2', u: 'ha', faktor: 100 },
-  { iz: 'ha', u: 'm2', faktor: 10_000 },
+  { iz: 'km²', u: 'ha', faktor: 100 },
+  { iz: 'ha', u: 'm²', faktor: 10_000 },
 ]
 
 interface Mesovito {
@@ -35,10 +35,10 @@ interface Mesovito {
 
 // Mešoviti zapis, npr. "3 dm² 4 cm² = ? cm²"
 const MESOVITO: Mesovito[] = [
-  { iz1: 'dm2', iz2: 'cm2', u: 'cm2', faktor: 100 },
-  { iz1: 'm2', iz2: 'dm2', u: 'dm2', faktor: 100 },
-  { iz1: 'm2', iz2: 'cm2', u: 'cm2', faktor: 10_000 },
-  { iz1: 'm2', iz2: 'mm2', u: 'mm2', faktor: 1_000_000 },
+  { iz1: 'dm²', iz2: 'cm²', u: 'cm²', faktor: 100 },
+  { iz1: 'm²', iz2: 'dm²', u: 'dm²', faktor: 100 },
+  { iz1: 'm²', iz2: 'cm²', u: 'cm²', faktor: 10_000 },
+  { iz1: 'm²', iz2: 'mm²', u: 'mm²', faktor: 1_000_000 },
 ]
 
 export const povrsina4: TopicGenerator = {

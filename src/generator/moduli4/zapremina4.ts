@@ -15,16 +15,16 @@ interface Konverzija {
 
 // mm³ ↔ cm³ ↔ dm³ ↔ m³ — svaki korak je faktor 1000 (10³ za dužinu → 1000 za zapreminu)
 const MALE: Konverzija[] = [
-  { iz: 'cm3', u: 'mm3', faktor: 1000 },
-  { iz: 'dm3', u: 'cm3', faktor: 1000 },
-  { iz: 'm3', u: 'dm3', faktor: 1000 },
+  { iz: 'cm³', u: 'mm³', faktor: 1000 },
+  { iz: 'dm³', u: 'cm³', faktor: 1000 },
+  { iz: 'm³', u: 'dm³', faktor: 1000 },
 ]
 
 // Identitet 1 dm³ = 1 l, i dm³ ↔ m³
 const SREDNJE: Konverzija[] = [
-  { iz: 'dm3', u: 'l', faktor: 1 },
-  { iz: 'm3', u: 'dm3', faktor: 1000 },
-  { iz: 'm3', u: 'l', faktor: 1000 },
+  { iz: 'dm³', u: 'l', faktor: 1 },
+  { iz: 'm³', u: 'dm³', faktor: 1000 },
+  { iz: 'm³', u: 'l', faktor: 1000 },
 ]
 
 function izaberiKonverziju(rng: Rng, niz: Konverzija[]): Konverzija {

@@ -85,7 +85,7 @@ export const obim: TopicGenerator = {
       return upakujRacun(cfg, rng, {
         text: `Obim pravougaonika je ${obimP} cm, a jedna njegova stranica je ${b} cm. Kolika je druga stranica u centimetrima?`,
         tacan: a,
-        kandidati: [obimP / 2 - b, obimP - b, a + 2, a - 2],
+        kandidati: [obimP / 2, obimP - b, a + 2, a - 2],
         explanation: `Zbir dve susedne stranice: O : 2 = ${obimP} : 2 = ${obimP / 2} cm. Druga stranica: ${obimP / 2} − ${b} = ${a} cm.`,
         hint: 'Obim podeli sa 2 da dobiješ zbir dve susedne stranice, pa oduzmi poznatu.',
         signature,
@@ -102,7 +102,7 @@ export const obim: TopicGenerator = {
     return upakujRacun(cfg, rng, {
       text: `Pravougaonik ima obim ${obimP} cm. Duža stranica je za ${n} cm veća od kraće. Kolika je kraća stranica u centimetrima?`,
       tacan: b,
-      kandidati: [obimP / 2 - n, obimP / 4, b + n, b - n > 0 ? b - n : b + 2],
+      kandidati: [obimP / 2 - n, Math.round(obimP / 4), b + n, b - n > 0 ? b - n : b + 2],
       explanation: `Zbir dve susedne stranice: O : 2 = ${obimP} : 2 = ${a + b} cm. Kad se od zbira oduzme razlika i podeli sa 2: (${a + b} − ${n}) : 2 = ${b} cm.`,
       hint: 'Zbir dve susedne stranice je O : 2. Oduzmi razliku pa podeli sa 2 da dobiješ kraću.',
       signature,

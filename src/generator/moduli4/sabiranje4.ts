@@ -6,7 +6,7 @@ import { viseSabiraka } from '../moduli/sabiranje.ts'
 import type { Tezina } from '../../types/db.ts'
 import { ceoBroj, izaberi, type Rng } from '../random.ts'
 import type { GeneratorConfig, GenerisanoPitanje, TopicGenerator } from '../types.ts'
-import { dvaImena, genMn, izaberiPredmet, kolicina, upakujRacun } from '../moduli/zajednicko.ts'
+import { dvaImena, genMn, izaberiPredmet, jeSu, kolicina, upakujRacun } from '../moduli/zajednicko.ts'
 
 // Gornja granica distraktora — jedna zajednička konstanta za sve nivoe (samo
 // gornji limit, ne mora biti tesna) da napraviDistraktore ne odbaci kandidate.
@@ -172,7 +172,7 @@ export const sabiranje4: TopicGenerator = {
         const [a, b] = operandi
         const sabloni = [
           `${ime1} ima ${kolicina(a, predmet, 'akuz')}, a ${ime2} ima ${kolicina(b, predmet, 'akuz')}. Koliko ${genMn(predmet)} imaju zajedno?`,
-          `U prvom skladištu se nalazi ${kolicina(a, predmet)}, a u drugom ${kolicina(b, predmet)}. Koliko je ukupno ${genMn(predmet)}?`,
+          `U prvom skladištu ${jeSu(a)} ${kolicina(a, predmet)}, a u drugom ${kolicina(b, predmet)}. Koliko je ukupno ${genMn(predmet)}?`,
           `${ime1} sakupi ${kolicina(a, predmet, 'akuz')}, a zatim dobije još ${kolicina(b, predmet, 'akuz')}. Koliko ${genMn(predmet)} sada ima?`,
         ]
         text = izaberi(rng, sabloni)
@@ -198,7 +198,7 @@ export const sabiranje4: TopicGenerator = {
     return upakujRacun(cfg, rng, {
       text, tacan, kandidati,
       explanation: `${operandi.join(' + ')} = ${tacan}`,
-      hint: 'Saberi pismeno: jedinice, desetice, stotine, hiljade — redom sa desna na levo.',
+      hint: 'Saberi pismeno: jedinice, desetice, stotine, hiljade — redom zdesna nalevo.',
       signature,
       maxDistraktor: MAX_DISTRAKTOR,
     })

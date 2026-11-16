@@ -87,12 +87,12 @@ export const jedinice: TopicGenerator = {
       return upakujRacun(cfg, rng, {
         text: `Koliko je ${v1} ${par.iz1} ${v2} ${par.iz2} izraženo u jedinici ${par.u}?`,
         tacan,
-        kandidati: [v1 + v2, v1 * 10 + v2, v1 * par.faktor * 10 + v2, tacan + par.faktor],
+        kandidati: [v1 + v2, v1 * 10 + v2, v1 * par.faktor * 10 + v2, tacan + par.faktor, Math.max(1, tacan - par.faktor)],
         explanation: `${v1} ${par.iz1} = ${v1 * par.faktor} ${par.u}, pa je ${v1} ${par.iz1} ${v2} ${par.iz2} = ${v1 * par.faktor} + ${v2} = ${tacan} ${par.u}.`,
         hint: `Prvo ${par.iz1} pretvori u ${par.u} (1 ${par.iz1} = ${par.faktor} ${par.u}), pa dodaj ostatak.`,
         signature,
         sufiks: par.u,
-        maxDistraktor: 10000,
+        maxDistraktor: 100_000,
       })
     }
     // Ekspert: sabiranje dve mešovite veličine (dužina ili zapremina), npr.
@@ -118,12 +118,12 @@ export const jedinice: TopicGenerator = {
     return upakujRacun(cfg, rng, {
       text: `Koliko je ${v1a} ${par.iz1} ${v2a} ${par.iz2} + ${v1b} ${par.iz1} ${v2b} ${par.iz2} izraženo u jedinici ${par.u}?`,
       tacan,
-      kandidati: [(v1a + v1b) * 10 + (v2a + v2b), zbir1 + v1b + v2b, tacan + par.faktor, tacan - par.faktor],
+      kandidati: [(v1a + v1b) * 10 + (v2a + v2b), zbir1 + v1b + v2b, tacan + par.faktor, Math.max(1, tacan - par.faktor)],
       explanation: `${v1a} ${par.iz1} ${v2a} ${par.iz2} = ${zbir1} ${par.u}, ${v1b} ${par.iz1} ${v2b} ${par.iz2} = ${zbir2} ${par.u}. Zbir: ${zbir1} + ${zbir2} = ${tacan} ${par.u}.`,
       hint: `Prvo svaku veličinu pretvori u ${par.u}, pa ih saberi.`,
       signature,
       sufiks: par.u,
-      maxDistraktor: 10000,
+      maxDistraktor: 100_000,
     })
   },
 }

@@ -29,7 +29,7 @@ export const nejednacine4: TopicGenerator = {
           tacan: k - 1,
           kandidati: [k, k + 1, k - 2],
           explanation: `${a} · x < ${b} znači x < ${k} (jer ${a} · ${k} = ${b}). Najveći ceo broj manji od ${k} je ${k - 1}.`,
-          hint: 'Podeli obe strane sa a da dobiješ granicu za x.',
+          hint: `Podeli obe strane sa ${a} da dobiješ granicu za x.`,
           signature,
           maxDistraktor: MAX_DISTRAKTOR,
         })
@@ -39,7 +39,7 @@ export const nejednacine4: TopicGenerator = {
         tacan: k + 1,
         kandidati: [k, k - 1, k + 2],
         explanation: `${a} · x > ${b} znači x > ${k} (jer ${a} · ${k} = ${b}). Najmanji ceo broj veći od ${k} je ${k + 1}.`,
-        hint: 'Podeli obe strane sa a da dobiješ granicu za x.',
+        hint: `Podeli obe strane sa ${a} da dobiješ granicu za x.`,
         signature,
         maxDistraktor: MAX_DISTRAKTOR,
       })
@@ -61,7 +61,7 @@ export const nejednacine4: TopicGenerator = {
             tacan: k - 1,
             kandidati: [k, k + 1, k - 2],
             explanation: `${a} · x < ${b} znači x < ${k} (jer ${a} · ${k} = ${b}). Najveći ceo broj manji od ${k} je ${k - 1}.`,
-            hint: 'Podeli obe strane sa a da dobiješ granicu za x.',
+            hint: `Podeli obe strane sa ${a} da dobiješ granicu za x.`,
             signature,
             maxDistraktor: MAX_DISTRAKTOR,
           })
@@ -71,7 +71,7 @@ export const nejednacine4: TopicGenerator = {
           tacan: k + 1,
           kandidati: [k, k - 1, k + 2],
           explanation: `${a} · x > ${b} znači x > ${k} (jer ${a} · ${k} = ${b}). Najmanji ceo broj veći od ${k} je ${k + 1}.`,
-          hint: 'Podeli obe strane sa a da dobiješ granicu za x.',
+          hint: `Podeli obe strane sa ${a} da dobiješ granicu za x.`,
           signature,
           maxDistraktor: MAX_DISTRAKTOR,
         })
@@ -90,7 +90,7 @@ export const nejednacine4: TopicGenerator = {
             tacan: k - 1,
             kandidati: [k, k + 1, k - 2],
             explanation: `x : ${a} < ${b} znači x < ${k} (jer ${k} : ${a} = ${b}). Najveći ceo broj manji od ${k} je ${k - 1}.`,
-            hint: 'Pomnoži obe strane sa a da dobiješ granicu za x.',
+            hint: `Pomnoži obe strane sa ${a} da dobiješ granicu za x.`,
             signature,
             maxDistraktor: MAX_DISTRAKTOR,
           })
@@ -100,7 +100,7 @@ export const nejednacine4: TopicGenerator = {
           tacan: k + 1,
           kandidati: [k, k - 1, k + 2],
           explanation: `x : ${a} > ${b} znači x > ${k} (jer ${k} : ${a} = ${b}). Najmanji ceo broj veći od ${k} je ${k + 1}.`,
-          hint: 'Pomnoži obe strane sa a da dobiješ granicu za x.',
+          hint: `Pomnoži obe strane sa ${a} da dobiješ granicu za x.`,
           signature,
           maxDistraktor: MAX_DISTRAKTOR,
         })
@@ -167,11 +167,17 @@ export const nejednacine4: TopicGenerator = {
         })
       }
       const brojResenja = U - L - 1
+      const nabroji =
+        brojResenja === 1
+          ? `${L + 1}`
+          : brojResenja === 2
+            ? `${L + 1}, ${L + 2}`
+            : `${L + 1}, ${L + 2}, ..., ${U - 1}`
       return upakujRacun(cfg, rng, {
         text: `Data je nejednačina ${L} < x < ${U}. Koliko celih brojeva x zadovoljava ovu nejednačinu?`,
         tacan: brojResenja,
         kandidati: [U - L, U - L + 1, brojResenja + 1, brojResenja - 1],
-        explanation: `Celi brojevi između ${L} i ${U} (bez njih samih) su ${L + 1}, ${L + 2}, ..., ${U - 1} — ima ih ${U - 1} − ${L + 1} + 1 = ${brojResenja}.`,
+        explanation: `Celi brojevi između ${L} i ${U} (bez njih samih) su ${nabroji} — ima ih ${U - 1} − ${L + 1} + 1 = ${brojResenja}.`,
         hint: 'Prebroj koliko celih brojeva ima strogo između donje i gornje granice (ne uklj. granice).',
         signature,
         maxDistraktor: MAX_DISTRAKTOR,
@@ -235,7 +241,7 @@ export const nejednacine4: TopicGenerator = {
           tacan: k - 1,
           kandidati: [k, k + 1, k - 2],
           explanation: `${izraz} < ${c} znači ${a} · (x ${oblik === '+' ? '+' : '−'} ${b}) < ${c - d}, pa x ${oblik === '+' ? '+' : '−'} ${b} < ${unutarnjaGranica}, pa x < ${k}. Najveći ceo broj manji od ${k} je ${k - 1}.`,
-          hint: 'Prvo poništi sabiranje sa d, pa podeli sa a, pa poništi zagradu — redom, od kraja izraza.',
+          hint: `Prvo poništi sabiranje sa ${d}, pa podeli sa ${a}, pa poništi zagradu — redom, od kraja izraza.`,
           signature,
           maxDistraktor: MAX_DISTRAKTOR,
         })
@@ -245,17 +251,18 @@ export const nejednacine4: TopicGenerator = {
         tacan: k + 1,
         kandidati: [k, k - 1, k + 2],
         explanation: `${izraz} > ${c} znači ${a} · (x ${oblik === '+' ? '+' : '−'} ${b}) > ${c - d}, pa x ${oblik === '+' ? '+' : '−'} ${b} > ${unutarnjaGranica}, pa x > ${k}. Najmanji ceo broj veći od ${k} je ${k + 1}.`,
-        hint: 'Prvo poništi sabiranje sa d, pa podeli sa a, pa poništi zagradu — redom, od kraja izraza.',
+        hint: `Prvo poništi sabiranje sa ${d}, pa podeli sa ${a}, pa poništi zagradu — redom, od kraja izraza.`,
         signature,
         maxDistraktor: MAX_DISTRAKTOR,
       })
     }
 
-    // N : (x ± b) ? c — deljenje SA zagradom, pravac se okreće (kao a:x)
+    // N : (x ± b) ? c — deljenje SA zagradom, pravac se okreće (kao a:x).
+    // Za '-' mora b ≤ k - 2 da pri x = k - 1 delilac (x - b) ostane ≥ 1 (bez deljenja nulom!).
     const k = ceoBroj(rng, 5, 1_000) // granica za x
     const c = ceoBroj(rng, 2, 30)
     const oblik = rng() < 0.5 ? '+' : '-'
-    const b = oblik === '+' ? ceoBroj(rng, 2, 300) : ceoBroj(rng, 2, Math.max(2, Math.min(300, k - 1)))
+    const b = oblik === '+' ? ceoBroj(rng, 2, 300) : ceoBroj(rng, 2, Math.min(300, k - 2))
     const unutarnjaGranica = oblik === '+' ? k + b : k - b // granica za (x±b), uvek nenegativna
     const N = unutarnjaGranica * c
     const smer = izaberi(rng, ['lt', 'gt'] as const)

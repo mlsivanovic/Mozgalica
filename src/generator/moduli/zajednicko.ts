@@ -18,6 +18,12 @@ export function dvaImena(rng: Rng): [string, string] {
   return [prvo, drugo]
 }
 
+const ZENSKA_IMENA = new Set<string>(['Lena', 'Ana', 'Sara', 'Mina', 'Iva', 'Nina', 'Maša', 'Dunja'])
+
+export function zamenicaDativ(ime: string): 'mu' | 'joj' {
+  return ZENSKA_IMENA.has(ime) ? 'joj' : 'mu'
+}
+
 // Imenica sa oblicima: [jednina nominativ, paukal (2–4), genitiv množine (5+), akuzativ jednine]
 export type Imenica = [string, string, string, string]
 
@@ -104,10 +110,13 @@ export function upakujRacun(
 
   if (zeljeni === 'single') {
     const decimals = ulaz.decimals ?? 0
+    // Gornja granica nikad ne sme da padne ispod tačnog odgovora (inače odbacuje sve veće distraktore)
+    const trazeniMax = ulaz.maxDistraktor ?? Math.max(1000, Math.ceil(ulaz.tacan * 1.5) + 100)
+    const max = Math.max(trazeniMax, Math.ceil(ulaz.tacan) + 30)
     const distraktori = napraviDistraktore(rng, {
       tacan: ulaz.tacan,
       kandidati: ulaz.kandidati,
-      max: ulaz.maxDistraktor ?? 1000,
+      max,
       decimals,
     })
     const { options, correctId } = napraviOpcije(rng, ulaz.tacan, distraktori, ulaz.sufiks ?? '', decimals)

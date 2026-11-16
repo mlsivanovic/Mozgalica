@@ -173,15 +173,15 @@ function oblikXpQ(rng: Rng, q: number, maxC: number, maxP: number): Zadatak {
   }
 }
 
-// (x ± p) · q ± r = c
+// (x ± p) · q ± r = c; x ≥ 3 i p ≤ x − 1 garantuju (x−p)·q ≥ q ≥ 2 i c ≥ 0
 function oblikXpQR(rng: Rng, maxX: number, maxP: number, q: number, maxR: number): Zadatak {
-  const x = ceoBroj(rng, 2, maxX)
+  const x = ceoBroj(rng, 3, maxX)
   const plusInner = rng() < 0.5
-  const p = plusInner ? ceoBroj(rng, 2, maxP) : ceoBroj(rng, 2, Math.min(maxP, x))
+  const p = plusInner ? ceoBroj(rng, 2, maxP) : ceoBroj(rng, 2, Math.min(maxP, x - 1))
   const unutra = plusInner ? x + p : x - p
   const proizvod = unutra * q
   const plusOuter = rng() < 0.5
-  const r = plusOuter ? ceoBroj(rng, 2, maxR) : ceoBroj(rng, 2, Math.max(2, Math.min(maxR, proizvod)))
+  const r = plusOuter ? ceoBroj(rng, 2, maxR) : ceoBroj(rng, 2, Math.min(maxR, proizvod))
   const c = plusOuter ? proizvod + r : proizvod - r
   return {
     text: `(x ${plusInner ? '+' : '−'} ${p}) · ${q} ${plusOuter ? '+' : '−'} ${r} = ${c}`,

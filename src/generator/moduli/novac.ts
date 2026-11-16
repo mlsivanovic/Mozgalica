@@ -112,10 +112,15 @@ export const novac: TopicGenerator = {
     const signature = `novac:dvaartikla:${cena1}x${kom1}+${cena2}x${kom2}`
     if (taken.has(signature)) return null
     const a1 = izaberi(rng, ARTIKLI)
-    let a2 = izaberi(rng, ARTIKLI)
-    while (a2 === a1) a2 = izaberi(rng, ARTIKLI)
+    const a2 = a2Name()
+    function a2Name() {
+      let x = izaberi(rng, ARTIKLI)
+      while (x === a1) x = izaberi(rng, ARTIKLI)
+      return x
+    }
+    const artikalRec = (n: number) => (n % 10 === 1 && n % 100 !== 11 ? 'artikal' : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14) ? 'artikla' : 'artikala')
     return upakujRacun(cfg, rng, {
-      text: `${ime} kupuje ${kom1} artikla „${a1}" po ceni od ${cena1} dinara za jedan i ${kom2} artikla „${a2}" po ceni od ${cena2} dinara za jedan, pa plaća novčanicom od 1000 dinara. Koliko dinara kusura dobija?`,
+      text: `${ime} kupuje ${kom1} ${artikalRec(kom1)} „${a1}" po ceni od ${cena1} dinara za jedan i ${kom2} ${artikalRec(kom2)} „${a2}" po ceni od ${cena2} dinara za jedan, pa plaća novčanicom od 1000 dinara. Koliko dinara kusura dobija?`,
       tacan,
       kandidati: [1000 - trosak1, 1000 - trosak2, tacan + 10, tacan - 10],
       explanation: `Ukupno: ${kom1} · ${cena1} + ${kom2} · ${cena2} = ${trosak1} + ${trosak2} = ${ukupno} dinara. Kusur: 1000 − ${ukupno} = ${tacan} dinara.`,

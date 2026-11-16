@@ -20,21 +20,17 @@ export const jednacine: TopicGenerator = {
 
   generateOne(cfg: GeneratorConfig, rng: Rng, taken: Set<string>): GenerisanoPitanje | null {
     if (cfg.difficulty === 5) {
-      // Ekspert: trostepena jednačina a·x ± b ± c = d — dva uzastopna poništavanja
-      // pre deljenja sa a (jedna operacija više nego na nivou 4).
-      const a = ceoBroj(rng, 3, 15)
-      const x = ceoBroj(rng, 3, 95)
+      // Ekspert: trostepena jednačina a·x ± b ± c = d (svi brojevi ≤ 1000)
+      const a = ceoBroj(rng, 3, 12)
+      const x = ceoBroj(rng, 3, Math.floor(600 / a))
       const ax = a * x
 
-      // ax = a·x je uvek ≥ 9 (a,x ≥ 3), pa je oduzimanje za prvi korak uvek bezbedno.
-      // posle1 posle prvog koraka može ispasti malo (čak i 0), pa drugi korak sme
-      // da oduzima SAMO ako ima od čega — u suprotnom se prisiljava na sabiranje.
       const plus1 = rng() < 0.5
-      const b = plus1 ? ceoBroj(rng, 3, 250) : ceoBroj(rng, 3, Math.min(250, ax))
+      const b = plus1 ? ceoBroj(rng, 3, 180) : ceoBroj(rng, 3, Math.min(180, ax))
       const posle1 = plus1 ? ax + b : ax - b
 
       const plus2 = posle1 < 3 ? true : rng() < 0.5
-      const c = plus2 ? ceoBroj(rng, 3, 250) : ceoBroj(rng, 3, Math.min(250, posle1))
+      const c = plus2 ? ceoBroj(rng, 3, 180) : ceoBroj(rng, 3, Math.min(180, posle1))
       const d = plus2 ? posle1 + c : posle1 - c
 
       const signature = `jednacine:trokorak:${a},${x},${plus1 ? '+' : '-'}${b},${plus2 ? '+' : '-'}${c}`
@@ -53,12 +49,12 @@ export const jednacine: TopicGenerator = {
     }
 
     if (cfg.difficulty === 4) {
-      // Vrlo teško: dvostepena jednačina a·x + b = c ili a·x − b = c
+      // Vrlo teško: dvostepena jednačina a·x + b = c ili a·x − b = c (c ≤ 980)
       const a = ceoBroj(rng, 3, 12)
-      const x = ceoBroj(rng, 3, 90)
+      const x = ceoBroj(rng, 3, Math.floor(700 / a))
       const ax = a * x
       const plus = rng() < 0.5
-      const b = plus ? ceoBroj(rng, 3, 300) : ceoBroj(rng, 3, Math.max(3, Math.min(300, ax)))
+      const b = plus ? ceoBroj(rng, 3, 280) : ceoBroj(rng, 3, Math.min(280, ax))
       const c = plus ? ax + b : ax - b
       const signature = `jednacine:dvokorak:${plus ? '+' : '-'}:${a},${x},${b}`
       if (taken.has(signature)) return null
@@ -81,7 +77,7 @@ export const jednacine: TopicGenerator = {
     // Za a*x=b je x (odgovor) direktno ograničen ovom granicom — sme biti veliko,
     // jer se b (= a·x) nigde ne proverava. Za x:a=b je x = a·b ODGOVOR, pa b mora
     // ostati dovoljno mali da a·b ne pređe 1000 (a je najviše 11 → b najviše ~78).
-    const xGornjaMnozenje = cfg.difficulty === 3 ? 95 : 10
+    const xGornjaMnozenje = cfg.difficulty === 3 ? 90 : 10
     const bGornjaDeljenje = cfg.difficulty === 3 ? 78 : 10
     const aGornja = cfg.difficulty === 3 ? 11 : 9
 

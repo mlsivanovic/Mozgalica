@@ -18,11 +18,13 @@ export function nzd(a: number, b: number): number {
 }
 
 export function nzs(a: number, b: number): number {
-  return Math.abs(a * b) / nzd(a, b)
+  if (a === 0 || b === 0) return 0
+  return Math.abs((a / nzd(a, b)) * b)
 }
 
 export function normalizujRazlomak(b: number, i: number): Razlomak {
   if (i === 0) throw new Error('Imenilac ne sme biti nula.')
+  if (b === 0) return { b: 0, i: 1 }
   const znak = i < 0 ? -1 : 1
   const d = nzd(b, i)
   return { b: (b / d) * znak, i: Math.abs(i / d) }
@@ -69,11 +71,6 @@ export function upakujIzbor(
   ulaz: IzborUlaz,
 ): GenerisanoPitanje {
   const netacni = [...new Set(ulaz.netacni)].filter((v) => v !== ulaz.tacan)
-  const dopune = ['Nijedno od navedenog', 'Ne može se odrediti', 'Sve navedeno']
-  for (const dopuna of dopune) {
-    if (netacni.length >= 3) break
-    if (dopuna !== ulaz.tacan && !netacni.includes(dopuna)) netacni.push(dopuna)
-  }
   const vrednosti = promesaj(rng, [ulaz.tacan, ...netacni.slice(0, 3)])
   const options: Opcija[] = vrednosti.map((text, i) => ({ id: `o${i + 1}`, text }))
   return {

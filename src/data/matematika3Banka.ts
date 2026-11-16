@@ -66,7 +66,7 @@ const GEOMETRIJA_TF: readonly Tvrdnja[] = [
   ['dva-prava', 'trougao', 4, 'Trougao može da ima dva prava ugla.', false, 'Dva prava ugla ne mogu da se zatvore trećom stranicom u trougao.', 'Nacrtaj dva prava ugla i pokušaj da zatvoriš trougao.'],
   ['kruznica-krug', 'krug', 4, 'Kružnica i krug označavaju istu stvar.', false, 'Kružnica je linija, a krug je figura koju ta linija omeđuje.', 'Kružnica je „ivica", krug je „unutrašnjost sa ivicom".'],
   ['ostrougli', 'trougao', 5, 'Oštrougli trougao ima sva tri ugla oštra.', true, 'Kod oštrouglog trougla svaki ugao je manji od pravog.', 'Nijedan ugao nije prav ni tup.'],
-  ['normalne-prav', 'prave', 5, 'Normalne (upravne) prave se seku pod pravim uglom.', true, 'Upravan položaj pravi znači da obrazuju prav ugao.', 'Zamisli plus: +'],
+  ['normalne-prav', 'prave', 5, 'Normalne (upravne) prave se seku pod pravim uglom.', true, 'Upravan položaj pravih znači da obrazuju prav ugao.', 'Zamisli plus: +'],
 ]
 
 const GEOMETRIJA_BROJ: readonly Broj[] = [
@@ -79,7 +79,7 @@ const GEOMETRIJA_BROJ: readonly Broj[] = [
 ]
 
 const GEOMETRIJA_UNOS: readonly Unos[] = [
-  ['teme-naziv', 'ugao', 2, 'Kako se zove zajednička početna tačka kraka ugla?', ['teme', 'teme ugla'], 'Kraci polaze iz temena ugla.', 'To je „špic" ugla.'],
+  ['teme-naziv', 'ugao', 2, 'Kako se zove zajednička početna tačka krakova ugla?', ['teme', 'teme ugla'], 'Kraci polaze iz temena ugla.', 'To je „špic" ugla.'],
   ['krak-naziv', 'ugao', 2, 'Kako se zovu poluprave koje čine ugao?', ['kraci', 'krakovi', 'kraci ugla'], 'Dva kraka i teme čine ugao.', 'Izgledaju kao dve poluge iz jedne tačke.'],
   ['jednakostranicni', 'trougao', 3, 'Kako se zove trougao čije su sve tri stranice jednake?', ['jednakostranični', 'jednakostraničan', 'jednakostranični trougao'], 'Jednakostranični trougao ima sve stranice jednake.', 'Sve tri strane su iste dužine.'],
   ['jednakokraki', 'trougao', 3, 'Kako se zove trougao koji ima tačno dve jednake stranice?', ['jednakokraki', 'jednakokraki trougao'], 'Jednakokraki trougao ima dve jednake stranice (krake).', 'Dve strane iste, treća drugačija.'],
@@ -151,11 +151,11 @@ const VREME_SINGLE: readonly Ponudjeno[] = [
 
 const RAZLOMCI_TF: readonly Tvrdnja[] = [
   ['pola-pola', 'celina', 1, 'Razlomak 1/2 označava polovinu celine.', true, '1/2 znači jedan od dva jednaka dela.', 'Broj ispod crte kaže na koliko je delova podeljeno.'],
-  ['pet-pet', 'celina', 2, 'Razlomak 5/5 označava celu jedinicu.', true, 'Kad su brojilac i imenilac jednaki, uzet je ceo.', 'Svi delovi su uzeti.'],
+  ['pet-pet', 'celina', 2, 'Razlomak 5/5 označava celu jedinicu.', true, 'Kad su brojilac i imenilac jednaki, uzeta je cela jedinica (1).', 'Svi delovi su uzeti.'],
   ['1-3-vece-1-2', 'poredjenje', 3, 'Razlomak 1/3 je veći od razlomka 1/2.', false, 'Polovina je veća od trećine iste celine.', 'Zamisli istu tortu: veći komad je 1/2.'],
   ['2-5-manje', 'poredjenje', 2, 'Razlomak 2/5 je manji od razlomka 4/5.', true, 'Isti imenilac: veći brojilac znači veći razlomak. 2 < 4, pa je 2/5 < 4/5.', 'Uporedi brojeve iznad crte.'],
   ['1-4-torta', 'celina', 1, 'Ako je torta isečena na 4 jednaka dela, jedan deo je 1/4.', true, 'Jedan od četiri jednaka dela zapisujemo kao 1/4.', 'Imenilac je 4.'],
-  ['3-3-nije-ceo', 'celina', 3, 'Razlomak 3/3 nije ceo, jer je imenilac 3.', false, '3/3 = 1, to je cela jedinica.', 'Svi delovi su uzeti.'],
+  ['3-3-nije-ceo', 'celina', 3, 'Razlomak 3/3 ne označava celu jedinicu, jer je imenilac 3.', false, '3/3 = 1, to je cela jedinica.', 'Svi delovi su uzeti.'],
 ]
 
 const RAZLOMCI_BROJ: readonly Broj[] = [
@@ -182,13 +182,13 @@ const RAZLOMCI_UNOS: readonly Unos[] = [
 
 const RAZLOMCI_SINGLE: readonly Ponudjeno[] = [
   ['koji-pola', 'zapis', 1, 'Koji razlomak označava polovinu?', ['1/2', '1/4', '1/3', '1/10'], 0, '1/2 je jedan od dva jednaka dela — polovina.', 'Imenilac 2 znači dva jednaka dela.'],
-  ['koji-veci-5', 'poredjenje', 2, 'Koji razlomak je veći?', ['4/5', '1/5', '2/5', '3/5'], 0, 'Isti imenilac: veći brojilac daje veći razlomak. 4/5 je najveći.', 'Uporedi brojeve iznad crte.'],
+  ['koji-veci-5', 'poredjenje', 2, 'Koji razlomak je najveći?', ['4/5', '1/5', '2/5', '3/5'], 0, 'Isti imenilac: veći brojilac daje veći razlomak. 4/5 je najveći.', 'Uporedi brojeve iznad crte.'],
   ['koji-manji-8', 'poredjenje', 3, 'Koji razlomak je najmanji?', ['1/8', '3/8', '5/8', '7/8'], 0, 'Isti imenilac 8: najmanji brojilac je 1, pa je 1/8 najmanji.', 'Manji brojilac — manji deo.'],
-  ['koji-veci-jedinicni', 'poredjenje', 3, 'Koji komad iste pice je veći?', ['1/2', '1/3', '1/4', '1/5'], 0, 'Što je imenilac manji, jedinični razlomak je veći. 1/2 je najveći komad.', 'Manje delova znači veći svaki deo.'],
-  ['sest-sest', 'celina', 4, 'Koji razlomak označava ceo?', ['6/6', '5/6', '1/6', '2/6'], 0, '6/6 znači da su uzeti svi delovi — cela jedinica.', 'Brojilac jednak imeniocu.'],
-  ['tri-deset-crvenih', 'deo-skupa', 4, 'Od 10 olovaka 3 su crvene. Kojim razlomkom zapisujemo crvene olovke?', ['3/10', '10/3', '3/7', '1/3'], 0, '3 od 10 jednako važnih predmeta je 3/10.', 'Imenilac je ukupan broj olovaka.'],
+  ['koji-veci-jedinicni', 'poredjenje', 3, 'Koji komad iste pice je najveći?', ['1/2', '1/3', '1/4', '1/5'], 0, 'Što je imenilac manji, jedinični razlomak je veći. 1/2 je najveći komad.', 'Manje delova znači veći svaki deo.'],
+  ['sest-sest', 'celina', 4, 'Koji razlomak označava celu jedinicu (1)?', ['6/6', '5/6', '1/6', '2/6'], 0, '6/6 znači da su uzeti svi delovi — cela jedinica.', 'Brojilac jednak imeniocu.'],
+  ['tri-deset-crvenih', 'deo-skupa', 4, 'Od 10 olovaka 3 su crvene. Kojim razlomkom zapisujemo crvene olovke?', ['3/10', '10/3', '3/7', '1/3'], 0, '3 od 10 jednakih delova (olovaka) je 3/10.', 'Imenilac je ukupan broj olovaka.'],
   ['dve-osmine', 'poredjenje', 5, 'Koji razlomak je najveći: 6/8, 2/8, 1/8 ili 3/8?', ['6/8', '2/8', '1/8', '3/8'], 0, 'Isti imenilac 8: 6 > 3 > 2 > 1, pa je 6/8 najveći.', 'Veći brojilac uz isti imenilac.'],
-  ['pola-ili-cetvrt', 'poredjenje', 5, 'Ana je pojela 1/2 pice, a Luka 1/4 iste veličine pice. Ko je pojeo više?', ['Ana', 'Luka', 'Pojeli su jednako', 'Ne može da se zna'], 0, '1/2 je veće od 1/4 iste celine, pa je Ana pojela više.', 'Polovina je dva puta veća od četvrtine.'],
+  ['pola-ili-cetvrt', 'poredjenje', 5, 'Ana je pojela 1/2 pice, a Luka 1/4 pice iste veličine. Ko je pojeo više?', ['Ana', 'Luka', 'Pojeli su jednako', 'Ne može da se zna'], 0, '1/2 je veće od 1/4 iste celine, pa je Ana pojela više.', 'Polovina je dva puta veća od četvrtine.'],
 ]
 
 const TEKST_BROJ: readonly Broj[] = [
@@ -206,7 +206,7 @@ const TEKST_BROJ: readonly Broj[] = [
   ['razredi-200', 'mnozenje', 3, 'U 8 odeljenja ima po 25 učenika. Koliko učenika ima ukupno?', 200, '8 · 25 = 200.', 'Pomnoži 8 i 25.'],
   ['sveske-gumica', 'kombinovano', 3, 'Tri sveske koštaju po 40 dinara, a gumica 25 dinara. Koliko dinara treba za sve?', 145, '3 · 40 = 120, 120 + 25 = 145.', 'Najpre sveske, pa dodaj gumicu.'],
   ['kolaci-80', 'deljenje', 3, '480 kolača pakuje se jednako u 6 kutija. Koliko kolača ide u jednu kutiju?', 80, '480 : 6 = 80.', 'Podeli ukupno na 6.'],
-  ['vise-212', 'sabiranje', 3, 'Ujutru je palo 125 litara kiše u burad, a popodne 87 litara više nego ujutru. Koliko je pala popodne?', 212, '125 + 87 = 212.', '„Više" znači sabiranje.'],
+  ['vise-212', 'sabiranje', 3, 'Ujutru je palo 125 litara kiše u burad, a popodne 87 litara više nego ujutru. Koliko je litara palo popodne?', 212, '125 + 87 = 212.', '„Više" znači sabiranje.'],
   ['strane-36', 'oduzimanje', 3, 'Knjiga ima 64 strane. Pročitano je 28. Koliko strana je ostalo?', 36, '64 − 28 = 36.', 'Oduzmi pročitano.'],
   ['olovke-108', 'mnozenje', 3, 'Devet pakovanja ima po 12 olovaka. Koliko je olovaka ukupno?', 108, '9 · 12 = 108.', 'Pomnoži 9 i 12.'],
   ['kusur-sveske', 'kombinovano', 4, 'Mina ima 210 dinara. Kupi 3 sveske po 50 dinara. Koliko dinara joj ostaje?', 60, '3 · 50 = 150, 210 − 150 = 60.', 'Najpre utrošak, pa ostatak.'],
@@ -251,7 +251,7 @@ const LOGIKA_BROJ: readonly Broj[] = [
   ['slicice-novo', 'odnosi', 3, 'Ana, Iva i Marko imaju 36 sličica. Ana i Iva imaju po jednako, a Marko ima duplo više od Ane. Koliko sličica ima Marko?', 18, 'Ana i Iva imaju isto, a Marko duplo više — to su četiri jednaka dela. 36 : 4 = 9, pa Marko ima 2 · 9 = 18.', 'Četiri jednaka dela, Marko uzima dva.'],
   ['autobus', 'kombinovano', 3, 'U autobusu je bilo 12 putnika. Na stanici je ušlo 9, a izašlo 5. Koliko putnika je ostalo u autobusu?', 16, '12 + 9 = 21, 21 − 5 = 16.', 'Dodaj one koji ulaze, oduzmi one koji izlaze.'],
   ['red-brojeva', 'pogodi', 4, 'Tri uzastopna broja daju zbir 24. Koji je srednji broj?', 8, 'Srednji je 24 : 3 = 8. Brojevi su 7, 8 i 9.', 'Srednji je trećina zbira.'],
-  ['ostalo-deljenje', 'deljenje', 4, '23 olovke pakuju se u kutije od po 5. Koliko olovaka ostane nespakovano?', 3, '4 · 5 = 20, ostane 23 − 20 = 3.', 'Koliko nedostaje do sledeće petice.'],
+  ['ostalo-deljenje', 'deljenje', 4, '23 olovke pakuju se u kutije od po 5. Koliko olovaka ostane nespakovano?', 3, '4 · 5 = 20, ostane 23 − 20 = 3.', 'Koliko ostane preko najvećeg umnoška broja 5 manjeg od 23.'],
   ['mreza-kvadrat', 'model', 5, 'Kvadratna mreža ima 6 redova i 6 kolona polja. Koliko polja ima?', 36, '6 · 6 = 36.', 'Pomnoži broj redova i kolona.'],
   ['novcic', 'odnosi', 5, 'Ana ima 3 novčića više od Luke, a zajedno imaju 27 novčića. Koliko novčića ima Luka?', 12, 'Zajedno imaju 27, a Ana ima 3 više. Od 27 oduzmemo 3, ostane 24 za dvoje jednako, pa Luka ima 12.', 'Od zbira oduzmi 3, pa prepolovi.'],
   ['pola-ostalo', 'kombinovano', 5, 'Od 20 keksova pojedena je polovina, pa još 3. Koliko keksova je ostalo?', 7, 'Polovina od 20 je 10, 10 − 3 = 7.', 'Najpre polovinu, pa oduzmi još 3.'],
