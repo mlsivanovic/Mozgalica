@@ -292,11 +292,11 @@ private fun ResavanjeEkran(ui: KvizUi, onNazad: () -> Unit, model: KvizViewModel
         if (pitanje != null) {
             val belezka = stanje.belezke?.get(pitanje.id)
             RadniList(
+                pitanjeId = pitanje.id,
                 naslov = "Pitanje ${pager.currentPage + 1} · računaj korak po korak",
                 tekst = belezka?.tekst.orEmpty(),
                 sacuvano = belezka == null || belezka.synced || ui.probni,
                 onTekst = { model.belezka(pitanje.id, it) },
-                onObrisi = { model.belezka(pitanje.id, "") },
                 onZatvori = { model.radniList(false) },
             )
         }
@@ -718,13 +718,14 @@ private fun DonjiList(onZatvori: () -> Unit, sadrzaj: @Composable () -> Unit) {
 // da roditelj u pregledu rezultata vidi kako je računalo.
 @Composable
 private fun RadniList(
+    pitanjeId: String,
     naslov: String,
     tekst: String,
     sacuvano: Boolean,
     onTekst: (String) -> Unit,
-    onObrisi: () -> Unit,
     onZatvori: () -> Unit,
 ) {
+    val polje = rememberTekstPolje(pitanjeId, tekst, maks = MAKS_BELEZKA, onPromena = onTekst)
     Box(
         Modifier.fillMaxSize().imePadding().background(MaterialTheme.colorScheme.scrim),
         contentAlignment = Alignment.BottomCenter,
@@ -746,14 +747,16 @@ private fun RadniList(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                if (tekst.isNotEmpty()) TextButton(onClick = onObrisi) { Text("Obriši") }
+                if (polje.vrednost.text.isNotEmpty()) {
+                    TextButton(onClick = { polje.postavi("") }) { Text("Obriši") }
+                }
                 IconButton(onClick = onZatvori) {
                     Icon(Icons.Rounded.Close, contentDescription = "Zatvori radni listić")
                 }
             }
             OutlinedTextField(
-                value = tekst,
-                onValueChange = onTekst,
+                value = polje.vrednost,
+                onValueChange = polje::naPromenu,
                 modifier = Modifier.fillMaxWidth().heightIn(min = 140.dp),
                 textStyle = MaterialTheme.typography.bodyLarge.copy(
                     fontFamily = FontFamily.Monospace,
