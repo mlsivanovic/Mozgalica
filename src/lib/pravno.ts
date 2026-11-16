@@ -1,9 +1,6 @@
-// Identitet rukovaoca i kontakt na jednom mestu. Politika privatnosti i uslovi čitaju
-// ove vrednosti. RUKOVALAC je namerno placeholder: upisati zakonski naziv i ime pre javne objave.
-
-// TODO: upisati ime i prezime (ili naziv) rukovaoca pre javne objave aplikacije.
-export const RUKOVALAC = '[ime i prezime rukovaoca]'
+// Identitet rukovaoca i kontakt na jednom mestu. Politika privatnosti i uslovi čitaju ove vrednosti.
+export const RUKOVALAC = 'Miloš Ivanović, Beograd'
 
 export const KONTAKT_EMAIL = 'kontakt@mozgalica.rs'
 
-export const DATUM_IZMENE = '16. novembar 2026.'
+export const DATUM_IZMENE = '17. novembar 2026.'
