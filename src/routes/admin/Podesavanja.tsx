@@ -12,7 +12,7 @@ import {
 } from '../../lib/api'
 import { RoditeljskiLink as Link, useRoditelj } from '../../lib/roditelj'
 import { useAuth } from '../../lib/auth'
-import { MEJL_DETETU_ZA_NOVI_KVIZ, MEJL_RODITELJU_POSLE_KVIZA } from '../../lib/funkcije'
+import { MEJL_DETETU_ZA_NOVI_KVIZ, MEJL_DETETU_ZA_NOVU_PARTIJU, MEJL_RODITELJU_POSLE_KVIZA } from '../../lib/funkcije'
 import { BrisanjeNaloga } from '../../components/BrisanjeNaloga'
 import { emailJeIspravan, normalizujEmail } from '../../lib/email'
 import { formatDatum, formatProcenat } from '../../lib/format'
@@ -682,28 +682,28 @@ export function Podesavanja({ sekcija = 'obavestenja' }: { sekcija?: Sekcija }) 
           <p className="blago razmak-gore">Još nema profila. Dodaj dete da dobije svoj link, kvizove i nagrade.</p>
         )}
 
-        <div className="mreza-kartica razmak-gore">
+        <div className="mreza-kartica profili-mreza razmak-gore">
           {profili.map((profil) => {
             const pregled = preglediProfila[profil.id]
             const istorija = pregled?.history ?? []
 
             return (
               <article key={profil.id} className="kartica profil-admin-kartica">
-                <div className="red">
-                  <span aria-hidden="true" style={{ fontSize: '2.2rem' }}>{profil.avatar}</span>
-                  <div>
+                <div className="profil-admin-zaglavlje">
+                  <span className="profil-admin-avatar" aria-hidden="true">{profil.avatar}</span>
+                  <div className="profil-admin-identitet">
                     <h3>{profil.name}</h3>
                     <p className="malo blago">
                       {profil.birth_date
                         ? `Rođen/a ${new Date(`${profil.birth_date}T12:00:00`).toLocaleDateString('sr-Latn-RS')}`
                         : 'Datum rođenja nije unet'}
                     </p>
-                    <p className="malo blago">
+                    <p className="malo blago profil-admin-email">
                       {profil.email ?? 'Email adresa nije uneta'}
                     </p>
                   </div>
                 </div>
-                <div className="red razmak-gore">
+                <div className="red razmak-gore profil-admin-bedzevi">
                   <span className="bedz" title="Doživotne zvezdice — hrane titulu">
                     ⭐ {pregled?.totalStars ?? 0} zvezdica
                   </span>
@@ -715,7 +715,7 @@ export function Podesavanja({ sekcija = 'obavestenja' }: { sekcija?: Sekcija }) 
                       📝 {pregled?.activeQuizzes?.length} aktivno
                     </span>
                   )}
-                  <span className="bedz bedz--neutral" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <span className="bedz bedz--neutral profil-admin-titula-bedz">
                     {pregled?.currentTitle && (
                       <TitleAvatar
                         name={pregled.currentTitle.name}
@@ -723,10 +723,10 @@ export function Podesavanja({ sekcija = 'obavestenja' }: { sekcija?: Sekcija }) 
                         size={22}
                       />
                     )}
-                    Titula: {pregled?.currentTitle?.name ?? '—'}
+                    <span>Titula: {pregled?.currentTitle?.name ?? '—'}</span>
                   </span>
                 </div>
-                <div className="red razmak-gore">
+                <div className="red razmak-gore profil-admin-akcije">
                   <button type="button" className="dugme dugme--senka dugme--malo" onClick={() => urediProfil(profil)}>
                     Uredi
                   </button>
@@ -747,7 +747,7 @@ export function Podesavanja({ sekcija = 'obavestenja' }: { sekcija?: Sekcija }) 
                     vrednost={profilniLink(BAZA_URL, profil.public_token)}
                     oznaka={`QR kod profilnog linka za ${profil.name}`}
                   />
-                  <p className="malo blago">Skeniraj kod u dečjoj aplikaciji. To je isti link kao na dugmetu.</p>
+                  <p className="malo blago">Skeniraj u dečjoj aplikaciji (isti link).</p>
                 </div>
                 <details className="profil-admin-istorija">
                   <summary>
@@ -804,6 +804,7 @@ export function Podesavanja({ sekcija = 'obavestenja' }: { sekcija?: Sekcija }) 
                   value={forma.birth_date} onChange={(e) => setForma({ ...forma, birth_date: e.target.value })}
                 />
               </div>
+              {(MEJL_DETETU_ZA_NOVI_KVIZ || MEJL_DETETU_ZA_NOVU_PARTIJU) && (
               <div className="polje">
                 <label htmlFor="pd-email">Email deteta (opciono)</label>
                 <input
@@ -813,11 +814,10 @@ export function Podesavanja({ sekcija = 'obavestenja' }: { sekcija?: Sekcija }) 
                   onChange={(e) => setForma({ ...forma, email: e.target.value })}
                 />
                 <p className="malo blago">
-                  {MEJL_DETETU_ZA_NOVI_KVIZ
-                    ? 'Adresa je vidljiva samo administratoru i koristi se za nove kvizove.'
-                    : 'Adresa je vidljiva samo administratoru. Trenutno se koristi za mejl o šahovskim partijama. Obaveštenja o kvizovima stižu kao push.'}
+                  Adresa je vidljiva samo administratoru i koristi se za mejl o novim kvizovima i partijama.
                 </p>
               </div>
+              )}
               {MEJL_DETETU_ZA_NOVI_KVIZ && (
                 <label className="stiklir">
                   <input
