@@ -11,6 +11,7 @@ import { napraviPlanOblastiKviza } from '../../../src/lib/raspodelaKviza.ts'
 import {
   KONFIGURACIJA_PREDMETA, type Predmet,
 } from '../../../src/types/db.ts'
+import { servisniPozivJeDozvoljen } from '../_shared/servisniPoziv.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -399,6 +400,7 @@ async function obradi(rad: DnevniRad, supabase: ReturnType<typeof napraviKlijent
 
 Deno.serve(async (req: Request) => {
   if (req.method !== 'POST') return odgovor('Metoda nije dozvoljena.', 405)
+  if (!servisniPozivJeDozvoljen(req, SUPABASE_URL, SERVICE_ROLE_KEY)) return odgovor('Nije dozvoljeno.', 401)
   const supabase = napraviKlijent()
   const { data, error } = await supabase.rpc('claim_due_daily_quiz_runs', { p_limit: 20 })
   if (error) return odgovor(`Preuzimanje dnevnih kvizova nije uspelo: ${error.message}`, 500)

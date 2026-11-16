@@ -5,6 +5,7 @@ import { createClient } from 'jsr:@supabase/supabase-js@2'
 import {
   apsolutnaHashRuta, escapeHtml, proceniHttpIsporuku, sledeciPokusaj,
 } from '../_shared/notification-utils.ts'
+import { servisniPozivJeDozvoljen } from '../_shared/servisniPoziv.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -64,30 +65,9 @@ class GreskaIsporuke extends Error {
   }
 }
 
-function servisniPozivJeDozvoljen(req: Request): boolean {
-  const authorization = req.headers.get('authorization')
-  if (authorization === `Bearer ${SERVICE_ROLE_KEY}`) return true
-  if (!authorization?.startsWith('Bearer ')) return false
-
-  try {
-    const token = authorization.slice(7)
-    const payloadSegment = token.split('.')[1]
-    if (!payloadSegment) return false
-
-    const base64 = payloadSegment.replace(/-/g, '+').replace(/_/g, '/')
-    const payload = JSON.parse(atob(base64.padEnd(Math.ceil(base64.length / 4) * 4, '=')))
-    const projectRef = new URL(SUPABASE_URL).hostname.split('.')[0]
-
-    // Gateway sa uključenim verify_jwt prethodno proverava potpis ovog tokena.
-    return payload.role === 'service_role' && payload.ref === projectRef
-  } catch {
-    return false
-  }
-}
-
 Deno.serve(async (req: Request) => {
   if (req.method !== 'POST') return new Response('Method not allowed', { status: 405 })
-  if (!servisniPozivJeDozvoljen(req)) {
+  if (!servisniPozivJeDozvoljen(req, SUPABASE_URL, SERVICE_ROLE_KEY)) {
     return new Response('Unauthorized', { status: 401 })
   }
 
