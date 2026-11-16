@@ -902,3 +902,8 @@ svg use {
 .podnozje a:hover {
   color: var(--tekst);
 }
+
+.privatnost__linkovi {
+  margin: 28px 0 0;
+  color: var(--tekst-blagi);
+}
