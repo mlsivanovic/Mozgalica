@@ -14,6 +14,7 @@ import {
 } from '../../lib/raspodelaKviza'
 import { sastaviKombinovaniPid } from '../../lib/kombinovaniPid'
 import { predmetImaTezinu, razrediPredmeta, tezinaZaPredmet } from '../../lib/predmet'
+import { MEJL_DETETU_ZA_NOVI_KVIZ } from '../../lib/funkcije'
 import {
   KONFIGURACIJA_PREDMETA, NAZIVI_PREDMETA, NAZIVI_RAZREDA, NAZIVI_TEZINA, NAZIVI_TIPOVA, PREDMETI,
   type Oblast, type Predmet, type Razred, type Tezina, type TipPitanja,
@@ -468,7 +469,7 @@ export function KvizForma({ pocetnoDete = '', onNazad }: { pocetnoDete?: string;
 
       // 4. Dodeli kviz izabranom detetu ako je odabrano
       if (izabranoDete) {
-        await dodeliKvizProfilu(quizId, izabranoDete, posaljiEmail, kreiranje.current.zahtev)
+        await dodeliKvizProfilu(quizId, izabranoDete, MEJL_DETETU_ZA_NOVI_KVIZ && posaljiEmail, kreiranje.current.zahtev)
       }
 
       navigate(izabranoDete ? `/admin/vezbanje?dete=${izabranoDete}` : `/admin/kvizovi/${quizId}`)
@@ -507,7 +508,7 @@ export function KvizForma({ pocetnoDete = '', onNazad }: { pocetnoDete?: string;
       <p className="razmak-gore">Za: <strong>{primalac?.name ?? 'Bez dodele — priprema kviza'}</strong></p>
       <p>{NAZIVI_PREDMETA[predmet]} · {NAZIVI_RAZREDA[razred]}</p>
       {mod === 'manual' ? <p className="poruka poruka--info">Najpre ćeš dodati pitanja. Kviz dodeli detetu iz pregleda gotovog kviza.</p> : <><p>{cfg.count} pitanja · {cfg.selectedTopics.length} oblasti · {cfg.timeLimit ? `${cfg.timeLimit} minuta` : 'bez vremenskog ograničenja'}</p><p className="malo blago">Izvor: {cfg.source === 'generator' ? 'Generator' : cfg.source === 'bank' ? 'Banka pitanja' : 'Kombinovano'} · prag {cfg.passThreshold}%</p></>}
-      {primalac && mod !== 'manual' && <><p className="malo blago razmak-gore">Aktivnost se pojavljuje na profilu deteta. Push stiže na povezane uređaje.</p><label className="stiklir"><input type="checkbox" checked={posaljiEmail} disabled={!primalac.email || zapoceto} onChange={e => setPosaljiEmail(e.target.checked)} />Pošalji i mejl detetu{!primalac.email ? ' (email nije unet)' : ''}</label></>}
+      {primalac && mod !== 'manual' && <><p className="malo blago razmak-gore">Aktivnost se pojavljuje na profilu deteta. Push stiže na povezane uređaje.</p>{MEJL_DETETU_ZA_NOVI_KVIZ && <label className="stiklir"><input type="checkbox" checked={posaljiEmail} disabled={!primalac.email || zapoceto} onChange={e => setPosaljiEmail(e.target.checked)} />Pošalji i mejl detetu{!primalac.email ? ' (email nije unet)' : ''}</label>}</>}
     </div>
     {greska && <p className="poruka poruka--greska" role="alert">{greska}</p>}
     {zapoceto && greska && <p className="blago">Ponovni pokušaj nastavlja isti kviz, bez nove dodele ili duplog slanja.</p>}

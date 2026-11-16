@@ -11,6 +11,7 @@ import {
 import { formatDatum, formatProcenat } from '../../lib/format'
 import { podrazumevanoSlanjeMejla } from '../../lib/email'
 import { mapaPredmetaPoTemi } from '../../lib/predmet'
+import { MEJL_DETETU_ZA_NOVI_KVIZ } from '../../lib/funkcije'
 import { Loader } from '../../components/Zajednicke'
 import {
   NAZIVI_PREDMETA, NAZIVI_TIPOVA, type Kviz, type KvizLink, type KvizPitanje,
@@ -466,7 +467,7 @@ function LinkoviKviza({
     try {
       slanjeDodele.current = true
       setDodelaZapoceta(true)
-      await dodeliKvizProfilu(quizId, izabraniProfil, posaljiEmail, zahtevDodele.current)
+      await dodeliKvizProfilu(quizId, izabraniProfil, MEJL_DETETU_ZA_NOVI_KVIZ && posaljiEmail, zahtevDodele.current)
       setDodelaZapoceta(false)
       zahtevDodele.current = crypto.randomUUID()
       setIzabraniProfil('')
@@ -543,7 +544,7 @@ function LinkoviKviza({
             Dodeli kviz
           </button>
         </div>
-        {izabraniProfil && (
+        {izabraniProfil && MEJL_DETETU_ZA_NOVI_KVIZ && (
           <div className="razmak-dole">
             <label className="stiklir">
               <input
@@ -560,6 +561,9 @@ function LinkoviKviza({
                 : <>Profil nema email adresu. <Link to="/admin/deca">Dodaj je u profilu deteta.</Link></>}
             </p>
           </div>
+        )}
+        {izabraniProfil && !MEJL_DETETU_ZA_NOVI_KVIZ && (
+          <p className="malo blago razmak-dole">Kviz se detetu javlja kao push obaveštenje i na profilnom linku.</p>
         )}
 
         {profilniLinkovi.length === 0 ? (

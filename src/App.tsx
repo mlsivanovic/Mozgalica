@@ -9,6 +9,7 @@ import { AuthProvider } from './lib/auth'
 import { NijePronadjeno } from './routes/NijePronadjeno'
 import { Loader } from './components/Zajednicke'
 import { DecjiLayout } from './components/DecjiLayout'
+import { Privatnost, Uslovi } from './routes/PravneStrane'
 
 const Sah = lazy(() => import('./routes/admin/Sah').then((modul) => ({ default: modul.Sah })))
 const SahPartija = lazy(() => import('./routes/sah/SahPartija').then((modul) => ({ default: modul.SahPartija })))
@@ -25,6 +26,7 @@ const Kontrolna = lazy(() => import('./routes/admin/Kontrolna').then(m => ({ def
 const PitanjaLista = lazy(() => import('./routes/admin/PitanjaLista').then(m => ({ default: m.PitanjaLista })))
 const Podesavanja = lazy(() => import('./routes/admin/Podesavanja').then(m => ({ default: m.Podesavanja })))
 const Prijava = lazy(() => import('./routes/admin/Prijava').then(m => ({ default: m.Prijava })))
+const Roditelji = lazy(() => import('./routes/admin/Roditelji').then(m => ({ default: m.Roditelji })))
 const RezultatDetalj = lazy(() => import('./routes/admin/RezultatDetalj').then(m => ({ default: m.RezultatDetalj })))
 const Rezultati = lazy(() => import('./routes/admin/Rezultati').then(m => ({ default: m.Rezultati })))
 const KvizRezultat = lazy(() => import('./routes/kviz/KvizRezultat').then(m => ({ default: m.KvizRezultat })))
@@ -43,6 +45,8 @@ function App() {
           <Routes>
           <Route path="/" element={<Navigate to="/admin" replace />} />
           <Route path="/prijava" element={<Prijava />} />
+          <Route path="/privatnost" element={<Privatnost />} />
+          <Route path="/uslovi" element={<Uslovi />} />
 
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<Kontrolna />} />
@@ -79,6 +83,7 @@ function App() {
             </Route>
             <Route path="deca" element={<Podesavanja key="profili" sekcija="profili" />} />
             <Route path="podesavanja" element={<Podesavanja key="obavestenja" />} />
+            <Route path="roditelji" element={<Roditelji />} />
           </Route>
 
           <Route path="/kviz/:token" element={<KvizUlaz />} />

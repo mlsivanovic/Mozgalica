@@ -17,6 +17,7 @@ import type {
 import type { SmenaCasova } from './rasporedCasova'
 import { SEED_PITANJA } from '../data/seedPitanja'
 import { supabase } from './supabase'
+import { porukaZaGreskuBrisanja, porukaZaGreskuPoziva, type StatusPoziva } from './nalog'
 
 // Pretvori Supabase grešku u čitljivu srpsku poruku
 function opisiGresku(error: { message: string } | null): string | null {
@@ -656,6 +657,54 @@ export async function ucitajPodesavanja(): Promise<AdminPodesavanja | null> {
 export async function postaviEmailObavestenja(userId: string, ukljucena: boolean): Promise<void> {
   const { error } = await supabase()
     .from('admin_settings').update({ email_notifications: ukljucena }).eq('user_id', userId)
+  if (error) throw new Error(opisiGresku(error)!)
+}
+
+// Edge funkcija vraća grešku kao HTTP odgovor; kod iz tela se čita za poruku.
+async function kodGreskeFunkcije(error: unknown): Promise<string | null> {
+  const odgovor = (error as { context?: unknown })?.context
+  if (!(odgovor instanceof Response)) return null
+  try {
+    return ((await odgovor.json()) as { error?: string }).error ?? null
+  } catch {
+    return null
+  }
+}
+
+// ---------- Nalog roditelja: poziv, brisanje, uslovi ----------
+export async function pozoviRoditelja(email: string): Promise<StatusPoziva> {
+  const { data, error } = await supabase().functions.invoke('pozovi-roditelja', { body: { email } })
+  if (error) throw new Error(porukaZaGreskuPoziva(await kodGreskeFunkcije(error)))
+  const odgovor = data as { ok: boolean; status?: StatusPoziva; error?: string }
+  if (!odgovor.ok || !odgovor.status) throw new Error(porukaZaGreskuPoziva(odgovor.error))
+  return odgovor.status
+}
+
+export interface PozvanRoditelj {
+  email: string
+  nalogPostoji: boolean
+  aktivan: boolean
+}
+
+export async function listajPozvaneRoditelje(): Promise<PozvanRoditelj[]> {
+  const { data, error } = await supabase().rpc('listaj_pozvane_roditelje')
+  if (error) throw new Error(opisiGresku(error)!)
+  return (data as Array<{ email: string; nalog_postoji: boolean; aktivan: boolean }>).map((red) => ({
+    email: red.email,
+    nalogPostoji: red.nalog_postoji,
+    aktivan: red.aktivan,
+  }))
+}
+
+export async function obrisiMojNalog(potvrda: string): Promise<void> {
+  const { data, error } = await supabase().functions.invoke('obrisi-nalog', { body: { potvrda } })
+  if (error) throw new Error(porukaZaGreskuBrisanja(await kodGreskeFunkcije(error)))
+  const odgovor = data as { ok: boolean; error?: string }
+  if (!odgovor.ok) throw new Error(porukaZaGreskuBrisanja(odgovor.error))
+}
+
+export async function prihvatiUslove(): Promise<void> {
+  const { error } = await supabase().rpc('accept_terms')
   if (error) throw new Error(opisiGresku(error)!)
 }
 

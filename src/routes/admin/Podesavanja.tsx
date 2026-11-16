@@ -12,6 +12,8 @@ import {
 } from '../../lib/api'
 import { useRoditelj } from '../../lib/roditelj'
 import { useAuth } from '../../lib/auth'
+import { MEJL_DETETU_ZA_NOVI_KVIZ, MEJL_RODITELJU_POSLE_KVIZA } from '../../lib/funkcije'
+import { BrisanjeNaloga } from '../../components/BrisanjeNaloga'
 import { emailJeIspravan, normalizujEmail } from '../../lib/email'
 import { formatDatum, formatProcenat } from '../../lib/format'
 import { validirajSahNagrade } from '../../sah/nagrade'
@@ -811,21 +813,25 @@ export function Podesavanja({ sekcija = 'obavestenja' }: { sekcija?: Sekcija }) 
                   onChange={(e) => setForma({ ...forma, email: e.target.value })}
                 />
                 <p className="malo blago">
-                  Adresa je vidljiva samo administratoru i koristi se za nove kvizove.
+                  {MEJL_DETETU_ZA_NOVI_KVIZ
+                    ? 'Adresa je vidljiva samo administratoru i koristi se za nove kvizove.'
+                    : 'Adresa je vidljiva samo administratoru. Trenutno se koristi za mejl o šahovskim partijama. Obaveštenja o kvizovima stižu kao push.'}
                 </p>
               </div>
-              <label className="stiklir">
-                <input
-                  type="checkbox"
-                  checked={forma.notify_new_quiz_email}
-                  disabled={!forma.email.trim()}
-                  onChange={(e) => setForma({
-                    ...forma,
-                    notify_new_quiz_email: e.target.checked,
-                  })}
-                />
-                Podrazumevano pošalji mejl kada se dodeli novi kviz
-              </label>
+              {MEJL_DETETU_ZA_NOVI_KVIZ && (
+                <label className="stiklir">
+                  <input
+                    type="checkbox"
+                    checked={forma.notify_new_quiz_email}
+                    disabled={!forma.email.trim()}
+                    onChange={(e) => setForma({
+                      ...forma,
+                      notify_new_quiz_email: e.target.checked,
+                    })}
+                  />
+                  Podrazumevano pošalji mejl kada se dodeli novi kviz
+                </label>
+              )}
               <fieldset className="polje" style={{ border: 0 }}>
                 <legend style={{ fontWeight: 700 }}>Avatar</legend>
                 <div className="red" style={{ marginTop: '0.4rem' }}>
@@ -1398,24 +1404,28 @@ export function Podesavanja({ sekcija = 'obavestenja' }: { sekcija?: Sekcija }) 
             onClick={() => { setIzgled(vrednost); postaviIzborTeme(vrednost) }}
           ><Ikona ime={ikona} />{naziv}</button>)}
         </div>
-        <div className="roditelj-sekcija">
-        <h2>Mejl obaveštenja</h2>
-        <p className="blago razmak-dole">
-          Kada dete završi kviz, na tvoju email adresu stiže obaveštenje sa rezultatom.
-        </p>
-        <label className="stiklir">
-          <input type="checkbox" checked={ukljucena} onChange={(e) => promeniEmail(e.target.checked)} />
-          Pošalji mi mejl kada dete završi kviz
-        </label>
-        </div>
+        {MEJL_RODITELJU_POSLE_KVIZA && (
+          <div className="roditelj-sekcija">
+            <h2>Mejl obaveštenja</h2>
+            <p className="blago razmak-dole">
+              Kada dete završi kviz, na tvoju email adresu stiže obaveštenje sa rezultatom.
+            </p>
+            <label className="stiklir">
+              <input type="checkbox" checked={ukljucena} onChange={(e) => promeniEmail(e.target.checked)} />
+              Pošalji mi mejl kada dete završi kviz
+            </label>
+          </div>
+        )}
         <div className="podesavanja-push razmak-gore">
           <h2>Obaveštenja na uređaju</h2>
           <p className="blago razmak-dole">
             Uključi sistemsko obaveštenje kada dete završi kviz. Podešavanje važi samo
             za ovaj pregledač ili instaliranu aplikaciju.
+            {!MEJL_RODITELJU_POSLE_KVIZA && ' Obaveštenja stižu kao push i u aplikaciji.'}
           </p>
           <PushKontrole />
         </div>
+        <BrisanjeNaloga />
         <div className="roditelj-sekcija"><h2>Nalog</h2><button className="dugme dugme--senka" onClick={() => void odjavi()}>Odjavi se</button></div>
       </section>
       )}

@@ -297,6 +297,7 @@ export interface AdminPodesavanja {
   user_id: string
   email_notifications: boolean
   is_platform_owner: boolean
+  terms_accepted_at: string | null
 }
 
 export interface ProfilDeteta {
