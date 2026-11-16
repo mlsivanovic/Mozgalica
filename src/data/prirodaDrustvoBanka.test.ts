@@ -86,6 +86,12 @@ describe('dopunska banka prirode i društva', () => {
       const tvrdnje = banka.filter((p) => p.topicSlug === slug && p.type === 'truefalse')
       expect(new Set(tvrdnje.map((p) => (p.correct as { value: boolean }).value)).size).toBe(2)
     }
+    const rasporediDesno = new Set(banka.filter((p) => p.type === 'matching').map((p) => {
+      const { right } = p.options as MatchingOpcije
+      return right.map((o) => o.id).join(',')
+    }))
+    expect(rasporediDesno.size).toBeGreaterThan(5)
+    expect(rasporediDesno.has('r0,r1,r2,r3')).toBe(false)
   })
 
   it('uvoz bira administratorskog vlasnika, radi rollback i ne prepisuje postojeća pitanja', () => {

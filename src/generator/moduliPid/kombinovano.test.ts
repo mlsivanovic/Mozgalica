@@ -41,4 +41,19 @@ describe('konačni fond generatora za kombinovanu prirodu i društvo', () => {
     expect(rez.kljucevi).toContain(svi.at(-1)!.signature)
     expect(new Set(rez.kljucevi).size).toBe(2)
   })
+
+  it('u okviru istog kviza ne ponavlja istu činjenicu u drugom obliku dok ima neiskorišćenih', () => {
+    for (const oblast of PID_PODACI) {
+      for (const seed of [1, 7, 42, 99]) {
+        const rez = generisiPidZaKombinovani({
+          topicSlug: oblast.slug, difficulty: 5, count: oblast.cinjenice.length,
+          type: 'auto', wordProblems: false, allowRepeats: false, seed,
+        })
+        const cinjenice = rez.questions
+          .filter((p) => p.type === 'single' || p.type === 'truefalse')
+          .map((p) => p.signature.split(':').slice(2, 4).join(':'))
+        expect(new Set(cinjenice).size, `${oblast.slug}:${seed}`).toBe(cinjenice.length)
+      }
+    }
+  })
 })
