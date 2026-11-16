@@ -79,7 +79,7 @@ const PRICE: Prica[] = [
   },
   {
     id: 'anja-bara', tekst: 'Anja je posle kiše skakala u barice na stazi. Čizme su joj bile žute i visoke. Na kraju je sela na klupu da se odmori.',
-    ko: 'Anja', gde: ['na stazi', 'stazi'], predmetPitanje: 'Koje je boje bile čizme?', predmet: ['žute', 'žuta'],
+    ko: 'Anja', gde: ['na stazi', 'stazi'], predmetPitanje: 'Koje su boje bile čizme?', predmet: ['žute', 'žuta'],
     krajPitanje: 'Šta je Anja uradila na kraju?', kraj: ['sela na klupu', 'sela se da se odmori', 'odmorila se na klupi'],
     krajObjasnjenje: 'Anja je sela na klupu da se odmori.',
   },
