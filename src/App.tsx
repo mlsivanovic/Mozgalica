@@ -54,6 +54,7 @@ function App() {
             <Route element={<VezbanjeSekcija />}>
               <Route path="vezbanje" element={<Vezbanje />} />
               <Route path="vezbanje/rasporedi" element={<Rasporedi />} />
+              <Route path="sah" element={<Sah />} />
               <Route path="pitanja" element={<PitanjaSekcija />}>
                 <Route index element={<PitanjaLista />} />
                 <Route path="generator" element={<Generator />} />
@@ -64,7 +65,6 @@ function App() {
             <Route path="zadaj" element={<Zadaj />} />
             <Route path="kvizovi/novi" element={<RoditeljskoPreusmerenje to="/admin/zadaj" />} />
             <Route path="kvizovi/:id" element={<KvizDetalj />} />
-            <Route path="sah" element={<Sah />} />
             <Route path="napredak" element={<NapredakSekcija />}>
               <Route index element={<Napredak />} />
               <Route path="rezultati" element={<Rezultati />} />

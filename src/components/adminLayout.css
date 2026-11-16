@@ -399,3 +399,12 @@ body:has(.roditeljski-okvir) > .toast-omot .dugme { min-height: 48px; font-size:
 .roditeljski-okvir .prodavnica-kupovina-akcije:has(button + button) { grid-template-columns: 1.7fr 1fr; }
 .roditeljski-okvir .prodavnica-kupovina-akcije .dugme { white-space: nowrap; padding-inline: 12px; }
 .roditeljski-okvir .generator-strana > .zaglavlje-strane:has(+ .roditelj-koraci) { display: none; }
+
+/* Kartica „Prvi koraci“: oznaka u fiksnoj koloni, tekst se prelama pored nje. */
+.prvi-koraci h2 { margin: 0; }
+.prvi-koraci-lista { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 10px; }
+.prvi-koraci-lista li { display: grid; grid-template-columns: 22px 1fr; align-items: center; gap: 4px 10px; }
+.prvi-koraci-lista li > .dugme { grid-column: 2; justify-self: start; }
+.prvi-koraci-oznaka { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--boja-ivica); color: var(--boja-uspeh); }
+.prvi-koraci-lista li.gotovo .prvi-koraci-oznaka { border: 0; }
+.prvi-koraci-lista li.gotovo a { color: var(--boja-tekst-blagi); text-decoration: line-through; }

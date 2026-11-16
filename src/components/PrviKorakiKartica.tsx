@@ -60,15 +60,15 @@ export function PrviKorakiKartica({ podaci }: { podaci: RoditeljskiPregled }) {
 
   return (
     <section className="kartica razmak-dole prvi-koraci" aria-label="Prvi koraci">
-      <div className="red">
+      <div className="red red--razmak">
         <h2>Prvi koraci</h2>
         <button type="button" className="dugme dugme--senka dugme--malo" onClick={sakrij}>Sakrij</button>
       </div>
       <ol className="prvi-koraci-lista">
         {stavke.map((stavka) => (
-          <li key={stavka.id} className="red">
-            <span aria-hidden="true">{stavka.gotovo ? <Ikona ime="gotovo" velicina={18} /> : '○'}</span>
-            <Link to={stavka.putanja} className={stavka.gotovo ? 'malo blago' : undefined}>
+          <li key={stavka.id} className={stavka.gotovo ? 'gotovo' : undefined}>
+            <span className="prvi-koraci-oznaka" aria-hidden="true">{stavka.gotovo ? <Ikona ime="gotovo" velicina={18} /> : null}</span>
+            <Link to={stavka.putanja}>
               {stavka.naslov}
             </Link>
             {stavka.id === 'link' && !stavka.gotovo && (

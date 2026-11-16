@@ -10,7 +10,7 @@ import {
   sacuvajNivoeTitula, sacuvajProfilDeteta, sacuvajSahNagrade, sacuvajStavkeProdavnice,
   ucitajJavniProfil, ucitajPodesavanja, ucitajSahNagrade, type KupovinaAdminPrikaz,
 } from '../../lib/api'
-import { useRoditelj } from '../../lib/roditelj'
+import { RoditeljskiLink as Link, useRoditelj } from '../../lib/roditelj'
 import { useAuth } from '../../lib/auth'
 import { MEJL_DETETU_ZA_NOVI_KVIZ, MEJL_RODITELJU_POSLE_KVIZA } from '../../lib/funkcije'
 import { BrisanjeNaloga } from '../../components/BrisanjeNaloga'
@@ -1395,7 +1395,10 @@ export function Podesavanja({ sekcija = 'obavestenja' }: { sekcija?: Sekcija }) 
         id="podesavanja-panel-obavestenja" className="kartica podesavanja-panel"
         aria-label="obavestenja"
       >
-        <h2>Izgled</h2>
+        <h2>Deca</h2>
+        <p className="blago razmak-dole">Profili, linkovi i QR kodovi za decu.</p>
+        <Link to="/admin/deca" className="dugme dugme--senka"><Ikona ime="deca" />Upravljaj decom</Link>
+        <h2 className="razmak-gore">Izgled</h2>
         <p className="blago razmak-dole">Izaberi temu ili prepusti aplikaciji da prati podešavanje telefona.</p>
         <div className="podesavanja-tema" role="radiogroup" aria-label="Tema aplikacije">
           {([['sistem','izgled','Sistem'],['svetla','svetla','Svetla'],['tamna','tamna','Tamna']] as const).map(([vrednost,ikona,naziv]) => <button
@@ -1425,8 +1428,15 @@ export function Podesavanja({ sekcija = 'obavestenja' }: { sekcija?: Sekcija }) 
           </p>
           <PushKontrole />
         </div>
+        <div className="roditelj-sekcija">
+          <h2>Privatnost i uslovi</h2>
+          <div className="red">
+            <Link to="/privatnost" className="dugme dugme--senka">Politika privatnosti</Link>
+            <Link to="/uslovi" className="dugme dugme--senka">Uslovi korišćenja</Link>
+          </div>
+        </div>
+        <div className="roditelj-sekcija"><h2>Nalog</h2><button className="dugme dugme--senka" onClick={() => void odjavi()}><Ikona ime="odjava" />Odjavi se</button></div>
         <BrisanjeNaloga />
-        <div className="roditelj-sekcija"><h2>Nalog</h2><button className="dugme dugme--senka" onClick={() => void odjavi()}>Odjavi se</button></div>
       </section>
       )}
     </div>

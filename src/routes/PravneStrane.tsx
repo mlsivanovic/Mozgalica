@@ -2,15 +2,19 @@
 // Sadržaj se oslanja na to šta aplikacija stvarno radi (šema baze, Edge funkcije, obaveštenja).
 import { Link } from 'react-router-dom'
 import { DATUM_IZMENE, KONTAKT_EMAIL, RUKOVALAC } from '../lib/pravno'
+import { useAuth } from '../lib/auth'
 
 function Okvir({ naslov, children }: { naslov: string; children: React.ReactNode }) {
+  const { session } = useAuth()
   return (
     <div className="sadrzaj sadrzaj--usko pravna-strana">
       <div className="kartica">
         <h1>{naslov}</h1>
         <p className="malo blago razmak-dole">Poslednja izmena: {DATUM_IZMENE}</p>
         {children}
-        <p className="razmak-gore"><Link to="/prijava">Nazad na prijavu</Link></p>
+        <p className="razmak-gore">{session
+          ? <Link to="/admin/podesavanja">Nazad na podešavanja</Link>
+          : <Link to="/prijava">Nazad na prijavu</Link>}</p>
       </div>
     </div>
   )
