@@ -1,8 +1,9 @@
 // Prijava administratora: lozinka (primarno) ili magic link (sekundarno —
 // Supabase besplatni SMTP šalje svega par mejlova na sat)
 import { useState, type FormEvent } from 'react'
-import { Navigate } from 'react-router-dom'
+import { Link, Navigate } from 'react-router-dom'
 import { useAuth } from '../../lib/auth'
+import { uzmiPorukuPosleBrisanja } from '../../lib/nalog'
 import { backendPodesen } from '../../lib/supabase'
 import { Maskota } from '../../components/Maskota'
 
@@ -12,7 +13,7 @@ export function Prijava() {
   const [email, setEmail] = useState('')
   const [lozinka, setLozinka] = useState('')
   const [greska, setGreska] = useState<string | null>(null)
-  const [info, setInfo] = useState<string | null>(null)
+  const [info, setInfo] = useState<string | null>(() => uzmiPorukuPosleBrisanja())
   const [radi, setRadi] = useState(false)
 
   if (session) return <Navigate to="/admin" replace />
@@ -91,6 +92,10 @@ export function Prijava() {
           >
             {nacin === 'lozinka' ? 'Prijava magic linkom umesto lozinke' : 'Prijava lozinkom'}
           </button>
+        </p>
+
+        <p className="malo blago centar razmak-gore">
+          <Link to="/privatnost">Politika privatnosti</Link> · <Link to="/uslovi">Uslovi korišćenja</Link>
         </p>
       </div>
     </div>

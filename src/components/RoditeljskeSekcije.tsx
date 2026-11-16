@@ -12,12 +12,14 @@ export function RoditeljTabovi({ naziv, tabovi, aktivan }: { naziv: string; tabo
 
 export function VezbanjeSekcija() {
   const { pathname } = useLocation()
-  const izbor = pathname.includes('/rasporedi') ? 'rasporedi' : /pitanja|generator/.test(pathname) ? 'pitanja' : 'zadaci'
+  const izbor = pathname.includes('/rasporedi') ? 'rasporedi' : pathname.endsWith('/sah') ? 'sah'
+    : /pitanja|generator/.test(pathname) ? 'pitanja' : 'zadaci'
   return <>
     <h1 className="sr-only">Zadaci</h1>
     <RoditeljTabovi naziv="Zadaci" aktivan={izbor} tabovi={[
       { id: 'zadaci', to: '/admin/vezbanje', naziv: 'Aktivni' },
       { id: 'rasporedi', to: '/admin/vezbanje/rasporedi', naziv: 'Rasporedi' },
+      { id: 'sah', to: '/admin/sah', naziv: 'Šah' },
       { id: 'pitanja', to: '/admin/pitanja', naziv: 'Pitanja' },
     ]} />
     <Outlet />

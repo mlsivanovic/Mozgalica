@@ -90,6 +90,7 @@ export function RasporedCasova() {
       )}
       {!radi && deteId && korak === 'urednik' && unos && (
         <Urednik
+          key={deteId}
           childId={deteId}
           ime={profili.find((p) => p.id === deteId)?.name ?? 'dete'}
           unos={unos}
@@ -213,21 +214,44 @@ function Urednik({
   onGreska: (poruka: string | null) => void
 }) {
   const { profili } = useRoditelj()
-  const [smenaPrikaz, setSmenaPrikaz] = useState<SmenaCasova>(unos.defaultShift)
+  const [smenaPrikaz, setSmenaPrikaz] = useState<SmenaCasova>(pregled?.thisWeekShift ?? unos.defaultShift)
   const [celija, setCelija] = useState<{ weekday: number; periodNo: number } | null>(null)
   const [kopijaNa, setKopijaNa] = useState('')
   const [radi, setRadi] = useState(false)
   const [prikaz, setPrikaz] = useState<'mreza' | 'dete'>('mreza')
+  const [poruka, setPoruka] = useState<string | null>(null)
   const dani = unos.includeSaturday ? [1, 2, 3, 4, 5, 6] : [1, 2, 3, 4, 5]
   const periodi = smenaPrikaz === 'afternoon' ? unos.afternoonPeriods : unos.morningPeriods
   const boje = mapaBojaPredmeta(unos.slots.map((s) => s.subject))
+  const brojPrepodne = unos.sharedSlots ? unos.slots.length : unos.slots.filter((s) => s.shift === 'morning').length
+  const brojPopodne = unos.sharedSlots ? unos.slots.length : unos.slots.filter((s) => s.shift === 'afternoon').length
+  const praznaSmena: SmenaCasova | null = !unos.sharedSlots && unos.rotationMode === 'alternating'
+    ? (brojPrepodne > 0 && brojPopodne === 0 ? 'afternoon' : brojPopodne > 0 && brojPrepodne === 0 ? 'morning' : null)
+    : null
 
   async function sacuvaj(sledeci = unos) {
-    setRadi(true); onGreska(null)
+    setRadi(true); onGreska(null); setPoruka(null)
     const data = await sacuvajRasporedCasova(childId, sledeci)
     setRadi(false)
     if (!data.ok) { onGreska(data.error ?? 'Čuvanje nije uspelo.'); return }
     onSacuvano(data)
+  }
+
+  function kopirajIzDrugeSmene(ciljnaSmena: SmenaCasova) {
+    const izvornaSmena: SmenaCasova = ciljnaSmena === 'afternoon' ? 'morning' : 'afternoon'
+    const ciljniPeriodi = new Set(
+      (ciljnaSmena === 'afternoon' ? unos.afternoonPeriods : unos.morningPeriods).map((p) => p.periodNo),
+    )
+    const kopirani = unos.slots
+      .filter((s) => s.shift === izvornaSmena && ciljniPeriodi.has(s.periodNo))
+      .map((s) => ({ ...s, shift: ciljnaSmena }))
+    const sledeci: RasporedCasovaUnos = {
+      ...unos,
+      slots: [...unos.slots.filter((s) => s.shift !== ciljnaSmena), ...kopirani],
+    }
+    onUnos(sledeci)
+    setSmenaPrikaz(ciljnaSmena)
+    void sacuvaj(sledeci)
   }
 
   function slotNa(weekday: number, periodNo: number) {
@@ -281,7 +305,10 @@ function Urednik({
                   const druga = pregled.thisWeekShift === 'morning' ? 'afternoon' : 'morning'
                   void postaviSmenuNedelje(childId, pregled.weekMonday!, druga).then((data) => {
                     if (!data.ok) onGreska(data.error ?? 'Smena nije promenjena.')
-                    else onSacuvano(data)
+                    else {
+                      setSmenaPrikaz(druga)
+                      onSacuvano(data)
+                    }
                   })
                 }}
               >
@@ -291,6 +318,27 @@ function Urednik({
           )}
         </p>
       )}
+      {praznaSmena && (
+        <div className="poruka poruka--upozorenje" role="status">
+          {pregled?.thisWeekShift === praznaSmena
+            ? `U smeni ${nazivSmene(praznaSmena).toLowerCase()} (aktivna ove nedelje) nema unetih časova — dete trenutno ne vidi raspored.`
+            : `U smeni ${nazivSmene(praznaSmena).toLowerCase()} nema unetih časova, pa dete u toj nedelji neće videti raspored.`}{' '}
+          {smenaPrikaz !== praznaSmena && (
+            <button type="button" className="dugme dugme--senka dugme--malo" onClick={() => { setPrikaz('mreza'); setSmenaPrikaz(praznaSmena) }}>
+              Otvori smenu {nazivSmene(praznaSmena).toLowerCase()}
+            </button>
+          )}{' '}
+          <button
+            type="button"
+            className="dugme dugme--senka dugme--malo"
+            disabled={radi}
+            onClick={() => kopirajIzDrugeSmene(praznaSmena)}
+          >
+            Prekopiraj iz {praznaSmena === 'afternoon' ? 'prepodnevne' : 'popodnevne'} smene
+          </button>
+        </div>
+      )}
+      {poruka && <p className="poruka poruka--uspeh" role="status">{poruka}</p>}
 
       {pregled?.exists && <RasporedIzvoz raspored={pregled} />}
       {prikaz === 'dete' && pregled?.exists
@@ -298,8 +346,12 @@ function Urednik({
         : (
           <>
             <div className="raspored-izbor razmak-dole">
-              <button type="button" aria-pressed={smenaPrikaz === 'morning'} onClick={() => setSmenaPrikaz('morning')}>Prepodne</button>
-              <button type="button" aria-pressed={smenaPrikaz === 'afternoon'} onClick={() => setSmenaPrikaz('afternoon')}>Popodne</button>
+              <button type="button" aria-pressed={smenaPrikaz === 'morning'} onClick={() => setSmenaPrikaz('morning')}>
+                Prepodne{!unos.sharedSlots && unos.rotationMode === 'alternating' ? ` (${brojPrepodne})` : ''}
+              </button>
+              <button type="button" aria-pressed={smenaPrikaz === 'afternoon'} onClick={() => setSmenaPrikaz('afternoon')}>
+                Popodne{!unos.sharedSlots && unos.rotationMode === 'alternating' ? ` (${brojPopodne})` : ''}
+              </button>
             </div>
             <details className="kartica razmak-dole">
               <summary>Satnica i pretčas</summary>
@@ -373,8 +425,14 @@ function Urednik({
               className="dugme dugme--senka"
               disabled={!kopijaNa || radi}
               onClick={() => {
+                const cilj = profili.find((p) => p.id === kopijaNa)?.name
+                onGreska(null); setPoruka(null)
                 void kopirajRasporedCasova(childId, kopijaNa).then((data) => {
                   if (!data.ok) onGreska(data.error ?? 'Kopiranje nije uspelo.')
+                  else {
+                    setKopijaNa('')
+                    setPoruka(cilj ? `Raspored je kopiran na ${cilj}.` : 'Raspored je kopiran.')
+                  }
                 })
               }}
             >

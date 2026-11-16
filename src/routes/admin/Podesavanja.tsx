@@ -10,8 +10,10 @@ import {
   sacuvajNivoeTitula, sacuvajProfilDeteta, sacuvajSahNagrade, sacuvajStavkeProdavnice,
   ucitajJavniProfil, ucitajPodesavanja, ucitajSahNagrade, type KupovinaAdminPrikaz,
 } from '../../lib/api'
-import { useRoditelj } from '../../lib/roditelj'
+import { RoditeljskiLink as Link, useRoditelj } from '../../lib/roditelj'
 import { useAuth } from '../../lib/auth'
+import { MEJL_DETETU_ZA_NOVI_KVIZ, MEJL_DETETU_ZA_NOVU_PARTIJU, MEJL_RODITELJU_POSLE_KVIZA } from '../../lib/funkcije'
+import { BrisanjeNaloga } from '../../components/BrisanjeNaloga'
 import { emailJeIspravan, normalizujEmail } from '../../lib/email'
 import { formatDatum, formatProcenat } from '../../lib/format'
 import { validirajSahNagrade } from '../../sah/nagrade'
@@ -680,28 +682,28 @@ export function Podesavanja({ sekcija = 'obavestenja' }: { sekcija?: Sekcija }) 
           <p className="blago razmak-gore">Još nema profila. Dodaj dete da dobije svoj link, kvizove i nagrade.</p>
         )}
 
-        <div className="mreza-kartica razmak-gore">
+        <div className="mreza-kartica profili-mreza razmak-gore">
           {profili.map((profil) => {
             const pregled = preglediProfila[profil.id]
             const istorija = pregled?.history ?? []
 
             return (
               <article key={profil.id} className="kartica profil-admin-kartica">
-                <div className="red">
-                  <span aria-hidden="true" style={{ fontSize: '2.2rem' }}>{profil.avatar}</span>
-                  <div>
+                <div className="profil-admin-zaglavlje">
+                  <span className="profil-admin-avatar" aria-hidden="true">{profil.avatar}</span>
+                  <div className="profil-admin-identitet">
                     <h3>{profil.name}</h3>
                     <p className="malo blago">
                       {profil.birth_date
                         ? `Rođen/a ${new Date(`${profil.birth_date}T12:00:00`).toLocaleDateString('sr-Latn-RS')}`
                         : 'Datum rođenja nije unet'}
                     </p>
-                    <p className="malo blago">
+                    <p className="malo blago profil-admin-email">
                       {profil.email ?? 'Email adresa nije uneta'}
                     </p>
                   </div>
                 </div>
-                <div className="red razmak-gore">
+                <div className="red razmak-gore profil-admin-bedzevi">
                   <span className="bedz" title="Doživotne zvezdice — hrane titulu">
                     ⭐ {pregled?.totalStars ?? 0} zvezdica
                   </span>
@@ -713,7 +715,7 @@ export function Podesavanja({ sekcija = 'obavestenja' }: { sekcija?: Sekcija }) 
                       📝 {pregled?.activeQuizzes?.length} aktivno
                     </span>
                   )}
-                  <span className="bedz bedz--neutral" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <span className="bedz bedz--neutral profil-admin-titula-bedz">
                     {pregled?.currentTitle && (
                       <TitleAvatar
                         name={pregled.currentTitle.name}
@@ -721,10 +723,10 @@ export function Podesavanja({ sekcija = 'obavestenja' }: { sekcija?: Sekcija }) 
                         size={22}
                       />
                     )}
-                    Titula: {pregled?.currentTitle?.name ?? '—'}
+                    <span>Titula: {pregled?.currentTitle?.name ?? '—'}</span>
                   </span>
                 </div>
-                <div className="red razmak-gore">
+                <div className="red razmak-gore profil-admin-akcije">
                   <button type="button" className="dugme dugme--senka dugme--malo" onClick={() => urediProfil(profil)}>
                     Uredi
                   </button>
@@ -745,7 +747,7 @@ export function Podesavanja({ sekcija = 'obavestenja' }: { sekcija?: Sekcija }) 
                     vrednost={profilniLink(BAZA_URL, profil.public_token)}
                     oznaka={`QR kod profilnog linka za ${profil.name}`}
                   />
-                  <p className="malo blago">Skeniraj kod u dečjoj aplikaciji. To je isti link kao na dugmetu.</p>
+                  <p className="malo blago">Skeniraj u dečjoj aplikaciji (isti link).</p>
                 </div>
                 <details className="profil-admin-istorija">
                   <summary>
@@ -802,6 +804,7 @@ export function Podesavanja({ sekcija = 'obavestenja' }: { sekcija?: Sekcija }) 
                   value={forma.birth_date} onChange={(e) => setForma({ ...forma, birth_date: e.target.value })}
                 />
               </div>
+              {(MEJL_DETETU_ZA_NOVI_KVIZ || MEJL_DETETU_ZA_NOVU_PARTIJU) && (
               <div className="polje">
                 <label htmlFor="pd-email">Email deteta (opciono)</label>
                 <input
@@ -811,21 +814,24 @@ export function Podesavanja({ sekcija = 'obavestenja' }: { sekcija?: Sekcija }) 
                   onChange={(e) => setForma({ ...forma, email: e.target.value })}
                 />
                 <p className="malo blago">
-                  Adresa je vidljiva samo administratoru i koristi se za nove kvizove.
+                  Adresa je vidljiva samo administratoru i koristi se za mejl o novim kvizovima i partijama.
                 </p>
               </div>
-              <label className="stiklir">
-                <input
-                  type="checkbox"
-                  checked={forma.notify_new_quiz_email}
-                  disabled={!forma.email.trim()}
-                  onChange={(e) => setForma({
-                    ...forma,
-                    notify_new_quiz_email: e.target.checked,
-                  })}
-                />
-                Podrazumevano pošalji mejl kada se dodeli novi kviz
-              </label>
+              )}
+              {MEJL_DETETU_ZA_NOVI_KVIZ && (
+                <label className="stiklir">
+                  <input
+                    type="checkbox"
+                    checked={forma.notify_new_quiz_email}
+                    disabled={!forma.email.trim()}
+                    onChange={(e) => setForma({
+                      ...forma,
+                      notify_new_quiz_email: e.target.checked,
+                    })}
+                  />
+                  Podrazumevano pošalji mejl kada se dodeli novi kviz
+                </label>
+              )}
               <fieldset className="polje" style={{ border: 0 }}>
                 <legend style={{ fontWeight: 700 }}>Avatar</legend>
                 <div className="red" style={{ marginTop: '0.4rem' }}>
@@ -1389,7 +1395,10 @@ export function Podesavanja({ sekcija = 'obavestenja' }: { sekcija?: Sekcija }) 
         id="podesavanja-panel-obavestenja" className="kartica podesavanja-panel"
         aria-label="obavestenja"
       >
-        <h2>Izgled</h2>
+        <h2>Deca</h2>
+        <p className="blago razmak-dole">Profili, linkovi i QR kodovi za decu.</p>
+        <Link to="/admin/deca" className="dugme dugme--senka"><Ikona ime="deca" />Upravljaj decom</Link>
+        <h2 className="razmak-gore">Izgled</h2>
         <p className="blago razmak-dole">Izaberi temu ili prepusti aplikaciji da prati podešavanje telefona.</p>
         <div className="podesavanja-tema" role="radiogroup" aria-label="Tema aplikacije">
           {([['sistem','izgled','Sistem'],['svetla','svetla','Svetla'],['tamna','tamna','Tamna']] as const).map(([vrednost,ikona,naziv]) => <button
@@ -1398,25 +1407,36 @@ export function Podesavanja({ sekcija = 'obavestenja' }: { sekcija?: Sekcija }) 
             onClick={() => { setIzgled(vrednost); postaviIzborTeme(vrednost) }}
           ><Ikona ime={ikona} />{naziv}</button>)}
         </div>
-        <div className="roditelj-sekcija">
-        <h2>Mejl obaveštenja</h2>
-        <p className="blago razmak-dole">
-          Kada dete završi kviz, na tvoju email adresu stiže obaveštenje sa rezultatom.
-        </p>
-        <label className="stiklir">
-          <input type="checkbox" checked={ukljucena} onChange={(e) => promeniEmail(e.target.checked)} />
-          Pošalji mi mejl kada dete završi kviz
-        </label>
-        </div>
+        {MEJL_RODITELJU_POSLE_KVIZA && (
+          <div className="roditelj-sekcija">
+            <h2>Mejl obaveštenja</h2>
+            <p className="blago razmak-dole">
+              Kada dete završi kviz, na tvoju email adresu stiže obaveštenje sa rezultatom.
+            </p>
+            <label className="stiklir">
+              <input type="checkbox" checked={ukljucena} onChange={(e) => promeniEmail(e.target.checked)} />
+              Pošalji mi mejl kada dete završi kviz
+            </label>
+          </div>
+        )}
         <div className="podesavanja-push razmak-gore">
           <h2>Obaveštenja na uređaju</h2>
           <p className="blago razmak-dole">
             Uključi sistemsko obaveštenje kada dete završi kviz. Podešavanje važi samo
             za ovaj pregledač ili instaliranu aplikaciju.
+            {!MEJL_RODITELJU_POSLE_KVIZA && ' Obaveštenja stižu kao push i u aplikaciji.'}
           </p>
           <PushKontrole />
         </div>
-        <div className="roditelj-sekcija"><h2>Nalog</h2><button className="dugme dugme--senka" onClick={() => void odjavi()}>Odjavi se</button></div>
+        <div className="roditelj-sekcija">
+          <h2>Privatnost i uslovi</h2>
+          <div className="red">
+            <Link to="/privatnost" className="dugme dugme--senka">Politika privatnosti</Link>
+            <Link to="/uslovi" className="dugme dugme--senka">Uslovi korišćenja</Link>
+          </div>
+        </div>
+        <div className="roditelj-sekcija"><h2>Nalog</h2><button className="dugme dugme--senka" onClick={() => void odjavi()}><Ikona ime="odjava" />Odjavi se</button></div>
+        <BrisanjeNaloga />
       </section>
       )}
     </div>

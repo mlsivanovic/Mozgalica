@@ -6,6 +6,7 @@ import { KvizForma } from './KvizForma'
 import { SAH_ELO_NIVOI, SAH_SATOVI } from '../../sah/podesavanja'
 import type { SahBoja } from '../../types/db'
 import { Ikona } from '../../components/Ikona'
+import { MEJL_DETETU_ZA_NOVU_PARTIJU } from '../../lib/funkcije'
 export function Zadaj() {
   const { deteId,profili } = useRoditelj()
   const [params] = useSearchParams()
@@ -48,12 +49,12 @@ function DodelaSaha({ deteId,onNazad }: { deteId:string; onNazad:()=>void }) {
   const zahtev = useRef(crypto.randomUUID())
   const zauzeto = useRef(false)
   async function sacuvaj() {if(zauzeto.current || !dete) return; zauzeto.current = true; setRadi(true);setZapoceto(true);setGreska(null)
-    try {await dodeliSahPartiju({childProfileId:deteId, approximateElo:elo, childColor:boja, clockSeconds:sat ? Number(sat) as 300|600|900|1800 : null, sendEmail:email && !!dete.email, idempotencyKey:zahtev.current}); navigate(`/admin/vezbanje?dete=${deteId}`)}
+    try {await dodeliSahPartiju({childProfileId:deteId, approximateElo:elo, childColor:boja, clockSeconds:sat ? Number(sat) as 300|600|900|1800 : null, sendEmail:MEJL_DETETU_ZA_NOVU_PARTIJU && email && !!dete.email, idempotencyKey:zahtev.current}); navigate(`/admin/vezbanje?dete=${deteId}`)}
     catch(e) {setGreska((e as Error).message)} finally {zauzeto.current = false; setRadi(false)} }
   return <><ol className="roditelj-koraci"><li>Dete i aktivnost</li><li aria-current={!potvrda ? 'step' : undefined}>Sadržaj</li><li aria-current={potvrda ? 'step' : undefined}>Potvrda</li></ol>
     <div className="kartica"><h2>{potvrda ? 'Pregled pre potvrde' : 'Postavke šaha'}</h2><p className="razmak-gore razmak-dole">Za: <strong>{dete?.name}</strong></p>
       {potvrda ? <p>ELO {elo} · {boja === 'white' ? 'bele figure' : 'crne figure'} · {sat ? `${Number(sat)/60} minuta` : 'bez sata'}</p> : <><div className="polje"><label htmlFor="dodela-elo">Težina protivnika (približni ELO)</label><select id="dodela-elo" value={elo} onChange={e => setElo(Number(e.target.value) as typeof elo)}>{SAH_ELO_NIVOI.map(x=><option key={x} value={x}>{x}</option>)}</select></div><div className="polje"><label htmlFor="dodela-boja">Figure deteta</label><select id="dodela-boja" value={boja} onChange={e=>setBoja(e.target.value as SahBoja)}><option value="white">Bele</option><option value="black">Crne</option></select></div><div className="polje"><label htmlFor="dodela-sat">Vreme za igru</label><select id="dodela-sat" value={sat} onChange={e=>setSat(e.target.value)}>{SAH_SATOVI.map(x=><option key={x.value} value={x.value}>{x.label}</option>)}</select></div></>}
-      <p className="malo blago razmak-gore">Partija se pojavljuje na profilu deteta. Push stiže na povezane uređaje.</p><label className="stiklir"><input type="checkbox" checked={email} disabled={!dete?.email || zapoceto} onChange={e=>setEmail(e.target.checked)} />Pošalji i mejl{!dete?.email ? ' (email nije unet)' : ''}</label>
+      <p className="malo blago razmak-gore">Partija se pojavljuje na profilu deteta. Push stiže na povezane uređaje.</p>{MEJL_DETETU_ZA_NOVU_PARTIJU && <label className="stiklir"><input type="checkbox" checked={email} disabled={!dete?.email || zapoceto} onChange={e=>setEmail(e.target.checked)} />Pošalji i mejl{!dete?.email ? ' (email nije unet)' : ''}</label>}
     </div>{greska && <p role="alert" className="poruka poruka--greska">{greska}</p>}
     <div className="roditelj-radnje roditelj-donja-akcija"><button className="dugme dugme--senka" disabled={zapoceto} onClick={() => potvrda ? setPotvrda(false) : onNazad()}>← Nazad</button>{potvrda ? <button className="dugme dugme--akcenat" disabled={radi} onClick={() => void sacuvaj()}>{radi ? 'Dodeljujem…' : zapoceto ? 'Pokušaj ponovo' : 'Dodeli partiju'}</button> : <button className="dugme dugme--akcenat" onClick={()=>setPotvrda(true)}>Pregled i potvrda →</button>}</div>
   </>

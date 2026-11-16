@@ -12,6 +12,10 @@ import {
   type Tezina,
 } from '../../types/db'
 import { predmetImaTezinu, razrediPredmeta } from '../../lib/predmet'
+import { useAuth } from '../../lib/auth'
+import {
+  filtrirajPoVlasnistvu, idsZaBrisanje, jeZajednicko, mozeDaMenja, type FilterVlasnistva,
+} from '../../lib/zajednickaBanka'
 import { napraviCsv, preuzmiCsv } from '../../lib/csv'
 import { PitanjeForma } from './PitanjeForma'
 import { UvozCsv } from './UvozCsv'
@@ -27,7 +31,10 @@ export function PitanjaLista() {
   const [ucitava, setUcitava] = useState(true)
   const [greska, setGreska] = useState<string | null>(null)
   const [oblasti, setOblasti] = useState<Oblast[]>([])
-  const [pitanja, setPitanja] = useState<Pitanje[]>([])
+  const [svaPitanja, setSvaPitanja] = useState<Pitanje[]>([])
+  const { session } = useAuth()
+  const userId = session?.user.id ?? null
+  const [filterVlasnistva, setFilterVlasnistva] = useState<FilterVlasnistva>('sva')
   const [kvizovi, setKvizovi] = useState<Kviz[]>([])
   // Predmet je uvek aktivan tab, pa se pitanja različitih predmeta ne mešaju.
   const [predmet, setPredmet] = useState<Predmet>('matematika')
@@ -63,7 +70,7 @@ export function PitanjaLista() {
         listajKvizove(),
       ])
       setOblasti(o)
-      setPitanja(p)
+      setSvaPitanja(p)
       setKvizovi(k)
       setIzabrana([])
     } catch (e) {
@@ -74,6 +81,16 @@ export function PitanjaLista() {
   }
 
   useEffect(() => { ucitaj() }, [predmet, razred, filterOblast, filterTip, filterTezina, filterIzvor])
+
+  // Filter vlasništva radi nad već učitanim pitanjima, pa se ne šalje upitu baze.
+  const pitanja = useMemo(
+    () => filtrirajPoVlasnistvu(svaPitanja, filterVlasnistva, userId),
+    [svaPitanja, filterVlasnistva, userId],
+  )
+  const zaBrisanje = useMemo(
+    () => idsZaBrisanje(svaPitanja, izabrana, userId),
+    [svaPitanja, izabrana, userId],
+  )
 
   function promeniPredmet(p: Predmet) {
     setPredmet(p)
@@ -162,11 +179,12 @@ export function PitanjaLista() {
   }
 
   async function obrisiIzabrana() {
-    if (!confirm(`Obrisati ${izabrana.length} izabranih pitanja? Ova radnja se ne može poništiti.`)) return
+    if (zaBrisanje.length === 0) return
+    if (!confirm(`Obrisati ${zaBrisanje.length} izabranih pitanja? Ova radnja se ne može poništiti.`)) return
     setGreska(null)
     setRadiBulk(true)
     try {
-      await obrisiPitanja(izabrana)
+      await obrisiPitanja(zaBrisanje)
       await ucitaj()
     } catch (e) {
       setGreska(String((e as Error).message ?? e))
@@ -314,7 +332,7 @@ export function PitanjaLista() {
               📥 Izvezi u CSV ({pitanja.length})
             </button>
           )}
-          {predmet === 'matematika' && pitanja.length === 0 && (
+          {predmet === 'matematika' && svaPitanja.length === 0 && (
             <button type="button" className="dugme dugme--senka" onClick={ucitajPocetna}>
               Učitaj početna pitanja
             </button>
@@ -365,6 +383,17 @@ export function PitanjaLista() {
               </select>
             </div>
           )}
+          <div className="polje">
+            <label htmlFor="f-vlasnistvo">Banka</label>
+            <select
+              id="f-vlasnistvo" value={filterVlasnistva}
+              onChange={(e) => { setFilterVlasnistva(e.target.value as FilterVlasnistva); setIzabrana([]) }}
+            >
+              <option value="sva">Sva pitanja</option>
+              <option value="moja">Moja</option>
+              <option value="zajednicka">Zajednička banka</option>
+            </select>
+          </div>
           <div className="polje">
             <label htmlFor="f-izvor">Izvor</label>
             <select id="f-izvor" value={filterIzvor} onChange={(e) => setFilterIzvor(e.target.value)}>
@@ -428,8 +457,12 @@ export function PitanjaLista() {
               >
                 Napravi novi kviz od izabranih
               </button>
-              <button type="button" className="dugme dugme--opasno dugme--malo" disabled={radiBulk} onClick={obrisiIzabrana}>
-                Obriši izabrana
+              <button
+                type="button" className="dugme dugme--opasno dugme--malo"
+                disabled={radiBulk || zaBrisanje.length === 0} onClick={obrisiIzabrana}
+                title={zaBrisanje.length === 0 ? 'Zajedničku banku može da menja samo vlasnik platforme' : undefined}
+              >
+                Obriši izabrana{zaBrisanje.length > 0 ? ` (${zaBrisanje.length})` : ''}
               </button>
             </div>
           </div>
@@ -465,14 +498,23 @@ export function PitanjaLista() {
                     <span className={`bedz ${p.source === 'generated' ? 'bedz--upozorenje' : 'bedz--neutral'}`}>
                       {p.source === 'generated' ? 'Generisano' : 'Ručno'}
                     </span>
+                    {jeZajednicko(p, userId) && (
+                      <>{' '}<span className="bedz bedz--uspeh">Zajednička banka</span></>
+                    )}
                   </td>
                   <td className="red">
-                    <button type="button" className="dugme dugme--senka dugme--malo" onClick={() => setUredjivanje(p)}>
-                      Izmeni
-                    </button>
-                    <button type="button" className="dugme dugme--opasno dugme--malo" onClick={() => obrisi(p.id)}>
-                      Obriši
-                    </button>
+                    {mozeDaMenja(p, userId) ? (
+                      <>
+                        <button type="button" className="dugme dugme--senka dugme--malo" onClick={() => setUredjivanje(p)}>
+                          Izmeni
+                        </button>
+                        <button type="button" className="dugme dugme--opasno dugme--malo" onClick={() => obrisi(p.id)}>
+                          Obriši
+                        </button>
+                      </>
+                    ) : (
+                      <span className="malo blago">Samo pregled</span>
+                    )}
                   </td>
                 </tr>
               ))}

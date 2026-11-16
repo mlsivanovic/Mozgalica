@@ -11,9 +11,9 @@ import {
   listajAdminObavestenja, oznaciAdminObavestenjaProcitanim,
 } from '../lib/api'
 import { useAuth } from '../lib/auth'
+import { PrihvatanjeUslova } from './PrihvatanjeUslova'
 import { oznaciInboxProcitanim } from '../lib/obavestenja'
 import { postaviBedzAplikacije, slusajPushPoruke } from '../lib/push'
-import { pratiSistemskuTemu, preklopiTemu, trenutnaTema } from '../lib/tema'
 import type { InboxObavestenja } from '../types/db'
 import { Loader } from './Zajednicke'
 import { ObavestenjaZvonce } from './ObavestenjaZvonce'
@@ -21,7 +21,7 @@ import { Ikona } from './Ikona'
 import './adminLayout.css'
 
 export function AdminLayout() {
-  const { session, ucitava } = useAuth()
+  const { session, ucitava, prihvacenUslovi } = useAuth()
   const [inbox, setInbox] = useState<InboxObavestenja>({ obavestenja: [], neprocitano: 0 })
 
   const osveziObavestenja = useCallback(async () => {
@@ -63,6 +63,8 @@ export function AdminLayout() {
 
   if (ucitava) return <Loader tekst="Provera prijave…" />
   if (!session) return <Navigate to="/prijava" replace />
+  if (prihvacenUslovi === null) return <Loader tekst="Provera naloga…" />
+  if (prihvacenUslovi === false) return <PrihvatanjeUslova />
 
   return <RoditeljProvider><RoditeljskiOkvir inbox={inbox} onProcitano={oznaciProcitanim} /></RoditeljProvider>
 }
@@ -206,11 +208,9 @@ export function DonjiList({ naslov, onZatvori, children }: { naslov: string; onZ
 }
 
 function MeniVise() {
-  const { odjavi } = useAuth()
+  const { odjavi, jeVlasnikPlatforme } = useAuth()
   const [otvoren, setOtvoren] = useState(false)
-  const [tema, setTema] = useState(trenutnaTema)
   const ref = useRef<HTMLDivElement>(null)
-  useEffect(() => pratiSistemskuTemu(setTema), [])
   useEffect(() => {
     if (!otvoren) return
     const van = (e: PointerEvent) => { if (!ref.current?.contains(e.target as Node)) setOtvoren(false) }
@@ -225,13 +225,8 @@ function MeniVise() {
       <Ikona ime="opcije" />
     </button>
     {otvoren && <div className="roditelj-meni-lista" role="menu">
-      <Link role="menuitem" to="/admin/raspored-casova" onClick={zatvori}><Ikona ime="raspored" />Raspored časova</Link>
-      <Link role="menuitem" to="/admin/sah" onClick={zatvori}><Ikona ime="sah" />Šahovske partije</Link>
-      <Link role="menuitem" to="/admin/deca" onClick={zatvori}><Ikona ime="deca" />Deca</Link>
-      <button role="menuitem" type="button" onClick={() => setTema(preklopiTemu())}>
-        <Ikona ime={tema === 'tamna' ? 'svetla' : 'tamna'} />{tema === 'tamna' ? 'Svetla tema' : 'Tamna tema'}
-      </button>
       <Link role="menuitem" to="/admin/podesavanja" onClick={zatvori}><Ikona ime="podesavanja" />Podešavanja</Link>
+      {jeVlasnikPlatforme && <Link role="menuitem" to="/admin/roditelji" onClick={zatvori}><Ikona ime="deca" />Roditelji</Link>}
       <hr />
       <button role="menuitem" type="button" onClick={() => { zatvori(); void odjavi() }}><Ikona ime="odjava" />Odjavi se</button>
     </div>}

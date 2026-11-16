@@ -58,7 +58,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 // Isto ograničenje kao u save_attempt_notes (server skraćuje na 2000 znakova)
-private const val MAKS_BELEZKA = 2000
+internal const val MAKS_BELEZKA = 2000
 
 data class KvizUi(
     val faza: FazaKviza = FazaKviza.ULAZ,
@@ -117,24 +117,30 @@ class KvizViewModel @Inject constructor(
     private var profilniSat: ProfilniSat? = null
     private var preostaloTekuce: Int? = null
     private var mrezniPoziv: ConnectivityManager.NetworkCallback? = null
+    private var zadnjeVremeIzmene = 0L
+    private val izmenjeniPonovni = mutableSetOf<String>()
 
     init {
         viewModelScope.launch {
             skladiste.posmatraj(token).collect { snimak ->
                 ui.update { staro ->
                     val metaStigla = snimak?.meta != null
+                    val ponovni = (snimak?.ponovniOdgovori ?: emptyMap()).toMutableMap()
+                    for (id in izmenjeniPonovni) {
+                        staro.ponovniOdgovori[id]?.let { ponovni[id] = it }
+                    }
                     staro.copy(
                         faza = snimak?.faza ?: staro.faza,
                         meta = snimak?.meta ?: staro.meta,
                         pitanja = snimak?.pitanja?.takeIf { it.isNotEmpty() } ?: staro.pitanja,
-                        stanje = snimak?.stanje ?: staro.stanje,
+                        stanje = spojiSvezijeStanje(staro.stanje, snimak?.stanje),
                         rezultat = snimak?.rezultat,
                         rezultatSkriven = snimak?.rezultatSkriven == true,
                         skriveniAccessMode = snimak?.skriveniAccessMode,
                         skriveniProfilToken = snimak?.skriveniProfilToken,
                         preostaloSavetaSaServera = snimak?.preostaloSavetaSaServera ?: staro.preostaloSavetaSaServera,
                         ponovnaPitanja = snimak?.ponovnaPitanja ?: emptyList(),
-                        ponovniOdgovori = snimak?.ponovniOdgovori ?: emptyMap(),
+                        ponovniOdgovori = ponovni,
                         ponovniIshod = snimak?.ponovniIshod,
                         ponovniZapocet = snimak?.ponovniZapocet == true,
                         ucitavaMeta = if (metaStigla) false else staro.ucitavaMeta,
@@ -147,6 +153,12 @@ class KvizViewModel @Inject constructor(
             }
         }
         viewModelScope.launch { ucitajUlaz() }
+    }
+
+    private fun sledeceVreme(najmanje: Long = 0L): Long {
+        val sledece = maxOf(System.currentTimeMillis(), zadnjeVremeIzmene + 1, najmanje + 1)
+        zadnjeVremeIzmene = sledece
+        return sledece
     }
 
     fun ime(vrednost: String) = ui.update { it.copy(ime = vrednost.take(60)) }
@@ -163,13 +175,20 @@ class KvizViewModel @Inject constructor(
 
     fun radniList(otvoren: Boolean) = ui.update { it.copy(radniList = otvoren) }
 
-    // Radni listić se upisuje odmah u Room; slanje ide kroz isti offline red kao
-    // odgovori, pa tekst preživljava prekid i bez veze.
+    // Radni listić se ažurira odmah u UI stanju i upisuje u Room; slanje ide kroz isti
+    // offline red kao odgovori, pa tekst preživljava prekid i bez veze.
     fun belezka(pitanjeId: String, tekst: String) {
+        val ograniceno = tekst.take(MAKS_BELEZKA)
+        val sada = sledeceVreme(ui.value.stanje?.belezke?.get(pitanjeId)?.changedAt ?: 0L)
+        ui.update { staro ->
+            val stanje = staro.stanje ?: return@update staro
+            staro.copy(stanje = upisiBelezkuCisto(stanje, pitanjeId, ograniceno, sada))
+        }
         viewModelScope.launch {
             skladiste.izmeni(token) { snimak ->
                 val stanje = snimak.stanje ?: return@izmeni snimak
-                snimak.copy(stanje = upisiBelezkuCisto(stanje, pitanjeId, tekst.take(MAKS_BELEZKA)))
+                if ((stanje.belezke?.get(pitanjeId)?.changedAt ?: 0L) > sada) return@izmeni snimak
+                snimak.copy(stanje = upisiBelezkuCisto(stanje, pitanjeId, ograniceno, sada))
             }
             if (!probni) KvizRad.zakazi(context, odmah = false)
         }
@@ -210,10 +229,16 @@ class KvizViewModel @Inject constructor(
     }
 
     fun odgovor(pitanjeId: String, vrednost: OdgovorDeteta) {
+        val sada = sledeceVreme(ui.value.stanje?.answers?.get(pitanjeId)?.changedAt ?: 0L)
+        ui.update { staro ->
+            val stanje = staro.stanje ?: return@update staro
+            staro.copy(stanje = upisiOdgovorCisto(stanje, pitanjeId, vrednost, sada))
+        }
         viewModelScope.launch {
             skladiste.izmeni(token) { snimak ->
                 val stanje = snimak.stanje ?: return@izmeni snimak
-                snimak.copy(stanje = upisiOdgovorCisto(stanje, pitanjeId, vrednost))
+                if ((stanje.answers[pitanjeId]?.changedAt ?: 0L) > sada) return@izmeni snimak
+                snimak.copy(stanje = upisiOdgovorCisto(stanje, pitanjeId, vrednost, sada))
             }
             if (!probni) KvizRad.zakazi(context, odmah = false)
         }
@@ -309,6 +334,8 @@ class KvizViewModel @Inject constructor(
     }
 
     fun ponovniOdgovor(pitanjeId: String, vrednost: OdgovorDeteta) {
+        izmenjeniPonovni += pitanjeId
+        ui.update { it.copy(ponovniOdgovori = it.ponovniOdgovori + (pitanjeId to vrednost)) }
         viewModelScope.launch {
             skladiste.izmeni(token) { snimak ->
                 snimak.copy(ponovniOdgovori = snimak.ponovniOdgovori + (pitanjeId to vrednost))
@@ -360,6 +387,7 @@ class KvizViewModel @Inject constructor(
             when (ishod) {
                 is IshodPonovnog.Uspesan -> {
                     val odgovor = ishod.odgovor
+                    if (!zapocet) izmenjeniPonovni.clear()
                     skladiste.izmeni(token) { snimak ->
                         snimak.copy(
                             ponovnaPitanja = odgovor.questions,
@@ -439,6 +467,7 @@ class KvizViewModel @Inject constructor(
     }
 
     fun zatvoriPonovniIshod() {
+        izmenjeniPonovni.clear()
         viewModelScope.launch {
             skladiste.izmeni(token) {
                 it.copy(ponovniIshod = null, ponovnaPitanja = emptyList(), ponovniOdgovori = emptyMap())
@@ -473,6 +502,7 @@ class KvizViewModel @Inject constructor(
     }
 
     fun noviPokusaj() {
+        izmenjeniPonovni.clear()
         viewModelScope.launch {
             satPosao?.cancel()
             satPokrenut = false
@@ -700,4 +730,27 @@ fun porukaKviza(kod: String?): String = when (kod) {
 fun tekstNeodgovorenih(broj: Int): String = when (broj) {
     1 -> "Ostalo je 1 neodgovoreno pitanje."
     else -> "Ostalo je $broj neodgovorenih."
+}
+
+internal fun spojiSvezijeStanje(staro: StanjePokusaja?, novo: StanjePokusaja?): StanjePokusaja? {
+    if (novo == null) return staro
+    if (staro == null || staro.attemptToken != novo.attemptToken) return novo
+    val answers = novo.answers.toMutableMap()
+    for ((id, stariOdgovor) in staro.answers) {
+        val noviOdgovor = answers[id]
+        if (noviOdgovor == null || stariOdgovor.changedAt > noviOdgovor.changedAt) {
+            answers[id] = stariOdgovor
+        }
+    }
+    val belezke = (novo.belezke ?: emptyMap()).toMutableMap()
+    for ((id, staraBelezka) in staro.belezke.orEmpty()) {
+        val novaBelezka = belezke[id]
+        if (novaBelezka == null || staraBelezka.changedAt > novaBelezka.changedAt) {
+            belezke[id] = staraBelezka
+        }
+    }
+    return novo.copy(
+        answers = answers,
+        belezke = belezke.ifEmpty { null },
+    )
 }

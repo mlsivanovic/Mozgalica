@@ -5,6 +5,7 @@
 // redove sa pravim ID-jevima dobijenim iz dodajOblast.
 import { useMemo, useState, type ChangeEvent } from 'react'
 import { dodajOblast, upisiPitanjaUvoz } from '../../lib/api'
+import { useAuth } from '../../lib/auth'
 import { napraviCsv, preuzmiCsv } from '../../lib/csv'
 import {
   izdvojNepoznateTeme, mapirajRedove, napraviSlugTeme, parsirajCsv, PRIMERI_UVOZA,
@@ -23,6 +24,7 @@ export function UvozCsv({ oblastiSrpski, onZatvori, onUvezeno }: Props) {
   const [imeFajla, setImeFajla] = useState<string | null>(null)
   const [greska, setGreska] = useState<string | null>(null)
   const [uvozi, setUvozi] = useState(false)
+  const { jeVlasnikPlatforme } = useAuth()
 
   const nepoznateTeme = useMemo(
     () => redovi ? izdvojNepoznateTeme(redovi, oblastiSrpski) : [],
@@ -60,6 +62,7 @@ export function UvozCsv({ oblastiSrpski, onZatvori, onUvezeno }: Props) {
 
   async function uvezi() {
     if (!redovi || !rezultat || rezultat.validni.length === 0) return
+    if (nepoznateTeme.length > 0 && !jeVlasnikPlatforme) return
     setUvozi(true)
     setGreska(null)
     try {
@@ -92,7 +95,7 @@ export function UvozCsv({ oblastiSrpski, onZatvori, onUvezeno }: Props) {
         Uvezi pitanja srpskog jezika iz CSV fajla. Podržana su samo dva tipa: <strong>tekst</strong> (otvoren
         odgovor koji ručno ocenjuje administrator) i <strong>tacno-netacno</strong> (ocenjuje se automatski).
         Obavezne kolone: <code>tema</code> (naziv ili slug teme srpskog jezika — <strong>ako tema ne postoji,
-        biće automatski kreirana</strong>), <code>tip</code> (<code>tekst</code> ili <code>tacno-netacno</code>),
+        pri uvozu je kreira samo vlasnik platforme</strong>), <code>tip</code> (<code>tekst</code> ili <code>tacno-netacno</code>),
         {' '}<code>pitanje</code>, <code>odgovor</code>. Opcione: <code>poeni</code> (za srpski je fiksno 5),
         {' '}<code>objasnjenje</code>, <code>hint</code> (sva pitanja iz srpskog su iste težine). Za tip{' '}
         <code>tekst</code> je <code>odgovor</code> opcioni referentni odgovor koji admin vidi pri ocenjivanju
@@ -118,11 +121,18 @@ export function UvozCsv({ oblastiSrpski, onZatvori, onUvezeno }: Props) {
             {rezultat.greske.length > 0 && `, ${rezultat.greske.length} sa greškom`}.
           </p>
 
-          {nepoznateTeme.length > 0 && (
+          {nepoznateTeme.length > 0 && jeVlasnikPlatforme && (
             <p className="poruka poruka--upozorenje razmak-dole">
               🆕 {nepoznateTeme.length === 1 ? 'Nova tema' : 'Nove teme'} koje ne postoje u aplikaciji —{' '}
               {nepoznateTeme.length === 1 ? 'biće kreirana' : 'biće kreirane'} automatski pri uvozu:{' '}
               <strong>{nepoznateTeme.join(', ')}</strong>.
+            </p>
+          )}
+
+          {nepoznateTeme.length > 0 && !jeVlasnikPlatforme && (
+            <p className="poruka poruka--greska razmak-dole">
+              Teme koje ne postoje u aplikaciji: <strong>{nepoznateTeme.join(', ')}</strong>.
+              Nove teme može da doda samo vlasnik platforme, pa uvoz nije moguć dok se redovi ne isprave.
             </p>
           )}
 
@@ -151,7 +161,8 @@ export function UvozCsv({ oblastiSrpski, onZatvori, onUvezeno }: Props) {
             <button type="button" className="dugme dugme--senka" onClick={onZatvori}>Otkaži</button>
             <button
               type="button" className="dugme dugme--akcenat"
-              disabled={uvozi || rezultat.validni.length === 0} onClick={uvezi}
+              disabled={uvozi || rezultat.validni.length === 0 || (nepoznateTeme.length > 0 && !jeVlasnikPlatforme)}
+              onClick={uvezi}
             >
               {uvozi ? 'Uvozim…' : `Uvezi ${rezultat.validni.length} pitanja`}
             </button>

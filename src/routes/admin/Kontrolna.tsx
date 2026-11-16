@@ -7,6 +7,7 @@ import { formatDatum, formatProcenat } from '../../lib/format'
 import { nazivCasa, nazivSmene } from '../../lib/rasporedCasova'
 import { Loader } from '../../components/Zajednicke'
 import { Ikona, type ImeIkone } from '../../components/Ikona'
+import { PrviKorakiKartica } from '../../components/PrviKorakiKartica'
 import { NAZIVI_PREDMETA, type Predmet } from '../../types/db'
 import type { RasporedCasovaKartica } from '../../types/kviz'
 
@@ -24,6 +25,7 @@ export function Kontrolna() {
     {greska && <div className="poruka poruka--greska" role="alert">{greska} <button className="dugme dugme--senka dugme--malo" onClick={() => void osvezi()}>Pokušaj ponovo</button></div>}
     {podaci && <>
       <ZaTebe podaci={podaci} />
+      <PrviKorakiKartica podaci={podaci} />
       <section aria-label={dete ? 'Dnevni pregled' : 'Moja deca'}>
         {podaci.children.length === 0
           ? <div className="kartica"><p>Dodaj dete da ovde pratiš njegove zadatke i napredak.</p><Link to="/admin/deca" className="dugme razmak-gore">Dodaj dete</Link></div>

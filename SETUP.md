@@ -177,4 +177,55 @@ curl "https://<project-ref>.supabase.co/rest/v1/attempts?select=*" \
 # Očekivano: ista "permission denied" greška
 ```
 
+## 11. Privremeno isključeni mejlovi
+
+Dva mejl obaveštenja su privremeno isključena. Obaveštenja i dalje stižu kao push
+i u inbox-u aplikacije:
+
+- mejl detetu kad mu se dodeli novi kviz;
+- mejl roditelju kad dete završi kviz.
+
+Mejl o šahovskoj partiji, nedeljni izveštaj i ostali mejlovi nisu menjani.
+
+Prekidači su na serveru, u tabeli `public.app_config` (vrednost `'true'` uključuje, sve ostalo je
+isključeno):
+
+- `mejl_detetu_novi_kviz`
+- `mejl_roditelju_posle_kviza`
+
+Aplikacija skriva kontrole preko konstanti u `src/lib/funkcije.ts`
+(`MEJL_DETETU_ZA_NOVI_KVIZ`, `MEJL_RODITELJU_POSLE_KVIZA`). Za ponovno uključivanje:
+
+```sql
+update public.app_config set value = 'true' where key = 'mejl_roditelju_posle_kviza';
+update public.app_config set value = 'true' where key = 'mejl_detetu_novi_kviz';
+```
+
+Zatim postavi odgovarajuće konstante na `true` i ponovo objavi aplikaciju. Postojeći
+podaci (mejlovi dece i podešavanja) nisu brisani.
+
+## 12. Pozivanje roditelja i podešavanje Supabase Auth
+
+Nalozi se prave samo pozivom koji šalje vlasnik platforme (panel **Roditelji**, Edge funkcija
+`pozovi-roditelja`). Javna registracija treba da bude isključena. Magic link ne pravi nove
+naloge. Ove stavke se podešavaju ručno u Supabase dashboard-u, a ne kroz repozitorijum:
+
+- **Authentication → Sign In / Providers → Email:** isključi „Allow new users to sign up“.
+- **Project Settings → Auth → SMTP:** uključi custom SMTP preko Brevo (SMTP podaci iz Brevo
+  dashboard-a, ne u repozitorijumu). Podrazumevani Supabase SMTP šalje samo članovima tima i ima nizak limit.
+- **Authentication → Email Templates:** srpski šabloni za **Invite user** i **Magic Link**.
+  Link ostavi kao `{{ .ConfirmationURL }}`.
+- **Authentication → URL Configuration:** Site URL i Redirect URLs moraju da pokazuju na adresu
+  aplikacije (GitHub Pages ili domen). Ista adresa treba da bude u Edge secret-u `APP_BASE_URL`.
+
+Edge funkcije za ovaj deo: `pozovi-roditelja` i `obrisi-nalog` (`verify_jwt` je uključen).
+Deploy: `supabase functions deploy pozovi-roditelja` i `supabase functions deploy obrisi-nalog`.
+
+## 13. Pravne stranice i rukovalac
+
+Politika privatnosti (`#/privatnost`) i uslovi korišćenja (`#/uslovi`) čitaju identitet
+rukovaoca i kontakt iz `src/lib/pravno.ts`. Pre javne objave upiši ime rukovaoca u
+`RUKOVALAC` (sada je placeholder, označen sa `TODO`) i proveri tekst sa pravnikom. Roditelj
+mora da prihvati uslove pre ulaska u panel; prihvatanje se čuva u `admin_settings.terms_accepted_at`.
+
 To je sve — aplikacija je spremna za korišćenje! 🎉

@@ -1,6 +1,6 @@
 // Tipizirani pozivi ka Supabase-u: tabele za admina, RPC funkcije za dete
 import type {
-  AdminPodesavanja, AvatarDeteta, DnevniRasporedSaha, FiksnoImeDeteta, InboxObavestenja,
+  AdminPodesavanja, AvatarDeteta, DnevniRasporedSaha, InboxObavestenja,
   Kviz, KvizLink, KvizPitanje, NivoTitule, Oblast, Obavestenje, OdgovorDeteta, Pitanje,
   DnevniRasporedKviza, IzvorDnevnogKviza, Pokusaj, PokusajOdgovor, PonovniOdgovorPokusaja,
   Predmet, ProfilDeteta,
@@ -8,7 +8,7 @@ import type {
   StavkaProdavnice, Tezina, TipPitanja,
 } from '../types/db'
 import type {
-  InboxDetetaPayload, JavniProfilPayload, KupovinaPayload, KvizMeta, NapredakTitule,
+  InboxDetetaPayload, JavniProfilPayload, KupovinaPayload, KvizMeta,
   ObjasnjenjePayload, PokusajPayload, PonovniPayload, PotvrdaTajmera,
   PregledRasporedaCasova, PregledStatistikeDecePayload, ProdavnicaPayload,
   RasporedCasovaAdmin, RasporedCasovaKartica, RasporedCasovaUnos,
@@ -17,6 +17,7 @@ import type {
 import type { SmenaCasova } from './rasporedCasova'
 import { SEED_PITANJA } from '../data/seedPitanja'
 import { supabase } from './supabase'
+import { porukaZaGreskuBrisanja, porukaZaGreskuPoziva, type StatusPoziva } from './nalog'
 
 // Pretvori Supabase grešku u čitljivu srpsku poruku
 function opisiGresku(error: { message: string } | null): string | null {
@@ -91,7 +92,8 @@ export async function listajPitanja(filter: FilterPitanja): Promise<Pitanje[]> {
   return sve
 }
 
-export type NovoPitanje = Omit<Pitanje, 'id' | 'owner_id' | 'created_at' | 'updated_at'>
+// is_shared se ne šalje iz klijenta: zajedničku banku održava vlasnik platforme direktno u bazi.
+export type NovoPitanje = Omit<Pitanje, 'id' | 'owner_id' | 'is_shared' | 'created_at' | 'updated_at'>
 
 export async function sacuvajPitanje(pitanje: NovoPitanje, id?: string): Promise<void> {
   if (id) {
@@ -112,8 +114,12 @@ export async function sacuvajPitanje(pitanje: NovoPitanje, id?: string): Promise
 // duplikati proveravaju ručno (SELECT pa filter), umesto oslanjanja na upsert.
 export async function upisiGenerisana(pitanja: NovoPitanje[]): Promise<number> {
   const potpisi = pitanja.map((p) => p.gen_signature).filter((s): s is string => !!s)
+  // Potpis je jedinstven po vlasniku, pa se proverava samo sopstvena banka (RLS vraća i zajedničku).
+  const vlasnik = (await supabase().auth.getSession()).data.session?.user.id
+  if (!vlasnik) throw new Error('Nema aktivne prijave.')
   const { data: postojeci, error: erSelect } = await supabase()
-    .from('questions').select('gen_signature').in('gen_signature', potpisi)
+    .from('questions').select('gen_signature')
+    .eq('owner_id', vlasnik).in('gen_signature', potpisi)
   if (erSelect) throw new Error(opisiGresku(erSelect)!)
 
   const zauzeti = new Set((postojeci ?? []).map((p) => p.gen_signature))
@@ -565,46 +571,6 @@ export async function sahAkcija(
   return data as SahStanjePayload
 }
 
-export interface ZbirZvezdica {
-  child_name: FiksnoImeDeteta
-  total_stars: number
-}
-
-export async function listajZbiroveZvezdica(): Promise<ZbirZvezdica[]> {
-  const { data, error } = await supabase().from('v_child_star_totals').select('*')
-  if (error) throw new Error(opisiGresku(error)!)
-  return data as ZbirZvezdica[]
-}
-
-export interface StatusTituleDeteta {
-  childName: FiksnoImeDeteta
-  totalStars: number
-  seasonStartedAt: string
-  titleProgress: NapredakTitule
-}
-
-interface StatusiTitulaPayload {
-  ok: boolean
-  error?: string
-  children?: StatusTituleDeteta[]
-}
-
-export async function ucitajStatuseTitula(): Promise<StatusTituleDeteta[]> {
-  const { data, error } = await supabase().rpc('admin_get_child_title_statuses')
-  if (error) throw new Error(opisiGresku(error)!)
-  const rezultat = data as StatusiTitulaPayload
-  if (!rezultat.ok || !rezultat.children) throw new Error(rezultat.error ?? 'Status titula nije dostupan.')
-  return rezultat.children
-}
-
-export async function zapocniNovuSezonuTitula(dete: FiksnoImeDeteta): Promise<StatusTituleDeteta> {
-  const { data, error } = await supabase().rpc('admin_start_new_title_season', { p_child_name: dete })
-  if (error) throw new Error(opisiGresku(error)!)
-  const rezultat = data as StatusTituleDeteta & { ok?: boolean; error?: string }
-  if (!rezultat.ok || !rezultat.titleProgress) throw new Error(rezultat.error ?? 'Nova sezona nije pokrenuta.')
-  return rezultat
-}
-
 // ---------- Statistika (view-ovi) ----------
 export interface StatistikaKviza {
   quiz_id: string
@@ -691,6 +657,54 @@ export async function ucitajPodesavanja(): Promise<AdminPodesavanja | null> {
 export async function postaviEmailObavestenja(userId: string, ukljucena: boolean): Promise<void> {
   const { error } = await supabase()
     .from('admin_settings').update({ email_notifications: ukljucena }).eq('user_id', userId)
+  if (error) throw new Error(opisiGresku(error)!)
+}
+
+// Edge funkcija vraća grešku kao HTTP odgovor; kod iz tela se čita za poruku.
+async function kodGreskeFunkcije(error: unknown): Promise<string | null> {
+  const odgovor = (error as { context?: unknown })?.context
+  if (!(odgovor instanceof Response)) return null
+  try {
+    return ((await odgovor.json()) as { error?: string }).error ?? null
+  } catch {
+    return null
+  }
+}
+
+// ---------- Nalog roditelja: poziv, brisanje, uslovi ----------
+export async function pozoviRoditelja(email: string): Promise<StatusPoziva> {
+  const { data, error } = await supabase().functions.invoke('pozovi-roditelja', { body: { email } })
+  if (error) throw new Error(porukaZaGreskuPoziva(await kodGreskeFunkcije(error)))
+  const odgovor = data as { ok: boolean; status?: StatusPoziva; error?: string }
+  if (!odgovor.ok || !odgovor.status) throw new Error(porukaZaGreskuPoziva(odgovor.error))
+  return odgovor.status
+}
+
+export interface PozvanRoditelj {
+  email: string
+  nalogPostoji: boolean
+  aktivan: boolean
+}
+
+export async function listajPozvaneRoditelje(): Promise<PozvanRoditelj[]> {
+  const { data, error } = await supabase().rpc('listaj_pozvane_roditelje')
+  if (error) throw new Error(opisiGresku(error)!)
+  return (data as Array<{ email: string; nalog_postoji: boolean; aktivan: boolean }>).map((red) => ({
+    email: red.email,
+    nalogPostoji: red.nalog_postoji,
+    aktivan: red.aktivan,
+  }))
+}
+
+export async function obrisiMojNalog(potvrda: string): Promise<void> {
+  const { data, error } = await supabase().functions.invoke('obrisi-nalog', { body: { potvrda } })
+  if (error) throw new Error(porukaZaGreskuBrisanja(await kodGreskeFunkcije(error)))
+  const odgovor = data as { ok: boolean; error?: string }
+  if (!odgovor.ok) throw new Error(porukaZaGreskuBrisanja(odgovor.error))
+}
+
+export async function prihvatiUslove(): Promise<void> {
+  const { error } = await supabase().rpc('accept_terms')
   if (error) throw new Error(opisiGresku(error)!)
 }
 

@@ -27,7 +27,10 @@ Javna stranica: **https://mozgalica.rs/** · aplikacija: **https://mozgalica.rs/
   oblasti, 25% za redovno ponavljanje i 15% kao teži izazov. Roditelj ponedeljkom
   dobija mejl sa aktivnim danima, prosekom, trendom i jakim/slabim oblastima.
 - Odgovori se čuvaju i offline, a predaja je moguća tek kad server potvrdi da su sačuvani.
-- Kada dete završi kviz, administrator dobija mejl sa rezultatom.
+- Kada dete završi kviz, roditelj dobija push i obaveštenje u aplikaciji. Mejlovi o kvizovima su
+  privremeno isključeni (vidi SETUP.md, odeljak 11).
+- Aplikacija je dostupna po pozivu: nalog pravi vlasnik platforme, a roditelj može da obriše nalog i
+  sve podatke iz podešavanja.
 
 ## Tehnologije
 

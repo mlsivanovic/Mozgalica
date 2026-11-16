@@ -108,13 +108,14 @@ async function ucitajPitanjaIzBanke(
   const sva: PitanjeIzBanke[] = []
   const velicinaStrane = 1000
   for (let od = 0; ; od += velicinaStrane) {
-    let upit = supabase
+    const upit = supabase
       .from('questions')
       .select('id, topic_id, type, difficulty, text, options, correct, explanation, hint, points, manual_review, gen_signature')
-      .eq('owner_id', rad.owner_id)
+      .or(`owner_id.eq.${rad.owner_id},is_shared.eq.true`)
       .in('topic_id', rad.topic_ids)
+      // Stabilan redosled je neophodan za stranicanje: zajednička banka ima više od 1000 redova.
+      .order('id')
       .range(od, od + velicinaStrane - 1)
-    if (rad.source === 'combined' && rad.subject === 'priroda_drustvo') upit = upit.order('id')
     const { data, error } = await upit
     if (error) throw new Error(error.message)
     const strana = (data ?? []) as PitanjeIzBanke[]

@@ -3,7 +3,7 @@ import type {
   CasUDanu, RezimRotacije, SatnicaCasa, SmenaCasova, SlotRasporedaCasova,
 } from '../lib/rasporedCasova'
 import type {
-  FiksnoImeDeteta, Obavestenje, OdgovorDeteta, OpcijeJson, TacanOdgovor, TipPitanja,
+  Obavestenje, OdgovorDeteta, OpcijeJson, TacanOdgovor, TipPitanja,
 } from './db'
 
 // Pitanje kako ga vidi dete — BEZ tačnog odgovora i objašnjenja.
@@ -35,7 +35,6 @@ export interface KvizMeta {
   totalPoints?: number
   timeLimitSeconds?: number | null
   requireName?: boolean
-  fixedChildName?: FiksnoImeDeteta | null
   totalStars?: number | null
   titleProgress?: NapredakTitule | null
   requireLabel?: boolean

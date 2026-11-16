@@ -32,7 +32,7 @@ describe('roditeljski kontekst u URL-u', () => {
 describe('gornja traka roditeljskog prikaza', () => {
   it('razlikuje odredišta navigacije od detalja koji traže dugme nazad', () => {
     for (const p of ['/admin', '/admin/vezbanje', '/admin/pitanja/generator', '/admin/napredak/rezultati', '/admin/nagrade/pravila']) expect(korenskaStrana(p)).toBe(true)
-    for (const p of ['/admin/zadaj', '/admin/kvizovi/abc', '/admin/rezultati/abc', '/admin/deca', '/admin/podesavanja', '/admin/sah']) expect(korenskaStrana(p)).toBe(false)
+    for (const p of ['/admin/zadaj', '/admin/kvizovi/abc', '/admin/rezultati/abc', '/admin/deca', '/admin/podesavanja']) expect(korenskaStrana(p)).toBe(false)
     expect(korenskaStrana('/admin/vezbanje/rasporedi', '?raspored=novi&vrsta=quiz')).toBe(false)
   })
   it('daje naslov ekrana i rezervni povratak bez istorije', () => {

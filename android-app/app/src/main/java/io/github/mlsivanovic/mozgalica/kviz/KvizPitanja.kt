@@ -15,9 +15,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -26,8 +28,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.mlsivanovic.mozgalica.dizajn.LocalEfekti
@@ -81,10 +85,11 @@ fun PitanjePrikaz(
         }
         "numeric" -> NumerickiUnos((odgovor as? OdgovorDeteta.Broj)?.value.orEmpty(), dozvoljenUnos, onOdgovor)
         "text" -> TekstualniUnos(
-            (odgovor as? OdgovorDeteta.Tekst)?.text.orEmpty(),
-            dozvoljenUnos,
-            onOdgovor,
-            onTekstFokus,
+            pitanjeId = pitanje.id,
+            trenutno = (odgovor as? OdgovorDeteta.Tekst)?.text.orEmpty(),
+            dozvoljenUnos = dozvoljenUnos,
+            onOdgovor = onOdgovor,
+            onFokus = onTekstFokus,
         )
         "truefalse" -> {
             val izabrano = (odgovor as? OdgovorDeteta.Logicki)?.value
@@ -201,16 +206,88 @@ private fun Numpad(trenutno: String, onVrednost: (String) -> Unit) {
     }
 }
 
+// Sinhroni lokalni bafer za TextFieldValue sprečava skakanje kursora dok Room
+// asinhrono čuva i emituje promene u pozadini.
+internal class TekstPoljeStanje(
+    pocetni: String,
+    private val maks: Int,
+    private val onPromena: (String) -> Unit,
+) {
+    var vrednost by mutableStateOf(TextFieldValue(text = pocetni, selection = TextRange(pocetni.length)))
+        private set
+
+    private var poslednjiPoslat = pocetni
+
+    fun naPromenu(novo: TextFieldValue) {
+        val ograniceno = ograniciUnos(novo, maks)
+        val promenjen = ograniceno.text != vrednost.text
+        vrednost = ograniceno
+        if (promenjen) {
+            poslednjiPoslat = ograniceno.text
+            onPromena(ograniceno.text)
+        }
+    }
+
+    fun postavi(tekst: String) {
+        val ograniceno = tekst.take(maks)
+        poslednjiPoslat = ograniceno
+        vrednost = TextFieldValue(text = ograniceno, selection = TextRange(ograniceno.length))
+        onPromena(ograniceno)
+    }
+
+    fun uskladiSpolja(spoljni: String) {
+        val ograniceno = spoljni.take(maks)
+        if (ograniceno != poslednjiPoslat && ograniceno != vrednost.text) {
+            poslednjiPoslat = ograniceno
+            vrednost = TextFieldValue(text = ograniceno, selection = TextRange(ograniceno.length))
+        }
+    }
+}
+
+internal fun ograniciUnos(vrednost: TextFieldValue, maks: Int): TextFieldValue {
+    if (vrednost.text.length <= maks) return vrednost
+    val tekst = vrednost.text.take(maks)
+    val start = vrednost.selection.start.coerceIn(0, tekst.length)
+    val end = vrednost.selection.end.coerceIn(0, tekst.length)
+    val comp = vrednost.composition?.let {
+        val cs = it.start.coerceIn(0, tekst.length)
+        val ce = it.end.coerceIn(0, tekst.length)
+        if (cs < ce) TextRange(cs, ce) else null
+    }
+    return TextFieldValue(text = tekst, selection = TextRange(start, end), composition = comp)
+}
+
+@Composable
+internal fun rememberTekstPolje(
+    kljuc: Any?,
+    tekst: String,
+    maks: Int,
+    onPromena: (String) -> Unit,
+): TekstPoljeStanje {
+    val trenutniOnPromena by rememberUpdatedState(onPromena)
+    val stanje = remember(kljuc, maks) {
+        TekstPoljeStanje(tekst.take(maks), maks) { trenutniOnPromena(it) }
+    }
+    LaunchedEffect(stanje, tekst) {
+        stanje.uskladiSpolja(tekst)
+    }
+    return stanje
+}
+
 @Composable
 private fun TekstualniUnos(
+    pitanjeId: String,
     trenutno: String,
     dozvoljenUnos: Boolean,
     onOdgovor: (OdgovorDeteta) -> Unit,
     onFokus: (Boolean) -> Unit,
 ) {
+    val polje = rememberTekstPolje(pitanjeId, trenutno, maks = 120) {
+        onOdgovor(OdgovorDeteta.Tekst(it))
+    }
     OutlinedTextField(
-        value = trenutno,
-        onValueChange = { onOdgovor(OdgovorDeteta.Tekst(it.take(120))) },
+        value = polje.vrednost,
+        onValueChange = polje::naPromenu,
         enabled = dozvoljenUnos,
         modifier = Modifier.fillMaxWidth().onFocusChanged { onFokus(it.isFocused) },
         textStyle = MaterialTheme.typography.bodyLarge.copy(fontSize = 18.sp),

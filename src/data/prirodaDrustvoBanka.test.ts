@@ -86,6 +86,12 @@ describe('dopunska banka prirode i društva', () => {
       const tvrdnje = banka.filter((p) => p.topicSlug === slug && p.type === 'truefalse')
       expect(new Set(tvrdnje.map((p) => (p.correct as { value: boolean }).value)).size).toBe(2)
     }
+    const rasporediDesno = new Set(banka.filter((p) => p.type === 'matching').map((p) => {
+      const { right } = p.options as MatchingOpcije
+      return right.map((o) => o.id).join(',')
+    }))
+    expect(rasporediDesno.size).toBeGreaterThan(5)
+    expect(rasporediDesno.has('r0,r1,r2,r3')).toBe(false)
   })
 
   it('uvoz bira administratorskog vlasnika, radi rollback i ne prepisuje postojeća pitanja', () => {
@@ -93,7 +99,8 @@ describe('dopunska banka prirode i društva', () => {
     expect(sql).toContain('rollback;')
     expect(sql).not.toContain('commit;')
     expect(napraviSqlUvoza(true)).toContain('commit;')
-    expect(sql).toContain('join public.admin_settings a on a.user_id = q.owner_id')
+    expect(sql).toContain('from public.admin_settings where is_platform_owner')
+    expect(sql).toContain('is_shared')
     expect(sql).toContain('v_broj <> 1')
     expect(sql).toContain('on conflict (owner_id, gen_signature) where gen_signature is not null do nothing')
     expect(sql).toContain('is distinct from row(')

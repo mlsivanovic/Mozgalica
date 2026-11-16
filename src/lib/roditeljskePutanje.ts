@@ -36,7 +36,7 @@ export function sacuvajKontekstPutanje(to: string, dete: string, trenutna: strin
 }
 
 const KORENSKE = new Set([
-  '/admin', '/admin/vezbanje', '/admin/vezbanje/rasporedi', '/admin/pitanja', '/admin/pitanja/generator',
+  '/admin', '/admin/vezbanje', '/admin/vezbanje/rasporedi', '/admin/sah', '/admin/pitanja', '/admin/pitanja/generator',
   '/admin/napredak', '/admin/napredak/rezultati',
   '/admin/nagrade', '/admin/nagrade/istorija', '/admin/nagrade/katalog', '/admin/nagrade/pravila',
 ])
@@ -56,7 +56,6 @@ export function naslovStrane(putanja: string, search = ''): string {
   if (putanja === '/admin/kvizovi') return 'Arhiva kvizova'
   if (/^\/admin\/kvizovi\/[^/]+$/.test(putanja)) return 'Kviz'
   if (/^\/admin\/rezultati\/[^/]+$/.test(putanja)) return 'Rezultat'
-  if (putanja === '/admin/sah') return 'Šah'
   if (putanja === '/admin/raspored-casova') return 'Raspored časova'
   if (putanja === '/admin/deca') return 'Deca'
   if (putanja === '/admin/podesavanja') return 'Podešavanja'

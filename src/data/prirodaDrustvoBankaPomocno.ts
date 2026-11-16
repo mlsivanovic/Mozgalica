@@ -1,4 +1,5 @@
 import type { Pitanje } from '../types/db.ts'
+import { napraviRng, promesaj } from '../generator/random.ts'
 
 export type PidBankaPitanje = Pick<Pitanje, 'type' | 'difficulty' | 'text' | 'options' | 'correct' | 'explanation' | 'hint' | 'points' | 'source' | 'gen_signature' | 'manual_review'> & {
   topicSlug: string
@@ -9,6 +10,25 @@ type Izbor = readonly [id: string, tekst: string, tacan: string, netacni: readon
 type Tvrdnja = readonly [id: string, tekst: string, tacno: boolean, objasnjenje: string, pomoc: string]
 type Par = readonly [levo: string, desno: string]
 type Povezivanje = readonly [id: string, tekst: string, parovi: readonly [Par, Par, Par, Par], pomoc: string]
+
+function seedOdKljuča(kljuc: string): number {
+  let h = 2166136261
+  for (let i = 0; i < kljuc.length; i++) {
+    h ^= kljuc.charCodeAt(i)
+    h = Math.imul(h, 16777619)
+  }
+  return h >>> 0
+}
+
+function promesajDesneParove(kljuc: string, parovi: readonly [Par, Par, Par, Par]) {
+  const bazni = parovi.map(([, desno], i) => ({ id: 'r' + i, text: desno }))
+  const rng = napraviRng(seedOdKljuča(kljuc))
+  let izmesani = promesaj(rng, bazni)
+  while (izmesani.every((o, i) => o.id === 'r' + i)) {
+    izmesani = promesaj(rng, bazni)
+  }
+  return izmesani
+}
 
 export function oblastBanke(slug: string, izbori: readonly Izbor[], tvrdnje: readonly Tvrdnja[], povezivanja: readonly Povezivanje[]): PidBankaPitanje[] {
   const osnova = (id: string) => ({
@@ -30,7 +50,7 @@ export function oblastBanke(slug: string, izbori: readonly Izbor[], tvrdnje: rea
       ...osnova(id), type: 'matching', text, hint,
       options: {
         left: parovi.map(([levo], i) => ({ id: 'l' + i, text: levo })),
-        right: parovi.map(([, desno], i) => ({ id: 'r' + i, text: desno })).reverse(),
+        right: promesajDesneParove(slug + ':' + id, parovi),
       },
       correct: { pairs: Object.fromEntries(parovi.map((_, i) => ['l' + i, 'r' + i])) },
       explanation: 'Tačni parovi: ' + parovi.map(([levo, desno]) => levo + ' — ' + desno).join('; ') + '.',
