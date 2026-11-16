@@ -29,8 +29,10 @@ describe('zajednička banka pitanja', () => {
   it('vlasnik platforme menja svoja zajednička pitanja i vidi ih pod filterom Zajednička', () => {
     expect(mozeDaMenja(pitanja[1], VLASNIK)).toBe(true)
     expect(jeZajednicko(pitanja[1], VLASNIK)).toBe(true)
-    expect(filtrirajPoVlasnistvu(pitanja, 'zajednicka', VLASNIK).map((p) => p.id)).toEqual(['zajednicko-1', 'zajednicko-2'])
-    expect(filtrirajPoVlasnistvu(pitanja, 'moja', VLASNIK).map((p) => p.id)).toEqual(['zajednicko-1', 'zajednicko-2'])
+    // Vlasniku RLS ne vraća tuđa privatna pitanja, pa vidi samo svoja.
+    const vlasnikova = [...pitanja.slice(1), pitanje('privatno', VLASNIK)]
+    expect(filtrirajPoVlasnistvu(vlasnikova, 'zajednicka', VLASNIK).map((p) => p.id)).toEqual(['zajednicko-1', 'zajednicko-2'])
+    expect(filtrirajPoVlasnistvu(vlasnikova, 'moja', VLASNIK).map((p) => p.id)).toEqual(['zajednicko-1', 'zajednicko-2', 'privatno'])
   })
 
   it('filter Sva / Moja / Zajednička', () => {
