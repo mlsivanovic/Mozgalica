@@ -72,6 +72,8 @@ export interface Pitanje {
   source: IzvorPitanja
   gen_signature: string | null
   manual_review: boolean
+  // Pitanje vlasnika platforme u zajedničkoj banci: vidljivo svim administratorima
+  is_shared: boolean
   created_at: string
   updated_at: string
 }

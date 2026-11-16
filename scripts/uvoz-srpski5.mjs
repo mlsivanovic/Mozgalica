@@ -16,15 +16,11 @@ declare
   v_owner uuid;
   v_broj int;
 begin
-  select count(distinct q.owner_id) into v_broj
-  from public.questions q join public.topics t on t.id = q.topic_id
-  where t.subject = 'srpski' and t.grade in (3, 4);
+  select count(*) into v_broj from public.admin_settings where is_platform_owner;
   if v_broj <> 1 then
-    raise exception 'Uvoz zahteva tačno jednog vlasnika postojeće srpske banke; pronađeno: %', v_broj;
+    raise exception 'Uvoz zahteva tačno jednog vlasnika platforme; pronađeno: %', v_broj;
   end if;
-  select distinct q.owner_id into strict v_owner
-  from public.questions q join public.topics t on t.id = q.topic_id
-  where t.subject = 'srpski' and t.grade in (3, 4);
+  select user_id into strict v_owner from public.admin_settings where is_platform_owner;
 
   if exists (
     select 1 from srpski5_uvoz u left join public.topics t on t.slug = u."topicSlug"
@@ -35,10 +31,10 @@ begin
 
   insert into public.questions (
     owner_id, topic_id, type, difficulty, text, options, correct, explanation,
-    hint, points, source, gen_signature, manual_review
+    hint, points, source, gen_signature, manual_review, is_shared
   )
   select v_owner, t.id, u.type, u.difficulty, u.text, u.options, u.correct,
-    u.explanation, u.hint, u.points, u.source, u.gen_signature, u.manual_review
+    u.explanation, u.hint, u.points, u.source, u.gen_signature, u.manual_review, true
   from srpski5_uvoz u join public.topics t on t.slug = u."topicSlug"
   on conflict (owner_id, gen_signature) where gen_signature is not null do nothing;
 

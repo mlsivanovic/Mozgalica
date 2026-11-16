@@ -91,7 +91,8 @@ export async function listajPitanja(filter: FilterPitanja): Promise<Pitanje[]> {
   return sve
 }
 
-export type NovoPitanje = Omit<Pitanje, 'id' | 'owner_id' | 'created_at' | 'updated_at'>
+// is_shared se ne šalje iz klijenta: zajedničku banku održava vlasnik platforme direktno u bazi.
+export type NovoPitanje = Omit<Pitanje, 'id' | 'owner_id' | 'is_shared' | 'created_at' | 'updated_at'>
 
 export async function sacuvajPitanje(pitanje: NovoPitanje, id?: string): Promise<void> {
   if (id) {
@@ -112,8 +113,12 @@ export async function sacuvajPitanje(pitanje: NovoPitanje, id?: string): Promise
 // duplikati proveravaju ručno (SELECT pa filter), umesto oslanjanja na upsert.
 export async function upisiGenerisana(pitanja: NovoPitanje[]): Promise<number> {
   const potpisi = pitanja.map((p) => p.gen_signature).filter((s): s is string => !!s)
+  // Potpis je jedinstven po vlasniku, pa se proverava samo sopstvena banka (RLS vraća i zajedničku).
+  const vlasnik = (await supabase().auth.getSession()).data.session?.user.id
+  if (!vlasnik) throw new Error('Nema aktivne prijave.')
   const { data: postojeci, error: erSelect } = await supabase()
-    .from('questions').select('gen_signature').in('gen_signature', potpisi)
+    .from('questions').select('gen_signature')
+    .eq('owner_id', vlasnik).in('gen_signature', potpisi)
   if (erSelect) throw new Error(opisiGresku(erSelect)!)
 
   const zauzeti = new Set((postojeci ?? []).map((p) => p.gen_signature))
