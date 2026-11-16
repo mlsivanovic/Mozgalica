@@ -12,7 +12,6 @@ export type SahRezultat = 'child_win' | 'draw' | 'child_loss'
 export type SahZavrsetak =
   | 'checkmate' | 'stalemate' | 'threefold_repetition' | 'fifty_move'
   | 'insufficient_material' | 'timeout' | 'resignation' | 'draw'
-export type FiksnoImeDeteta = 'Andrej' | 'Filip'
 export type AvatarDeteta = '🧠' | '🚀' | '🦊' | '🦁' | '🤖' | '⭐'
 
 // ---------- jsonb oblici opcija ----------
@@ -90,7 +89,7 @@ export interface Kviz {
   show_correct: boolean
   pass_threshold_pct: number
   require_name: boolean
-  fixed_child_name: FiksnoImeDeteta | null
+  fixed_child_name: string | null
   require_label: boolean
   label_name: string
   grade: Razred | null
@@ -295,6 +294,7 @@ export interface SahNagradaPodesavanje {
 export interface AdminPodesavanja {
   user_id: string
   email_notifications: boolean
+  is_platform_owner: boolean
 }
 
 export interface ProfilDeteta {

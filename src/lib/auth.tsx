@@ -2,10 +2,12 @@
 import type { Session } from '@supabase/supabase-js'
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import { backendPodesen, supabase } from './supabase'
+import { ucitajPodesavanja } from './api'
 
 interface AuthStanje {
   session: Session | null
   ucitava: boolean
+  jeVlasnikPlatforme: boolean
   prijaviLozinkom(email: string, lozinka: string): Promise<string | null>
   posaljiMagicLink(email: string): Promise<string | null>
   odjavi(): Promise<void>
@@ -16,6 +18,9 @@ const AuthContext = createContext<AuthStanje | null>(null)
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [ucitava, setUcitava] = useState(backendPodesen)
+  const [vlasnikId, setVlasnikId] = useState<string | null>(null)
+  const userId = session?.user.id ?? null
+  const jeVlasnikPlatforme = userId !== null && vlasnikId === userId
 
   useEffect(() => {
     if (!backendPodesen) return
@@ -29,6 +34,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })
     return () => pretplata.subscription.unsubscribe()
   }, [])
+
+  // Vlasništvo se čita iz sopstvenog admin_settings reda. Pamti se uz korisnika
+  // da stari odgovor ne važi posle promene naloga.
+  useEffect(() => {
+    if (!userId) return
+    let aktivno = true
+    ucitajPodesavanja()
+      .then((podesavanja) => { if (aktivno) setVlasnikId(podesavanja?.is_platform_owner ? userId : null) })
+      .catch(() => { if (aktivno) setVlasnikId(null) })
+    return () => { aktivno = false }
+  }, [userId])
 
   async function prijaviLozinkom(email: string, lozinka: string): Promise<string | null> {
     const { error } = await supabase().auth.signInWithPassword({ email, password: lozinka })
@@ -48,7 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ session, ucitava, prijaviLozinkom, posaljiMagicLink, odjavi }}>
+    <AuthContext.Provider value={{ session, ucitava, jeVlasnikPlatforme, prijaviLozinkom, posaljiMagicLink, odjavi }}>
       {children}
     </AuthContext.Provider>
   )
