@@ -77,7 +77,7 @@ supabase secrets set \
   BREVO_API_KEY=xkeysib-tvoj-kljuc \
   BREVO_SENDER_EMAIL=tvoja-potvrdjena-adresa@example.com \
   BREVO_SENDER_NAME=Mozgalica \
-  APP_BASE_URL=https://mlsivanovic.github.io/Mozgalica/ \
+  APP_BASE_URL=https://mozgalica.rs/app/ \
   VAPID_SUBJECT=mailto:tvoja-adresa@example.com \
   VAPID_PUBLIC_KEY=tvoj-javni-vapid-kljuc \
   VAPID_PRIVATE_KEY=tvoj-privatni-vapid-kljuc

@@ -4,7 +4,8 @@ PWA aplikacija za kvizove iz matematike i srpskog jezika, uz partije šaha proti
 računara, namenjena deci koja su završila 3. ili 4. razred osnovne škole. Cilj je
 da tokom letnjeg raspusta na zabavan način obnove gradivo.
 
-Živa verzija: **https://mlsivanovic.github.io/Mozgalica/**
+Javna stranica: **https://mozgalica.rs/** · aplikacija: **https://mozgalica.rs/app/**
+(stara adresa `mlsivanovic.github.io/Mozgalica/` automatski preusmerava na novu).
 
 ## Kako radi
 
@@ -39,8 +40,9 @@ da tokom letnjeg raspusta na zabavan način obnove gradivo.
   API i privatni ključevi nikad nisu izloženi u frontendu.
 - **PWA:** `vite-plugin-pwa` (manifest + service worker, instalabilna aplikacija,
   offline shell, obaveštenje o novoj verziji).
-- **Hosting:** GitHub Pages, automatski deploy preko GitHub Actions pri svakom
-  push-u na `main`.
+- **Hosting:** GitHub Pages sa domenom `mozgalica.rs`, automatski deploy preko GitHub
+  Actions pri svakom push-u na `main`. Statička javna stranica iz `landing/` ide na koren
+  domena, a Vite aplikacija na `/app/` (`npm run build` sklapa oba u `dist/`).
 - **Testovi:** Vitest (generator pitanja, šahovski engine, offline red, seed podaci
   i pomoćni moduli).
 

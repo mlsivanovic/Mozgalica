@@ -85,6 +85,7 @@ src/routes/admin/      Administratorski panel (zaštićen AuthContext-om)
 src/routes/kviz/       Dečji tok kviza bez naloga: ulaz → rešavanje → rezultat
 src/routes/sah/        Dečja šahovska partija bez naloga (preko play tokena)
 android-app/            Native dečja Android aplikacija (Kotlin, Compose, Room, FCM)
+landing/               Statička javna stranica za koren mozgalica.rs (aplikacija je na /app/)
 ```
 
 Detaljan opis modela baze, bezbednosnog modela i faza razvoja: videti plan

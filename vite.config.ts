@@ -2,9 +2,10 @@ import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
-// Aplikacija se služi sa GitHub Pages podputanje /Mozgalica/
+// Na mozgalica.rs je javna stranica (landing/) na korenu, a aplikacija na /app/.
 export default defineConfig({
-  base: '/Mozgalica/',
+  base: '/app/',
+  build: { outDir: 'dist/app' },
   plugins: [
     react(),
     VitePWA({

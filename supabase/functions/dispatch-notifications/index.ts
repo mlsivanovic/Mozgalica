@@ -9,7 +9,7 @@ import { servisniPozivJeDozvoljen } from '../_shared/servisniPoziv.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-const APP_BASE_URL = Deno.env.get('APP_BASE_URL') ?? 'https://mlsivanovic.github.io/Mozgalica/'
+const APP_BASE_URL = Deno.env.get('APP_BASE_URL') ?? 'https://mozgalica.rs/app/'
 
 interface Isporuka {
   id: string
