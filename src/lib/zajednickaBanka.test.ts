@@ -26,9 +26,11 @@ describe('zajednička banka pitanja', () => {
     expect(mozeDaMenja(pitanja[0], JA)).toBe(true)
   })
 
-  it('vlasnik platforme vidi svoja pitanja kao sopstvena', () => {
+  it('vlasnik platforme menja svoja zajednička pitanja i vidi ih pod filterom Zajednička', () => {
     expect(mozeDaMenja(pitanja[1], VLASNIK)).toBe(true)
-    expect(jeZajednicko(pitanja[1], VLASNIK)).toBe(false)
+    expect(jeZajednicko(pitanja[1], VLASNIK)).toBe(true)
+    expect(filtrirajPoVlasnistvu(pitanja, 'zajednicka', VLASNIK).map((p) => p.id)).toEqual(['zajednicko-1', 'zajednicko-2'])
+    expect(filtrirajPoVlasnistvu(pitanja, 'moja', VLASNIK).map((p) => p.id)).toEqual(['zajednicko-1', 'zajednicko-2'])
   })
 
   it('filter Sva / Moja / Zajednička', () => {

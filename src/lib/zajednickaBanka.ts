@@ -4,9 +4,9 @@ import type { Pitanje } from '../types/db'
 
 export type FilterVlasnistva = 'sva' | 'moja' | 'zajednicka'
 
-// Pitanje koje nije moje dolazi iz zajedničke banke (RLS ga vraća samo ako je is_shared).
+// Tuđe pitanje RLS vraća samo ako je is_shared; vlasnik platforme vidi is_shared i na svojim pitanjima.
 export function jeZajednicko(pitanje: Pitanje, userId: string | null): boolean {
-  return pitanje.owner_id !== userId
+  return pitanje.is_shared || pitanje.owner_id !== userId
 }
 
 export function mozeDaMenja(pitanje: Pitanje, userId: string | null): boolean {
