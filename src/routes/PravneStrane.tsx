@@ -39,7 +39,7 @@ export function Privatnost() {
       <p><strong>Dete (profil):</strong></p>
       <ul>
         <li>ime, izabrani avatar i, ako ga roditelj unese, datum rođenja;</li>
-        <li>opciona email adresa deteta (koristi se za mejl o šahovskoj partiji, ako ga roditelj uključi);</li>
+        <li>opciona email adresa deteta, ako je ranije uneta (trenutno se ne koristi: obaveštenja detetu stižu kao push i u aplikaciji);</li>
         <li>odgovori na kvizove, rezultati, zvezdice, nagrade iz prodavnice i istorija kupovina;</li>
         <li>šahovske partije, dnevni rasporedi vežbe i raspored časova koji roditelj unese;</li>
         <li>obaveštenja u aplikaciji i pretplate na push obaveštenja uređaja (uključujući identifikator za Android obaveštenja).</li>
@@ -59,7 +59,7 @@ export function Privatnost() {
       <h2>4. Gde se podaci čuvaju i ko ih obrađuje</h2>
       <ul>
         <li><strong>Supabase</strong> — baza podataka, prijava i Edge funkcije. Region: London (eu-west-2).</li>
-        <li><strong>Brevo</strong> — slanje mejlova obaveštenja aplikacije.</li>
+        <li><strong>Brevo</strong> — slanje mejlova roditelju (npr. nedeljni izveštaj).</li>
         <li><strong>Google Firebase Cloud Messaging</strong> — push obaveštenja na Android uređajima.</li>
         <li><strong>Servisi pregledača i operativnog sistema</strong> — isporuka Web Push obaveštenja na uređaj.</li>
         <li><strong>GitHub Pages</strong> — hosting statičkih fajlova aplikacije (bez podataka o deci).</li>
