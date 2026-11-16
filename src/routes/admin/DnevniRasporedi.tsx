@@ -258,7 +258,7 @@ export function DnevniRasporedi({
                 })}
               />
               <span><strong>Pametna dnevna vežba</strong><br />
-                <small className="blago">Prednost imaju slabe oblasti, zatim ponavljanje i jedan teži izazov.</small>
+                <small className="blago">{predmetImaTezinu(forma.subject) ? 'Prednost imaju slabe oblasti, zatim ponavljanje i jedan teži izazov.' : 'Prednost imaju slabe oblasti i ponavljanje gradiva.'}</small>
               </span>
             </label>
             <label className="stiklir razmak-gore">

@@ -6,6 +6,7 @@ import type { Oblast } from '../types/db'
 const OBLASTI: Oblast[] = [
   { id: 'g1', slug: 'srpski-gramatika', name: 'Gramatika', sort_order: 200, subject: 'srpski', grade: 3 },
   { id: 'r1', slug: 'srpski-recnik', name: 'Rečnik', sort_order: 230, subject: 'srpski', grade: 3 },
+  { id: 'm1', slug: 'sabiranje', name: 'Sabiranje', sort_order: 10, subject: 'matematika', grade: 3 },
 ]
 
 const ZAGLAVLJE = 'tema;tip;pitanje;odgovor;poeni;tezina;objasnjenje;hint'
@@ -63,8 +64,8 @@ describe('mapirajRedove', () => {
     expect(tf.correct).toEqual({ value: true })
     expect(tf.manual_review).toBe(false)
     expect(tf.topic_id).toBe('g1')
-    expect(tf.points).toBe(1)
-    expect(tf.difficulty).toBe(2)
+    expect(tf.points).toBe(5)
+    expect(tf.difficulty).toBe(5)
     expect(tf.explanation).toBe('Objašnjenje')
     expect(tf.hint).toBe('Savet')
 
@@ -73,6 +74,8 @@ describe('mapirajRedove', () => {
     expect(tekst.correct).toEqual({ accept: ['srećan', 'veseo'] })
     expect(tekst.manual_review).toBe(true)
     expect(tekst.topic_id).toBe('r1')
+    expect(tekst.points).toBe(5)
+    expect(tekst.difficulty).toBe(5)
     expect(tekst.explanation).toBeNull()
   })
 
@@ -83,11 +86,17 @@ describe('mapirajRedove', () => {
     expect(r.validni[0].topic_id).toBe('g1')
   })
 
-  it('koristi podrazumevane vrednosti kad poeni/tezina nisu upisani', () => {
-    const csv = [ZAGLAVLJE, 'Gramatika;tacno-netacno;Pitanje?;netacno;;;;'].join('\n')
+  it('srpskom uvek dodeljuje ujednačenu vrednost 5, a matematici podrazumevane vrednosti', () => {
+    const csv = [
+      ZAGLAVLJE,
+      'Gramatika;tacno-netacno;Pitanje?;netacno;;;;',
+      'Sabiranje;tacno-netacno;2+2=4?;tacno;;;;',
+    ].join('\n')
     const r = mapirajRedove(parsirajCsv(csv), OBLASTI)
-    expect(r.validni[0].points).toBe(1)
-    expect(r.validni[0].difficulty).toBe(3)
+    expect(r.validni[0].points).toBe(5)
+    expect(r.validni[0].difficulty).toBe(5)
+    expect(r.validni[1].points).toBe(1)
+    expect(r.validni[1].difficulty).toBe(3)
   })
 
   it('odbacuje red sa nepoznatom temom', () => {
@@ -115,8 +124,8 @@ describe('mapirajRedove', () => {
   it('odbacuje red sa poenima/težinom van opsega', () => {
     const csv = [
       ZAGLAVLJE,
-      'Gramatika;tacno-netacno;Pitanje?;tacno;0;3;;',
-      'Gramatika;tacno-netacno;Pitanje?;tacno;1;6;;',
+      'Sabiranje;tacno-netacno;Pitanje?;tacno;0;3;;',
+      'Sabiranje;tacno-netacno;Pitanje?;tacno;1;6;;',
     ].join('\n')
     const r = mapirajRedove(parsirajCsv(csv), OBLASTI)
     expect(r.validni).toHaveLength(0)

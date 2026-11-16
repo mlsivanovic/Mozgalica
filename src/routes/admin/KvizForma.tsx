@@ -151,6 +151,7 @@ export function KvizForma({ pocetnoDete = '', onNazad }: { pocetnoDete?: string;
       return {
         ...defaults,
         ...parsed,
+        difficulty: predmetImaTezinu(p) ? (parsed.difficulty ?? '') : '',
         source: noviIzvor,
         type: konacniTip,
         selectedTopics: konacneTeme,
@@ -331,9 +332,9 @@ export function KvizForma({ pocetnoDete = '', onNazad }: { pocetnoDete?: string;
         const filterBanke: FilterPitanja = {
           topicIds: oblastiBanke.map((oblast) => oblast!.id),
         }
-        filterBanke.difficulty = predmetImaTezinu(predmet)
-          ? cfg.difficulty ? Number(cfg.difficulty) : undefined
-          : tezinaZaPredmet(predmet)
+        if (predmetImaTezinu(predmet) && cfg.difficulty) {
+          filterBanke.difficulty = Number(cfg.difficulty)
+        }
         if (cfg.type && cfg.type !== 'auto') filterBanke.type = cfg.type
         const svaPitanjaIzBanke = planBanke.length > 0 ? await listajPitanja(filterBanke) : []
 
@@ -406,9 +407,7 @@ export function KvizForma({ pocetnoDete = '', onNazad }: { pocetnoDete?: string;
           topicIds: izabraneOblasti.map((oblast) => oblast.id),
         }
 
-        if (!predmetImaTezinu(predmet)) {
-          filter.difficulty = tezinaZaPredmet(predmet)
-        } else if (cfg.difficulty) {
+        if (predmetImaTezinu(predmet) && cfg.difficulty) {
           filter.difficulty = Number(cfg.difficulty)
         }
         if (cfg.type && cfg.type !== 'auto') {
@@ -747,7 +746,7 @@ export function KvizForma({ pocetnoDete = '', onNazad }: { pocetnoDete?: string;
                 </div>
 
               </div>
-              <details className="roditelj-opcije"><summary>Izvor pitanja, težina i tip</summary>
+              <details className="roditelj-opcije"><summary>{predmetImaTezinu(predmet) ? 'Izvor pitanja, težina i tip' : 'Izvor pitanja i tip'}</summary>
                 <div className="polje">
                   <label htmlFor="std-source">Izvor pitanja</label>
                   <select

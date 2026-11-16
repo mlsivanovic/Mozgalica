@@ -3,6 +3,7 @@
 // u NovoPitanje. Podržava samo dva tipa: otvoren tekst (ručno ocenjivanje) i
 // tačno/netačno (automatska ocena) — u skladu sa proizvodnom odlukom modula.
 import type { NovoPitanje } from './api'
+import { predmetImaTezinu, tezinaZaPredmet } from './predmet'
 import type { Oblast, Tezina } from '../types/db'
 
 // ---------- parsiranje ----------
@@ -56,11 +57,11 @@ function normalizuj(s: string): string {
 
 // ---------- šema kolona + šablon za preuzimanje ----------
 
-export const ZAGLAVLJA_UVOZA = ['tema', 'tip', 'pitanje', 'odgovor', 'poeni', 'tezina', 'objasnjenje', 'hint']
+export const ZAGLAVLJA_UVOZA = ['tema', 'tip', 'pitanje', 'odgovor', 'poeni', 'objasnjenje', 'hint']
 
 export const PRIMERI_UVOZA: (string | number)[][] = [
-  ['Gramatika', 'tacno-netacno', 'Imenice menjaju rod, broj i padež.', 'tacno', 1, 2, 'Imenice se menjaju po rodu, broju i padežu.', ''],
-  ['Rečnik', 'tekst', 'Napiši jedan sinonim za reč „radostan".', 'srećan|veseo', 2, 3, 'Sinonimi su reči sličnog značenja.', 'Razmisli kako se još može reći da je neko srećan.'],
+  ['Gramatika', 'tacno-netacno', 'Imenice menjaju rod, broj i padež.', 'tacno', 5, 'Imenice se menjaju po rodu, broju i padežu.', ''],
+  ['Rečnik', 'tekst', 'Napiši jedan sinonim za reč „radostan".', 'srećan|veseo', 5, 'Sinonimi su reči sličnog značenja.', 'Razmisli kako se još može reći da je neko srećan.'],
 ]
 
 // ---------- automatsko kreiranje nepostojećih tema ----------
@@ -198,18 +199,19 @@ export function mapirajRedove(redovi: string[][], oblastiSrpski: Oblast[]): Rezu
       continue
     }
 
-    let poeni = 1
+    const imaTezinu = predmetImaTezinu(oblast.subject)
+    let poeni = imaTezinu ? 1 : 5
     if (iPoeni !== -1 && (red[iPoeni] ?? '').trim() !== '') {
       const p = Number((red[iPoeni] ?? '').trim())
       if (!Number.isInteger(p) || p < 1 || p > 100) {
         odbaci(`Poeni moraju biti ceo broj 1–100 (dobijeno „${red[iPoeni]}").`)
         continue
       }
-      poeni = p
+      if (imaTezinu) poeni = p
     }
 
-    let tezina: Tezina = 3
-    if (iTezina !== -1 && (red[iTezina] ?? '').trim() !== '') {
+    let tezina: Tezina = imaTezinu ? 3 : tezinaZaPredmet(oblast.subject)
+    if (imaTezinu && iTezina !== -1 && (red[iTezina] ?? '').trim() !== '') {
       const t = Number((red[iTezina] ?? '').trim())
       if (!Number.isInteger(t) || t < 1 || t > 5) {
         odbaci(`Težina mora biti ceo broj 1–5 (dobijeno „${red[iTezina]}").`)

@@ -11,7 +11,7 @@ import {
   type Kviz, type Oblast, type Pitanje, type Predmet, type Razred,
   type Tezina,
 } from '../../types/db'
-import { predmetImaTezinu, razrediPredmeta, tezinaZaPredmet } from '../../lib/predmet'
+import { predmetImaTezinu, razrediPredmeta } from '../../lib/predmet'
 import { napraviCsv, preuzmiCsv } from '../../lib/csv'
 import { PitanjeForma } from './PitanjeForma'
 import { UvozCsv } from './UvozCsv'
@@ -56,9 +56,7 @@ export function PitanjaLista() {
           topicId: filterOblast || undefined,
           topicIds: filterOblast ? undefined : oblastiPredmeta.map((t) => t.id),
           type: filterTip || undefined,
-          difficulty: filterTezina
-            ? Number(filterTezina)
-            : predmetImaTezinu(predmet) ? undefined : tezinaZaPredmet(predmet),
+          difficulty: predmetImaTezinu(predmet) && filterTezina ? Number(filterTezina) : undefined,
           source: filterIzvor || undefined,
           pretraga: pretraga || undefined,
         }),
@@ -204,12 +202,13 @@ export function PitanjaLista() {
   function izveziUCsv() {
     if (pitanja.length === 0) return
 
+    const saTezinom = predmetImaTezinu(predmet)
     const zaglavlja = [
       'Predmet',
       'Razred',
       'Oblast',
       'Tip',
-      'Težina',
+      ...(saTezinom ? ['Težina'] : []),
       'Poeni',
       'Tekst pitanja',
       'Ponuđeni odgovori',
@@ -221,7 +220,7 @@ export function PitanjaLista() {
 
     const redovi = pitanja.map((p) => {
       const predmetNaziv = NAZIVI_PREDMETA[predmet] ?? predmet
-      const razredNaziv = predmet === 'matematika' ? NAZIVI_RAZREDA[razred] ?? `${razred}. razred` : '—'
+      const razredNaziv = NAZIVI_RAZREDA[razred] ?? `${razred}. razred`
       const oblastNaziv = mapaOblasti.get(p.topic_id) ?? '—'
       const tipNaziv = NAZIVI_TIPOVA[p.type] ?? p.type
       const tezinaNaziv = `${NAZIVI_TEZINA[p.difficulty as Tezina]} (${p.difficulty})`
@@ -262,7 +261,7 @@ export function PitanjaLista() {
         razredNaziv,
         oblastNaziv,
         tipNaziv,
-        tezinaNaziv,
+        ...(saTezinom ? [tezinaNaziv] : []),
         p.points,
         p.text,
         opcijeTekst,

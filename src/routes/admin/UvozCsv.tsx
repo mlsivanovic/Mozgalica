@@ -93,8 +93,8 @@ export function UvozCsv({ oblastiSrpski, onZatvori, onUvezeno }: Props) {
         odgovor koji ručno ocenjuje administrator) i <strong>tacno-netacno</strong> (ocenjuje se automatski).
         Obavezne kolone: <code>tema</code> (naziv ili slug teme srpskog jezika — <strong>ako tema ne postoji,
         biće automatski kreirana</strong>), <code>tip</code> (<code>tekst</code> ili <code>tacno-netacno</code>),
-        {' '}<code>pitanje</code>, <code>odgovor</code>. Opcione: <code>poeni</code> (podrazumevano 1),
-        {' '}<code>tezina</code> (1–5, podrazumevano 3), <code>objasnjenje</code>, <code>hint</code>. Za tip{' '}
+        {' '}<code>pitanje</code>, <code>odgovor</code>. Opcione: <code>poeni</code> (za srpski je fiksno 5),
+        {' '}<code>objasnjenje</code>, <code>hint</code> (sva pitanja iz srpskog su iste težine). Za tip{' '}
         <code>tekst</code> je <code>odgovor</code> opcioni referentni odgovor koji admin vidi pri ocenjivanju
         (više varijanti razdvoj znakom „|"). Za <code>tacno-netacno</code>, odgovor mora biti tačno „tacno" ili
         {' '}„netacno".

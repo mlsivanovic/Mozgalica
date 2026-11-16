@@ -22,14 +22,16 @@ export function PitanjeForma({ oblasti, predmet, pitanje, onSacuvano, onOtkazano
   const vidljiveOblasti = predmet ? oblasti.filter((o) => o.subject === predmet) : oblasti
   const [type, setType] = useState<TipPitanja>(pitanje?.type ?? 'single')
   const [topicId, setTopicId] = useState(pitanje?.topic_id ?? vidljiveOblasti[0]?.id ?? '')
+  const efektivniPredmet = predmet ?? oblasti.find((o) => o.id === topicId)?.subject
+  const imaTezinu = !efektivniPredmet || predmetImaTezinu(efektivniPredmet)
   const [difficulty, setDifficulty] = useState<Tezina>(
-    predmet ? tezinaZaPredmet(predmet, pitanje?.difficulty as Tezina | undefined) : pitanje?.difficulty ?? 3,
+    efektivniPredmet ? tezinaZaPredmet(efektivniPredmet, pitanje?.difficulty as Tezina | undefined) : pitanje?.difficulty ?? 3,
   )
   const [text, setText] = useState(pitanje?.text ?? '')
   const [explanation, setExplanation] = useState(pitanje?.explanation ?? '')
   const [hint, setHint] = useState(pitanje?.hint ?? '')
   const [points, setPoints] = useState(
-    predmet && !predmetImaTezinu(predmet) ? 5 : pitanje?.points ?? 1,
+    efektivniPredmet && !predmetImaTezinu(efektivniPredmet) ? 5 : pitanje?.points ?? 1,
   )
   const [rucnoOcenjivanje, setRucnoOcenjivanje] = useState(pitanje?.manual_review ?? false)
 
@@ -121,10 +123,10 @@ export function PitanjeForma({ oblasti, predmet, pitanje, onSacuvano, onOtkazano
 
       const novo: NovoPitanje = {
         topic_id: topicId, type,
-        difficulty: predmet ? tezinaZaPredmet(predmet, difficulty) : difficulty,
+        difficulty: efektivniPredmet ? tezinaZaPredmet(efektivniPredmet, difficulty) : difficulty,
         text: text.trim(), options, correct,
         explanation: explanation.trim() || null, hint: hint.trim() || null,
-        points: predmet && !predmetImaTezinu(predmet) ? 5 : points,
+        points: !imaTezinu ? 5 : points,
         source: pitanje?.source ?? 'manual', gen_signature: pitanje?.gen_signature ?? null,
         // Tačno/netačno se uvek ocenjuje automatski, bez obzira na stanje čekboksa
         manual_review: type === 'truefalse' ? false : rucnoOcenjivanje,
@@ -162,7 +164,7 @@ export function PitanjeForma({ oblasti, predmet, pitanje, onSacuvano, onOtkazano
               ))}
           </select>
         </div>
-        {(!predmet || predmetImaTezinu(predmet)) && (
+        {imaTezinu && (
           <div className="polje">
             <label htmlFor="pf-tezina">Težina</label>
             <select id="pf-tezina" value={difficulty} onChange={(e) => setDifficulty(Number(e.target.value) as Tezina)}>
@@ -288,14 +290,14 @@ export function PitanjeForma({ oblasti, predmet, pitanje, onSacuvano, onOtkazano
         </div>
       )}
 
-      {(!predmet || predmetImaTezinu(predmet)) ? (
+      {imaTezinu ? (
         <div className="red-polja">
           <div className="polje">
             <label htmlFor="pf-poeni">Poeni</label>
             <input id="pf-poeni" type="number" min={1} max={100} value={points} onChange={(e) => setPoints(Number(e.target.value))} />
           </div>
         </div>
-      ) : <p className="blago malo razmak-dole">Težina i broj poena su fiksno 5.</p>}
+      ) : <p className="blago malo razmak-dole">Broj poena po pitanju je fiksno 5.</p>}
 
       <div className="polje">
         <label htmlFor="pf-objasnjenje">Objašnjenje tačnog rešenja</label>

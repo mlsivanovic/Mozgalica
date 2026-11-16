@@ -125,7 +125,7 @@ async function ucitajPitanjaIzBanke(
   return sva.filter((pitanje) =>
     (konfiguracija.imaTezinu
       ? rad.smart_mode || rad.difficulty == null || pitanje.difficulty === rad.difficulty
-      : pitanje.difficulty === konfiguracija.fiksnaTezina)
+      : rad.subject === 'srpski' || pitanje.difficulty === konfiguracija.fiksnaTezina)
     && (rad.question_type == null || pitanje.type === rad.question_type),
   )
 }
