@@ -12,6 +12,7 @@ import {
 } from '../lib/api'
 import { useAuth } from '../lib/auth'
 import { PrihvatanjeUslova } from './PrihvatanjeUslova'
+import { PostavljanjeLozinke } from './Lozinka'
 import { oznaciInboxProcitanim } from '../lib/obavestenja'
 import { postaviBedzAplikacije, slusajPushPoruke } from '../lib/push'
 import type { InboxObavestenja } from '../types/db'
@@ -21,7 +22,7 @@ import { Ikona } from './Ikona'
 import './adminLayout.css'
 
 export function AdminLayout() {
-  const { session, ucitava, prihvacenUslovi } = useAuth()
+  const { session, ucitava, prihvacenUslovi, zahtevLozinke } = useAuth()
   const [inbox, setInbox] = useState<InboxObavestenja>({ obavestenja: [], neprocitano: 0 })
 
   const osveziObavestenja = useCallback(async () => {
@@ -63,6 +64,7 @@ export function AdminLayout() {
 
   if (ucitava) return <Loader tekst="Provera prijave…" />
   if (!session) return <Navigate to="/prijava" replace />
+  if (zahtevLozinke) return <PostavljanjeLozinke />
   if (prihvacenUslovi === null) return <Loader tekst="Provera naloga…" />
   if (prihvacenUslovi === false) return <PrihvatanjeUslova />
 

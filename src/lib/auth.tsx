@@ -3,6 +3,11 @@ import type { Session } from '@supabase/supabase-js'
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import { backendPodesen, supabase } from './supabase'
 import { ucitajPodesavanja } from './api'
+import {
+  KLJUC_GRESKE_PRIJAVE, KLJUC_ZAHTEVA_LOZINKE, jeAuthHash, porukaGreskeLozinke, procitajZahtevLozinke,
+} from './authPovratak'
+
+type ZahtevLozinke = 'pozivnica' | 'oporavak'
 
 interface AuthStanje {
   session: Session | null
@@ -12,6 +17,10 @@ interface AuthStanje {
   prihvacenUslovi: boolean | null
   prijaviLozinkom(email: string, lozinka: string): Promise<string | null>
   posaljiMagicLink(email: string): Promise<string | null>
+  posaljiLinkZaLozinku(email: string): Promise<string | null>
+  // Posle pozivnice ili oporavka roditelj prvo bira lozinku, pa tek onda ulazi u panel.
+  zahtevLozinke: ZahtevLozinke | null
+  postaviLozinku(lozinka: string): Promise<string | null>
   osveziPodesavanja(): void
   odjavi(): Promise<void>
 }
@@ -29,6 +38,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [ucitava, setUcitava] = useState(backendPodesen)
   const [podesavanja, setPodesavanja] = useState<PodesavanjaPrijavljenog | null>(null)
   const [verzijaPodesavanja, setVerzijaPodesavanja] = useState(0)
+  const [zahtevLozinke, setZahtevLozinke] = useState<ZahtevLozinke | null>(procitajZahtevLozinke)
   const userId = session?.user.id ?? null
   const trenutna = userId !== null && podesavanja?.userId === userId ? podesavanja : null
   const jeVlasnikPlatforme = trenutna?.vlasnik ?? false
@@ -40,9 +50,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .auth.getSession()
       .then(({ data }) => setSession(data.session))
       .catch(() => setSession(null))
-      .finally(() => setUcitava(false))
-    const { data: pretplata } = supabase().auth.onAuthStateChange((_dogadjaj, novaSesija) => {
+      .finally(() => {
+        // supabase-js briše hash samo kad uspe; neuspeo povratak inače ostaje na 404 strani.
+        if (jeAuthHash(window.location.hash)) {
+          sessionStorage.setItem(KLJUC_GRESKE_PRIJAVE, 'Prijava preko linka nije uspela. Zatraži novi link ispod.')
+          sessionStorage.removeItem(KLJUC_ZAHTEVA_LOZINKE)
+          setZahtevLozinke(null)
+          window.location.hash = '#/prijava'
+        }
+        setUcitava(false)
+      })
+    const { data: pretplata } = supabase().auth.onAuthStateChange((dogadjaj, novaSesija) => {
       setSession(novaSesija)
+      if (dogadjaj === 'PASSWORD_RECOVERY') {
+        sessionStorage.setItem(KLJUC_ZAHTEVA_LOZINKE, 'oporavak')
+        setZahtevLozinke('oporavak')
+      }
+      if (dogadjaj === 'SIGNED_OUT') {
+        sessionStorage.removeItem(KLJUC_ZAHTEVA_LOZINKE)
+        setZahtevLozinke(null)
+      }
     })
     return () => pretplata.subscription.unsubscribe()
   }, [])
@@ -82,6 +109,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return error ? prevodGreske(error.message) : null
   }
 
+  async function posaljiLinkZaLozinku(email: string): Promise<string | null> {
+    const { error } = await supabase().auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + import.meta.env.BASE_URL,
+    })
+    return error ? prevodGreske(error.message) : null
+  }
+
+  async function postaviLozinku(lozinka: string): Promise<string | null> {
+    const { error } = await supabase().auth.updateUser({ password: lozinka })
+    if (error) return porukaGreskeLozinke(error.message)
+    sessionStorage.removeItem(KLJUC_ZAHTEVA_LOZINKE)
+    setZahtevLozinke(null)
+    return null
+  }
+
   function osveziPodesavanja() {
     setVerzijaPodesavanja((broj) => broj + 1)
   }
@@ -93,7 +135,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return (
     <AuthContext.Provider value={{
       session, ucitava, jeVlasnikPlatforme, prihvacenUslovi,
-      prijaviLozinkom, posaljiMagicLink, osveziPodesavanja, odjavi,
+      prijaviLozinkom, posaljiMagicLink, posaljiLinkZaLozinku, zahtevLozinke, postaviLozinku,
+      osveziPodesavanja, odjavi,
     }}>
       {children}
     </AuthContext.Provider>
