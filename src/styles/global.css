@@ -321,3 +321,317 @@ table.tabela { width: 100%; border-collapse: collapse; background: var(--boja-ka
 @media (prefers-reduced-motion: reduce) {
   .ui-skeleton, .maskota { animation: none; }
 }
+
+/* ---------- Pravne stranice (Politika privatnosti & Uslovi korišćenja) ---------- */
+.pravna-strana {
+  max-width: 1020px;
+  padding-top: clamp(16px, 3vw, 32px);
+  padding-bottom: clamp(32px, 6vw, 64px);
+}
+
+.pravna-strana__traka {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.pravna-strana__preklopnik {
+  display: inline-flex;
+  padding: 4px;
+  border-radius: 999px;
+  background: var(--boja-povrsina-niska);
+  border: 1px solid var(--boja-ivica);
+  gap: 4px;
+}
+
+.pravna-strana__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--boja-tekst-blagi);
+  text-decoration: none;
+  transition: background var(--brzina), color var(--brzina), box-shadow var(--brzina);
+}
+
+.pravna-strana__tab:hover {
+  color: var(--boja-tekst);
+  text-decoration: none;
+}
+
+.pravna-strana__tab.aktivna {
+  background: var(--boja-kartica);
+  color: var(--boja-primarna);
+  box-shadow: var(--senka);
+}
+
+.pravna-strana__hero {
+  padding: clamp(22px, 4vw, 36px);
+  border-radius: var(--radius-veliki);
+  margin-bottom: 20px;
+  background:
+    radial-gradient(circle at 95% 10%, color-mix(in srgb, var(--boja-primarna) 10%, transparent), transparent 45%),
+    var(--boja-kartica);
+}
+
+.pravna-strana__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  margin-bottom: 12px;
+}
+
+.pravna-strana__datum {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--boja-tekst-blagi);
+}
+
+.pravna-strana__hero h1 {
+  margin-bottom: 8px;
+}
+
+.pravna-strana__podnaslov {
+  color: var(--boja-tekst-blagi);
+  font-size: 1.04rem;
+  max-width: 62ch;
+  margin-bottom: 20px;
+}
+
+.pravna-strana__sazetak {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.pravna-strana__sazetak-stavka {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--radius-mali);
+  background: var(--boja-povrsina-niska);
+  border: 1px solid var(--boja-ivica);
+}
+
+.pravna-strana__sazetak-stavka svg {
+  flex: none;
+  color: var(--boja-uspeh);
+  margin-top: 2px;
+}
+
+.pravna-strana__sazetak-stavka strong {
+  display: block;
+  font-size: 0.9rem;
+  line-height: 1.25;
+  margin-bottom: 2px;
+}
+
+.pravna-strana__sazetak-stavka span {
+  display: block;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  color: var(--boja-tekst-blagi);
+}
+
+.pravna-strana__mreza {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.pravna-strana__nav {
+  position: sticky;
+  top: 20px;
+  padding: 18px;
+  border-radius: var(--radius);
+}
+
+.pravna-strana__nav-naslov {
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--boja-tekst-blagi);
+  margin-bottom: 10px;
+}
+
+.pravna-strana__nav ol {
+  list-style: none;
+  display: grid;
+  gap: 4px;
+}
+
+.pravna-strana__nav button {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--boja-tekst-blagi);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  line-height: 1.35;
+  transition: background var(--brzina), color var(--brzina);
+}
+
+.pravna-strana__nav button:hover {
+  background: var(--boja-primarna-svetla);
+  color: var(--boja-primarna);
+}
+
+.pravna-strana__nav-broj {
+  color: var(--boja-primarna);
+  font-weight: 800;
+  min-width: 1.25em;
+}
+
+.pravna-strana__clanak {
+  padding: clamp(22px, 4vw, 40px);
+  border-radius: var(--radius-veliki);
+  line-height: 1.72;
+}
+
+.pravna-strana__clanak section + section {
+  margin-top: 2.2rem;
+  padding-top: 1.8rem;
+  border-top: 1px solid var(--boja-ivica);
+}
+
+.pravna-strana__clanak h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 0.9rem;
+  font-size: 1.25rem;
+}
+
+.pravna-strana__broj {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+  background: var(--boja-primarna-svetla);
+  color: var(--boja-primarna);
+  font-size: 0.88rem;
+  font-weight: 800;
+}
+
+.pravna-strana__clanak p {
+  margin-bottom: 0.85rem;
+  color: var(--boja-tekst);
+}
+
+.pravna-strana__clanak p:last-child {
+  margin-bottom: 0;
+}
+
+.pravna-strana__clanak ul {
+  margin: 0.4rem 0 1rem;
+  padding-left: 1.35rem;
+}
+
+.pravna-strana__clanak li {
+  margin-bottom: 0.45rem;
+  padding-left: 0.25rem;
+}
+
+.pravna-strana__clanak li::marker {
+  color: var(--boja-primarna);
+}
+
+.pravna-strana__clanak code {
+  font-size: 0.88em;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: var(--boja-povrsina-niska);
+  border: 1px solid var(--boja-ivica);
+}
+
+.pravna-strana__poziv {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-top: 1rem;
+  padding: 14px 16px;
+  border-radius: var(--radius-mali);
+  background: var(--boja-primarna-svetla);
+  color: var(--boja-na-primarnom-kontejneru);
+}
+
+.pravna-strana__poziv svg {
+  flex: none;
+  color: var(--boja-primarna);
+  margin-top: 3px;
+}
+
+.pravna-strana__poziv p {
+  margin: 0;
+  color: inherit;
+  font-size: 0.95rem;
+}
+
+.pravna-strana__tabela {
+  margin-top: 0.75rem;
+  box-shadow: none;
+  border: 1px solid var(--boja-ivica);
+}
+
+.pravna-strana__dno {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 2.2rem;
+  padding-top: 1.4rem;
+  border-top: 1px solid var(--boja-ivica);
+}
+
+@media (max-width: 900px) {
+  .pravna-strana__sazetak {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .pravna-strana__mreza {
+    grid-template-columns: 1fr;
+  }
+  .pravna-strana__nav {
+    position: static;
+  }
+  .pravna-strana__nav ol {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .pravna-strana__sazetak,
+  .pravna-strana__nav ol {
+    grid-template-columns: 1fr;
+  }
+  .pravna-strana__preklopnik {
+    width: 100%;
+    justify-content: stretch;
+  }
+  .pravna-strana__tab {
+    flex: 1;
+    justify-content: center;
+    padding: 9px 10px;
+    font-size: 0.85rem;
+  }
+}

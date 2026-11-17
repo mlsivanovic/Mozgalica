@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="sr">
+  <head>
+    <meta charset="UTF-8" />
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem('mozgalica:tema');
+          if (t !== 'svetla' && t !== 'tamna') {
+            t = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'tamna' : 'svetla';
+          }
+          document.documentElement.setAttribute('data-theme', t);
+        } catch (e) {}
+      })();
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Politika privatnosti — Mozgalica</title>
+    <meta name="description" content="Politika privatnosti platforme Mozgalica: koje podatke čuvamo, zašto su potrebni, gde se nalaze i kako možete da ih obrišete." />
+    <link rel="canonical" href="https://mozgalica.rs/privatnost/" />
+    <link rel="icon" type="image/svg+xml" href="/app/favicon.svg" />
+    <link rel="apple-touch-icon" href="/app/icon-192.png" />
+    <meta name="theme-color" content="#4f46e5" />
+    <link rel="stylesheet" href="/stil.css" />
+    <script src="/skripta.js" defer></script>
+  </head>
+  <body>
+    <svg class="sprite" aria-hidden="true">
+      <symbol id="i-sunce" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></symbol>
+      <symbol id="i-mesec" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></symbol>
+      <symbol id="i-meni" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+    </svg>
+
+    <a class="preskoci" href="#sadrzaj">Preskoči na sadržaj</a>
+
+    <header class="zaglavlje">
+      <div class="okvir zaglavlje__red">
+        <a class="logo" href="/" aria-label="Mozgalica, početna">
+          <svg viewBox="0 0 64 64" aria-hidden="true">
+            <rect width="64" height="64" rx="14" fill="#4f46e5"/>
+            <circle cx="32" cy="27" r="15" fill="#fbbf24"/>
+            <path d="M27 40h10v5a3 3 0 0 1-3 3h-4a3 3 0 0 1-3-3z" fill="#f7f7fc"/>
+            <path d="M26 24l4 4 8-8" stroke="#3730a3" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            <path d="M32 12v-4M18 16l-3-3M46 16l3-3" stroke="#fbbf24" stroke-width="3" stroke-linecap="round"/>
+          </svg>
+          <span>Mozgalica</span>
+        </a>
+        <nav class="meni" aria-label="Glavni meni">
+          <a href="/#za-dete">Za dete</a>
+          <a href="/#gradivo">Gradivo</a>
+          <a href="/#probaj">Probaj kviz</a>
+          <a href="/#za-roditelje">Za roditelje</a>
+          <a href="/privatnost/" aria-current="page">Privatnost</a>
+          <a href="/uslovi/">Uslovi</a>
+        </nav>
+        <div class="zaglavlje__akcije">
+          <button
+            type="button"
+            id="tema-prekidac"
+            class="ikona-dugme tema-dugme"
+            aria-label="Prebaci na tamnu temu"
+            aria-pressed="false"
+            title="Promeni temu"
+          >
+            <svg class="tema-ikona--mesec" aria-hidden="true"><use href="#i-mesec"/></svg>
+            <svg class="tema-ikona--sunce" aria-hidden="true"><use href="#i-sunce"/></svg>
+          </button>
+          <a class="dugme dugme--obrubljeno dugme--malo zaglavlje__prijava" href="/app/#/prijava">Prijava</a>
+          <button
+            type="button"
+            id="meni-dugme"
+            class="ikona-dugme meni-dugme"
+            aria-label="Otvori meni"
+            aria-expanded="false"
+            aria-controls="mobilni-meni"
+          >
+            <svg aria-hidden="true"><use href="#i-meni"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <nav id="mobilni-meni" class="mobilni-meni" aria-label="Mobilna navigacija">
+        <a href="/">Početna stranica</a>
+        <a href="/#gradivo">Gradivo (2–5. razred)</a>
+        <a href="/privatnost/" aria-current="page">Politika privatnosti</a>
+        <a href="/uslovi/">Uslovi korišćenja</a>
+        <div class="mobilni-meni__akcija">
+          <a class="dugme dugme--obrubljeno dugme--malo" href="/app/#/prijava">Prijava za roditelje</a>
+        </div>
+      </nav>
+    </header>
+
+    <main id="sadrzaj" class="pravni-omot">
+      <div class="okvir">
+        <div class="pravni-putanja">
+          <a href="/">← Nazad na početnu Mozgalice</a>
+          <nav class="pravni-preklopnik" aria-label="Pravni dokumenti">
+            <a class="pravni-tab aktivna" href="/privatnost/" aria-current="page">Politika privatnosti</a>
+            <a class="pravni-tab" href="/uslovi/">Uslovi korišćenja</a>
+          </nav>
+        </div>
+
+        <header class="pravni-hero">
+          <div class="pravni-hero__meta">
+            <span class="pravni-bedz">Zaštita podataka</span>
+            <span class="pravni-datum">Poslednja izmena: 17. novembar 2026.</span>
+          </div>
+          <h1>Politika privatnosti</h1>
+          <p class="pravni-hero__podnaslov">
+            Jasno i otvoreno objašnjavamo koje podatke Mozgalica čuva, zašto su potrebni i kako
+            možete da ih obrišete u svakom trenutku.
+          </p>
+
+          <div class="pravni-sazetak">
+            <div class="pravni-sazetak-stavka">
+              <strong>Bez reklama i praćenja</strong>
+              <span>Nema oglasa, analitike ni kolačića trećih strana.</span>
+            </div>
+            <div class="pravni-sazetak-stavka">
+              <strong>Dete nema nalog</strong>
+              <span>Bez mejla i lozinke za dete — ulaz je tajnim linkom.</span>
+            </div>
+            <div class="pravni-sazetak-stavka">
+              <strong>Podaci u Evropi</strong>
+              <span>Baza je u Londonu (eu-west-2), pod kontrolom roditelja.</span>
+            </div>
+            <div class="pravni-sazetak-stavka">
+              <strong>Brisanje jednim klikom</strong>
+              <span>Profil deteta ili ceo nalog brišete sami u podešavanjima.</span>
+            </div>
+          </div>
+        </header>
+
+        <div class="pravni-raspored">
+          <aside class="pravni-toc" aria-label="Sadržaj politike privatnosti">
+            <p class="pravni-toc__naslov">Sadržaj</p>
+            <ol>
+              <li><a href="#p-rukovalac" class="aktivna"><span class="pravni-toc__broj">1.</span><span>Ko obrađuje podatke</span></a></li>
+              <li><a href="#p-podaci"><span class="pravni-toc__broj">2.</span><span>Koje podatke čuvamo</span></a></li>
+              <li><a href="#p-svrha"><span class="pravni-toc__broj">3.</span><span>Svrha i pravni osnov obrade</span></a></li>
+              <li><a href="#p-obradjivaci"><span class="pravni-toc__broj">4.</span><span>Gde se podaci čuvaju i ko ih obrađuje</span></a></li>
+              <li><a href="#p-cuvanje"><span class="pravni-toc__broj">5.</span><span>Koliko dugo čuvamo podatke</span></a></li>
+              <li><a href="#p-prava"><span class="pravni-toc__broj">6.</span><span>Tvoja prava</span></a></li>
+              <li><a href="#p-kontakt"><span class="pravni-toc__broj">7.</span><span>Kontakt</span></a></li>
+            </ol>
+          </aside>
+
+          <article class="pravni-clanak">
+            <section id="p-rukovalac">
+              <h2><span class="pravni-broj">1</span> Ko obrađuje podatke</h2>
+              <p>
+                Rukovalac podacima o ličnosti je <strong>Miloš Ivanović, Beograd</strong>. Za sva pitanja o
+                privatnosti, pristupu podacima ili brisanju piši na
+                <a href="mailto:kontakt@mozgalica.rs">kontakt@mozgalica.rs</a>.
+              </p>
+            </section>
+
+            <section id="p-podaci">
+              <h2><span class="pravni-broj">2</span> Koje podatke čuvamo</h2>
+              <p><strong>Roditelj (administrator):</strong></p>
+              <ul>
+                <li>email adresa za prijavu, pozivnicu, reset lozinke i podešavanja obaveštenja;</li>
+                <li>datum prihvatanja uslova korišćenja;</li>
+                <li>pretplate na push obaveštenja za svaki uređaj (adresa pretplate i ključevi za šifrovanje poruka).</li>
+              </ul>
+
+              <p><strong>Dete (profil):</strong></p>
+              <ul>
+                <li>ime, izabrani avatar i, ako ga roditelj unese, datum rođenja;</li>
+                <li>opciona email adresa deteta, ako je ranije uneta (trenutno se ne koristi: obaveštenja detetu stižu kao push i u aplikaciji);</li>
+                <li>odgovori na kvizove, rezultati, zvezdice, nagrade iz prodavnice i istorija kupovina;</li>
+                <li>šahovske partije, dnevni rasporedi vežbe i raspored časova koji roditelj unese;</li>
+                <li>obaveštenja u aplikaciji i pretplate na push obaveštenja uređaja (uključujući identifikator za Android obaveštenja).</li>
+              </ul>
+
+              <div class="pravni-callout">
+                <p>
+                  <strong>Dete nema svoj nalog i ne unosi lozinku.</strong> Profilu pristupa isključivo
+                  preko ličnog linka ili QR koda koji roditelj podeli.
+                </p>
+              </div>
+            </section>
+
+            <section id="p-svrha">
+              <h2><span class="pravni-broj">3</span> Svrha i pravni osnov obrade</h2>
+              <p>
+                Podaci se obrađuju isključivo da bi aplikacija radila: da dodeljuje kvizove i šahovske partije,
+                ocenjuje odgovore na serveru, prikazuje napredak, šalje obaveštenja i priprema nedeljni
+                izveštaj za roditelja.
+              </p>
+              <p>
+                Pravni osnov obrade je pružanje usluge na zahtev roditelja (izvršenje ugovornog odnosa po
+                prihvatanju uslova) i pristanak roditelja kao zakonskog zastupnika za unos podataka o detetu.
+              </p>
+              <p>
+                Ne koristimo reklame, analitiku ni kolačiće za praćenje. U pregledaču i na uređaju čuvaju se
+                samo tehnički podaci neophodni za rad: sesija prijave, izabrana tema, status kartice
+                „Prvi koraci“ i privremeni lokalni odgovori na kviz dok nema internet veze (kako se napredak
+                ne bi izgubio).
+              </p>
+            </section>
+
+            <section id="p-obradjivaci">
+              <h2><span class="pravni-broj">4</span> Gde se podaci čuvaju i ko ih obrađuje</h2>
+              <p>Podaci se ne prodaju i ne šalju drugim licima osim sledećim tehničkim obrađivačima:</p>
+              <div class="pravni-tabela-omot">
+                <table class="pravni-tabela">
+                  <thead>
+                    <tr>
+                      <th>Servis</th>
+                      <th>Uloga</th>
+                      <th>Lokacija / napomena</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>Supabase</strong></td>
+                      <td>Baza podataka, autentifikacija i Edge funkcije</td>
+                      <td>Region London (<code>eu-west-2</code>)</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Brevo</strong></td>
+                      <td>Slanje mejlova roditelju (pozivnice, reset lozinke i nedeljni izveštaj)</td>
+                      <td>EU email infrastruktura</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Google Firebase Cloud Messaging</strong></td>
+                      <td>Isporuka push obaveštenja na Android uređaje</td>
+                      <td>Samo token uređaja i tekst obaveštenja</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Servisi pregledača i OS-a</strong></td>
+                      <td>Isporuka Web Push obaveštenja</td>
+                      <td>Apple / Google / Mozilla push kanali</td>
+                    </tr>
+                    <tr>
+                      <td><strong>GitHub Pages</strong></td>
+                      <td>Hosting statičkih fajlova sajta i aplikacije</td>
+                      <td>Bez podataka o deci i roditeljima</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            <section id="p-cuvanje">
+              <h2><span class="pravni-broj">5</span> Koliko dugo čuvamo podatke</h2>
+              <p>
+                Podaci se čuvaju dok postoji nalog roditelja ili profil deteta. Profil deteta roditelj može
+                obrisati u podešavanjima, a ceo nalog u odeljku „Obriši nalog“.
+              </p>
+              <p>
+                Brisanjem se trajno uklanjaju i svi podaci vezani za nalog, uključujući obaveštenja i
+                pretplate na uređajima. Dnevnik pozadinskih poslova na serveru automatski se čuva najduže 7 dana.
+              </p>
+            </section>
+
+            <section id="p-prava">
+              <h2><span class="pravni-broj">6</span> Tvoja prava</h2>
+              <p>
+                Po Zakonu o zaštiti podataka o ličnosti Republike Srbije imaš pravo da zatražiš pristup
+                svojim podacima, ispravku, brisanje, ograničenje obrade, prenosivost i da podneseš prigovor.
+              </p>
+              <p>
+                Takođe imaš pravo na pritužbu
+                <a href="https://www.poverenik.rs" target="_blank" rel="noreferrer">
+                  Povereniku za informacije od javnog značaja i zaštitu podataka o ličnosti
+                </a>.
+              </p>
+            </section>
+
+            <section id="p-kontakt">
+              <h2><span class="pravni-broj">7</span> Kontakt</h2>
+              <p>
+                Za sva pitanja o zaštiti podataka piši na:
+                <a href="mailto:kontakt@mozgalica.rs">kontakt@mozgalica.rs</a>
+              </p>
+            </section>
+
+            <footer class="pravni-dno">
+              <a class="dugme dugme--obrubljeno dugme--malo" href="/">← Početna stranica</a>
+              <a class="dugme dugme--malo" href="/uslovi/">Pročitaj Uslove korišćenja →</a>
+            </footer>
+          </article>
+        </div>
+      </div>
+    </main>
+
+    <footer class="podnozje">
+      <div class="okvir">
+        <div class="podnozje__dno" style="border-top: 0; padding-top: 0">
+          <p>© 2026 Mozgalica · Miloš Ivanović, Beograd</p>
+          <p>
+            <a href="/">Početna</a> ·
+            <a href="/privatnost/">Privatnost</a> ·
+            <a href="/uslovi/">Uslovi korišćenja</a> ·
+            <a href="/app/#/prijava">Prijava</a>
+          </p>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

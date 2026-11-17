@@ -35,9 +35,63 @@
     <meta property="og:url" content="https://mozgalica.rs/" />
     <meta property="og:title" content="Mozgalica — kvizovi, šah i nagrade za đake" />
     <meta property="og:description" content="Kratki kvizovi iz matematike, srpskog jezika i prirode i društva, šah protiv računara i zvezdice za nagrade. Za đake od 2. do 5. razreda." />
-    <meta property="og:image" content="https://mozgalica.rs/app/icon-512.png" />
-    <meta name="twitter:card" content="summary" />
+    <meta property="og:image" content="https://mozgalica.rs/og-slika.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="https://mozgalica.rs/og-slika.png" />
     <link rel="stylesheet" href="/stil.css" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "SoftwareApplication",
+            "name": "Mozgalica",
+            "applicationCategory": "EducationalApplication",
+            "operatingSystem": "Web, Android",
+            "inLanguage": "sr",
+            "url": "https://mozgalica.rs/",
+            "description": "Kvizovi iz matematike, srpskog jezika i prirode i društva, šah protiv računara, raspored časova i sistem zvezdica za đake od 2. do 5. razreda.",
+            "offers": {
+              "@type": "Offer",
+              "price": "0",
+              "priceCurrency": "RSD"
+            }
+          },
+          {
+            "@type": "FAQPage",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "Za koje razrede je Mozgalica?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Za đake od 2. do 5. razreda osnovne škole. Matematika i srpski jezik pokrivaju sve te razrede, a priroda i društvo 3. i 4. razred."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Da li detetu treba nalog ili telefon?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Nalog ne treba. Dovoljan je bilo koji uređaj sa pregledačem — telefon, tablet ili računar. Dete otvara lični link ili skenira QR kod sa vašeg profila."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Šta ako nema interneta?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Dete može da nastavi kviz. Odgovori se čuvaju na uređaju i šalju čim se veza vrati, a kviz se predaje tek kad server potvrdi da je sve sačuvano."
+                }
+              }
+            ]
+          }
+        ]
+      }
+    </script>
+    <script src="/skripta.js" defer></script>
   </head>
   <body>
     <svg class="sprite" aria-hidden="true">
@@ -56,6 +110,10 @@
       <symbol id="i-stit" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></symbol>
       <symbol id="i-server" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/><path d="M7 7.5h.01M7 16.5h.01"/></symbol>
       <symbol id="i-mejl" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></symbol>
+      <symbol id="i-sunce" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></symbol>
+      <symbol id="i-mesec" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></symbol>
+      <symbol id="i-meni" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+      <symbol id="i-zatvori" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></symbol>
     </svg>
 
     <a class="preskoci" href="#sadrzaj">Preskoči na sadržaj</a>
@@ -74,13 +132,52 @@
         </a>
         <nav class="meni" aria-label="Glavni meni">
           <a href="#za-dete">Za dete</a>
+          <a href="#gradivo">Gradivo</a>
+          <a href="#probaj">Probaj kviz</a>
           <a href="#kako-radi">Kako radi</a>
           <a href="#za-roditelje">Za roditelje</a>
           <a href="#privatnost">Privatnost</a>
           <a href="#pitanja">Pitanja</a>
         </nav>
-        <a class="dugme dugme--obrubljeno dugme--malo" href="/app/#/prijava">Prijava</a>
+        <div class="zaglavlje__akcije">
+          <button
+            type="button"
+            id="tema-prekidac"
+            class="ikona-dugme tema-dugme"
+            aria-label="Prebaci na tamnu temu"
+            aria-pressed="false"
+            title="Promeni temu"
+          >
+            <svg class="tema-ikona--mesec" aria-hidden="true"><use href="#i-mesec"/></svg>
+            <svg class="tema-ikona--sunce" aria-hidden="true"><use href="#i-sunce"/></svg>
+          </button>
+          <a class="dugme dugme--obrubljeno dugme--malo zaglavlje__prijava" href="/app/#/prijava">Prijava</a>
+          <button
+            type="button"
+            id="meni-dugme"
+            class="ikona-dugme meni-dugme"
+            aria-label="Otvori meni"
+            aria-expanded="false"
+            aria-controls="mobilni-meni"
+          >
+            <svg aria-hidden="true"><use href="#i-meni"/></svg>
+          </button>
+        </div>
       </div>
+
+      <nav id="mobilni-meni" class="mobilni-meni" aria-label="Mobilna navigacija">
+        <a href="#za-dete">Za dete</a>
+        <a href="#gradivo">Gradivo (2–5. razred)</a>
+        <a href="#probaj">Probaj kviz</a>
+        <a href="#kako-radi">Kako radi</a>
+        <a href="#za-roditelje">Za roditelje</a>
+        <a href="#privatnost">Privatnost i uslovi</a>
+        <a href="#pitanja">Česta pitanja</a>
+        <div class="mobilni-meni__akcija">
+          <a class="dugme dugme--obrubljeno dugme--malo" href="/app/#/prijava">Prijava</a>
+          <button type="button" class="dugme dugme--malo" data-otvori-pristup>Zatraži pristup</button>
+        </div>
+      </nav>
     </header>
 
     <main id="sadrzaj">
@@ -95,41 +192,125 @@
               zvezdice za nagrade koje ste zajedno dogovorili.
             </p>
             <div class="heroj__dugmad">
-              <a class="dugme" href="mailto:kontakt@mozgalica.rs?subject=Pristup%20Mozgalici">Zatraži pristup</a>
-              <a class="dugme dugme--obrubljeno" href="#kako-radi">Kako radi</a>
+              <a class="dugme" href="mailto:kontakt@mozgalica.rs?subject=Pristup%20Mozgalici" data-otvori-pristup>Zatraži pristup</a>
+              <a class="dugme dugme--obrubljeno" href="#probaj">Probaj primer kviza</a>
             </div>
-            <p class="napomena">Mozgalica je trenutno dostupna na poziv.</p>
+            <ul class="poverenje" aria-label="Ključne osobine">
+              <li>2–5. razred</li>
+              <li>Bez reklama i praćenja</li>
+              <li>Radi i bez interneta</li>
+              <li>Web (PWA) + Android</li>
+              <li>Otvoren kod</li>
+            </ul>
           </div>
 
-          <div class="telefon" aria-hidden="true">
-            <div class="telefon__ekran">
-              <div class="t-zaglavlje">
-                <div>
-                  <p class="t-pozdrav">Zdravo, Ana!</p>
-                  <p class="t-titula">Titula: Mali matematičar</p>
+          <div class="prikaz-omot">
+            <div class="prikaz-tabovi" role="tablist" aria-label="Pregled ekrana Mozgalice">
+              <button type="button" class="prikaz-tab" role="tab" aria-selected="true" data-prikaz-tab="dete">Profil deteta</button>
+              <button type="button" class="prikaz-tab" role="tab" aria-selected="false" data-prikaz-tab="sah">Šah</button>
+              <button type="button" class="prikaz-tab" role="tab" aria-selected="false" data-prikaz-tab="roditelj">Izveštaj</button>
+            </div>
+
+            <div class="telefon" aria-live="polite">
+              <div class="telefon__ekran">
+                <!-- Panel 1: Dečji profil -->
+                <div class="telefon__panel" data-prikaz-panel="dete">
+                  <div class="t-zaglavlje">
+                    <div class="t-dete">
+                      <svg width="40" height="40" viewBox="0 0 84 84" aria-hidden="true">
+                        <circle cx="42" cy="38" r="28" fill="#fbbf24"/>
+                        <path d="M31 61h22v5a8 8 0 0 1-8 8h-6a8 8 0 0 1-8-8Z" fill="#4f46e5"/>
+                        <circle cx="33" cy="40" r="2.7" fill="#25225a"/>
+                        <circle cx="51" cy="40" r="2.7" fill="#25225a"/>
+                        <path d="M34 49q8 9 16 0" fill="none" stroke="#25225a" stroke-width="3" stroke-linecap="round"/>
+                      </svg>
+                      <div>
+                        <p class="t-pozdrav">Zdravo, Ana!</p>
+                        <p class="t-titula">Titula: Mali matematičar</p>
+                      </div>
+                    </div>
+                    <p class="t-zvezde"><svg><use href="#i-zvezda"/></svg> 128</p>
+                  </div>
+                  <p class="t-naslov">Danas</p>
+                  <div class="t-kartica t-kartica--mat">
+                    <span class="t-oznaka">Matematika</span>
+                    <p>Množenje i deljenje</p>
+                    <div class="t-traka"><span style="width: 70%"></span></div>
+                    <p class="t-sitno">7 od 10 zadataka</p>
+                  </div>
+                  <div class="t-kartica t-kartica--srp">
+                    <span class="t-oznaka">Srpski jezik</span>
+                    <p>Veliko slovo</p>
+                    <p class="t-sitno">Novi kviz · 8 pitanja</p>
+                  </div>
+                  <div class="t-kartica t-kartica--sah">
+                    <span class="t-oznaka">Šah</span>
+                    <p>Partija protiv računara</p>
+                    <p class="t-sitno">Nivo 2 · bez sata</p>
+                  </div>
+                  <div class="t-sutra">
+                    <svg><use href="#i-raspored"/></svg>
+                    <span>Sutra: matematika, srpski, likovno, fizičko</span>
+                  </div>
                 </div>
-                <p class="t-zvezde"><svg><use href="#i-zvezda"/></svg> 128</p>
-              </div>
-              <p class="t-naslov">Danas</p>
-              <div class="t-kartica t-kartica--mat">
-                <span class="t-oznaka">Matematika</span>
-                <p>Množenje i deljenje</p>
-                <div class="t-traka"><span style="width: 70%"></span></div>
-                <p class="t-sitno">7 od 10 zadataka</p>
-              </div>
-              <div class="t-kartica t-kartica--srp">
-                <span class="t-oznaka">Srpski jezik</span>
-                <p>Veliko slovo</p>
-                <p class="t-sitno">Novi kviz · 8 pitanja</p>
-              </div>
-              <div class="t-kartica t-kartica--sah">
-                <span class="t-oznaka">Šah</span>
-                <p>Partija protiv računara</p>
-                <p class="t-sitno">Nivo 2 · bez sata</p>
-              </div>
-              <div class="t-sutra">
-                <svg><use href="#i-raspored"/></svg>
-                <span>Sutra: matematika, srpski, likovno, fizičko</span>
+
+                <!-- Panel 2: Šahovska partija -->
+                <div class="telefon__panel" data-prikaz-panel="sah" hidden>
+                  <div class="t-zaglavlje">
+                    <div>
+                      <p class="t-pozdrav">Šahovska partija</p>
+                      <p class="t-titula">Protiv računara · Nivo 2</p>
+                    </div>
+                    <p class="t-zvezde"><svg><use href="#i-zvezda"/></svg> +8</p>
+                  </div>
+                  <div class="mini-tabla" aria-hidden="true">
+                    <span class="polje-s">♜</span><span class="polje-t"></span><span class="polje-s">♝</span><span class="polje-t">♚</span>
+                    <span class="polje-t">♟</span><span class="polje-s">♟</span><span class="polje-t"></span><span class="polje-s">♟</span>
+                    <span class="polje-s"></span><span class="polje-t">♘</span><span class="polje-s">♙</span><span class="polje-t"></span>
+                    <span class="polje-t">♙</span><span class="polje-s"></span><span class="polje-t">♕</span><span class="polje-s">♔</span>
+                  </div>
+                  <div class="t-kartica t-kartica--sah">
+                    <span class="t-oznaka">Na potezu</span>
+                    <p>Tvoj red (beli)</p>
+                    <p class="t-sitno">Bez sata · 12. potez</p>
+                  </div>
+                  <div class="t-kartica t-kartica--mat">
+                    <span class="t-oznaka">Druga šansa</span>
+                    <p>Revanš ako izgubiš</p>
+                    <p class="t-sitno">Do 3 ponovna pokušaja po partiji</p>
+                  </div>
+                </div>
+
+                <!-- Panel 3: Roditeljski pregled -->
+                <div class="telefon__panel" data-prikaz-panel="roditelj" hidden>
+                  <div class="t-zaglavlje">
+                    <div>
+                      <p class="t-pozdrav">Nedeljni pregled</p>
+                      <p class="t-titula">Ana · 3. razred</p>
+                    </div>
+                    <span class="t-zvezde">+42 ⭐</span>
+                  </div>
+                  <div class="t-stat-mreza">
+                    <div class="t-stat">
+                      <strong>5 / 7</strong>
+                      <span>aktivnih dana</span>
+                    </div>
+                    <div class="t-stat">
+                      <strong>88%</strong>
+                      <span>tačnih odgovora</span>
+                    </div>
+                  </div>
+                  <div class="t-kartica t-kartica--pri">
+                    <span class="t-oznaka">Odlično ide</span>
+                    <p>Množenje i veliko slovo</p>
+                    <p class="t-sitno">94% tačnosti ove nedelje</p>
+                  </div>
+                  <div class="t-kartica t-kartica--srp">
+                    <span class="t-oznaka">Za još vežbe</span>
+                    <p>Merne jedinice (dužina i masa)</p>
+                    <p class="t-sitno">Pametna vežba ubacuje 60% zadataka</p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -144,36 +325,269 @@
             <p>Kratki zadaci, jasna objašnjenja i nagrade koje motivišu — dete samo otvara svoj profil i počinje.</p>
           </header>
           <div class="mreza mreza--3">
-            <article class="kartica">
+            <article class="kartica kartica--interaktivna">
               <span class="ikona ikona--mat"><svg><use href="#i-kviz"/></svg></span>
               <h3>Kvizovi po razredima</h3>
               <p>Matematika i srpski jezik od 2. do 5. razreda, priroda i društvo za 3. i 4. razred.</p>
             </article>
-            <article class="kartica">
+            <article class="kartica kartica--interaktivna">
               <span class="ikona ikona--srp"><svg><use href="#i-ponovo"/></svg></span>
               <h3>Greška nije kraj</h3>
               <p>Uz netačan zadatak stiže objašnjenje. Dete jednom rešava nove, istovrsne zadatke — ako ih sve uradi tačno, zvezdice se dopune.</p>
             </article>
-            <article class="kartica">
+            <article class="kartica kartica--interaktivna">
               <span class="ikona ikona--sah"><svg><use href="#i-sah"/></svg></span>
               <h3>Šah protiv računara</h3>
               <p>Pet nivoa protivnika, partije sa satom ili bez njega. Posle poraza dete može do tri puta da pokuša ponovo.</p>
             </article>
-            <article class="kartica">
+            <article class="kartica kartica--interaktivna">
               <span class="ikona ikona--zvezda"><svg><use href="#i-zvezda"/></svg></span>
               <h3>Zvezdice, titule i nagrade</h3>
               <p>Za rešene kvizove i partije dete skuplja zvezdice i menja ih u prodavnici za nagrade koje roditelj sam odredi.</p>
             </article>
-            <article class="kartica">
+            <article class="kartica kartica--interaktivna">
               <span class="ikona ikona--pri"><svg><use href="#i-raspored"/></svg></span>
               <h3>Raspored časova</h3>
               <p>Danas i sutra na jednom ekranu, da se knjige spakuju na vreme. Podržava smene i naizmenične nedelje.</p>
             </article>
-            <article class="kartica">
+            <article class="kartica kartica--interaktivna">
               <span class="ikona ikona--siva"><svg><use href="#i-offline"/></svg></span>
               <h3>Radi i bez interneta</h3>
               <p>Odgovori se čuvaju na uređaju i šalju čim se veza vrati. Kviz se predaje tek kad je sve bezbedno sačuvano.</p>
             </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="sekcija sekcija--niska" id="gradivo">
+        <div class="okvir">
+          <header class="sekcija__zaglavlje">
+            <p class="nadnaslov">Školski program</p>
+            <h2>Gradivo od 2. do 5. razreda na jednom mestu</h2>
+            <p>Izaberi razred i pogledaj oblasti koje automatski generator zadataka i banka pitanja pokrivaju.</p>
+          </header>
+
+          <div class="razredi-tabovi" role="tablist" aria-label="Razredi osnovne škole">
+            <button type="button" class="razred-dugme" role="tab" aria-selected="true" data-razred-tab="2">2. razred</button>
+            <button type="button" class="razred-dugme" role="tab" aria-selected="false" data-razred-tab="3">3. razred</button>
+            <button type="button" class="razred-dugme" role="tab" aria-selected="false" data-razred-tab="4">4. razred</button>
+            <button type="button" class="razred-dugme" role="tab" aria-selected="false" data-razred-tab="5">5. razred</button>
+          </div>
+
+          <div class="razred-panel" data-razred-panel="2">
+            <div class="mreza mreza--2">
+              <article class="kartica predmet-kartica predmet-kartica--mat">
+                <div class="predmet-zaglavlje">
+                  <h3>Matematika</h3>
+                  <span class="predmet-oznaka">14 oblasti</span>
+                </div>
+                <ul class="oblasti-lista">
+                  <li>Brojevi do 100</li>
+                  <li>Sabiranje i oduzimanje</li>
+                  <li>Množenje i deljenje</li>
+                  <li>Kombinovane operacije</li>
+                  <li>Jednačine</li>
+                  <li>Delovi celine</li>
+                  <li>Novac</li>
+                  <li>Rimski brojevi</li>
+                  <li>Nizovi</li>
+                  <li>Tabele i dijagrami</li>
+                  <li>Geometrija</li>
+                  <li>Merenje i mere</li>
+                </ul>
+              </article>
+              <article class="kartica predmet-kartica predmet-kartica--srp">
+                <div class="predmet-zaglavlje">
+                  <h3>Srpski jezik</h3>
+                  <span class="predmet-oznaka">5 oblasti</span>
+                </div>
+                <ul class="oblasti-lista">
+                  <li>Vrste reči</li>
+                  <li>Gramatika</li>
+                  <li>Pravopis</li>
+                  <li>Čitanje i razumevanje</li>
+                  <li>Rečnik</li>
+                </ul>
+              </article>
+            </div>
+          </div>
+
+          <div class="razred-panel" data-razred-panel="3" hidden>
+            <div class="mreza mreza--3">
+              <article class="kartica predmet-kartica predmet-kartica--mat">
+                <div class="predmet-zaglavlje">
+                  <h3>Matematika</h3>
+                  <span class="predmet-oznaka">13 oblasti</span>
+                </div>
+                <ul class="oblasti-lista">
+                  <li>Sabiranje i oduzimanje</li>
+                  <li>Množenje i deljenje</li>
+                  <li>Kombinovane operacije</li>
+                  <li>Poređenje brojeva</li>
+                  <li>Nizovi i obrasci</li>
+                  <li>Obim i merenje dužine</li>
+                  <li>Merne jedinice</li>
+                  <li>Novac</li>
+                  <li>Rimski brojevi</li>
+                  <li>Jednačine i nejednačine</li>
+                </ul>
+              </article>
+              <article class="kartica predmet-kartica predmet-kartica--srp">
+                <div class="predmet-zaglavlje">
+                  <h3>Srpski jezik</h3>
+                  <span class="predmet-oznaka">5 oblasti</span>
+                </div>
+                <ul class="oblasti-lista">
+                  <li>Vrste reči</li>
+                  <li>Gramatika</li>
+                  <li>Pravopis</li>
+                  <li>Čitanje i razumevanje</li>
+                  <li>Rečnik</li>
+                </ul>
+              </article>
+              <article class="kartica predmet-kartica predmet-kartica--pri">
+                <div class="predmet-zaglavlje">
+                  <h3>Priroda i društvo</h3>
+                  <span class="predmet-oznaka">6 oblasti</span>
+                </div>
+                <ul class="oblasti-lista">
+                  <li>Priroda, čovek i društvo</li>
+                  <li>Orijentacija</li>
+                  <li>Prošlost</li>
+                  <li>Kretanje</li>
+                  <li>Materijali</li>
+                  <li>Beograd — moj grad</li>
+                </ul>
+              </article>
+            </div>
+          </div>
+
+          <div class="razred-panel" data-razred-panel="4" hidden>
+            <div class="mreza mreza--3">
+              <article class="kartica predmet-kartica predmet-kartica--mat">
+                <div class="predmet-zaglavlje">
+                  <h3>Matematika</h3>
+                  <span class="predmet-oznaka">13 oblasti</span>
+                </div>
+                <ul class="oblasti-lista">
+                  <li>Veliki brojevi</li>
+                  <li>Sabiranje i oduzimanje</li>
+                  <li>Množenje i deljenje</li>
+                  <li>Kombinovane operacije</li>
+                  <li>Jednačine i nejednačine</li>
+                  <li>Površina i zapremina</li>
+                  <li>Geometrijska tela</li>
+                  <li>Razlomci</li>
+                  <li>Decimalni brojevi</li>
+                </ul>
+              </article>
+              <article class="kartica predmet-kartica predmet-kartica--srp">
+                <div class="predmet-zaglavlje">
+                  <h3>Srpski jezik</h3>
+                  <span class="predmet-oznaka">Gramatika, rečnik, čitanje</span>
+                </div>
+                <ul class="oblasti-lista">
+                  <li>Gramatika (4. razred)</li>
+                  <li>Rečnik i značenje reči</li>
+                  <li>Čitanje i razumevanje</li>
+                  <li>Pravopisne vežbe</li>
+                </ul>
+              </article>
+              <article class="kartica predmet-kartica predmet-kartica--pri">
+                <div class="predmet-zaglavlje">
+                  <h3>Priroda i društvo</h3>
+                  <span class="predmet-oznaka">4 oblasti</span>
+                </div>
+                <ul class="oblasti-lista">
+                  <li>Odlike Srbije</li>
+                  <li>Čovek i zdravlje</li>
+                  <li>Materijali i smeše</li>
+                  <li>Prošlost Srbije</li>
+                </ul>
+              </article>
+            </div>
+          </div>
+
+          <div class="razred-panel" data-razred-panel="5" hidden>
+            <div class="mreza mreza--2">
+              <article class="kartica predmet-kartica predmet-kartica--mat">
+                <div class="predmet-zaglavlje">
+                  <h3>Matematika</h3>
+                  <span class="predmet-oznaka">16 oblasti</span>
+                </div>
+                <ul class="oblasti-lista">
+                  <li>Prirodni brojevi i izrazi</li>
+                  <li>Deljivost i prosti brojevi</li>
+                  <li>NZD i NZS</li>
+                  <li>Skupovi i logika</li>
+                  <li>Tačke, prave i duži</li>
+                  <li>Kružnica i krug</li>
+                  <li>Uglovi</li>
+                  <li>Osna i centralna simetrija</li>
+                  <li>Translacija</li>
+                  <li>Razlomci i operacije</li>
+                  <li>Decimalni brojevi</li>
+                  <li>Jednačine i nejednačine</li>
+                  <li>Procenti, prosek i razmera</li>
+                  <li>Obrada podataka</li>
+                </ul>
+              </article>
+              <article class="kartica predmet-kartica predmet-kartica--srp">
+                <div class="predmet-zaglavlje">
+                  <h3>Srpski jezik</h3>
+                  <span class="predmet-oznaka">5. razred</span>
+                </div>
+                <ul class="oblasti-lista">
+                  <li>Gramatika (padeži, glagoli, rečenice)</li>
+                  <li>Čitanje i razumevanje teksta</li>
+                  <li>Književnost i rima</li>
+                  <li>Rečnik i kultura izražavanja</li>
+                </ul>
+              </article>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="sekcija" id="probaj">
+        <div class="okvir">
+          <div class="proba-kviz" id="probaj-kviz">
+            <div class="proba-uvod">
+              <p class="nadnaslov" style="width: fit-content">Isprobaj odmah</p>
+              <h2>Pogledaj kako izgleda jedan zadatak</h2>
+              <p>
+                Mozgalica ne kaže samo „tačno“ ili „netačno“. Kada dete pogreši, odmah dobija kratko
+                objašnjenje zašto je drugi odgovor tačan — a potom i priliku da pokuša ponovo na novim zadacima.
+              </p>
+              <div class="proba-maskota-red">
+                <svg width="58" height="58" viewBox="0 0 84 84" aria-hidden="true">
+                  <circle cx="42" cy="38" r="28" fill="#fbbf24"/>
+                  <path d="M31 61h22v5a8 8 0 0 1-8 8h-6a8 8 0 0 1-8-8Z" fill="#4f46e5"/>
+                  <circle cx="33" cy="40" r="2.7" fill="#25225a"/>
+                  <circle cx="51" cy="40" r="2.7" fill="#25225a"/>
+                  <path d="M34 49q8 9 16 0" fill="none" stroke="#25225a" stroke-width="3" stroke-linecap="round"/>
+                  <path d="M15 20h9M19.5 15.5v9" stroke="#4f46e5" stroke-width="3" stroke-linecap="round"/>
+                </svg>
+                <div class="proba-zvezde-brojac">
+                  <span>⭐ Skupljene probe:</span>
+                  <span id="proba-zvezdice">0</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="proba-karta">
+              <div class="proba-predmeti" role="tablist" aria-label="Izbor predmeta za probu">
+                <button type="button" class="proba-predmet" role="tab" aria-selected="true" data-proba-index="0">Matematika (3. r)</button>
+                <button type="button" class="proba-predmet" role="tab" aria-selected="false" data-proba-index="1">Srpski (4. r)</button>
+                <button type="button" class="proba-predmet" role="tab" aria-selected="false" data-proba-index="2">Priroda i društvo (3. r)</button>
+              </div>
+              <p class="proba-pitanje" id="proba-pitanje"></p>
+              <div class="proba-opcije" id="proba-opcije"></div>
+              <div class="proba-povratna" id="proba-povratna" hidden></div>
+              <div class="proba-akcije">
+                <button type="button" class="dugme dugme--malo dugme--obrubljeno" id="proba-sledece" hidden>Sledeće pitanje →</button>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -221,6 +635,29 @@
               </ul>
             </div>
           </div>
+
+          <div class="mreza mreza--2">
+            <article class="kartica">
+              <span class="ikona ikona--zvezda"><svg><use href="#i-zvezda"/></svg></span>
+              <h3>Prodavnica nagrada po vašem dogovoru</h3>
+              <p>Vi određujete nagrade i broj zvezdica, a dete samo bira kada će ih zameniti i dobija nove titule usput.</p>
+              <div class="nagrade-primeri">
+                <div class="nagrada-red"><span>🎬 Izbor porodičnog filma</span><span class="nagrada-cena">50 ⭐</span></div>
+                <div class="nagrada-red"><span>🎮 30 minuta dodatne igre</span><span class="nagrada-cena">25 ⭐</span></div>
+                <div class="nagrada-red"><span>🍦 Sladoled posle škole</span><span class="nagrada-cena">35 ⭐</span></div>
+              </div>
+            </article>
+            <article class="kartica">
+              <span class="ikona ikona--sah"><svg><use href="#i-sah"/></svg></span>
+              <h3>Šah koji uči strpljenju i planiranju</h3>
+              <p>Partije se igraju protiv ugrađenog engine-a na 5 nivoa težine, sa satom ili opušteno bez sata.</p>
+              <div class="nagrade-primeri">
+                <div class="nagrada-red"><span>♟️ Pobeda na izabranom nivou</span><span class="nagrada-cena">+ zvezdice</span></div>
+                <div class="nagrada-red"><span>🔁 Ponovni pokušaj posle poraza</span><span class="nagrada-cena">do 3 puta</span></div>
+                <div class="nagrada-red"><span>📅 Dnevni šahovski raspored</span><span class="nagrada-cena">automatski</span></div>
+              </div>
+            </article>
+          </div>
         </div>
       </section>
 
@@ -229,51 +666,76 @@
           <header class="sekcija__zaglavlje">
             <p class="nadnaslov">Za roditelje</p>
             <h2>Vi odlučujete šta se vežba</h2>
-            <p>Kontrolna tabla za roditelja radi na telefonu i računaru.</p>
+            <p>Kontrolna tabla za roditelja radi na telefonu i računaru — bez komplikovanog podešavanja.</p>
           </header>
-          <div class="mreza mreza--2">
-            <article class="red-stavka">
-              <span class="ikona ikona--mat"><svg><use href="#i-generator"/></svg></span>
-              <div>
-                <h3>Generator zadataka</h3>
-                <p>Novi zadaci nastaju po unapred zadatim matematičkim i jezičkim pravilima, bez veštačke inteligencije. Uz zajedničku banku pitanja možete dodati i svoja.</p>
+          <div class="roditelji-raspored">
+            <div class="roditelji-lista">
+              <article class="red-stavka">
+                <span class="ikona ikona--mat"><svg><use href="#i-generator"/></svg></span>
+                <div>
+                  <h3>Generator zadataka bez veštačke inteligencije</h3>
+                  <p>Novi zadaci nastaju po unapred zadatim matematičkim i jezičkim pravilima, bez izmišljanja. Uz zajedničku banku pitanja možete dodati i svoja.</p>
+                </div>
+              </article>
+              <article class="red-stavka">
+                <span class="ikona ikona--pri"><svg><use href="#i-raspored"/></svg></span>
+                <div>
+                  <h3>Rasporedi kvizova i šaha</h3>
+                  <p>Podesite jednom koji dani su za vežbu, a Mozgalica svakog jutra sama pripremi kviz ili partiju.</p>
+                </div>
+              </article>
+              <article class="red-stavka">
+                <span class="ikona ikona--srp"><svg><use href="#i-zvono"/></svg></span>
+                <div>
+                  <h3>Obaveštenja na telefonu</h3>
+                  <p>Push obaveštenje čim dete završi, a u aplikaciji detalji svakog odgovora i radni listić.</p>
+                </div>
+              </article>
+              <article class="red-stavka">
+                <span class="ikona ikona--zvezda"><svg><use href="#i-grafik"/></svg></span>
+                <div>
+                  <h3>Napredak po oblastima</h3>
+                  <p>Aktivni dani, prosek, trend i oblasti u kojima detetu treba još vežbe.</p>
+                </div>
+              </article>
+              <article class="red-stavka">
+                <span class="ikona ikona--sah"><svg><use href="#i-porodica"/></svg></span>
+                <div>
+                  <h3>Više dece, jedan nalog</h3>
+                  <p>Svako dete ima svoj profil, razred, nagrade, raspored časova i zasebnu istoriju.</p>
+                </div>
+              </article>
+            </div>
+
+            <aside class="izvestaj-kartica" aria-label="Primer nedeljnog izveštaja za roditelje">
+              <div class="izvestaj-zaglavlje">
+                <div>
+                  <span class="izvestaj-oznaka">Nedeljni izveštaj · Ponedeljak</span>
+                  <h3 style="margin: 4px 0 0">Pregled za prethodnu nedelju</h3>
+                </div>
+                <span class="ikona ikona--mat" style="margin: 0"><svg><use href="#i-mejl"/></svg></span>
               </div>
-            </article>
-            <article class="red-stavka">
-              <span class="ikona ikona--pri"><svg><use href="#i-raspored"/></svg></span>
-              <div>
-                <h3>Rasporedi kvizova i šaha</h3>
-                <p>Podesite jednom koji dani su za vežbu, a Mozgalica svakog jutra sama pripremi kviz ili partiju.</p>
+              <div class="izvestaj-red">
+                <span>Urađeni kvizovi</span>
+                <strong>6 kvizova · 2 partije šaha</strong>
               </div>
-            </article>
-            <article class="red-stavka">
-              <span class="ikona ikona--srp"><svg><use href="#i-zvono"/></svg></span>
-              <div>
-                <h3>Obaveštenja na telefonu</h3>
-                <p>Push obaveštenje čim dete završi, a u aplikaciji detalji svakog odgovora.</p>
+              <div class="izvestaj-red">
+                <span>Prosečna tačnost</span>
+                <strong>86% (+6% u odnosu na prošlu)</strong>
               </div>
-            </article>
-            <article class="red-stavka">
-              <span class="ikona ikona--zvezda"><svg><use href="#i-grafik"/></svg></span>
-              <div>
-                <h3>Napredak po oblastima</h3>
-                <p>Aktivni dani, prosek, trend i oblasti u kojima detetu treba još vežbe.</p>
+              <div class="izvestaj-red">
+                <span>Najjača oblast</span>
+                <span class="izvestaj-bedz izvestaj-bedz--ok">Množenje i deljenje</span>
               </div>
-            </article>
-            <article class="red-stavka">
-              <span class="ikona ikona--sah"><svg><use href="#i-porodica"/></svg></span>
-              <div>
-                <h3>Više dece, jedan nalog</h3>
-                <p>Svako dete ima svoj profil, razred, nagrade i raspored.</p>
+              <div class="izvestaj-red">
+                <span>Preporuka za vežbu</span>
+                <span class="izvestaj-bedz izvestaj-bedz--vezba">Merne jedinice</span>
               </div>
-            </article>
-            <article class="red-stavka">
-              <span class="ikona ikona--siva"><svg><use href="#i-zvezda"/></svg></span>
-              <div>
-                <h3>Vaše nagrade, vaša pravila</h3>
-                <p>Sami pravite katalog nagrada i određujete koliko zvezdica košta svaka.</p>
+              <div class="izvestaj-red">
+                <span>Nagrade za isporuku</span>
+                <strong>1 kupljena nagrada</strong>
               </div>
-            </article>
+            </aside>
           </div>
         </div>
       </section>
@@ -288,7 +750,7 @@
             <article class="kartica kartica--mala">
               <span class="ikona ikona--mat"><svg><use href="#i-katanac"/></svg></span>
               <h3>Dete nema nalog</h3>
-              <p>Ni mejl ni lozinku. Profil se otvara tajnim linkom koji samo vi delite.</p>
+              <p>Ni mejl ni lozinku. Profil se otvara tajnim linkom ili QR kodom koji samo vi delite.</p>
             </article>
             <article class="kartica kartica--mala">
               <span class="ikona ikona--pri"><svg><use href="#i-vaga"/></svg></span>
@@ -306,7 +768,7 @@
               <p>Baza je u Londonu, a pristup podacima ima samo roditelj. Nalog i sve podatke brišete sami, u podešavanjima.</p>
             </article>
           </div>
-          <p class="privatnost__linkovi">Sve detalje pročitajte u <a href="/app/#/privatnost">politici privatnosti</a> i <a href="/app/#/uslovi">uslovima korišćenja</a>.</p>
+          <p class="privatnost__linkovi">Sve detalje pročitajte u <a href="/privatnost/">politici privatnosti</a> i <a href="/uslovi/">uslovima korišćenja</a>.</p>
         </div>
       </section>
 
@@ -355,11 +817,11 @@
             </details>
             <details>
               <summary>Šta se dešava sa podacima?</summary>
-              <p>Čuvamo samo ono što je potrebno da aplikacija radi: ime i razred deteta, odgovore, rezultate i nagrade. Nalog možete obrisati u podešavanjima i tada se brišu i svi podaci. Detalji su u <a href="/app/#/privatnost">politici privatnosti</a>.</p>
+              <p>Čuvamo samo ono što je potrebno da aplikacija radi: ime i razred deteta, odgovore, rezultate i nagrade. Nalog možete obrisati u podešavanjima i tada se brišu i svi podaci. Detalji su u <a href="/privatnost/">politici privatnosti</a>.</p>
             </details>
             <details>
               <summary>Kako da dobijem pristup?</summary>
-              <p>Pišite na <a href="mailto:kontakt@mozgalica.rs?subject=Pristup%20Mozgalici">kontakt@mozgalica.rs</a> sa adresom na koju želite nalog. Na tu adresu stiže pozivnica, a posle se prijavljujete lozinkom ili linkom koji stiže na mejl.</p>
+              <p>Pišite na <a href="mailto:kontakt@mozgalica.rs?subject=Pristup%20Mozgalici" data-otvori-pristup>kontakt@mozgalica.rs</a> sa adresom na koju želite nalog. Na tu adresu stiže pozivnica, a posle postavljate lozinku i prijavljujete se lozinkom ili magic linkom.</p>
             </details>
           </div>
         </div>
@@ -368,8 +830,8 @@
       <section class="poziv">
         <div class="okvir poziv__sadrzaj">
           <h2>Želite Mozgalicu za svoje dete?</h2>
-          <p>Javite nam se i poslaćemo vam pristup.</p>
-          <a class="dugme dugme--svetlo" href="mailto:kontakt@mozgalica.rs?subject=Pristup%20Mozgalici">
+          <p>Javite nam se i poslaćemo vam pozivnicu na email adresu.</p>
+          <a class="dugme dugme--svetlo" href="mailto:kontakt@mozgalica.rs?subject=Pristup%20Mozgalici" data-otvori-pristup>
             <svg><use href="#i-mejl"/></svg> Zatraži pristup
           </a>
         </div>
@@ -377,16 +839,91 @@
     </main>
 
     <footer class="podnozje">
-      <div class="okvir podnozje__red">
-        <p>© 2026 Mozgalica</p>
-        <nav aria-label="Podnožje">
-          <a href="mailto:kontakt@mozgalica.rs">kontakt@mozgalica.rs</a>
-          <a href="/app/#/prijava">Prijava za roditelje</a>
-          <a href="/app/#/privatnost">Privatnost</a>
-          <a href="/app/#/uslovi">Uslovi korišćenja</a>
-          <a href="https://github.com/mlsivanovic/Mozgalica">GitHub</a>
-        </nav>
+      <div class="okvir">
+        <div class="podnozje__mreza">
+          <div>
+            <a class="logo" href="/">
+              <svg viewBox="0 0 64 64" aria-hidden="true">
+                <rect width="64" height="64" rx="14" fill="#4f46e5"/>
+                <circle cx="32" cy="27" r="15" fill="#fbbf24"/>
+                <path d="M27 40h10v5a3 3 0 0 1-3 3h-4a3 3 0 0 1-3-3z" fill="#f7f7fc"/>
+                <path d="M26 24l4 4 8-8" stroke="#3730a3" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+              </svg>
+              <span>Mozgalica</span>
+            </a>
+            <p class="podnozje__opis">
+              Kratki kvizovi, šah i zvezdice za đake od 2. do 5. razreda — bez reklama i praćenja.
+            </p>
+          </div>
+
+          <div class="podnozje__kolona">
+            <h3>Sajt</h3>
+            <ul>
+              <li><a href="#za-dete">Za dete</a></li>
+              <li><a href="#gradivo">Gradivo po razredima</a></li>
+              <li><a href="#probaj">Probaj kviz</a></li>
+              <li><a href="#za-roditelje">Za roditelje</a></li>
+              <li><a href="#pitanja">Česta pitanja</a></li>
+            </ul>
+          </div>
+
+          <div class="podnozje__kolona">
+            <h3>Pravni dokumenti</h3>
+            <ul>
+              <li><a href="/privatnost/">Politika privatnosti</a></li>
+              <li><a href="/uslovi/">Uslovi korišćenja</a></li>
+              <li><a href="/app/#/prijava">Prijava za roditelje</a></li>
+            </ul>
+          </div>
+
+          <div class="podnozje__kolona">
+            <h3>Kontakt i kod</h3>
+            <ul>
+              <li><a href="mailto:kontakt@mozgalica.rs">kontakt@mozgalica.rs</a></li>
+              <li><a href="https://github.com/mlsivanovic/Mozgalica">GitHub repozitorijum</a></li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="podnozje__dno">
+          <p>© 2026 Mozgalica · Miloš Ivanović, Beograd</p>
+          <p>Napravljeno za bezbedno učenje dece</p>
+        </div>
       </div>
     </footer>
+
+    <dialog id="pristup-modal" class="modal-dijalog" aria-labelledby="pristup-modal-naslov">
+      <div class="modal-sadrzaj">
+        <div class="modal-zaglavlje">
+          <h2 id="pristup-modal-naslov">Zatraži pristup Mozgalici</h2>
+          <button type="button" class="ikona-dugme" data-zatvori-modal aria-label="Zatvori prozor">
+            <svg aria-hidden="true"><use href="#i-zatvori"/></svg>
+          </button>
+        </div>
+        <p style="color: var(--tekst-blagi); margin-bottom: 0">
+          Mozgalica je trenutno dostupna na poziv i potpuno je besplatna za pozvane porodice.
+          Pošaljite kratak mejl sa adresom na koju želite pozivnicu:
+        </p>
+
+        <div class="modal-email-kutija">
+          <code>kontakt@mozgalica.rs</code>
+          <button type="button" id="kopiraj-email" class="dugme dugme--obrubljeno dugme--malo">Kopiraj adresu</button>
+        </div>
+
+        <div class="modal-sablon">
+          <strong>Predlog poruke:</strong> „Zdravo, voleo/la bih pristup Mozgalici za dete (npr. 3. razred). Pozivnicu možete poslati na ovaj mejl.“
+        </div>
+
+        <div class="modal-akcije">
+          <a
+            class="dugme dugme--malo"
+            href="mailto:kontakt@mozgalica.rs?subject=Pristup%20Mozgalici&body=Zdravo%2C%20voleo%2Fla%20bih%20pristup%20Mozgalici.%20Dete%20ide%20u%20___.%20razred."
+          >
+            <svg><use href="#i-mejl"/></svg> Otvori email aplikaciju
+          </a>
+          <button type="button" class="dugme dugme--obrubljeno dugme--malo" data-zatvori-modal>Zatvori</button>
+        </div>
+      </div>
+    </dialog>
   </body>
 </html>

@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="sr">
+  <head>
+    <meta charset="UTF-8" />
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem('mozgalica:tema');
+          if (t !== 'svetla' && t !== 'tamna') {
+            t = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'tamna' : 'svetla';
+          }
+          document.documentElement.setAttribute('data-theme', t);
+        } catch (e) {}
+      })();
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Uslovi korišćenja — Mozgalica</title>
+    <meta name="description" content="Uslovi korišćenja platforme Mozgalica: pristup na poziv, odgovornost roditelja, zajednička banka pitanja i brisanje naloga." />
+    <link rel="canonical" href="https://mozgalica.rs/uslovi/" />
+    <link rel="icon" type="image/svg+xml" href="/app/favicon.svg" />
+    <link rel="apple-touch-icon" href="/app/icon-192.png" />
+    <meta name="theme-color" content="#4f46e5" />
+    <link rel="stylesheet" href="/stil.css" />
+    <script src="/skripta.js" defer></script>
+  </head>
+  <body>
+    <svg class="sprite" aria-hidden="true">
+      <symbol id="i-sunce" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></symbol>
+      <symbol id="i-mesec" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></symbol>
+      <symbol id="i-meni" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+    </svg>
+
+    <a class="preskoci" href="#sadrzaj">Preskoči na sadržaj</a>
+
+    <header class="zaglavlje">
+      <div class="okvir zaglavlje__red">
+        <a class="logo" href="/" aria-label="Mozgalica, početna">
+          <svg viewBox="0 0 64 64" aria-hidden="true">
+            <rect width="64" height="64" rx="14" fill="#4f46e5"/>
+            <circle cx="32" cy="27" r="15" fill="#fbbf24"/>
+            <path d="M27 40h10v5a3 3 0 0 1-3 3h-4a3 3 0 0 1-3-3z" fill="#f7f7fc"/>
+            <path d="M26 24l4 4 8-8" stroke="#3730a3" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            <path d="M32 12v-4M18 16l-3-3M46 16l3-3" stroke="#fbbf24" stroke-width="3" stroke-linecap="round"/>
+          </svg>
+          <span>Mozgalica</span>
+        </a>
+        <nav class="meni" aria-label="Glavni meni">
+          <a href="/#za-dete">Za dete</a>
+          <a href="/#gradivo">Gradivo</a>
+          <a href="/#probaj">Probaj kviz</a>
+          <a href="/#za-roditelje">Za roditelje</a>
+          <a href="/privatnost/">Privatnost</a>
+          <a href="/uslovi/" aria-current="page">Uslovi</a>
+        </nav>
+        <div class="zaglavlje__akcije">
+          <button
+            type="button"
+            id="tema-prekidac"
+            class="ikona-dugme tema-dugme"
+            aria-label="Prebaci na tamnu temu"
+            aria-pressed="false"
+            title="Promeni temu"
+          >
+            <svg class="tema-ikona--mesec" aria-hidden="true"><use href="#i-mesec"/></svg>
+            <svg class="tema-ikona--sunce" aria-hidden="true"><use href="#i-sunce"/></svg>
+          </button>
+          <a class="dugme dugme--obrubljeno dugme--malo zaglavlje__prijava" href="/app/#/prijava">Prijava</a>
+          <button
+            type="button"
+            id="meni-dugme"
+            class="ikona-dugme meni-dugme"
+            aria-label="Otvori meni"
+            aria-expanded="false"
+            aria-controls="mobilni-meni"
+          >
+            <svg aria-hidden="true"><use href="#i-meni"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <nav id="mobilni-meni" class="mobilni-meni" aria-label="Mobilna navigacija">
+        <a href="/">Početna stranica</a>
+        <a href="/#gradivo">Gradivo (2–5. razred)</a>
+        <a href="/privatnost/">Politika privatnosti</a>
+        <a href="/uslovi/" aria-current="page">Uslovi korišćenja</a>
+        <div class="mobilni-meni__akcija">
+          <a class="dugme dugme--obrubljeno dugme--malo" href="/app/#/prijava">Prijava za roditelje</a>
+        </div>
+      </nav>
+    </header>
+
+    <main id="sadrzaj" class="pravni-omot">
+      <div class="okvir">
+        <div class="pravni-putanja">
+          <a href="/">← Nazad na početnu Mozgalice</a>
+          <nav class="pravni-preklopnik" aria-label="Pravni dokumenti">
+            <a class="pravni-tab" href="/privatnost/">Politika privatnosti</a>
+            <a class="pravni-tab aktivna" href="/uslovi/" aria-current="page">Uslovi korišćenja</a>
+          </nav>
+        </div>
+
+        <header class="pravni-hero">
+          <div class="pravni-hero__meta">
+            <span class="pravni-bedz">Pravila platforme</span>
+            <span class="pravni-datum">Poslednja izmena: 17. novembar 2026.</span>
+          </div>
+          <h1>Uslovi korišćenja</h1>
+          <p class="pravni-hero__podnaslov">
+            Jednostavna i fer pravila korišćenja platforme Mozgalica za roditelje i decu.
+          </p>
+
+          <div class="pravni-sazetak">
+            <div class="pravni-sazetak-stavka">
+              <strong>Pristup na poziv</strong>
+              <span>Nalog otvara vlasnik platforme za pozvane roditelje.</span>
+            </div>
+            <div class="pravni-sazetak-stavka">
+              <strong>Roditelj upravlja profilom</strong>
+              <span>Vi birate podatke deteta i kome delite link ili QR kod.</span>
+            </div>
+            <div class="pravni-sazetak-stavka">
+              <strong>Sopstveni i zajednički zadaci</strong>
+              <span>Koristite zajedničku banku ili pravite svoje kvizove.</span>
+            </div>
+            <div class="pravni-sazetak-stavka">
+              <strong>Trajno brisanje u 1 korak</strong>
+              <span>Nalog se briše iz podešavanja uz potvrdu email adrese.</span>
+            </div>
+          </div>
+        </header>
+
+        <div class="pravni-raspored">
+          <aside class="pravni-toc" aria-label="Sadržaj uslova korišćenja">
+            <p class="pravni-toc__naslov">Sadržaj</p>
+            <ol>
+              <li><a href="#u-poziv" class="aktivna"><span class="pravni-toc__broj">1.</span><span>Pristup na poziv</span></a></li>
+              <li><a href="#u-odgovornost"><span class="pravni-toc__broj">2.</span><span>Odgovornost roditelja</span></a></li>
+              <li><a href="#u-banka"><span class="pravni-toc__broj">3.</span><span>Zajednička banka pitanja</span></a></li>
+              <li><a href="#u-obavestenja"><span class="pravni-toc__broj">4.</span><span>Obaveštenja</span></a></li>
+              <li><a href="#u-brisanje"><span class="pravni-toc__broj">5.</span><span>Brisanje naloga</span></a></li>
+              <li><a href="#u-dostupnost"><span class="pravni-toc__broj">6.</span><span>Dostupnost i otvoreni kod</span></a></li>
+              <li><a href="#u-izmene"><span class="pravni-toc__broj">7.</span><span>Izmene uslova</span></a></li>
+              <li><a href="#u-pravo"><span class="pravni-toc__broj">8.</span><span>Merodavno pravo</span></a></li>
+              <li><a href="#u-kontakt"><span class="pravni-toc__broj">9.</span><span>Kontakt</span></a></li>
+            </ol>
+          </aside>
+
+          <article class="pravni-clanak">
+            <section id="u-poziv">
+              <h2><span class="pravni-broj">1</span> Pristup na poziv</h2>
+              <p>
+                Mozgalica je dostupna isključivo po pozivu. Nalog kreira vlasnik platforme, a prijava je
+                moguća samo sa email adrese koja je pozvana. Nalog nije moguće otvoriti samostalno.
+              </p>
+            </section>
+
+            <section id="u-odgovornost">
+              <h2><span class="pravni-broj">2</span> Odgovornost roditelja</h2>
+              <p>
+                Roditelj odgovara za profile dece koje kreira, za tačnost podataka koje unosi i za to kome
+                deli lični profilni link ili QR kod deteta.
+              </p>
+              <div class="pravni-callout">
+                <p>
+                  Ako posumnjaš da je link ili QR kod deteta dospeo u tuđe ruke, odmah obriši ili zameni
+                  pristup u podešavanjima profila deteta ili kontaktiraj podršku.
+                </p>
+              </div>
+            </section>
+
+            <section id="u-banka">
+              <h2><span class="pravni-broj">3</span> Zajednička banka pitanja</h2>
+              <p>
+                Pitanja koja vlasnik platforme označi kao zajednička mogu da koriste svi roditelji u svojim
+                kvizovima. Pitanja se koriste kakva jesu, bez garancije da su bez greške. Roditelj ne može da
+                ih menja, ali uvek može da napravi sopstveni kviz ili sopstveno pitanje.
+              </p>
+            </section>
+
+            <section id="u-obavestenja">
+              <h2><span class="pravni-broj">4</span> Obaveštenja</h2>
+              <p>
+                Obaveštenja stižu kao push poruke na uređaje koje roditelj uključi, kao i unutar same aplikacije.
+                Push obaveštenja možeš isključiti u svakom trenutku u podešavanjima uređaja ili aplikacije.
+              </p>
+            </section>
+
+            <section id="u-brisanje">
+              <h2><span class="pravni-broj">5</span> Brisanje naloga</h2>
+              <p>
+                Nalog možeš da obrišeš u podešavanjima, uz potvrdu svoje email adrese. Brisanje je trajno i
+                podaci se ne mogu vratiti. Vlasnik platforme ne može da obriše svoj nalog dok su njegova
+                pitanja deo zajedničke banke.
+              </p>
+            </section>
+
+            <section id="u-dostupnost">
+              <h2><span class="pravni-broj">6</span> Dostupnost usluge i otvoreni kod</h2>
+              <p>
+                Usluga na domenu <code>mozgalica.rs</code> pruža se kakva jeste, bez garancije neprekidnog rada.
+                U slučaju gašenja ili većih promena usluge, roditelji će biti obavešteni na email adresu sa naloga.
+              </p>
+              <p>
+                Izvorni kod projekta je javno dostupan na GitHub-u pod licencom navedenom u repozitorijumu, što
+                ne daje pravo neovlašćenog pristupa podacima drugih korisnika na hostovanoj platformi.
+              </p>
+            </section>
+
+            <section id="u-izmene">
+              <h2><span class="pravni-broj">7</span> Izmene uslova</h2>
+              <p>Izmene uslova objavljuju se na ovoj stranici uz jasno istaknut datum poslednje izmene.</p>
+            </section>
+
+            <section id="u-pravo">
+              <h2><span class="pravni-broj">8</span> Merodavno pravo</h2>
+              <p>Na ove uslove korišćenja primenjuje se pravo Republike Srbije.</p>
+            </section>
+
+            <section id="u-kontakt">
+              <h2><span class="pravni-broj">9</span> Kontakt</h2>
+              <p>
+                Za sva pitanja i predloge piši na:
+                <a href="mailto:kontakt@mozgalica.rs">kontakt@mozgalica.rs</a>
+              </p>
+            </section>
+
+            <footer class="pravni-dno">
+              <a class="dugme dugme--obrubljeno dugme--malo" href="/">← Početna stranica</a>
+              <a class="dugme dugme--malo" href="/privatnost/">Pročitaj Politiku privatnosti →</a>
+            </footer>
+          </article>
+        </div>
+      </div>
+    </main>
+
+    <footer class="podnozje">
+      <div class="okvir">
+        <div class="podnozje__dno" style="border-top: 0; padding-top: 0">
+          <p>© 2026 Mozgalica · Miloš Ivanović, Beograd</p>
+          <p>
+            <a href="/">Početna</a> ·
+            <a href="/privatnost/">Privatnost</a> ·
+            <a href="/uslovi/">Uslovi korišćenja</a> ·
+            <a href="/app/#/prijava">Prijava</a>
+          </p>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>
