@@ -15,8 +15,9 @@ dist-ssr
 # Supabase CLI lokalni keš (project ref, verzije servisa — ne treba u git)
 supabase/.temp
 
-# ZCode sesijski podaci (privremeno, alatski)
+# ZCode i Claude lokalni alatski podaci
 .zcode/
+.claude/
 
 # Privremeni radni direktorijumi za analizu/eksport podataka iz baze
 tmp_analiza/

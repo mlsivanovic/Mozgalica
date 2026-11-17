@@ -37,8 +37,8 @@ Ovo kreira sve tabele, RLS pravila i RPC funkcije iz `supabase/migrations/`.
 ## 3. Napravi svoj administratorski nalog
 
 1. U Supabase dashboardu idi na **Authentication → Users → Add user** i napravi
-   nalog sa email adresom **mls.ivanovic@gmail.com** (ta adresa je već upisana
-   u `admin_allowlist` tabelu preko seed migracije) i lozinkom po izboru.
+   nalog sa svojom administratorskom email adresom (upisanom u `admin_allowlist`
+   tabelu preko seed migracije) i lozinkom po izboru.
    - Alternativa: pokreni aplikaciju lokalno i registruj se preko Supabase Auth
      UI-ja (ako ga dodaš) ili preko `supabase.auth.signUp` u SQL editoru:
      ```sql
@@ -228,9 +228,8 @@ Deploy: `supabase functions deploy pozovi-roditelja` i `supabase functions deplo
 
 ## 13. Pravne stranice i rukovalac
 
-Politika privatnosti (`#/privatnost`) i uslovi korišćenja (`#/uslovi`) čitaju identitet
-rukovaoca i kontakt iz `src/lib/pravno.ts`. Pre javne objave upiši ime rukovaoca u
-`RUKOVALAC` (sada je placeholder, označen sa `TODO`) i proveri tekst sa pravnikom. Roditelj
-mora da prihvati uslove pre ulaska u panel; prihvatanje se čuva u `admin_settings.terms_accepted_at`.
+Politika privatnosti (`/privatnost/`, `#/privatnost`) i uslovi korišćenja (`/uslovi/`, `#/uslovi`)
+čitaju identitet rukovaoca i kontakt iz `src/lib/pravno.ts` (i statičkih stranica u `landing/`).
+Roditelj mora da prihvati uslove pre ulaska u panel; prihvatanje se čuva u `admin_settings.terms_accepted_at`.
 
 To je sve — aplikacija je spremna za korišćenje! 🎉

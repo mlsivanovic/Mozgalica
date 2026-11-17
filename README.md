@@ -49,8 +49,7 @@ Javna stranica: **https://mozgalica.rs/** · aplikacija: **https://mozgalica.rs/
 - **Testovi:** Vitest (generator pitanja, šahovski engine, offline red, seed podaci
   i pomoćni moduli).
 
-Kompletan spisak arhitekturnih odluka i faza razvoja nalazi se u planu projekta;
-koraci za povezivanje Supabase/Brevo naloga i Web Push-a su u [SETUP.md](./SETUP.md).
+Koraci za povezivanje Supabase/Brevo naloga i Web Push-a su u [SETUP.md](./SETUP.md).
 
 ## Android aplikacija (sideload)
 
