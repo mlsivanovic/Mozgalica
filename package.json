@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "rm -rf dist && tsc -b && vite build && cp -R landing/. dist/",
+    "build": "rm -rf dist && tsc -b && vite build",
     "test": "vitest run",
     "lint": "oxlint",
     "preview": "vite preview"

@@ -2,10 +2,9 @@ import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
-// Na mozgalica.rs je javna stranica (landing/) na korenu, a aplikacija na /app/.
+// Privremeno ostaje /Mozgalica/ dok domen mozgalica.rs ne bude aktivan (tada se vraća /app/ i outDir: 'dist/app').
 export default defineConfig({
-  base: '/app/',
-  build: { outDir: 'dist/app' },
+  base: '/Mozgalica/',
   plugins: [
     react(),
     VitePWA({
