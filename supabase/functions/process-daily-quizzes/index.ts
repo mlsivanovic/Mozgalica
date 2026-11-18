@@ -422,7 +422,7 @@ Deno.serve(async (req: Request) => {
     }
   }
   const { data: izvestaji, error: greskaIzvestaja } = await supabase.rpc(
-    'process_due_smart_weekly_reports', { p_limit: 50 },
+    'process_due_weekly_parent_reports', { p_limit: 50 },
   )
   return Response.json({
     obradjeno: ishodi.length,

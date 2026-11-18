@@ -5,6 +5,10 @@ import { createClient } from 'jsr:@supabase/supabase-js@2'
 import {
   apsolutnaHashRuta, escapeHtml, proceniHttpIsporuku, sledeciPokusaj,
 } from '../_shared/notification-utils.ts'
+import {
+  napraviSadrzajObjedinjenogIzvestaja,
+  type SazetakObjedinjenogIzvestaja,
+} from '../_shared/weekly-report-email.ts'
 import { servisniPozivJeDozvoljen } from '../_shared/servisniPoziv.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
@@ -31,6 +35,7 @@ interface Obavestenje {
   attempt_id: string | null
   chess_game_id: string | null
   weekly_report_id: string | null
+  parent_weekly_report_id: string | null
   title: string
   body: string
   target_url: string
@@ -433,13 +438,13 @@ async function posaljiMejl(
   return telo.messageId ?? null
 }
 
-interface TemaNedeljnogIzvestaja {
+interface StaraTemaNedeljnogIzvestaja {
   topicName: string
   questionCount: number
   successPct: number | null
 }
 
-interface SazetakNedeljnogIzvestaja {
+interface StariSazetakNedeljnogIzvestaja {
   completedAttempts: number
   activeDays: number
   avgScorePct: number | null
@@ -447,14 +452,41 @@ interface SazetakNedeljnogIzvestaja {
   trendPct: number | null
   questionCount: number
   correctCount: number
-  practiceTopics: TemaNedeljnogIzvestaja[]
-  strongTopics: TemaNedeljnogIzvestaja[]
+  practiceTopics: StaraTemaNedeljnogIzvestaja[]
+  strongTopics: StaraTemaNedeljnogIzvestaja[]
 }
 
 async function napraviMejlZaNedeljniIzvestaj(
   supabase: ReturnType<typeof createClient>,
   obavestenje: Obavestenje,
 ) {
+  if (obavestenje.parent_weekly_report_id) {
+    const [{ data: izvestaj }, { data: userData }] = await Promise.all([
+      supabase.from('weekly_parent_reports')
+        .select('week_start, week_end, summary')
+        .eq('id', obavestenje.parent_weekly_report_id).single(),
+      supabase.auth.admin.getUserById(obavestenje.owner_id),
+    ])
+    const adminEmail = userData?.user?.email
+    if (!izvestaj || !adminEmail) {
+      throw new GreskaIsporuke('Nedeljni izveštaj ili administratorski mejl nisu pronađeni.', false)
+    }
+
+    const sazetak = izvestaj.summary as SazetakObjedinjenogIzvestaja
+    const sadrzaj = napraviSadrzajObjedinjenogIzvestaja({
+      ...sazetak,
+      weekStart: sazetak.weekStart ?? izvestaj.week_start,
+      weekEnd: sazetak.weekEnd ?? izvestaj.week_end,
+    }, APP_BASE_URL)
+    return {
+      to: adminEmail,
+      recipientName: 'Administrator',
+      subject: sadrzaj.subject,
+      text: sadrzaj.text,
+      html: sadrzaj.html,
+    }
+  }
+
   if (!obavestenje.weekly_report_id) {
     throw new GreskaIsporuke('Nedostaje nedeljni izveštaj.', false)
   }
@@ -472,8 +504,8 @@ async function napraviMejlZaNedeljniIzvestaj(
     .eq('id', izvestaj.child_profile_id).single()
   if (!profil) throw new GreskaIsporuke('Profil deteta nije pronađen.', false)
 
-  const sazetak = izvestaj.summary as SazetakNedeljnogIzvestaja
-  const link = apsolutnaHashRuta(APP_BASE_URL, `/admin/rezultati/statistika/${izvestaj.child_profile_id}`)
+  const sazetak = izvestaj.summary as StariSazetakNedeljnogIzvestaja
+  const link = apsolutnaHashRuta(APP_BASE_URL, `/admin/napredak?dete=${izvestaj.child_profile_id}`)
   const period = `${formatirajDatumIzvestaja(izvestaj.week_start)}–${formatirajDatumIzvestaja(izvestaj.week_end)}`
   const trend = sazetak.trendPct == null
     ? 'Još nema prethodne sedmice za poređenje.'
@@ -503,7 +535,7 @@ async function napraviMejlZaNedeljniIzvestaj(
     + `${trend} Za vežbu: ${zaVezbu || 'nema izdvojenih oblasti'}. Jake oblasti: ${jake || 'još nema dovoljno podataka'}. ${link}`
   const html = omotMejla(`
     <h2>📊 Nedeljni izveštaj za ${escapeHtml(profil.name)}</h2>
-    <p class="blago">${escapeHtml(period)}</p>
+    <p style="color:#6b7280;font-size:14px">${escapeHtml(period)}</p>
     <ul>
       <li>Završene vežbe: ${sazetak.completedAttempts}</li>
       <li>Aktivni dani: ${sazetak.activeDays}</li>
@@ -524,7 +556,7 @@ function formatirajDatumIzvestaja(datum: string): string {
   })
 }
 
-function formatirajTemeIzvestaja(teme: TemaNedeljnogIzvestaja[] | null | undefined): string {
+function formatirajTemeIzvestaja(teme: StaraTemaNedeljnogIzvestaja[] | null | undefined): string {
   return (teme ?? []).map((tema) => `${tema.topicName} (${tema.successPct ?? 0}%)`).join(', ')
 }
 

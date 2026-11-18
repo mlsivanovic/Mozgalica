@@ -7,8 +7,9 @@ import { OznakaRangaTitule, TitleAvatar } from '../../components/TitleAvatar'
 import {
   listajKupovineProdavnice, listajNivoeTitula, listajProfileDeteta, listajStavkeProdavnice,
   obrisiProfilDeteta, oznaciKupovinuKonzumiranom, otkaziKupovinu, postaviEmailObavestenja,
-  sacuvajNivoeTitula, sacuvajProfilDeteta, sacuvajSahNagrade, sacuvajStavkeProdavnice,
-  ucitajJavniProfil, ucitajPodesavanja, ucitajSahNagrade, type KupovinaAdminPrikaz,
+  postaviNedeljniIzvestaj, sacuvajNivoeTitula, sacuvajProfilDeteta, sacuvajSahNagrade,
+  sacuvajStavkeProdavnice, ucitajJavniProfil, ucitajPodesavanja, ucitajSahNagrade,
+  type KupovinaAdminPrikaz,
 } from '../../lib/api'
 import { RoditeljskiLink as Link, useRoditelj } from '../../lib/roditelj'
 import { useAuth } from '../../lib/auth'
@@ -270,6 +271,8 @@ export function Podesavanja({ sekcija = 'obavestenja' }: { sekcija?: Sekcija }) 
   const aktivanTab = sekcija === 'pravila' ? pravilo : ['isporuka', 'istorija', 'katalog'].includes(sekcija) ? 'prodavnica' : sekcija
   const [ucitava, setUcitava] = useState(true)
   const [ukljucena, setUkljucena] = useState(true)
+  const [nedeljniIzvestaj, setNedeljniIzvestaj] = useState(true)
+  const [cuvaNedeljniIzvestaj, setCuvaNedeljniIzvestaj] = useState(false)
   const [izgled, setIzgled] = useState<IzborTeme>(izborTeme)
   const [profili, setProfili] = useState<ProfilDeteta[]>([])
   const [preglediProfila, setPreglediProfila] = useState<Record<string, JavniProfilPayload>>({})
@@ -308,7 +311,9 @@ export function Podesavanja({ sekcija = 'obavestenja' }: { sekcija?: Sekcija }) 
       } else if (sekcija === 'isporuka' || sekcija === 'istorija') {
         setKupovine(await listajKupovineProdavnice())
       } else {
-        setUkljucena((await ucitajPodesavanja())?.email_notifications ?? true)
+        const podesavanja = await ucitajPodesavanja()
+        setUkljucena(podesavanja?.email_notifications ?? true)
+        setNedeljniIzvestaj(podesavanja?.weekly_report_enabled ?? true)
       }
       setUcitano(true)
     } catch (e) {
@@ -330,6 +335,29 @@ export function Podesavanja({ sekcija = 'obavestenja' }: { sekcija?: Sekcija }) 
       setPoruka('Mejl podešavanje je sačuvano.')
     } catch (e) {
       setGreska(String((e as Error).message ?? e))
+    }
+  }
+
+  async function promeniNedeljniIzvestaj(vrednost: boolean) {
+    if (!session) return
+    const prethodna = nedeljniIzvestaj
+    setNedeljniIzvestaj(vrednost)
+    setCuvaNedeljniIzvestaj(true)
+    setPoruka(null)
+    setGreska(null)
+    try {
+      const sacuvano = await postaviNedeljniIzvestaj(vrednost)
+      setNedeljniIzvestaj(sacuvano)
+      setPoruka(
+        sacuvano
+          ? 'Nedeljni izveštaj mejlom je uključen (ponedeljkom u 08:00).'
+          : 'Nedeljni izveštaj mejlom je isključen.',
+      )
+    } catch (e) {
+      setNedeljniIzvestaj(prethodna)
+      setGreska(String((e as Error).message ?? e))
+    } finally {
+      setCuvaNedeljniIzvestaj(false)
     }
   }
 
@@ -1407,6 +1435,22 @@ export function Podesavanja({ sekcija = 'obavestenja' }: { sekcija?: Sekcija }) 
             className={izgled === vrednost ? 'aktivna' : ''}
             onClick={() => { setIzgled(vrednost); postaviIzborTeme(vrednost) }}
           ><Ikona ime={ikona} />{naziv}</button>)}
+        </div>
+        <div className="roditelj-sekcija">
+          <h2>Nedeljni izveštaj mejlom</h2>
+          <p className="blago razmak-dole">
+            Ponedeljkom u 08:00 na tvoju email adresu stiže jedan objedinjeni pregled za svu decu,
+            sve predmete i šah iz prethodne nedelje (ne šalje se ako nije bilo aktivnosti).
+          </p>
+          <label className="stiklir">
+            <input
+              type="checkbox"
+              checked={nedeljniIzvestaj}
+              disabled={cuvaNedeljniIzvestaj}
+              onChange={(e) => void promeniNedeljniIzvestaj(e.target.checked)}
+            />
+            Pošalji mi nedeljni izveštaj ponedeljkom u 08:00
+          </label>
         </div>
         {MEJL_RODITELJU_POSLE_KVIZA && (
           <div className="roditelj-sekcija">

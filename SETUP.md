@@ -83,10 +83,11 @@ supabase secrets set \
   VAPID_PRIVATE_KEY=tvoj-privatni-vapid-kljuc
 ```
 
-Zatim deploy-uj funkciju sa uključenom JWT proverom:
+Zatim deploy-uj funkcije sa uključenom JWT proverom:
 
 ```bash
 supabase functions deploy dispatch-notifications
+supabase functions deploy process-daily-quizzes
 ```
 
 ## 6. Poveži outbox sa Edge funkcijom

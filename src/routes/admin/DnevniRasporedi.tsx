@@ -43,7 +43,6 @@ function novaForma(
     passThresholdPct: 90,
     dailyTime: '18:00',
     smartMode: true,
-    weeklyReportEnabled: true,
   }
 }
 
@@ -72,7 +71,6 @@ function formaIzRasporeda(raspored: DnevniRasporedKviza): FormaRasporeda {
     passThresholdPct: raspored.pass_threshold_pct,
     dailyTime: raspored.daily_time.slice(0, 5),
     smartMode: raspored.smart_mode,
-    weeklyReportEnabled: raspored.weekly_report_enabled,
   }
 }
 
@@ -245,7 +243,7 @@ export function DnevniRasporedi({
       <div className="red red--razmak razmak-dole" hidden={samoForma}>
         <div>
           <h2>Dnevni rasporedi</h2>
-          <p className="blago malo">Svaki dan nastaje novi kviz. Push stiže na povezane uređaje, a pametna vežba može da pošalje nedeljni mejl roditelju.</p>
+          <p className="blago malo">Svaki dan nastaje novi kviz i push stiže na povezane uređaje. Nedeljni izveštaj mejlom podešava se u Podešavanjima.</p>
         </div>
         <button type="button" className="dugme dugme--akcenat" onClick={otvoriNovi} disabled={profili.length === 0}>
           + Novi raspored
@@ -271,22 +269,10 @@ export function DnevniRasporedi({
                 onChange={(e) => setForma({
                   ...forma,
                   smartMode: e.target.checked,
-                  weeklyReportEnabled: e.target.checked && forma.weeklyReportEnabled,
                 })}
               />
               <span><strong>Pametna dnevna vežba</strong><br />
                 <small className="blago">{predmetImaTezinu(forma.subject) ? 'Prednost imaju slabe oblasti, zatim ponavljanje i jedan teži izazov.' : 'Prednost imaju slabe oblasti i ponavljanje gradiva.'}</small>
-              </span>
-            </label>
-            <label className="stiklir razmak-gore">
-              <input
-                type="checkbox"
-                checked={forma.weeklyReportEnabled}
-                disabled={!forma.smartMode}
-                onChange={(e) => setForma({ ...forma, weeklyReportEnabled: e.target.checked })}
-              />
-              <span><strong>Nedeljni izveštaj mejlom</strong><br />
-                <small className="blago">Ponedeljkom posle izabranog termina stižu napredak, jake i slabe oblasti.</small>
               </span>
             </label>
           </div>
@@ -429,9 +415,6 @@ export function DnevniRasporedi({
               <p className="malo blago">{nazivIzvora(raspored.source)} · {raspored.topic_slugs.length} {raspored.topic_slugs.length === 1 ? 'oblast' : 'oblasti'}</p>
               <p className="malo razmak-gore"><strong>Sledeći:</strong> {opisSledeceg(raspored)}</p>
               <p className="malo blago">Poslednji: {raspored.last_sent_at ? formatDatum(raspored.last_sent_at) : 'još nije poslat'}</p>
-              {raspored.weekly_report_enabled && (
-                <p className="malo blago">Nedeljni izveštaj: {raspored.last_weekly_report_at ? formatDatum(raspored.last_weekly_report_at) : 'prvi stiže narednog ponedeljka'}</p>
-              )}
               {raspored.last_error && <p className="poruka poruka--greska malo">Poslednja greška: {raspored.last_error}</p>}
               <div className="red razmak-gore">
                 <button type="button" className="dugme dugme--senka dugme--malo" onClick={() => { setGreska(null); setForma(formaIzRasporeda(raspored)) }}>Uredi</button>

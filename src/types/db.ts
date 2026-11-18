@@ -296,6 +296,8 @@ export interface SahNagradaPodesavanje {
 export interface AdminPodesavanja {
   user_id: string
   email_notifications: boolean
+  weekly_report_enabled: boolean
+  weekly_report_enabled_at: string | null
   is_platform_owner: boolean
   terms_accepted_at: string | null
   allowed_grades: Razred[]

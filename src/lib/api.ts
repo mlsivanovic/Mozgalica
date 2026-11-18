@@ -218,7 +218,7 @@ export interface NoviDnevniRasporedKviza {
   passThresholdPct: number
   dailyTime: string
   smartMode: boolean
-  weeklyReportEnabled: boolean
+  weeklyReportEnabled?: boolean
 }
 
 export async function listajDnevneRasporedeKvizova(): Promise<DnevniRasporedKviza[]> {
@@ -247,7 +247,7 @@ export async function sacuvajDnevniRasporedKviza(
     p_pass_threshold_pct: raspored.passThresholdPct,
     p_daily_time: raspored.dailyTime,
     p_smart_mode: raspored.smartMode,
-    p_weekly_report_enabled: raspored.weeklyReportEnabled,
+    p_weekly_report_enabled: raspored.weeklyReportEnabled ?? false,
   })
   if (error) throw new Error(opisiGresku(error)!)
   return data as DnevniRasporedKviza
@@ -659,6 +659,14 @@ export async function postaviEmailObavestenja(userId: string, ukljucena: boolean
   const { error } = await supabase()
     .from('admin_settings').update({ email_notifications: ukljucena }).eq('user_id', userId)
   if (error) throw new Error(opisiGresku(error)!)
+}
+
+export async function postaviNedeljniIzvestaj(ukljucen: boolean): Promise<boolean> {
+  const { data, error } = await supabase().rpc('postavi_nedeljni_izvestaj', {
+    p_enabled: ukljucen,
+  })
+  if (error) throw new Error(opisiGresku(error)!)
+  return Boolean(data)
 }
 
 // Edge funkcija vraća grešku kao HTTP odgovor; kod iz tela se čita za poruku.
