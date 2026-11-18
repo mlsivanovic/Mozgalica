@@ -2,11 +2,15 @@
 
 .pristup-okvir {
   display: grid;
-  gap: 0.9rem;
-  padding: 0.95rem 1rem;
+  gap: 1.05rem;
+  padding: 1.15rem;
   border: 1px solid var(--boja-ivica);
   border-radius: var(--radius);
-  background: var(--boja-povrsina-niska);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--boja-primarna-svetla) 30%, var(--boja-povrsina-niska)),
+    var(--boja-povrsina-niska)
+  );
   margin-bottom: 1rem;
 }
 
@@ -18,61 +22,296 @@
   flex-wrap: wrap;
 }
 
-.pristup-grupa {
+.pristup-naslov-grupa {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.pristup-ikona-bedz {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  background: var(--boja-primarna-svetla);
+  color: var(--boja-primarna);
+  border: 1px solid color-mix(in srgb, var(--boja-primarna) 28%, transparent);
+}
+
+.pristup-naslov-grupa strong {
+  display: block;
+  font-size: 1rem;
+  line-height: 1.25;
+}
+
+.pristup-podnaslov {
+  display: block;
+  font-size: 0.84rem;
+  color: var(--boja-tekst-blagi);
+}
+
+.pristup-korak {
   border: 0;
   padding: 0;
   margin: 0;
   min-width: 0;
+  display: grid;
+  gap: 0.6rem;
 }
 
-.pristup-grupa legend {
-  font-weight: 700;
-  font-size: 0.92rem;
-  margin-bottom: 0.45rem;
+.pristup-korak--iskace {
+  padding-top: 0.9rem;
+  border-top: 1px solid color-mix(in srgb, var(--boja-ivica) 80%, transparent);
+  animation: pristup-iskakanje 220ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.pristup-mreza {
+@keyframes pristup-iskakanje {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.pristup-korak-zaglavlje {
   display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
   flex-wrap: wrap;
-  gap: 0.5rem;
 }
 
-.pristup-stavka {
+.pristup-korak-naslov {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.45rem 0.75rem;
-  min-height: 42px;
-  border: 1.5px solid var(--boja-ivica);
-  border-radius: var(--radius-mali);
-  background: var(--boja-kartica);
-  font-weight: 600;
-  cursor: pointer;
-  user-select: none;
-  transition: border-color 0.12s ease, background 0.12s ease;
+  font-weight: 700;
+  font-size: 0.93rem;
+  color: var(--boja-tekst);
 }
 
-.pristup-stavka:hover {
-  border-color: var(--boja-primarna);
+.pristup-korak-broj {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-size: 0.78rem;
+  font-weight: 800;
+  background: var(--boja-primarna);
+  color: var(--boja-na-primarnoj);
 }
 
-.pristup-stavka--izabrana {
-  border-color: var(--boja-primarna);
+.pristup-brojac {
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.12rem 0.55rem;
+  border-radius: 999px;
   background: var(--boja-primarna-svetla);
   color: var(--boja-primarna-tamna);
 }
 
-.pristup-stavka input[type='checkbox'] {
-  width: 19px;
-  height: 19px;
-  accent-color: var(--boja-primarna);
+.pristup-brza-akcija {
+  border: 0;
+  background: transparent;
+  padding: 0.2rem 0.45rem;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--boja-primarna);
   cursor: pointer;
+  transition: background var(--brzina) ease;
 }
 
-.pristup-napomena {
-  font-size: 0.82rem;
-  font-weight: 500;
+.pristup-brza-akcija:hover {
+  background: var(--boja-primarna-svetla);
+}
+
+.pristup-mreza {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.pristup-mreza--razredi {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.pristup-mreza--predmeti {
+  grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
+}
+
+.pristup-kartica {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  padding: 0.72rem 0.85rem;
+  min-height: 54px;
+  border: 1.5px solid var(--boja-ivica);
+  border-radius: 14px;
+  background: var(--boja-kartica);
+  color: var(--boja-tekst);
+  cursor: pointer;
+  user-select: none;
+  transition:
+    transform 120ms ease,
+    border-color var(--brzina) ease,
+    background var(--brzina) ease,
+    box-shadow var(--brzina) ease;
+}
+
+.pristup-kartica:hover {
+  border-color: color-mix(in srgb, var(--boja-primarna) 65%, var(--boja-ivica));
+  transform: translateY(-1px);
+  box-shadow: var(--senka);
+}
+
+.pristup-kartica:active {
+  transform: scale(0.985);
+}
+
+.pristup-kartica:has(.pristup-ulaz:focus-visible) {
+  outline: 3px solid var(--boja-akcenat);
+  outline-offset: 2px;
+}
+
+.pristup-ulaz {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+}
+
+.pristup-indikator {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  border: 1.5px solid var(--boja-ivica);
+  background: var(--boja-povrsina-niska);
+  color: var(--boja-na-primarnoj);
+  transition: background var(--brzina) ease, border-color var(--brzina) ease, transform 120ms ease;
+}
+
+.pristup-kartica--razred.je-izabrana {
+  border-color: var(--boja-primarna);
+  background: color-mix(in srgb, var(--boja-primarna-svetla) 78%, var(--boja-kartica));
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--boja-primarna) 16%, transparent);
+}
+
+.pristup-kartica--razred.je-izabrana .pristup-indikator {
+  border-color: var(--boja-primarna);
+  background: var(--boja-primarna);
+}
+
+.pristup-razred-tekst {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+}
+
+.pristup-razred-broj {
+  font-size: 1.15rem;
+  font-weight: 850;
+  letter-spacing: -0.02em;
+}
+
+.pristup-razred-oznaka {
+  font-size: 0.88rem;
+  font-weight: 600;
   color: var(--boja-tekst-blagi);
+}
+
+.pristup-kartica--razred.je-izabrana .pristup-razred-broj,
+.pristup-kartica--razred.je-izabrana .pristup-razred-oznaka {
+  color: var(--boja-primarna-tamna);
+}
+
+.pristup-kartica--predmet {
+  --predmet-boja: var(--boja-primarna);
+  justify-content: flex-start;
+}
+
+.pristup-kartica--predmet:hover {
+  border-color: color-mix(in srgb, var(--predmet-boja) 65%, var(--boja-ivica));
+}
+
+.pristup-kartica--predmet.je-izabrana {
+  border-color: var(--predmet-boja);
+  background: color-mix(in srgb, var(--predmet-boja) 14%, var(--boja-kartica));
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--predmet-boja) 16%, transparent);
+}
+
+.pristup-predmet-tacka {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  flex-shrink: 0;
+  background: var(--predmet-boja);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--predmet-boja) 18%, transparent);
+}
+
+.pristup-predmet-tekst {
+  display: grid;
+  gap: 0.08rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.pristup-predmet-naziv {
+  font-weight: 700;
+  font-size: 0.95rem;
+  line-height: 1.25;
+}
+
+.pristup-predmet-opis {
+  font-size: 0.78rem;
+  color: var(--boja-tekst-blagi);
+  line-height: 1.25;
+}
+
+.pristup-kartica--predmet.je-izabrana .pristup-indikator {
+  border-color: var(--predmet-boja);
+  background: var(--predmet-boja);
+  color: #ffffff;
+}
+
+.pristup-prazno {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.8rem 0.95rem;
+  border: 1px dashed var(--boja-ivica);
+  border-radius: 12px;
+  color: var(--boja-tekst-blagi);
+  font-size: 0.9rem;
+  background: color-mix(in srgb, var(--boja-kartica) 55%, transparent);
+}
+
+.pristup-rezime {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--boja-uspeh-svetla) 68%, var(--boja-kartica));
+  color: var(--boja-uspeh-tekst);
+  font-size: 0.9rem;
+}
+
+.pristup-podsetnik {
+  color: var(--boja-tekst-blagi);
+  margin: 0;
 }
 
 .lista-roditelja {
@@ -82,15 +321,20 @@
 }
 
 .roditelj-stavka {
-  padding: 0.9rem 1rem;
+  padding: 0.95rem 1.05rem;
   border: 1px solid var(--boja-ivica);
   border-radius: var(--radius);
   background: var(--boja-kartica);
+  transition: border-color var(--brzina) ease;
+}
+
+.roditelj-stavka:hover {
+  border-color: color-mix(in srgb, var(--boja-primarna) 45%, var(--boja-ivica));
 }
 
 .roditelj-red {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 0.8rem;
   flex-wrap: wrap;
@@ -98,7 +342,7 @@
 
 .roditelj-podaci {
   display: grid;
-  gap: 0.25rem;
+  gap: 0.35rem;
 }
 
 .roditelj-naslov {
@@ -108,14 +352,34 @@
   flex-wrap: wrap;
 }
 
+.roditelj-pristup-pilula {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  background: var(--boja-povrsina-niska);
+  color: var(--boja-tekst-blagi);
+  font-weight: 600;
+}
+
 .roditelj-pristup-uredu {
-  margin-top: 0.85rem;
-  padding-top: 0.85rem;
+  margin-top: 0.9rem;
+  padding-top: 0.9rem;
   border-top: 1px solid var(--boja-ivica);
 }
 
 @media (max-width: 640px) {
-  .pristup-stavka {
-    flex: 1 1 140px;
+  .pristup-mreza--razredi {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .pristup-mreza--predmeti {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pristup-korak--iskace {
+    animation: none;
   }
 }

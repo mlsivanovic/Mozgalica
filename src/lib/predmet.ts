@@ -43,6 +43,21 @@ export function dozvoljeniRazrediPredmeta(
   return KONFIGURACIJA_PREDMETA[predmet].razredi.filter((r) => dozvoljeniRazredi.includes(r))
 }
 
+export function dostupniPredmetiZaRazrede(razredi: readonly Razred[]): Predmet[] {
+  if (razredi.length === 0) return []
+  return PREDMETI.filter((p) =>
+    KONFIGURACIJA_PREDMETA[p].razredi.some((r) => razredi.includes(r)),
+  )
+}
+
+export function filtrirajPredmeteZaRazrede(
+  predmeti: readonly Predmet[],
+  razredi: readonly Razred[],
+): Predmet[] {
+  const dostupni = dostupniPredmetiZaRazrede(razredi)
+  return PREDMETI.filter((p) => predmeti.includes(p) && dostupni.includes(p))
+}
+
 export function dozvoljeniPredmetiZaKorisnika(
   dozvoljeniPredmeti: readonly Predmet[],
   dozvoljeniRazredi: readonly Razred[],

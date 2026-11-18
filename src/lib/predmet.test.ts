@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { KONFIGURACIJA_PREDMETA, PREDMETI } from '../types/db.ts'
 import {
-  dozvoljeniPredmetiZaKorisnika, dozvoljeniRazrediPredmeta, kombinacijaPristupaJeIspravna,
-  normalizujPredmete, normalizujRazrede, predmetImaTezinu, razrediPredmeta, tezinaZaPredmet,
+  dostupniPredmetiZaRazrede, dozvoljeniPredmetiZaKorisnika, dozvoljeniRazrediPredmeta,
+  filtrirajPredmeteZaRazrede, kombinacijaPristupaJeIspravna, normalizujPredmete,
+  normalizujRazrede, predmetImaTezinu, razrediPredmeta, tezinaZaPredmet,
 } from './predmet.ts'
 
 describe('centralna konfiguracija predmeta', () => {
@@ -36,5 +37,15 @@ describe('centralna konfiguracija predmeta', () => {
     expect(dozvoljeniRazrediPredmeta('matematika', [2, 4])).toEqual([2, 4])
     expect(dozvoljeniRazrediPredmeta('priroda_drustvo', [2, 3, 5])).toEqual([3])
     expect(dozvoljeniPredmetiZaKorisnika(['matematika', 'priroda_drustvo'], [2, 5])).toEqual(['matematika'])
+
+    expect(dostupniPredmetiZaRazrede([])).toEqual([])
+    expect(dostupniPredmetiZaRazrede([2])).toEqual(['matematika', 'srpski'])
+    expect(dostupniPredmetiZaRazrede([2, 5])).toEqual(['matematika', 'srpski'])
+    expect(dostupniPredmetiZaRazrede([3])).toEqual(['matematika', 'srpski', 'priroda_drustvo'])
+    expect(dostupniPredmetiZaRazrede([2, 4])).toEqual(['matematika', 'srpski', 'priroda_drustvo'])
+
+    expect(filtrirajPredmeteZaRazrede(['matematika', 'priroda_drustvo'], [2])).toEqual(['matematika'])
+    expect(filtrirajPredmeteZaRazrede(['matematika', 'priroda_drustvo'], [3])).toEqual(['matematika', 'priroda_drustvo'])
+    expect(filtrirajPredmeteZaRazrede(['matematika', 'srpski'], [])).toEqual([])
   })
 })

@@ -1,5 +1,5 @@
 // Pozivanje roditelja, podešavanje nivoa pristupa i spisak pozvanih. Vidi samo vlasnik platforme.
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useState, type CSSProperties, type FormEvent } from 'react'
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '../../lib/auth'
 import {
@@ -10,128 +10,209 @@ import {
   opisNivoaPristupa, porukaZaStatusPoziva, pozivniEmailJeIspravan,
   validirajNivoPristupa, type StatusPoziva,
 } from '../../lib/nalog'
-import { kombinacijaPristupaJeIspravna } from '../../lib/predmet'
+import {
+  dostupniPredmetiZaRazrede, filtrirajPredmeteZaRazrede, kombinacijaPristupaJeIspravna,
+} from '../../lib/predmet'
 import {
   NAZIVI_PREDMETA, NAZIVI_RAZREDA, PREDMETI, RAZREDI, type Predmet, type Razred,
 } from '../../types/db'
+import { Ikona } from '../../components/Ikona'
 import { Loader } from '../../components/Zajednicke'
 import './roditelji.css'
 
-function opisStanja(roditelj: PozvanRoditelj): string {
-  if (roditelj.aktivan) return 'Aktivan nalog'
-  if (roditelj.nalogPostoji) return 'Pozivnica poslata, nalog još nije aktiviran'
-  return 'Na listi, pozivnica nije poslata'
+const BOJE_PREDMETA: Record<Predmet, string> = {
+  matematika: 'var(--boja-matematika)',
+  srpski: 'var(--boja-srpski)',
+  priroda_drustvo: 'var(--boja-priroda)',
+}
+
+const KRATKI_OPISI_PREDMETA: Record<Predmet, string> = {
+  matematika: 'Brojevi, račun i logika',
+  srpski: 'Pravopis, gramatika i čitanje',
+  priroda_drustvo: 'Svet oko nas · 3. i 4. razred',
+}
+
+function podatakStanja(roditelj: PozvanRoditelj): { tekst: string; klasa: string } {
+  if (roditelj.aktivan) return { tekst: 'Aktivan nalog', klasa: 'bedz bedz--uspeh' }
+  if (roditelj.nalogPostoji) return { tekst: 'Pozivnica poslata', klasa: 'bedz bedz--upozorenje' }
+  return { tekst: 'Na listi', klasa: 'bedz bedz--neutral' }
 }
 
 interface IzborPristupaProps {
   razredi: Razred[]
   predmeti: Predmet[]
-  onPromeniRazrede(novi: Razred[]): void
-  onPromeniPredmete(novi: Predmet[]): void
+  onPromeni(razredi: Razred[], predmeti: Predmet[]): void
   naslov?: string
 }
 
 function IzborPristupa({
   razredi,
   predmeti,
-  onPromeniRazrede,
-  onPromeniPredmete,
+  onPromeni,
   naslov = 'Nivo pristupa',
 }: IzborPristupaProps) {
+  const dostupniPredmeti = dostupniPredmetiZaRazrede(razredi)
+  const imaIzabraneRazrede = razredi.length > 0
+  const sviDostupniPredmetiIzabrani = dostupniPredmeti.length > 0
+    && dostupniPredmeti.every((p) => predmeti.includes(p))
+  const sveIzabrano = razredi.length === RAZREDI.length && predmeti.length === PREDMETI.length
+  const nekompatibilno = imaIzabraneRazrede
+    && predmeti.length > 0
+    && !kombinacijaPristupaJeIspravna(razredi, predmeti)
+  const mesanoSaDrugimIliPetim = razredi.some((r) => r === 2 || r === 5)
+
   function preklopiRazred(r: Razred) {
     const postoji = razredi.includes(r)
-    const sledeci = postoji
+    const sledeciRazredi = postoji
       ? razredi.filter((x) => x !== r)
       : RAZREDI.filter((x) => x === r || razredi.includes(x))
-    onPromeniRazrede(sledeci)
+    const sledeciPredmeti = filtrirajPredmeteZaRazrede(predmeti, sledeciRazredi)
+    onPromeni(sledeciRazredi, sledeciPredmeti)
   }
 
   function preklopiPredmet(p: Predmet) {
     const postoji = predmeti.includes(p)
-    const sledeci = postoji
+    const sledeciPredmeti = postoji
       ? predmeti.filter((x) => x !== p)
-      : PREDMETI.filter((x) => x === p || predmeti.includes(x))
-    onPromeniPredmete(sledeci)
+      : dostupniPredmeti.filter((x) => x === p || predmeti.includes(x))
+    onPromeni(razredi, sledeciPredmeti)
   }
-
-  const sveIzabrano = razredi.length === RAZREDI.length && predmeti.length === PREDMETI.length
-  const nekompatibilno = razredi.length > 0 && predmeti.length > 0 && !kombinacijaPristupaJeIspravna(razredi, predmeti)
 
   return (
     <div className="pristup-okvir">
       <div className="pristup-zaglavlje">
-        <strong>{naslov}</strong>
-        <div className="red">
-          <button
-            type="button"
-            className="dugme dugme--senka dugme--malo"
-            onClick={() => {
-              if (sveIzabrano) {
-                onPromeniRazrede([])
-                onPromeniPredmete([])
-              } else {
-                onPromeniRazrede([...RAZREDI])
-                onPromeniPredmete([...PREDMETI])
-              }
-            }}
-          >
-            {sveIzabrano ? 'Poništi sve' : 'Izaberi sve'}
-          </button>
+        <div className="pristup-naslov-grupa">
+          <span className="pristup-ikona-bedz" aria-hidden="true">
+            <Ikona ime="skola" velicina={18} />
+          </span>
+          <div>
+            <strong>{naslov}</strong>
+            <span className="pristup-podnaslov">
+              Prvo izaberi razrede, pa aktivne predmete
+            </span>
+          </div>
         </div>
+        <button
+          type="button"
+          className="dugme dugme--senka dugme--malo"
+          onClick={() => {
+            if (sveIzabrano) {
+              onPromeni([], [])
+            } else {
+              onPromeni([...RAZREDI], [...PREDMETI])
+            }
+          }}
+        >
+          {sveIzabrano ? 'Poništi sve' : 'Izaberi sve'}
+        </button>
       </div>
 
-      <fieldset className="pristup-grupa">
-        <legend>Razredi</legend>
-        <div className="pristup-mreza">
+      <fieldset className="pristup-korak">
+        <div className="pristup-korak-zaglavlje">
+          <legend className="pristup-korak-naslov">
+            <span className="pristup-korak-broj">1</span>
+            <span>Razredi</span>
+          </legend>
+          {imaIzabraneRazrede && (
+            <span className="pristup-brojac">{razredi.length} / {RAZREDI.length}</span>
+          )}
+        </div>
+
+        <div className="pristup-mreza pristup-mreza--razredi">
           {RAZREDI.map((r) => {
             const izabran = razredi.includes(r)
             return (
-              <label key={r} className={`pristup-stavka ${izabran ? 'pristup-stavka--izabrana' : ''}`}>
+              <label key={r} className={`pristup-kartica pristup-kartica--razred ${izabran ? 'je-izabrana' : ''}`}>
                 <input
                   type="checkbox"
+                  className="pristup-ulaz"
                   checked={izabran}
                   onChange={() => preklopiRazred(r)}
                 />
-                <span>{NAZIVI_RAZREDA[r]}</span>
+                <span className="pristup-razred-tekst">
+                  <span className="pristup-razred-broj">{r}.</span>
+                  <span className="pristup-razred-oznaka">razred</span>
+                </span>
+                <span className="pristup-indikator" aria-hidden="true">
+                  {izabran && <Ikona ime="potvrda" velicina={14} debljina={3} />}
+                </span>
+                <span className="sr-only">{NAZIVI_RAZREDA[r]}</span>
               </label>
             )
           })}
         </div>
       </fieldset>
 
-      <fieldset className="pristup-grupa">
-        <legend>Predmeti</legend>
-        <div className="pristup-mreza">
-          {PREDMETI.map((p) => {
-            const izabran = predmeti.includes(p)
-            return (
-              <label key={p} className={`pristup-stavka ${izabran ? 'pristup-stavka--izabrana' : ''}`}>
-                <input
-                  type="checkbox"
-                  checked={izabran}
-                  onChange={() => preklopiPredmet(p)}
-                />
-                <span>
-                  {NAZIVI_PREDMETA[p]}
-                  {p === 'priroda_drustvo' && <span className="pristup-napomena"> (3. i 4. razred)</span>}
-                </span>
-              </label>
-            )
-          })}
+      {!imaIzabraneRazrede ? (
+        <div className="pristup-prazno">
+          <Ikona ime="knjiga" velicina={18} />
+          <span>Izaberi bar jedan razred iznad da bi se pojavili aktivni predmeti.</span>
         </div>
-      </fieldset>
+      ) : (
+        <fieldset className="pristup-korak pristup-korak--iskace">
+          <div className="pristup-korak-zaglavlje">
+            <legend className="pristup-korak-naslov">
+              <span className="pristup-korak-broj">2</span>
+              <span>Aktivni predmeti</span>
+            </legend>
+            <button
+              type="button"
+              className="pristup-brza-akcija"
+              onClick={() => onPromeni(razredi, sviDostupniPredmetiIzabrani ? [] : [...dostupniPredmeti])}
+            >
+              {sviDostupniPredmetiIzabrani ? 'Poništi predmete' : 'Izaberi sve ponuđene'}
+            </button>
+          </div>
+
+          <div className="pristup-mreza pristup-mreza--predmeti">
+            {dostupniPredmeti.map((p) => {
+              const izabran = predmeti.includes(p)
+              const stilPredmeta = { '--predmet-boja': BOJE_PREDMETA[p] } as CSSProperties
+              return (
+                <label
+                  key={p}
+                  style={stilPredmeta}
+                  className={`pristup-kartica pristup-kartica--predmet ${izabran ? 'je-izabrana' : ''}`}
+                >
+                  <input
+                    type="checkbox"
+                    className="pristup-ulaz"
+                    checked={izabran}
+                    onChange={() => preklopiPredmet(p)}
+                  />
+                  <span className="pristup-predmet-tacka" aria-hidden="true" />
+                  <span className="pristup-predmet-tekst">
+                    <span className="pristup-predmet-naziv">{NAZIVI_PREDMETA[p]}</span>
+                    <span className="pristup-predmet-opis">
+                      {p === 'priroda_drustvo' && mesanoSaDrugimIliPetim
+                        ? 'Samo za 3. i 4. razred'
+                        : KRATKI_OPISI_PREDMETA[p]}
+                    </span>
+                  </span>
+                  <span className="pristup-indikator" aria-hidden="true">
+                    {izabran && <Ikona ime="potvrda" velicina={14} debljina={3} />}
+                  </span>
+                </label>
+              )
+            })}
+          </div>
+        </fieldset>
+      )}
 
       {nekompatibilno ? (
         <p className="poruka poruka--upozorenje malo" style={{ margin: 0 }}>
           Priroda i društvo postoji samo za 3. i 4. razred. Izaberi 3. ili 4. razred ili dodaj drugi predmet.
         </p>
-      ) : razredi.length > 0 && predmeti.length > 0 ? (
-        <p className="malo blago">
-          Izabrano: <strong>{opisNivoaPristupa(razredi, predmeti)}</strong>
+      ) : imaIzabraneRazrede && predmeti.length > 0 ? (
+        <div className="pristup-rezime">
+          <Ikona ime="gotovo" velicina={17} />
+          <span>Izabrani pristup: <strong>{opisNivoaPristupa(razredi, predmeti)}</strong></span>
+        </div>
+      ) : imaIzabraneRazrede ? (
+        <p className="pristup-podsetnik malo">
+          Štikliraj bar jedan od ponuđenih predmeta.
         </p>
-      ) : (
-        <p className="malo blago">Štikliraj razrede i predmete kojima roditelj treba da ima pristup.</p>
-      )}
+      ) : null}
     </div>
   )
 }
@@ -196,9 +277,11 @@ export function Roditelji() {
   }
 
   function otvoriIzmenu(roditelj: PozvanRoditelj) {
+    const pocetniRazredi = [...roditelj.allowedGrades]
+    const pocetniPredmeti = filtrirajPredmeteZaRazrede(roditelj.allowedSubjects, pocetniRazredi)
     setUredjivanjeEmail(roditelj.email)
-    setIzmenaRazredi([...roditelj.allowedGrades])
-    setIzmenaPredmeti([...roditelj.allowedSubjects])
+    setIzmenaRazredi(pocetniRazredi)
+    setIzmenaPredmeti(pocetniPredmeti)
     setGreskaIzmene(null)
     setPoruka(null)
   }
@@ -244,8 +327,10 @@ export function Roditelji() {
           <IzborPristupa
             razredi={razredi}
             predmeti={predmeti}
-            onPromeniRazrede={setRazredi}
-            onPromeniPredmete={setPredmeti}
+            onPromeni={(noviRazredi, noviPredmeti) => {
+              setRazredi(noviRazredi)
+              setPredmeti(noviPredmeti)
+            }}
           />
           {greska && <p className="poruka poruka--greska" role="alert">{greska}</p>}
           {poruka && <p className="poruka poruka--uspeh" role="status">{poruka}</p>}
@@ -263,19 +348,27 @@ export function Roditelji() {
           <ul className="lista-roditelja">
             {spisak.map((roditelj) => {
               const uredjujeSe = uredjivanjeEmail === roditelj.email
+              const stanje = podatakStanja(roditelj)
+              const filtriraniPredmeti = filtrirajPredmeteZaRazrede(
+                roditelj.allowedSubjects,
+                roditelj.allowedGrades,
+              )
               return (
                 <li key={roditelj.email} className="roditelj-stavka">
                   <div className="roditelj-red">
                     <div className="roditelj-podaci">
                       <div className="roditelj-naslov">
                         <strong>{roditelj.email}</strong>
-                        {roditelj.jeVlasnik && <span className="bedz bedz--uspeh">Vlasnik platforme</span>}
+                        <span className={stanje.klasa}>{stanje.tekst}</span>
+                        {roditelj.jeVlasnik && <span className="bedz">Vlasnik platforme</span>}
                       </div>
-                      <span className="malo blago">{opisStanja(roditelj)}</span>
-                      <span className="malo">
+                      <span className="roditelj-pristup-pilula malo">
                         {roditelj.jeVlasnik
                           ? 'Pun pristup (svi razredi i predmeti)'
-                          : `Pristup: ${opisNivoaPristupa(roditelj.allowedGrades, roditelj.allowedSubjects)}`}
+                          : opisNivoaPristupa(
+                              roditelj.allowedGrades,
+                              filtriraniPredmeti.length > 0 ? filtriraniPredmeti : roditelj.allowedSubjects,
+                            )}
                       </span>
                     </div>
                     {!roditelj.jeVlasnik && (
@@ -284,7 +377,8 @@ export function Roditelji() {
                         className="dugme dugme--senka dugme--malo"
                         onClick={() => uredjujeSe ? setUredjivanjeEmail(null) : otvoriIzmenu(roditelj)}
                       >
-                        {uredjujeSe ? 'Zatvori' : 'Izmeni pristup'}
+                        <Ikona ime={uredjujeSe ? 'zatvori' : 'uredi'} velicina={16} />
+                        <span>{uredjujeSe ? 'Zatvori' : 'Izmeni pristup'}</span>
                       </button>
                     )}
                   </div>
@@ -295,8 +389,10 @@ export function Roditelji() {
                         naslov={`Izmena pristupa za ${roditelj.email}`}
                         razredi={izmenaRazredi}
                         predmeti={izmenaPredmeti}
-                        onPromeniRazrede={setIzmenaRazredi}
-                        onPromeniPredmete={setIzmenaPredmeti}
+                        onPromeni={(noviRazredi, noviPredmeti) => {
+                          setIzmenaRazredi(noviRazredi)
+                          setIzmenaPredmeti(noviPredmeti)
+                        }}
                       />
                       {greskaIzmene && <p className="poruka poruka--greska" role="alert">{greskaIzmene}</p>}
                       <div className="red">
