@@ -1,6 +1,7 @@
 // Detalji kviza: podešavanja, izbor pitanja (snapshot), linkovi za decu
 import { useEffect, useRef, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
+import { useAuth } from '../../lib/auth'
 import { RoditeljskiLink as Link, useRoditelj } from '../../lib/roditelj'
 import {
   dodajPitanjaUKviz, dodeliKvizProfilu, izmeniLink, kvizImaPokusaje, listajLinkove,
@@ -184,6 +185,7 @@ function PitanjaKviza({
   quizId: string; zakljucano: boolean; snapshot: KvizPitanje[]; banka: Pitanje[]
   oblasti: Oblast[]; razred: Razred | null; onSacuvano: () => void
 }) {
+  const { dozvoljeniPredmeti } = useAuth()
   const [pitanjaOtvoreno, setPitanjaOtvoreno] = useState(false)
   const [bankaOtvoreno, setBankaOtvoreno] = useState(false)
   const [izabrana, setIzabrana] = useState<string[]>([])
@@ -310,7 +312,7 @@ function PitanjaKviza({
                 <label htmlFor="pk-predmet">Predmet</label>
                 <select id="pk-predmet" value={filterPredmet} onChange={(e) => setFilterPredmet(e.target.value as '' | Predmet)}>
                   <option value="">Svi predmeti</option>
-                  {Object.entries(NAZIVI_PREDMETA).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                  {dozvoljeniPredmeti.map((k) => <option key={k} value={k}>{NAZIVI_PREDMETA[k]}</option>)}
                 </select>
               </div>
               <div className="tabela-omot" style={{ maxHeight: 360 }}>

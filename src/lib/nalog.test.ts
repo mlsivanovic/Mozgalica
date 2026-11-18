@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
-  porukaZaGreskuBrisanja, porukaZaGreskuPoziva, porukaZaStatusPoziva,
-  potvrdaBrisanjaJeIspravna, pozivniEmailJeIspravan,
+  opisNivoaPristupa, porukaZaGreskuBrisanja, porukaZaGreskuPoziva, porukaZaStatusPoziva,
+  potvrdaBrisanjaJeIspravna, pozivniEmailJeIspravan, validirajNivoPristupa,
 } from './nalog'
 
 describe('poziv roditelja', () => {
@@ -13,6 +13,8 @@ describe('poziv roditelja', () => {
   it('greške Edge funkcije se prevode u srpske poruke, sa podrazumevanom za nepoznat kod', () => {
     expect(porukaZaGreskuPoziva('forbidden')).toContain('vlasnik platforme')
     expect(porukaZaGreskuPoziva('invalid_email')).toContain('ispravnu email')
+    expect(porukaZaGreskuPoziva('invalid_access')).toContain('razred')
+    expect(porukaZaGreskuPoziva('owner_self')).toContain('vlasnika platforme')
     expect(porukaZaGreskuPoziva('nepoznato')).toBe('Poziv nije uspeo. Pokušaj ponovo.')
     expect(porukaZaGreskuPoziva(null)).toBe('Poziv nije uspeo. Pokušaj ponovo.')
   })
@@ -23,6 +25,19 @@ describe('poziv roditelja', () => {
     expect(pozivniEmailJeIspravan('roditelj@')).toBe(false)
     expect(pozivniEmailJeIspravan('bez-znaka-at.com')).toBe(false)
     expect(pozivniEmailJeIspravan('')).toBe(false)
+  })
+
+  it('validacija i opis nivoa pristupa proveravaju razrede, predmete i kompatibilnost', () => {
+    expect(validirajNivoPristupa([], ['matematika'])).toContain('razred')
+    expect(validirajNivoPristupa([3], [])).toContain('predmet')
+    expect(validirajNivoPristupa([2], ['priroda_drustvo'])).toContain('Priroda i društvo')
+    expect(validirajNivoPristupa([3], ['priroda_drustvo'])).toBeNull()
+    expect(validirajNivoPristupa([2, 3], ['matematika'])).toBeNull()
+
+    expect(opisNivoaPristupa([2, 3, 4, 5], ['matematika', 'srpski', 'priroda_drustvo']))
+      .toBe('Svi razredi · Svi predmeti')
+    expect(opisNivoaPristupa([4, 3], ['srpski', 'matematika']))
+      .toBe('3., 4. razred · Matematika, Srpski jezik')
   })
 })
 

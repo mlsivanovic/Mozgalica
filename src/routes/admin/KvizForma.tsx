@@ -13,10 +13,11 @@ import {
   izaberiOblastiZaKviz, napraviPlanOblastiKviza, dostupanKombinovaniIzvor, type IzvorStandardnogKviza,
 } from '../../lib/raspodelaKviza'
 import { sastaviKombinovaniPid } from '../../lib/kombinovaniPid'
-import { predmetImaTezinu, razrediPredmeta, tezinaZaPredmet } from '../../lib/predmet'
+import { useAuth } from '../../lib/auth'
+import { dozvoljeniRazrediPredmeta, predmetImaTezinu, tezinaZaPredmet } from '../../lib/predmet'
 import { MEJL_DETETU_ZA_NOVI_KVIZ } from '../../lib/funkcije'
 import {
-  KONFIGURACIJA_PREDMETA, NAZIVI_PREDMETA, NAZIVI_RAZREDA, NAZIVI_TEZINA, NAZIVI_TIPOVA, PREDMETI,
+  KONFIGURACIJA_PREDMETA, NAZIVI_PREDMETA, NAZIVI_RAZREDA, NAZIVI_TEZINA, NAZIVI_TIPOVA,
   type Oblast, type Predmet, type Razred, type Tezina, type TipPitanja,
   type ProfilDeteta,
 } from '../../types/db'
@@ -37,11 +38,15 @@ interface StandardQuizConfig {
 
 export function KvizForma({ pocetnoDete = '', onNazad }: { pocetnoDete?: string; onNazad?: () => void }) {
   const navigate = useNavigate()
+  const { dozvoljeniPredmeti, dozvoljeniRazredi } = useAuth()
+  const pocetniPredmet = dozvoljeniPredmeti[0] ?? 'matematika'
+  const pocetniRazredi = dozvoljeniRazrediPredmeta(pocetniPredmet, dozvoljeniRazredi)
+  const pocetniRazred = pocetniRazredi.includes(3) ? 3 : (pocetniRazredi[0] ?? 3)
   const [mod, setMod] = useState<'standard' | 'manual'>('standard')
   
   // Opšta podešavanja za standardni kviz
-  const [predmet, setPredmet] = useState<Predmet>('matematika')
-  const [razred, setRazred] = useState<Razred>(3)
+  const [predmet, setPredmet] = useState<Predmet>(pocetniPredmet)
+  const [razred, setRazred] = useState<Razred>(pocetniRazred)
   const [oblasti, setOblasti] = useState<Oblast[]>([])
   
   // Profili dece za dodelu kviza
@@ -172,8 +177,8 @@ export function KvizForma({ pocetnoDete = '', onNazad }: { pocetnoDete?: string;
 
   function promeniPredmet(noviPredmet: Predmet) {
     if (noviPredmet === predmet) return
-    const podrzaniRazredi = razrediPredmeta(noviPredmet)
-    const noviRazred = podrzaniRazredi.includes(razred) ? razred : podrzaniRazredi[0]
+    const podrzaniRazredi = dozvoljeniRazrediPredmeta(noviPredmet, dozvoljeniRazredi)
+    const noviRazred = podrzaniRazredi.includes(razred) ? razred : (podrzaniRazredi[0] ?? razred)
     if (oblasti.length > 0) setCfg(ucitajKonfiguraciju(noviPredmet, noviRazred))
     setPredmet(noviPredmet)
     setRazred(noviRazred)
@@ -528,7 +533,11 @@ export function KvizForma({ pocetnoDete = '', onNazad }: { pocetnoDete?: string;
         <button
           type="button" role="tab" aria-selected={mod === 'standard'}
           className={`segment-dugme ${mod === 'standard' ? 'segment-dugme--izabran' : ''}`}
-          onClick={() => setMod('standard')}
+          onClick={() => {
+            setMod('standard')
+            const dozv = dozvoljeniRazrediPredmeta(predmet, dozvoljeniRazredi)
+            if (!dozv.includes(razred) && dozv[0]) promeniRazred(dozv[0])
+          }}
         >
           ✨ Standardni kviz (automatski)
         </button>
@@ -570,7 +579,7 @@ export function KvizForma({ pocetnoDete = '', onNazad }: { pocetnoDete?: string;
             <div className="polje">
               <label htmlFor="kv-razred-manual">Razred</label>
               <div className="segment">
-                {razrediPredmeta(predmet).map((r) => (
+                {dozvoljeniRazredi.map((r) => (
                   <button
                     key={r} type="button"
                     className={`segment-dugme ${razred === r ? 'segment-dugme--izabran' : ''}`}
@@ -669,7 +678,7 @@ export function KvizForma({ pocetnoDete = '', onNazad }: { pocetnoDete?: string;
                 <div className="polje">
                   <label htmlFor="f-predmet">Predmet</label>
                   <div className="segment">
-                    {PREDMETI.map((p) => (
+                    {dozvoljeniPredmeti.map((p) => (
                       <button
                         key={p} type="button"
                         className={`segment-dugme ${predmet === p ? 'segment-dugme--izabran' : ''}`}
@@ -684,7 +693,7 @@ export function KvizForma({ pocetnoDete = '', onNazad }: { pocetnoDete?: string;
                 <div className="polje">
                   <label htmlFor="f-razred">Razred</label>
                   <div className="segment">
-                    {razrediPredmeta(predmet).map((r) => (
+                    {dozvoljeniRazrediPredmeta(predmet, dozvoljeniRazredi).map((r) => (
                       <button
                         key={r} type="button"
                         className={`segment-dugme ${razred === r ? 'segment-dugme--izabran' : ''}`}

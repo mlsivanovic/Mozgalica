@@ -1,5 +1,5 @@
-// Pomoćne funkcije za grupisanje/filtriranje tema po predmetu.
-import { KONFIGURACIJA_PREDMETA, PREDMETI, type Oblast, type Predmet, type Razred, type Tezina } from '../types/db'
+// Pomoćne funkcije za grupisanje/filtriranje tema po predmetu i nivou pristupa.
+import { KONFIGURACIJA_PREDMETA, PREDMETI, RAZREDI, type Oblast, type Predmet, type Razred, type Tezina } from '../types/db'
 
 export interface GrupaOblasti {
   predmet: Predmet
@@ -15,6 +15,42 @@ export function grupisiOblastiPoPredmetu(oblasti: Oblast[]): GrupaOblasti[] {
 
 export function razrediPredmeta(predmet: Predmet): readonly Razred[] {
   return KONFIGURACIJA_PREDMETA[predmet].razredi
+}
+
+export function normalizujRazrede(ulaz?: readonly number[] | null): Razred[] {
+  if (!ulaz) return [...RAZREDI]
+  const filtrirani = RAZREDI.filter((r) => ulaz.includes(r))
+  return filtrirani.length > 0 ? filtrirani : [...RAZREDI]
+}
+
+export function normalizujPredmete(ulaz?: readonly string[] | null): Predmet[] {
+  if (!ulaz) return [...PREDMETI]
+  const filtrirani = PREDMETI.filter((p) => ulaz.includes(p))
+  return filtrirani.length > 0 ? filtrirani : [...PREDMETI]
+}
+
+export function kombinacijaPristupaJeIspravna(
+  razredi: readonly Razred[],
+  predmeti: readonly Predmet[],
+): boolean {
+  return predmeti.some((p) => KONFIGURACIJA_PREDMETA[p].razredi.some((r) => razredi.includes(r)))
+}
+
+export function dozvoljeniRazrediPredmeta(
+  predmet: Predmet,
+  dozvoljeniRazredi: readonly Razred[],
+): Razred[] {
+  return KONFIGURACIJA_PREDMETA[predmet].razredi.filter((r) => dozvoljeniRazredi.includes(r))
+}
+
+export function dozvoljeniPredmetiZaKorisnika(
+  dozvoljeniPredmeti: readonly Predmet[],
+  dozvoljeniRazredi: readonly Razred[],
+): Predmet[] {
+  const vazeci = PREDMETI.filter(
+    (p) => dozvoljeniPredmeti.includes(p) && dozvoljeniRazrediPredmeta(p, dozvoljeniRazredi).length > 0,
+  )
+  return vazeci.length > 0 ? vazeci : normalizujPredmete(dozvoljeniPredmeti)
 }
 
 export function predmetImaTezinu(predmet: Predmet): boolean {

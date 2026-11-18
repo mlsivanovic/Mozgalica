@@ -7,11 +7,11 @@ import {
 } from '../../lib/api'
 import { Loader, Modal } from '../../components/Zajednicke'
 import {
-  NAZIVI_PREDMETA, NAZIVI_RAZREDA, NAZIVI_TEZINA, NAZIVI_TIPOVA, PREDMETI,
+  NAZIVI_PREDMETA, NAZIVI_RAZREDA, NAZIVI_TEZINA, NAZIVI_TIPOVA,
   type Kviz, type Oblast, type Pitanje, type Predmet, type Razred,
   type Tezina,
 } from '../../types/db'
-import { predmetImaTezinu, razrediPredmeta } from '../../lib/predmet'
+import { dozvoljeniRazrediPredmeta, predmetImaTezinu } from '../../lib/predmet'
 import { useAuth } from '../../lib/auth'
 import {
   filtrirajPoVlasnistvu, idsZaBrisanje, jeZajednicko, mozeDaMenja, type FilterVlasnistva,
@@ -28,18 +28,22 @@ interface NoviKvizStanje {
 
 export function PitanjaLista() {
   const navigate = useNavigate()
+  const { session, dozvoljeniPredmeti, dozvoljeniRazredi } = useAuth()
+  const pocetniPredmet = dozvoljeniPredmeti[0] ?? 'matematika'
+  const pocetniRazredi = dozvoljeniRazrediPredmeta(pocetniPredmet, dozvoljeniRazredi)
+  const pocetniRazred = pocetniRazredi.includes(3) ? 3 : (pocetniRazredi[0] ?? 3)
+
   const [ucitava, setUcitava] = useState(true)
   const [greska, setGreska] = useState<string | null>(null)
   const [oblasti, setOblasti] = useState<Oblast[]>([])
   const [svaPitanja, setSvaPitanja] = useState<Pitanje[]>([])
-  const { session } = useAuth()
   const userId = session?.user.id ?? null
   const [filterVlasnistva, setFilterVlasnistva] = useState<FilterVlasnistva>('sva')
   const [kvizovi, setKvizovi] = useState<Kviz[]>([])
   // Predmet je uvek aktivan tab, pa se pitanja različitih predmeta ne mešaju.
-  const [predmet, setPredmet] = useState<Predmet>('matematika')
+  const [predmet, setPredmet] = useState<Predmet>(pocetniPredmet)
   // Razred je isti princip, jedan nivo dublje, unutar aktivnog predmeta.
-  const [razred, setRazred] = useState<Razred>(3)
+  const [razred, setRazred] = useState<Razred>(pocetniRazred)
   const [filterOblast, setFilterOblast] = useState('')
   const [filterTip, setFilterTip] = useState('')
   const [filterTezina, setFilterTezina] = useState('')
@@ -94,7 +98,8 @@ export function PitanjaLista() {
 
   function promeniPredmet(p: Predmet) {
     setPredmet(p)
-    if (!razrediPredmeta(p).includes(razred)) setRazred(razrediPredmeta(p)[0])
+    const dostupniRazredi = dozvoljeniRazrediPredmeta(p, dozvoljeniRazredi)
+    if (!dostupniRazredi.includes(razred) && dostupniRazredi[0]) setRazred(dostupniRazredi[0])
     setFilterOblast('') // tema iz drugog predmeta više ne bi bila validna
     setFilterTezina('')
   }
@@ -299,7 +304,7 @@ export function PitanjaLista() {
   return (
     <div>
       <div className="red predmet-tabovi razmak-dole">
-        {PREDMETI.map((p) => (
+        {dozvoljeniPredmeti.map((p) => (
           <button
             key={p} type="button"
             className={`dugme ${predmet === p ? '' : 'dugme--senka'}`}
@@ -312,7 +317,7 @@ export function PitanjaLista() {
       </div>
 
       <div className="red razred-tabovi razmak-dole">
-        {razrediPredmeta(predmet).map((r) => (
+        {dozvoljeniRazrediPredmeta(predmet, dozvoljeniRazredi).map((r) => (
           <button
             key={r} type="button"
             className={`dugme dugme--malo ${razred === r ? '' : 'dugme--senka'}`}

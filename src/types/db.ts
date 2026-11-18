@@ -298,6 +298,8 @@ export interface AdminPodesavanja {
   email_notifications: boolean
   is_platform_owner: boolean
   terms_accepted_at: string | null
+  allowed_grades: Razred[]
+  allowed_subjects: Predmet[]
 }
 
 export interface ProfilDeteta {

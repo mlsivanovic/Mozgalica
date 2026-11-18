@@ -1,27 +1,35 @@
 // Konfiguracija automatskog generisanja pitanja + pokretanje pregleda.
 // Podržava izbor VIŠE oblasti odjednom (automatski kviz iz više tema) —
 // ukupan broj pitanja se ravnomerno raspoređuje po izabranim oblastima.
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRoditeljskiNavigate as useNavigate } from '../../lib/roditelj'
 import { podrzaneOblasti } from '../../generator'
 import { generisi } from '../../generator'
 import { IKONE_GENERISANIH_OBLASTI, NAZIVI_GENERISANIH_OBLASTI } from '../../generator/oblasti'
 import type { GeneratorConfig, GenerisanoPitanje } from '../../generator/types'
 import { listajOblasti } from '../../lib/api'
-import { predmetImaTezinu, razrediPredmeta, tezinaZaPredmet } from '../../lib/predmet'
+import { useAuth } from '../../lib/auth'
+import {
+  dozvoljeniRazrediPredmeta, predmetImaTezinu, tezinaZaPredmet,
+} from '../../lib/predmet'
 import {
   KONFIGURACIJA_PREDMETA, NAZIVI_PREDMETA, NAZIVI_RAZREDA, NAZIVI_TEZINA,
-  NAZIVI_TIPOVA, PREDMETI, type Oblast, type Predmet, type Razred, type Tezina, type TipPitanja,
+  NAZIVI_TIPOVA, type Oblast, type Predmet, type Razred, type Tezina, type TipPitanja,
 } from '../../types/db'
 import { GeneratorPregled } from './GeneratorPregled'
 import './generator.css'
 
 export function Generator() {
   const navigate = useNavigate()
+  const { dozvoljeniPredmeti, dozvoljeniRazredi } = useAuth()
+  const pocetniPredmet = dozvoljeniPredmeti[0] ?? 'matematika'
+  const pocetniRazredi = dozvoljeniRazrediPredmeta(pocetniPredmet, dozvoljeniRazredi)
+  const pocetniRazred = pocetniRazredi.includes(3) ? 3 : (pocetniRazredi[0] ?? 3)
+
   const [oblasti, setOblasti] = useState<Oblast[]>([])
-  const [predmet, setPredmet] = useState<Predmet>('matematika')
-  const [razred, setRazred] = useState<Razred>(3)
-  const [topicSlugovi, setTopicSlugovi] = useState<string[]>(['sabiranje'])
+  const [predmet, setPredmet] = useState<Predmet>(pocetniPredmet)
+  const [razred, setRazred] = useState<Razred>(pocetniRazred)
+  const [topicSlugovi, setTopicSlugovi] = useState<string[]>([])
   const [difficulty, setDifficulty] = useState<Tezina>(3)
   const [count, setCount] = useState(10)
   const [type, setType] = useState<TipPitanja | 'auto'>('auto')
@@ -30,9 +38,20 @@ export function Generator() {
   const [rezultat, setRezultat] = useState<GenerisanoPitanje[] | null>(null)
   const [upozorenje, setUpozorenje] = useState<string | null>(null)
 
-  useEffect(() => { listajOblasti().then(setOblasti).catch(() => {}) }, [])
+  const podrzane = useMemo(() => podrzaneOblasti(), [])
 
-  const podrzane = podrzaneOblasti()
+  useEffect(() => {
+    listajOblasti()
+      .then((ucitane) => {
+        setOblasti(ucitane)
+        const vazeci = podrzane.filter((s) => ucitane.some(
+          (o) => o.slug === s && o.subject === pocetniPredmet && o.grade === pocetniRazred,
+        ))
+        setTopicSlugovi((trenutni) => trenutni.length > 0 ? trenutni : vazeci.slice(0, 1))
+      })
+      .catch(() => {})
+  }, [podrzane, pocetniPredmet, pocetniRazred])
+
   // Samo oblasti aktivnog predmeta i razreda — kviz ne sme da ih meša.
   const podrzaneRazreda = podrzane.filter((s) => oblasti.some(
     (o) => o.slug === s && o.subject === predmet && o.grade === razred,
@@ -42,8 +61,8 @@ export function Generator() {
     setPredmet(p)
     setType('auto')
     setWordProblems(false)
-    const dozvoljeniRazredi = razrediPredmeta(p)
-    const ciljniRazred = dozvoljeniRazredi.includes(razred) ? razred : dozvoljeniRazredi[0]
+    const dostupniRazredi = dozvoljeniRazrediPredmeta(p, dozvoljeniRazredi)
+    const ciljniRazred = dostupniRazredi.includes(razred) ? razred : (dostupniRazredi[0] ?? razred)
     setRazred(ciljniRazred)
     const vazeci = podrzane.filter((s) => oblasti.some(
       (o) => o.slug === s && o.subject === p && o.grade === ciljniRazred,
@@ -122,7 +141,7 @@ export function Generator() {
         <div className="gen-sekcija gen-sekcija--predmet">
           <p className="gen-naslov razmak-dole">Predmet</p>
           <div className="segment" role="radiogroup" aria-label="Predmet">
-            {PREDMETI.map((p) => (
+            {dozvoljeniPredmeti.map((p) => (
               <button
                 key={p} type="button" role="radio" aria-checked={predmet === p}
                 className={`segment-dugme ${predmet === p ? 'segment-dugme--izabran' : ''}`}
@@ -137,7 +156,7 @@ export function Generator() {
         <div className="gen-sekcija gen-sekcija--razred">
           <p className="gen-naslov razmak-dole">Razred</p>
           <div className="segment" role="radiogroup" aria-label="Razred">
-            {razrediPredmeta(predmet).map((r) => (
+            {dozvoljeniRazrediPredmeta(predmet, dozvoljeniRazredi).map((r) => (
               <button
                 key={r} type="button" role="radio" aria-checked={razred === r}
                 className={`segment-dugme ${razred === r ? 'segment-dugme--izabran' : ''}`}

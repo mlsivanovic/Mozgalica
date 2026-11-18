@@ -1,13 +1,15 @@
 import { useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { useAuth } from '../../lib/auth'
 import { useRoditelj, useRoditeljskiNavigate } from '../../lib/roditelj'
 import { dodeliSahPartiju } from '../../lib/api'
 import { KvizForma } from './KvizForma'
 import { SAH_ELO_NIVOI, SAH_SATOVI } from '../../sah/podesavanja'
-import type { SahBoja } from '../../types/db'
+import { NAZIVI_PREDMETA, type SahBoja } from '../../types/db'
 import { Ikona } from '../../components/Ikona'
 import { MEJL_DETETU_ZA_NOVU_PARTIJU } from '../../lib/funkcije'
 export function Zadaj() {
+  const { dozvoljeniPredmeti } = useAuth()
   const { deteId,profili } = useRoditelj()
   const [params] = useSearchParams()
   const [dete,setDete] = useState(deteId)
@@ -16,9 +18,10 @@ export function Zadaj() {
   const [pokrenuto,setPokrenuto] = useState(false)
   const [greska,setGreska] = useState<string|null>(null)
   const primaoci = [...profili.map(p => ({ id: p.id, naziv: p.name, avatar: p.avatar as string | null })), ...(vrsta === 'quiz' ? [{ id: 'bez-dodele', naziv: 'Bez dodele', avatar: null }] : [])]
+  const opisPredmeta = dozvoljeniPredmeti.map((p) => NAZIVI_PREDMETA[p]).join(', ')
   return <>
     <div hidden={korak !== 1}><ol className="roditelj-koraci"><li aria-current="step">Dete i aktivnost</li><li>Sadržaj</li><li>Potvrda</li></ol>
-      <fieldset className="zadaj-vrste"><legend>Šta zadaješ?</legend><div><label className={vrsta === 'quiz' ? 'aktivna' : ''}><input type="radio" name="vrsta" checked={vrsta === 'quiz'} onChange={() => setVrsta('quiz')} /><Ikona ime="zadaci" /><span><strong>Kviz</strong><small>Matematika, srpski, priroda</small></span></label><label className={vrsta === 'chess' ? 'aktivna' : ''}><input type="radio" name="vrsta" checked={vrsta === 'chess'} onChange={() => {setVrsta('chess'); if(dete === 'bez-dodele') setDete('')}} /><Ikona ime="sah" /><span><strong>Šah</strong><small>Partija protiv računara</small></span></label></div></fieldset>
+      <fieldset className="zadaj-vrste"><legend>Šta zadaješ?</legend><div><label className={vrsta === 'quiz' ? 'aktivna' : ''}><input type="radio" name="vrsta" checked={vrsta === 'quiz'} onChange={() => setVrsta('quiz')} /><Ikona ime="zadaci" /><span><strong>Kviz</strong><small>{opisPredmeta}</small></span></label><label className={vrsta === 'chess' ? 'aktivna' : ''}><input type="radio" name="vrsta" checked={vrsta === 'chess'} onChange={() => {setVrsta('chess'); if(dete === 'bez-dodele') setDete('')}} /><Ikona ime="sah" /><span><strong>Šah</strong><small>Partija protiv računara</small></span></label></div></fieldset>
       <fieldset className="zadaj-primalac"><legend>Kome?</legend>
         <div className="roditelj-cipovi roditelj-cipovi--prelom" role="radiogroup" aria-label="Kome je namenjeno">
           {primaoci.map(p => <button key={p.id} type="button" role="radio" aria-checked={dete === p.id}

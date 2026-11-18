@@ -1,8 +1,10 @@
 // Kontekst prijave administratora (Supabase Auth sesija)
 import type { Session } from '@supabase/supabase-js'
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import { PREDMETI, RAZREDI, type Predmet, type Razred } from '../types/db'
 import { backendPodesen, supabase } from './supabase'
 import { ucitajPodesavanja } from './api'
+import { dozvoljeniPredmetiZaKorisnika, normalizujPredmete, normalizujRazrede } from './predmet'
 import {
   KLJUC_GRESKE_PRIJAVE, KLJUC_ZAHTEVA_LOZINKE, jeAuthHash, porukaGreskeLozinke, procitajZahtevLozinke,
 } from './authPovratak'
@@ -13,6 +15,8 @@ interface AuthStanje {
   session: Session | null
   ucitava: boolean
   jeVlasnikPlatforme: boolean
+  dozvoljeniRazredi: Razred[]
+  dozvoljeniPredmeti: Predmet[]
   // null dok se podešavanja učitavaju; false znači da uslovi nisu prihvaćeni (ili se ne može proveriti)
   prihvacenUslovi: boolean | null
   prijaviLozinkom(email: string, lozinka: string): Promise<string | null>
@@ -29,6 +33,8 @@ interface PodesavanjaPrijavljenog {
   userId: string
   vlasnik: boolean
   uslovi: boolean
+  razredi: Razred[]
+  predmeti: Predmet[]
 }
 
 const AuthContext = createContext<AuthStanje | null>(null)
@@ -43,6 +49,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const trenutna = userId !== null && podesavanja?.userId === userId ? podesavanja : null
   const jeVlasnikPlatforme = trenutna?.vlasnik ?? false
   const prihvacenUslovi = trenutna ? trenutna.uslovi : null
+  const dozvoljeniRazredi = trenutna ? trenutna.razredi : [...RAZREDI]
+  const dozvoljeniPredmeti = trenutna ? trenutna.predmeti : [...PREDMETI]
 
   useEffect(() => {
     if (!backendPodesen) return
@@ -82,13 +90,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     ucitajPodesavanja()
       .then((red) => {
         if (!aktivno) return
+        const vlasnik = Boolean(red?.is_platform_owner)
+        const razredi = vlasnik ? [...RAZREDI] : normalizujRazrede(red?.allowed_grades)
+        const predmeti = vlasnik
+          ? [...PREDMETI]
+          : dozvoljeniPredmetiZaKorisnika(normalizujPredmete(red?.allowed_subjects), razredi)
         setPodesavanja({
           userId,
-          vlasnik: Boolean(red?.is_platform_owner),
+          vlasnik,
           uslovi: red ? red.terms_accepted_at !== null : false,
+          razredi,
+          predmeti,
         })
       })
-      .catch(() => { if (aktivno) setPodesavanja({ userId, vlasnik: false, uslovi: false }) })
+      .catch(() => {
+        if (aktivno) {
+          setPodesavanja({
+            userId,
+            vlasnik: false,
+            uslovi: false,
+            razredi: [...RAZREDI],
+            predmeti: [...PREDMETI],
+          })
+        }
+      })
     return () => { aktivno = false }
   }, [userId, verzijaPodesavanja])
 
@@ -134,7 +159,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider value={{
-      session, ucitava, jeVlasnikPlatforme, prihvacenUslovi,
+      session, ucitava, jeVlasnikPlatforme, dozvoljeniRazredi, dozvoljeniPredmeti, prihvacenUslovi,
       prijaviLozinkom, posaljiMagicLink, posaljiLinkZaLozinku, zahtevLozinke, postaviLozinku,
       osveziPodesavanja, odjavi,
     }}>

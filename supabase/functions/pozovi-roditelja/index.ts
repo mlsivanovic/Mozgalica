@@ -13,6 +13,16 @@ const CORS = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 const EMAIL_OBLIK = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const DOZVOLJENI_RAZREDI = [2, 3, 4, 5] as const
+const DOZVOLJENI_PREDMETI = ['matematika', 'srpski', 'priroda_drustvo'] as const
+const RAZREDI_PO_PREDMETU: Record<(typeof DOZVOLJENI_PREDMETI)[number], readonly number[]> = {
+  matematika: [2, 3, 4, 5],
+  srpski: [2, 3, 4, 5],
+  priroda_drustvo: [3, 4],
+}
+
+type DozvoljenRazred = (typeof DOZVOLJENI_RAZREDI)[number]
+type DozvoljenPredmet = (typeof DOZVOLJENI_PREDMETI)[number]
 
 const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
@@ -28,6 +38,36 @@ function greska(kod: string, status: number): Response {
 
 function emailJeIspravan(email: string): boolean {
   return email.length >= 3 && email.length <= 254 && EMAIL_OBLIK.test(email)
+}
+
+function parsirajRazrede(ulaz: unknown): DozvoljenRazred[] | null {
+  if (!Array.isArray(ulaz)) return null
+  const skup = new Set<DozvoljenRazred>()
+  for (const stavka of ulaz) {
+    if (typeof stavka !== 'number' || !DOZVOLJENI_RAZREDI.includes(stavka as DozvoljenRazred)) {
+      return null
+    }
+    skup.add(stavka as DozvoljenRazred)
+  }
+  const rezultat = DOZVOLJENI_RAZREDI.filter((r) => skup.has(r))
+  return rezultat.length > 0 ? rezultat : null
+}
+
+function parsirajPredmete(ulaz: unknown): DozvoljenPredmet[] | null {
+  if (!Array.isArray(ulaz)) return null
+  const skup = new Set<DozvoljenPredmet>()
+  for (const stavka of ulaz) {
+    if (typeof stavka !== 'string' || !DOZVOLJENI_PREDMETI.includes(stavka as DozvoljenPredmet)) {
+      return null
+    }
+    skup.add(stavka as DozvoljenPredmet)
+  }
+  const rezultat = DOZVOLJENI_PREDMETI.filter((p) => skup.has(p))
+  return rezultat.length > 0 ? rezultat : null
+}
+
+function pristupImaBarJednuKombinaciju(razredi: DozvoljenRazred[], predmeti: DozvoljenPredmet[]): boolean {
+  return predmeti.some((p) => RAZREDI_PO_PREDMETU[p].some((r) => razredi.includes(r as DozvoljenRazred)))
 }
 
 Deno.serve(async (req) => {
@@ -48,7 +88,7 @@ Deno.serve(async (req) => {
   if (greskaPodesavanja) return greska('server', 500)
   if (!podesavanja?.is_platform_owner) return greska('forbidden', 403)
 
-  let telo: { email?: unknown }
+  let telo: { email?: unknown; allowedGrades?: unknown; allowedSubjects?: unknown }
   try {
     telo = await req.json()
   } catch {
@@ -57,17 +97,47 @@ Deno.serve(async (req) => {
   const email = typeof telo.email === 'string' ? telo.email.trim().toLowerCase() : ''
   if (!emailJeIspravan(email)) return greska('invalid_email', 400)
 
-  const { error: greskaAllowlist } = await admin
-    .from('admin_allowlist')
-    .upsert({ email }, { onConflict: 'email', ignoreDuplicates: true })
-  if (greskaAllowlist) return greska('server', 500)
+  const allowedGrades = telo.allowedGrades === undefined && telo.allowedSubjects === undefined
+    ? [...DOZVOLJENI_RAZREDI]
+    : parsirajRazrede(telo.allowedGrades)
+  const allowedSubjects = telo.allowedGrades === undefined && telo.allowedSubjects === undefined
+    ? [...DOZVOLJENI_PREDMETI]
+    : parsirajPredmete(telo.allowedSubjects)
+
+  if (!allowedGrades || !allowedSubjects || !pristupImaBarJednuKombinaciju(allowedGrades, allowedSubjects)) {
+    return greska('invalid_access', 400)
+  }
 
   const { data: postojeciId, error: greskaTrazenja } = await admin.rpc('fn_naloga_po_mejlu', { p_email: email })
   if (greskaTrazenja) return greska('server', 500)
 
   if (postojeciId) {
-    // Nalog već postoji: samo se obezbeđuju administratorska prava, bez novog mejla.
-    const { error: greskaAktivacije } = await admin.rpc('fn_aktiviraj_roditelja', { p_user_id: postojeciId })
+    const { data: postojeciPodesavanja, error: erPostojeci } = await admin
+      .from('admin_settings')
+      .select('is_platform_owner')
+      .eq('user_id', postojeciId)
+      .maybeSingle()
+    if (erPostojeci) return greska('server', 500)
+    if (postojeciPodesavanja?.is_platform_owner || postojeciId === korisnik.user.id) {
+      return greska('owner_self', 400)
+    }
+  }
+
+  const { error: greskaAllowlist } = await admin
+    .from('admin_allowlist')
+    .upsert(
+      { email, allowed_grades: allowedGrades, allowed_subjects: allowedSubjects },
+      { onConflict: 'email' },
+    )
+  if (greskaAllowlist) return greska('server', 500)
+
+  if (postojeciId) {
+    // Nalog već postoji: obezbeđuju se administratorska prava i ažurira nivo pristupa, bez novog mejla.
+    const { error: greskaAktivacije } = await admin.rpc('fn_aktiviraj_roditelja', {
+      p_user_id: postojeciId,
+      p_grades: allowedGrades,
+      p_subjects: allowedSubjects,
+    })
     if (greskaAktivacije) return greska('server', 500)
     return json({ ok: true, status: 'vec_postoji' })
   }
@@ -78,6 +148,14 @@ Deno.serve(async (req) => {
   if (greskaPozivnice) {
     // Nalog je mogao nastati između provere i poziva.
     if (greskaPozivnice.code === 'email_exists' || /already/i.test(greskaPozivnice.message)) {
+      const { data: naknadniId } = await admin.rpc('fn_naloga_po_mejlu', { p_email: email })
+      if (naknadniId) {
+        await admin.rpc('fn_aktiviraj_roditelja', {
+          p_user_id: naknadniId,
+          p_grades: allowedGrades,
+          p_subjects: allowedSubjects,
+        })
+      }
       return json({ ok: true, status: 'vec_postoji' })
     }
     return greska('invite_failed', 502)

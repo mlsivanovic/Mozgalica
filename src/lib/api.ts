@@ -18,6 +18,7 @@ import type { SmenaCasova } from './rasporedCasova'
 import { SEED_PITANJA } from '../data/seedPitanja'
 import { supabase } from './supabase'
 import { porukaZaGreskuBrisanja, porukaZaGreskuPoziva, type StatusPoziva } from './nalog'
+import { normalizujPredmete, normalizujRazrede } from './predmet'
 
 // Pretvori Supabase grešku u čitljivu srpsku poruku
 function opisiGresku(error: { message: string } | null): string | null {
@@ -672,8 +673,14 @@ async function kodGreskeFunkcije(error: unknown): Promise<string | null> {
 }
 
 // ---------- Nalog roditelja: poziv, brisanje, uslovi ----------
-export async function pozoviRoditelja(email: string): Promise<StatusPoziva> {
-  const { data, error } = await supabase().functions.invoke('pozovi-roditelja', { body: { email } })
+export async function pozoviRoditelja(
+  email: string,
+  allowedGrades: Razred[],
+  allowedSubjects: Predmet[],
+): Promise<StatusPoziva> {
+  const { data, error } = await supabase().functions.invoke('pozovi-roditelja', {
+    body: { email, allowedGrades, allowedSubjects },
+  })
   if (error) throw new Error(porukaZaGreskuPoziva(await kodGreskeFunkcije(error)))
   const odgovor = data as { ok: boolean; status?: StatusPoziva; error?: string }
   if (!odgovor.ok || !odgovor.status) throw new Error(porukaZaGreskuPoziva(odgovor.error))
@@ -684,16 +691,44 @@ export interface PozvanRoditelj {
   email: string
   nalogPostoji: boolean
   aktivan: boolean
+  jeVlasnik: boolean
+  allowedGrades: Razred[]
+  allowedSubjects: Predmet[]
 }
 
 export async function listajPozvaneRoditelje(): Promise<PozvanRoditelj[]> {
   const { data, error } = await supabase().rpc('listaj_pozvane_roditelje')
   if (error) throw new Error(opisiGresku(error)!)
-  return (data as Array<{ email: string; nalog_postoji: boolean; aktivan: boolean }>).map((red) => ({
+  return (
+    data as Array<{
+      email: string
+      nalog_postoji: boolean
+      aktivan: boolean
+      je_vlasnik: boolean
+      allowed_grades: number[] | null
+      allowed_subjects: string[] | null
+    }>
+  ).map((red) => ({
     email: red.email,
     nalogPostoji: red.nalog_postoji,
     aktivan: red.aktivan,
+    jeVlasnik: Boolean(red.je_vlasnik),
+    allowedGrades: normalizujRazrede(red.allowed_grades),
+    allowedSubjects: normalizujPredmete(red.allowed_subjects),
   }))
+}
+
+export async function azurirajPristupRoditelja(
+  email: string,
+  allowedGrades: Razred[],
+  allowedSubjects: Predmet[],
+): Promise<void> {
+  const { error } = await supabase().rpc('azuriraj_pristup_roditelja', {
+    p_email: email,
+    p_grades: allowedGrades,
+    p_subjects: allowedSubjects,
+  })
+  if (error) throw new Error(opisiGresku(error)!)
 }
 
 export async function obrisiMojNalog(potvrda: string): Promise<void> {

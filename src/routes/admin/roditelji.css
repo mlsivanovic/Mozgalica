@@ -1,0 +1,121 @@
+/* Stranica za pozivanje roditelja i podešavanje nivoa pristupa */
+
+.pristup-okvir {
+  display: grid;
+  gap: 0.9rem;
+  padding: 0.95rem 1rem;
+  border: 1px solid var(--boja-ivica);
+  border-radius: var(--radius);
+  background: var(--boja-povrsina-niska);
+  margin-bottom: 1rem;
+}
+
+.pristup-zaglavlje {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.pristup-grupa {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+
+.pristup-grupa legend {
+  font-weight: 700;
+  font-size: 0.92rem;
+  margin-bottom: 0.45rem;
+}
+
+.pristup-mreza {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.pristup-stavka {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.75rem;
+  min-height: 42px;
+  border: 1.5px solid var(--boja-ivica);
+  border-radius: var(--radius-mali);
+  background: var(--boja-kartica);
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+  transition: border-color 0.12s ease, background 0.12s ease;
+}
+
+.pristup-stavka:hover {
+  border-color: var(--boja-primarna);
+}
+
+.pristup-stavka--izabrana {
+  border-color: var(--boja-primarna);
+  background: var(--boja-primarna-svetla);
+  color: var(--boja-primarna-tamna);
+}
+
+.pristup-stavka input[type='checkbox'] {
+  width: 19px;
+  height: 19px;
+  accent-color: var(--boja-primarna);
+  cursor: pointer;
+}
+
+.pristup-napomena {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--boja-tekst-blagi);
+}
+
+.lista-roditelja {
+  list-style: none;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.roditelj-stavka {
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--boja-ivica);
+  border-radius: var(--radius);
+  background: var(--boja-kartica);
+}
+
+.roditelj-red {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.roditelj-podaci {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.roditelj-naslov {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.roditelj-pristup-uredu {
+  margin-top: 0.85rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--boja-ivica);
+}
+
+@media (max-width: 640px) {
+  .pristup-stavka {
+    flex: 1 1 140px;
+  }
+}

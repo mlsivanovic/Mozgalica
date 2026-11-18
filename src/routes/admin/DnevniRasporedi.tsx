@@ -7,11 +7,13 @@ import {
   type NoviDnevniRasporedKviza,
 } from '../../lib/api'
 import { dostupanKombinovaniIzvor } from '../../lib/raspodelaKviza'
+import { useAuth } from '../../lib/auth'
 import { formatDatum } from '../../lib/format'
-import { predmetImaTezinu, razrediPredmeta, tezinaZaPredmet } from '../../lib/predmet'
+import { dozvoljeniRazrediPredmeta, predmetImaTezinu, tezinaZaPredmet } from '../../lib/predmet'
 import {
-  KONFIGURACIJA_PREDMETA, NAZIVI_PREDMETA, NAZIVI_RAZREDA, NAZIVI_TEZINA, NAZIVI_TIPOVA, PREDMETI,
-  type DnevniRasporedKviza, type IzvorDnevnogKviza, type Oblast, type ProfilDeteta, type Tezina, type TipPitanja,
+  KONFIGURACIJA_PREDMETA, NAZIVI_PREDMETA, NAZIVI_RAZREDA, NAZIVI_TEZINA, NAZIVI_TIPOVA,
+  type DnevniRasporedKviza, type IzvorDnevnogKviza, type Oblast, type Predmet, type ProfilDeteta,
+  type Razred, type Tezina, type TipPitanja,
 } from '../../types/db'
 import './generator.css'
 
@@ -20,11 +22,15 @@ interface FormaRasporeda extends NoviDnevniRasporedKviza {
   timeLimitMinutes: string
 }
 
-function novaForma(profili: ProfilDeteta[] = []): FormaRasporeda {
+function novaForma(
+  profili: ProfilDeteta[] = [],
+  pocetniPredmet: Predmet = 'matematika',
+  pocetniRazred: Razred = 3,
+): FormaRasporeda {
   return {
     childProfileId: profili[0]?.id ?? '',
-    subject: 'matematika',
-    grade: 3,
+    subject: pocetniPredmet,
+    grade: pocetniRazred,
     source: 'generator',
     topicIds: [],
     difficulty: null,
@@ -93,6 +99,11 @@ export function DnevniRasporedi({
   onZatvori?: () => void
   onPromena: () => Promise<void>
 }) {
+  const { dozvoljeniPredmeti, dozvoljeniRazredi } = useAuth()
+  const podrazumevaniPredmet = dozvoljeniPredmeti[0] ?? 'matematika'
+  const podrazumevaniRazredi = dozvoljeniRazrediPredmeta(podrazumevaniPredmet, dozvoljeniRazredi)
+  const podrazumevaniRazred = podrazumevaniRazredi.includes(3) ? 3 : (podrazumevaniRazredi[0] ?? 3)
+
   const [profili, setProfili] = useState<ProfilDeteta[]>([])
   const [oblasti, setOblasti] = useState<Oblast[]>([])
   const [forma, setForma] = useState<FormaRasporeda | null>(null)
@@ -131,15 +142,15 @@ export function DnevniRasporedi({
 
   function otvoriNovi() {
     setGreska(null)
-    setForma(novaForma(profili))
+    setForma(novaForma(profili, podrazumevaniPredmet, podrazumevaniRazred))
   }
 
   function promeniKontekst(izmene: Partial<Pick<FormaRasporeda, 'subject' | 'grade' | 'source'>>) {
     if (!forma) return
     const subject = izmene.subject ?? forma.subject
     const trazeniRazred = izmene.grade ?? forma.grade
-    const dozvoljeniRazredi = razrediPredmeta(subject)
-    const grade = dozvoljeniRazredi.includes(trazeniRazred) ? trazeniRazred : dozvoljeniRazredi[0]
+    const dostupniRazredi = dozvoljeniRazrediPredmeta(subject, dozvoljeniRazredi)
+    const grade = dostupniRazredi.includes(trazeniRazred) ? trazeniRazred : (dostupniRazredi[0] ?? trazeniRazred)
     let source = izmene.source ?? forma.source
     const sveTeme = oblasti.filter((oblast) => oblast.subject === subject && oblast.grade === grade)
     const generatorskeTeme = sveTeme.filter((oblast) => podrzane.has(oblast.slug))
@@ -173,8 +184,14 @@ export function DnevniRasporedi({
     if (!otvoriId || profili.length === 0 || otvorenaForma.current === otvoriId) return
     otvorenaForma.current = otvoriId
     const raspored = rasporedi.find(r => r.id === otvoriId)
-    setForma(raspored ? formaIzRasporeda(raspored) : otvoriId === 'novi' ? { ...novaForma(profili), childProfileId: pocetnoDete } : null)
-  }, [otvoriId, profili, rasporedi, pocetnoDete])
+    setForma(
+      raspored
+        ? formaIzRasporeda(raspored)
+        : otvoriId === 'novi'
+          ? { ...novaForma(profili, podrazumevaniPredmet, podrazumevaniRazred), childProfileId: pocetnoDete }
+          : null,
+    )
+  }, [otvoriId, profili, rasporedi, pocetnoDete, podrazumevaniPredmet, podrazumevaniRazred])
 
   async function sacuvaj() {
     if (!forma) return
@@ -298,7 +315,7 @@ export function DnevniRasporedi({
             <div className="polje">
               <label>Predmet</label>
               <div className="segment">
-                {PREDMETI.map((predmet) => (
+                {dozvoljeniPredmeti.map((predmet) => (
                   <button key={predmet} type="button" className={`segment-dugme ${forma.subject === predmet ? 'segment-dugme--izabran' : ''}`} onClick={() => promeniKontekst({ subject: predmet })}>
                     {NAZIVI_PREDMETA[predmet]}
                   </button>
@@ -308,7 +325,7 @@ export function DnevniRasporedi({
             <div className="polje">
               <label>Razred</label>
               <div className="segment">
-                {razrediPredmeta(forma.subject).map((razred) => (
+                {dozvoljeniRazrediPredmeta(forma.subject, dozvoljeniRazredi).map((razred) => (
                   <button key={razred} type="button" className={`segment-dugme ${forma.grade === razred ? 'segment-dugme--izabran' : ''}`} onClick={() => promeniKontekst({ grade: razred })}>
                     {NAZIVI_RAZREDA[razred]}
                   </button>
