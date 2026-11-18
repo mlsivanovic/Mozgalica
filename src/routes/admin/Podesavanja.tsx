@@ -265,7 +265,7 @@ function validirajStavke(stavke: StavkaForma[]): string | null {
 
 type Sekcija = 'profili' | 'pravila' | 'isporuka' | 'istorija' | 'katalog' | 'obavestenja'
 export function Podesavanja({ sekcija = 'obavestenja' }: { sekcija?: Sekcija }) {
-  const { session, odjavi } = useAuth()
+  const { session, odjavi, jeVlasnikPlatforme } = useAuth()
   const { deteId, osveziProfile, izaberiDete } = useRoditelj()
   const [pravilo, setPravilo] = useState<TabPodesavanja>('titule')
   const aktivanTab = sekcija === 'pravila' ? pravilo : ['isporuka', 'istorija', 'katalog'].includes(sekcija) ? 'prodavnica' : sekcija
@@ -1427,6 +1427,13 @@ export function Podesavanja({ sekcija = 'obavestenja' }: { sekcija?: Sekcija }) 
         <h2>Deca</h2>
         <p className="blago razmak-dole">Profili, linkovi i QR kodovi za decu.</p>
         <Link to="/admin/deca" className="dugme dugme--senka"><Ikona ime="deca" />Upravljaj decom</Link>
+        {jeVlasnikPlatforme && (
+          <div className="roditelj-sekcija">
+            <h2>Roditelji</h2>
+            <p className="blago razmak-dole">Pozivanje roditelja i nivoi pristupa po razredima i predmetima.</p>
+            <Link to="/admin/roditelji" className="dugme dugme--senka"><Ikona ime="deca" />Upravljaj roditeljima</Link>
+          </div>
+        )}
         <h2 className="razmak-gore">Izgled</h2>
         <p className="blago razmak-dole">Izaberi temu ili prepusti aplikaciji da prati podešavanje telefona.</p>
         <div className="podesavanja-tema" role="radiogroup" aria-label="Tema aplikacije">

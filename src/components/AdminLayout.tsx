@@ -79,6 +79,7 @@ const NAVIGACIJA = [
 function RoditeljskiOkvir({ inbox, onProcitano }: { inbox: InboxObavestenja; onProcitano: (ids?: string[]) => Promise<void> }) {
   const { pathname, search } = useLocation()
   const navigate = useNavigate()
+  const { odjavi } = useAuth()
   const { deteId, ucitava, greska, nepoznatoDete, izaberiDete, osveziProfile } = useRoditelj()
   const aktivna = glavnaSekcija(pathname)
   const zajednicko = zajednickaStranica(pathname)
@@ -114,6 +115,10 @@ function RoditeljskiOkvir({ inbox, onProcitano }: { inbox: InboxObavestenja; onP
             : <><h1 className="roditelj-traka-h1">{naslov}</h1>{podnaslov && <small>{podnaslov}</small>}</>}
         </div>
         <ObavestenjaZvonce inbox={inbox} onOznaciProcitanim={onProcitano} nazivPrimaoca="roditelja" />
+        <button type="button" className="roditelj-odjava" onClick={() => void odjavi()}>
+          <Ikona ime="odjava" velicina={20} />
+          <span>Odjavi se</span>
+        </button>
         <MeniVise />
       </header>
       <nav className="roditelj-nav" aria-label="Glavna navigacija">
@@ -123,6 +128,9 @@ function RoditeljskiOkvir({ inbox, onProcitano }: { inbox: InboxObavestenja; onP
         {NAVIGACIJA.map(([id, to, naziv]) => <Link key={id} to={to} className={aktivna === id ? 'aktivna' : ''} aria-current={aktivna === id ? 'page' : undefined}>
           <span className="roditelj-nav-ikona"><RoditeljskaIkona ime={id} /></span><span>{naziv}</span>
         </Link>)}
+        <Link to="/admin/podesavanja" className={`roditelj-nav-podesavanja${aktivna === 'podesavanja' ? ' aktivna' : ''}`} aria-current={aktivna === 'podesavanja' ? 'page' : undefined}>
+          <span className="roditelj-nav-ikona"><RoditeljskaIkona ime="podesavanja" /></span><span>Podešavanja</span>
+        </Link>
       </nav>
       {prikaziFab && <Link to="/admin/zadaj" className={`roditelj-fab${skupljen ? ' roditelj-fab--skupljen' : ''}`} aria-label="Zadaj novu aktivnost">
         <Ikona ime="dodaj" velicina={24} /><span>Zadaj</span>
@@ -210,7 +218,7 @@ export function DonjiList({ naslov, onZatvori, children }: { naslov: string; onZ
 }
 
 function MeniVise() {
-  const { odjavi, jeVlasnikPlatforme } = useAuth()
+  const { odjavi } = useAuth()
   const [otvoren, setOtvoren] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   useEffect(() => {
@@ -228,7 +236,6 @@ function MeniVise() {
     </button>
     {otvoren && <div className="roditelj-meni-lista" role="menu">
       <Link role="menuitem" to="/admin/podesavanja" onClick={zatvori}><Ikona ime="podesavanja" />Podešavanja</Link>
-      {jeVlasnikPlatforme && <Link role="menuitem" to="/admin/roditelji" onClick={zatvori}><Ikona ime="deca" />Roditelji</Link>}
       <hr />
       <button role="menuitem" type="button" onClick={() => { zatvori(); void odjavi() }}><Ikona ime="odjava" />Odjavi se</button>
     </div>}

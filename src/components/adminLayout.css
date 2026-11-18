@@ -106,6 +106,7 @@
 @keyframes roditelj-izlaz-odozdo { from { transform: translateY(40%); opacity: .4; } }
 
 /* Meni „više” */
+.roditelj-odjava { display: none; }
 .roditelj-meni { position: relative; }
 .roditelj-meni-lista { position: absolute; right: 4px; top: calc(100% + 4px); z-index: 110; min-width: 220px; padding: 8px 0; border-radius: 12px; background: var(--boja-povrsina-visoka); box-shadow: var(--senka-jaka); border: 1px solid var(--boja-ivica); animation: roditelj-pojava var(--brzina) ease; }
 .roditelj-meni-lista > a, .roditelj-meni-lista > button { width: 100%; min-height: 48px; display: flex; align-items: center; gap: 14px; padding: 0 16px; border: 0; background: transparent; color: var(--boja-tekst); font: inherit; font-size: 15px; font-weight: 600; text-align: left; cursor: pointer; }
@@ -115,7 +116,7 @@
 
 /* Donja navigacija */
 .roditelj-nav { position: fixed; z-index: 60; bottom: 0; left: 0; right: 0; display: grid; grid-template-columns: repeat(4, 1fr); padding: 0 4px env(safe-area-inset-bottom); height: calc(var(--visina-nav) + env(safe-area-inset-bottom)); background: var(--boja-kartica); border-top: 1px solid color-mix(in srgb, var(--boja-ivica) 70%, transparent); }
-.roditelj-nav-logo { display: none !important; }
+.roditelj-nav-logo, .roditelj-nav-podesavanja { display: none !important; }
 .roditelj-nav a { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: var(--boja-tekst-blagi); font-size: 12px; font-weight: 700; text-decoration: none; overflow-wrap: normal; }
 .roditelj-nav-ikona { width: 56px; height: 32px; display: grid; place-items: center; border-radius: 16px; transition: background var(--brzina), color var(--brzina); }
 .roditelj-nav a:hover .roditelj-nav-ikona { background: var(--boja-hover-red); }
@@ -354,16 +355,20 @@ body:has(.roditeljski-okvir) > .toast-omot .dugme { min-height: 48px; font-size:
   .roditeljski-okvir { --visina-nav: 0px; padding-left: 232px; }
   .roditelj-traka { padding-left: 24px; padding-right: 16px; }
   .roditelj-traka-logo { display: none; }
+  .roditelj-meni { display: none; }
+  .roditelj-odjava { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px; border: 0; border-radius: 999px; background: transparent; color: var(--boja-tekst-blagi); font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+  .roditelj-odjava:hover { background: var(--boja-primarna-svetla); color: var(--boja-primarna); }
   .roditelj-nav { top: 0; bottom: 0; width: 232px; height: auto; right: auto; display: flex; flex-direction: column; gap: 4px; padding: 12px 12px 24px; border-top: 0; border-right: 1px solid var(--boja-ivica); }
   .roditelj-nav-logo { display: flex !important; flex-direction: row !important; justify-content: flex-start !important; gap: 10px !important; min-height: 56px; margin-bottom: 72px; padding: 0 8px; font-size: 18px !important; font-weight: 850 !important; color: var(--boja-tekst) !important; }
   .roditelj-nav a:not(.roditelj-nav-logo) { flex-direction: row; justify-content: flex-start; min-height: 56px; padding: 0 16px 0 4px; gap: 4px; font-size: 15px; border-radius: 28px; }
+  .roditelj-nav-podesavanja { display: flex !important; margin-top: auto; }
   .roditelj-nav a.aktivna:not(.roditelj-nav-logo) { background: var(--boja-primarna-svetla); color: var(--boja-na-primarnom-kontejneru); }
   .roditelj-nav a.aktivna .roditelj-nav-ikona { background: transparent; }
   .roditelj-sadrzaj, .roditeljski-okvir--fab .roditelj-sadrzaj { padding: 8px 32px 48px; }
   .roditelj-tabovi { margin: 0 -32px 16px; padding: 0 24px; justify-content: flex-start; }
   .roditelj-tabovi a { flex: 0 0 auto; padding: 0 20px; }
   .roditelj-cipovi { margin-left: 0; margin-right: 0; padding-left: 0; padding-right: 0; }
-  .roditelj-fab { left: 24px; right: auto; bottom: 24px; width: 184px; }
+  .roditelj-fab { left: 24px; right: auto; bottom: 92px; width: 184px; }
   .roditelj-fab--skupljen { padding: 0 20px 0 16px; gap: 10px; }
   .roditelj-fab--skupljen span { max-width: 80px; opacity: 1; }
   .roditelj-kontekst-traka { left: calc(232px + 24px); right: 24px; bottom: 24px; max-width: 640px; }

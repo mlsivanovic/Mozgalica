@@ -26,13 +26,16 @@ describe('roditeljski kontekst u URL-u', () => {
     expect(glavnaSekcija('/admin/sah')).toBe('vezbanje')
     expect(glavnaSekcija('/admin/raspored-casova')).toBe('danas')
     expect(glavnaSekcija('/admin/vezbanje/rasporedi')).toBe('vezbanje')
+    expect(glavnaSekcija('/admin/podesavanja')).toBe('podesavanja')
+    expect(glavnaSekcija('/admin/roditelji')).toBe('podesavanja')
+    expect(zajednickaStranica('/admin/roditelji')).toBe(true)
   })
 })
 
 describe('gornja traka roditeljskog prikaza', () => {
   it('razlikuje odredišta navigacije od detalja koji traže dugme nazad', () => {
     for (const p of ['/admin', '/admin/vezbanje', '/admin/pitanja/generator', '/admin/napredak/rezultati', '/admin/nagrade/pravila']) expect(korenskaStrana(p)).toBe(true)
-    for (const p of ['/admin/zadaj', '/admin/kvizovi/abc', '/admin/rezultati/abc', '/admin/deca', '/admin/podesavanja']) expect(korenskaStrana(p)).toBe(false)
+    for (const p of ['/admin/zadaj', '/admin/kvizovi/abc', '/admin/rezultati/abc', '/admin/deca', '/admin/podesavanja', '/admin/roditelji']) expect(korenskaStrana(p)).toBe(false)
     expect(korenskaStrana('/admin/vezbanje/rasporedi', '?raspored=novi&vrsta=quiz')).toBe(false)
   })
   it('daje naslov ekrana i rezervni povratak bez istorije', () => {
@@ -40,11 +43,13 @@ describe('gornja traka roditeljskog prikaza', () => {
     expect(naslovStrane('/admin/pitanja')).toBe('Zadaci')
     expect(naslovStrane('/admin/nagrade/katalog')).toBe('Nagrade')
     expect(naslovStrane('/admin/kvizovi/abc')).toBe('Kviz')
+    expect(naslovStrane('/admin/roditelji')).toBe('Roditelji')
     expect(naslovStrane('/admin/vezbanje/rasporedi', '?raspored=novi')).toBe('Novi raspored')
     expect(roditeljNazad('/admin/rezultati/abc')).toBe('/admin/napredak/rezultati')
     expect(roditeljNazad('/admin/kvizovi/abc')).toBe('/admin/vezbanje')
     expect(roditeljNazad('/admin/vezbanje/rasporedi', '?raspored=s1')).toBe('/admin/vezbanje/rasporedi')
     expect(roditeljNazad('/admin/podesavanja')).toBe('/admin')
+    expect(roditeljNazad('/admin/roditelji')).toBe('/admin/podesavanja')
   })
 })
 

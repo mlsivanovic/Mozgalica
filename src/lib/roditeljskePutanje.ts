@@ -9,13 +9,13 @@ export function saDetetom(putanja: string, dete: string): string {
 export function zajednickaStranica(putanja: string): boolean {
   return putanja.includes('/pitanja') || putanja.includes('/generator')
     || putanja.includes('/katalog') || putanja.includes('/pravila')
-    || putanja === '/admin/deca' || putanja === '/admin/podesavanja'
+    || putanja === '/admin/deca' || putanja === '/admin/podesavanja' || putanja === '/admin/roditelji'
 }
 export function uredjivanjeAktivnosti(putanja: string): boolean {
   return putanja.startsWith('/admin/zadaj') || putanja.startsWith('/admin/kvizovi/')
 }
 export function glavnaSekcija(putanja: string): string {
-  if (putanja === '/admin/podesavanja' || putanja === '/admin/deca') return ''
+  if (putanja === '/admin/podesavanja' || putanja === '/admin/deca' || putanja === '/admin/roditelji') return 'podesavanja'
   if (/\/(napredak|rezultati|statistika-dece)/.test(putanja)) return 'napredak'
   if (putanja.includes('/nagrade')) return 'nagrade'
   if (/\/(vezbanje|kvizovi|pitanja|generator|sah|zadaj)/.test(putanja)) return 'vezbanje'
@@ -59,6 +59,7 @@ export function naslovStrane(putanja: string, search = ''): string {
   if (putanja === '/admin/raspored-casova') return 'Raspored časova'
   if (putanja === '/admin/deca') return 'Deca'
   if (putanja === '/admin/podesavanja') return 'Podešavanja'
+  if (putanja === '/admin/roditelji') return 'Roditelji'
   const raspored = new URLSearchParams(search).get('raspored')
   if (putanja === '/admin/vezbanje/rasporedi' && raspored) return raspored === 'novi' ? 'Novi raspored' : 'Uredi raspored'
   return NASLOVI_SEKCIJA[glavnaSekcija(putanja)] ?? 'Mozgalica'
@@ -69,5 +70,6 @@ export function roditeljNazad(putanja: string, search = ''): string {
   if (putanja === '/admin/vezbanje/rasporedi' && new URLSearchParams(search).has('raspored')) return '/admin/vezbanje/rasporedi'
   if (/^\/admin\/rezultati\//.test(putanja)) return '/admin/napredak/rezultati'
   if (/^\/admin\/(zadaj|kvizovi|sah)/.test(putanja)) return '/admin/vezbanje'
+  if (putanja === '/admin/roditelji') return '/admin/podesavanja'
   return '/admin'
 }
