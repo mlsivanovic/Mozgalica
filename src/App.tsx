@@ -26,6 +26,7 @@ const KvizoviLista = lazy(() => import('./routes/admin/KvizoviLista').then(m => 
 const Kontrolna = lazy(() => import('./routes/admin/Kontrolna').then(m => ({ default: m.Kontrolna })))
 const PitanjaLista = lazy(() => import('./routes/admin/PitanjaLista').then(m => ({ default: m.PitanjaLista })))
 const Podesavanja = lazy(() => import('./routes/admin/Podesavanja').then(m => ({ default: m.Podesavanja })))
+const PotvrdaLinka = lazy(() => import('./routes/admin/PotvrdaLinka').then((m) => ({ default: m.PotvrdaLinka })))
 const Prijava = lazy(() => import('./routes/admin/Prijava').then(m => ({ default: m.Prijava })))
 const Roditelji = lazy(() => import('./routes/admin/Roditelji').then(m => ({ default: m.Roditelji })))
 const RezultatDetalj = lazy(() => import('./routes/admin/RezultatDetalj').then(m => ({ default: m.RezultatDetalj })))
@@ -46,6 +47,7 @@ function App() {
           <Routes>
           <Route path="/" element={<Navigate to="/admin" replace />} />
           <Route path="/prijava" element={<Prijava />} />
+          <Route path="/potvrda" element={<PotvrdaLinka />} />
           <Route path="/privatnost" element={<Privatnost />} />
           <Route path="/uslovi" element={<Uslovi />} />
 

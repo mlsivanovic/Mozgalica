@@ -212,13 +212,16 @@ Nalozi se prave samo pozivom koji šalje vlasnik platforme (panel **Roditelji**,
 naloge. Ove stavke se podešavaju ručno u Supabase dashboard-u, a ne kroz repozitorijum:
 
 - **Authentication → Sign In / Providers → Email:** isključi „Allow new users to sign up“.
-- **SMTP:** pokreni `scripts/podesi-auth-smtp.sh` (Management API; SMTP ključ iz Brevo
+- **SMTP i šabloni mejlova:** pokreni `scripts/podesi-auth-smtp.sh` (Management API; SMTP ključ iz Brevo
   dashboard-a unosiš pri pokretanju, ne čuva se u repozitorijumu). Skripta uključuje Brevo
-  SMTP, diže limit mejlova na 30 na sat, postavlja minimalnu dužinu lozinke na 8 i srpski
-  šablon za **Reset Password**. Podrazumevani Supabase SMTP šalje samo članovima tima i ima nizak limit.
-- **Authentication → Email Templates:** srpski šabloni za **Invite user** i **Magic Link**.
-  Link ostavi kao `{{ .ConfirmationURL }}`.
-- Pozvani roditelj posle klika na pozivnicu bira lozinku (ekran pre uslova korišćenja).
+  SMTP, diže limit mejlova na 30 na sat, postavlja minimalnu dužinu lozinke na 8 i srpske
+  šablone za **Invite user**, **Reset Password** i **Magic Link**. Podrazumevani Supabase SMTP
+  šalje samo članovima tima i ima nizak limit.
+- **Zaštita od email skenera:** šabloni koriste link ka aplikaciji sa `token_hash`
+  (`{{ if .RedirectTo }}{{ .RedirectTo }}{{ else }}{{ .SiteURL }}{{ end }}?token_hash={{ .TokenHash }}&type=invite|recovery|email`)
+  umesto direktnog `{{ .ConfirmationURL }}`, pa bezbednosni skeneri (Safe Links / Defender)
+  ne mogu unapred da potroše jednokratni link — potvrda se dešava tek klikom na dugme u aplikaciji (`#/potvrda`).
+- Pozvani roditelj posle potvrde pozivnice bira lozinku (ekran pre uslova korišćenja).
   „Zaboravljena lozinka“ na ekranu za prijavu šalje Supabase mejl za oporavak, a lozinka se
   menja i u **Podešavanja → Lozinka**.
 - **Authentication → URL Configuration:** Site URL i Redirect URLs moraju da pokazuju na adresu
