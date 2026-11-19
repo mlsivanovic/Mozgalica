@@ -4,6 +4,7 @@ import {
   ukljuciPushZaAdmina, ukljuciPushZaDete,
 } from '../lib/push'
 import type { StatusPushObavestenja } from '../types/db'
+import { Ikona } from './Ikona'
 
 interface Props {
   profilToken?: string
@@ -63,30 +64,48 @@ export function PushKontrole({ profilToken }: Props) {
 
   if (!status) return <p className="malo blago">Proveravam podršku uređaja…</p>
 
+  const blokirano = !status.aktivno && status.dozvola === 'denied'
+  const nepodrzano = !status.aktivno && !status.podrzano
+
   return (
     <div className="push-kontrole">
-      <div>
-        <strong>{status.aktivno ? '🔔 Obaveštenja su uključena' : '🔕 Obaveštenja nisu uključena'}</strong>
-        <p className="malo blago">
-          {status.razlog ?? (
-            status.dozvola === 'denied'
-              ? 'Dozvola je blokirana u podešavanjima pregledača.'
-              : 'Telefon koristi svoj podrazumevani zvuk i vibraciju kada ih podržava.'
-          )}
-        </p>
-      </div>
-      {status.aktivno ? (
-        <button type="button" className="dugme dugme--senka dugme--malo" disabled={radi} onClick={iskljuci}>
-          Isključi na ovom uređaju
-        </button>
-      ) : (
-        <button
-          type="button" className="dugme dugme--akcenat dugme--malo"
-          disabled={radi || !status.podrzano || status.dozvola === 'denied'} onClick={ukljuci}
+      <div className="push-kontrole-info">
+        <span
+          className={`push-kontrole-ikona${status.aktivno ? ' je-aktivna' : ''}`}
+          aria-hidden="true"
         >
-          Uključi obaveštenja
-        </button>
-      )}
+          <Ikona ime={status.aktivno ? 'obavestenja' : 'obavestenjaIskljucena'} velicina={18} />
+        </span>
+        <div className="push-kontrole-tekst">
+          <div className="push-kontrole-naslov">
+            <strong>{status.aktivno ? 'Obaveštenja su uključena' : 'Obaveštenja nisu uključena'}</strong>
+            <span className={`bedz ${status.aktivno ? 'bedz--uspeh' : blokirano ? 'bedz--greska' : 'bedz--neutral'}`}>
+              {status.aktivno ? 'Aktivno' : blokirano ? 'Blokirano' : nepodrzano ? 'Nedostupno' : 'Isključeno'}
+            </span>
+          </div>
+          <p className="malo blago">
+            {status.razlog ?? (
+              status.dozvola === 'denied'
+                ? 'Dozvola je blokirana u podešavanjima pregledača.'
+                : 'Telefon koristi svoj podrazumevani zvuk i vibraciju kada ih podržava.'
+            )}
+          </p>
+        </div>
+      </div>
+      <div className="push-kontrole-akcija">
+        {status.aktivno ? (
+          <button type="button" className="dugme dugme--senka dugme--malo" disabled={radi} onClick={iskljuci}>
+            {radi ? 'Isključujem…' : 'Isključi na uređaju'}
+          </button>
+        ) : (
+          <button
+            type="button" className="dugme dugme--akcenat dugme--malo"
+            disabled={radi || !status.podrzano || status.dozvola === 'denied'} onClick={ukljuci}
+          >
+            {radi ? 'Uključujem…' : 'Uključi obaveštenja'}
+          </button>
+        )}
+      </div>
       {poruka && <p className="malo push-kontrole-poruka">{poruka}</p>}
     </div>
   )

@@ -1,23 +1,25 @@
 import {
-  ArrowLeft, ArrowRight, Bell, BookOpen, Brain, CalendarDays, Check, ChevronDown,
-  ChevronRight, CircleAlert, CircleCheck, Clock3, Cloud, CloudOff, Crown, Download,
-  Gift, GraduationCap, Home, LayoutDashboard, ListChecks, LogOut, Menu, Moon, MoreHorizontal, MoreVertical,
-  Palette, PencilLine, Play, Plus, RotateCcw, Search, Settings, ShoppingBag,
-  Sparkles, Star, Sun, Swords, Target, TrendingUp, Trophy, UserRound, UsersRound, X,
+  AlertTriangle, ArrowLeft, ArrowRight, Bell, BellOff, BookOpen, Brain, CalendarDays, Check, ChevronDown,
+  ChevronRight, CircleAlert, CircleCheck, Clock3, Cloud, CloudOff, Crown, Download, Eye, EyeOff,
+  FileText, Gift, GraduationCap, Home, KeyRound, LayoutDashboard, ListChecks, LogOut, Mail, Menu, Moon,
+  MoreHorizontal, MoreVertical, Palette, PencilLine, Play, Plus, RotateCcw, Search, Settings,
+  ShieldCheck, ShoppingBag, Smartphone, Sparkles, Star, Sun, Swords, Target, Trash2, TrendingUp,
+  Trophy, UserRound, UsersRound, X,
   type LucideIcon,
 } from 'lucide-react'
 
 const IKONE = {
-  nazad: ArrowLeft, napred: ArrowRight, obavestenja: Bell, knjiga: BookOpen,
+  nazad: ArrowLeft, napred: ArrowRight, obavestenja: Bell, obavestenjaIskljucena: BellOff, knjiga: BookOpen,
   mozak: Brain, raspored: CalendarDays, potvrda: Check, dole: ChevronDown,
   desno: ChevronRight, upozorenje: CircleAlert, gotovo: CircleCheck, vreme: Clock3,
   sacuvano: Cloud, offline: CloudOff, titula: Crown, nagrade: Gift,
   skola: GraduationCap, danas: Home, pregled: LayoutDashboard, zadaci: ListChecks,
-  meni: Menu, odjava: LogOut, tamna: Moon, vise: MoreHorizontal, opcije: MoreVertical, izgled: Palette, uredi: PencilLine,
+  meni: Menu, mejl: Mail, odjava: LogOut, tamna: Moon, vise: MoreHorizontal, opcije: MoreVertical, izgled: Palette, uredi: PencilLine,
   pokreni: Play, dodaj: Plus, ponovi: RotateCcw, pretraga: Search,
-  podesavanja: Settings, preuzmi: Download, prodavnica: ShoppingBag, sjaj: Sparkles, zvezda: Star,
-  svetla: Sun, sah: Swords, cilj: Target, napredak: TrendingUp, pehar: Trophy, dete: UserRound,
-  deca: UsersRound, zatvori: X,
+  podesavanja: Settings, preuzmi: Download, prikazi: Eye, sakrij: EyeOff, dokument: FileText,
+  lozinka: KeyRound, privatnost: ShieldCheck, prodavnica: ShoppingBag, uredjaj: Smartphone,
+  sjaj: Sparkles, zvezda: Star, svetla: Sun, sah: Swords, cilj: Target, obrisi: Trash2,
+  napredak: TrendingUp, pehar: Trophy, dete: UserRound, deca: UsersRound, opasnost: AlertTriangle, zatvori: X,
 } satisfies Record<string, LucideIcon>
 
 export type ImeIkone = keyof typeof IKONE

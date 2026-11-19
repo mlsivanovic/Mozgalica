@@ -485,3 +485,259 @@
     justify-content: space-between;
   }
 }
+
+/* ---------- Roditeljska podešavanja (moderna organizacija po sekcijama) ---------- */
+.sadrzaj.podesavanja-sadrzaj {
+  max-width: 760px;
+  margin-inline: auto;
+}
+
+.podesavanja-strana {
+  display: grid;
+  gap: 1.35rem;
+  padding-top: 0.35rem;
+  padding-bottom: 1rem;
+}
+
+.podesavanja-grupa {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.podesavanja-grupa > .roditelj-podnaslov {
+  margin: 0 0 0.25rem 0.25rem;
+  font-size: 0.82rem !important;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.podesavanja-opasna-oznaka {
+  color: var(--boja-greska) !important;
+}
+
+/* Kartica prijavljenog naloga */
+.podesavanja-nalog-kartica {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  background:
+    radial-gradient(circle at 95% 15%, color-mix(in srgb, var(--boja-primarna) 10%, transparent), transparent 55%),
+    var(--boja-kartica);
+}
+
+.podesavanja-nalog-identitet {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  min-width: 0;
+  flex: 1 1 260px;
+}
+
+.podesavanja-nalog-avatar {
+  width: 46px;
+  height: 46px;
+  flex: 0 0 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: var(--boja-primarna-svetla);
+  color: var(--boja-primarna);
+}
+
+.podesavanja-nalog-tekst {
+  min-width: 0;
+  display: grid;
+  gap: 0.2rem;
+}
+
+.podesavanja-nalog-tekst strong {
+  overflow-wrap: anywhere;
+  font-size: 1rem;
+}
+
+.podesavanja-naslov-red {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem 0.6rem;
+}
+
+/* Kartice i zaglavlja unutar podešavanja */
+.podesavanja-kartica {
+  display: grid;
+  gap: 1rem;
+}
+
+.podesavanja-kartica-zaglavlje {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+}
+
+.podesavanja-kartica-zaglavlje h2,
+.podesavanja-kartica-zaglavlje h3 {
+  margin: 0 0 0.15rem;
+  font-size: 1.05rem;
+}
+
+.podesavanja-ikona-krug {
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--boja-primarna-svetla);
+  color: var(--boja-primarna);
+}
+
+.podesavanja-ikona-krug--opasno {
+  background: var(--boja-greska-svetla);
+  color: var(--boja-greska);
+}
+
+.podesavanja-status-poruka {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 0;
+}
+
+/* Grupisani redovi (linkovi, prekidači, push) */
+.podesavanja-lista .podesavanja-veza-red,
+.podesavanja-lista .podesavanja-prekidac-red {
+  flex-wrap: nowrap;
+  gap: 0.85rem;
+  padding: 0.9rem 1rem;
+}
+
+.podesavanja-lista .podesavanja-prekidac-red:hover {
+  background: transparent;
+}
+
+.podesavanja-red-tekst {
+  flex: 1;
+  min-width: 0;
+}
+
+.podesavanja-red-tekst strong {
+  display: block;
+  font-size: 0.98rem;
+  line-height: 1.3;
+}
+
+.podesavanja-red-tekst small {
+  display: block;
+  color: var(--boja-tekst-blagi);
+  margin-top: 0.2rem;
+  line-height: 1.4;
+}
+
+.podesavanja-strelica {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  color: var(--boja-tekst-blagi);
+}
+
+.podesavanja-push-red {
+  display: grid;
+  gap: 0.85rem;
+  padding: 0.95rem 1rem;
+}
+
+.podesavanja-push-red:hover {
+  background: transparent;
+}
+
+.podesavanja-push-zaglavlje {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+}
+
+/* Opasna zona / Brisanje naloga */
+.podesavanja-opasna-zona {
+  border-color: color-mix(in srgb, var(--boja-greska) 30%, var(--boja-ivica));
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--boja-greska) 4%, transparent), transparent 45%),
+    var(--boja-kartica);
+}
+
+.podesavanja-opasna-naslov {
+  min-width: 0;
+  flex: 1;
+}
+
+.podesavanja-brisanje-stavke {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+}
+
+.podesavanja-brisanje-stavke li {
+  padding: 0.28rem 0.68rem;
+  border-radius: 999px;
+  border: 1px solid var(--boja-ivica);
+  background: var(--boja-povrsina-niska);
+  color: var(--boja-tekst-blagi);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.podesavanja-brisanje-pokretac {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.podesavanja-brisanje-potvrda {
+  display: grid;
+  gap: 0.85rem;
+  padding: 1rem;
+  border-radius: var(--radius-mali);
+  border: 1px solid color-mix(in srgb, var(--boja-greska) 32%, var(--boja-ivica));
+  background: var(--boja-povrsina-niska);
+}
+
+.podesavanja-brisanje-potvrda .polje {
+  margin-bottom: 0;
+}
+
+.podesavanja-email-uzorak {
+  display: inline-block;
+  padding: 0.1rem 0.45rem;
+  border-radius: 6px;
+  background: var(--boja-kartica);
+  border: 1px solid var(--boja-ivica);
+  font-size: 0.88em;
+  font-weight: 700;
+  color: var(--boja-tekst);
+  user-select: all;
+}
+
+.podesavanja-brisanje-akcije {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  justify-content: flex-end;
+}
+
+@media (max-width: 640px) {
+  .podesavanja-nalog-kartica .dugme {
+    width: 100%;
+  }
+
+  .podesavanja-brisanje-pokretac .dugme,
+  .podesavanja-brisanje-akcije .dugme {
+    width: 100%;
+  }
+
+  .podesavanja-brisanje-akcije {
+    flex-direction: column-reverse;
+  }
+}

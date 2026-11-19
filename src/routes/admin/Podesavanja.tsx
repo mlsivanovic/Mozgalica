@@ -682,7 +682,7 @@ export function Podesavanja({ sekcija = 'obavestenja' }: { sekcija?: Sekcija }) 
   if (!ucitano && greska) return <div role="alert" className="poruka poruka--greska">{greska} <button className="dugme" onClick={() => void ucitajSve()}>Pokušaj ponovo</button></div>
 
   return (
-    <div className="sadrzaj">
+    <div className={`sadrzaj${aktivanTab === 'obavestenja' ? ' podesavanja-sadrzaj' : ''}`}>
       {sekcija === 'profili' ? <h1 className="sr-only">Upravljaj decom</h1> : sekcija === 'pravila' ? <h1 className="sr-only">Titule i pravila za zvezdice</h1> : sekcija === 'obavestenja' ? <h1 className="sr-only">Podešavanja aplikacije</h1> : null}
       {poruka && <p className="poruka poruka--uspeh razmak-gore">{poruka}</p>}
       {greska && <p className="poruka poruka--greska razmak-gore" role="alert">{greska}</p>}
@@ -1420,77 +1420,202 @@ export function Podesavanja({ sekcija = 'obavestenja' }: { sekcija?: Sekcija }) 
       )}
 
       {aktivanTab === 'obavestenja' && (
-      <section
-        id="podesavanja-panel-obavestenja" className="kartica podesavanja-panel"
+      <div
+        id="podesavanja-panel-obavestenja" className="podesavanja-strana"
         aria-label="obavestenja"
       >
-        <h2>Deca</h2>
-        <p className="blago razmak-dole">Profili, linkovi i QR kodovi za decu.</p>
-        <Link to="/admin/deca" className="dugme dugme--senka"><Ikona ime="deca" />Upravljaj decom</Link>
-        {jeVlasnikPlatforme && (
-          <div className="roditelj-sekcija">
-            <h2>Roditelji</h2>
-            <p className="blago razmak-dole">Pozivanje roditelja i nivoi pristupa po razredima i predmetima.</p>
-            <Link to="/admin/roditelji" className="dugme dugme--senka"><Ikona ime="deca" />Upravljaj roditeljima</Link>
+        <section className="kartica podesavanja-nalog-kartica" aria-label="Prijavljeni nalog">
+          <div className="podesavanja-nalog-identitet">
+            <span className="podesavanja-nalog-avatar" aria-hidden="true">
+              <Ikona ime={jeVlasnikPlatforme ? 'privatnost' : 'dete'} velicina={22} />
+            </span>
+            <div className="podesavanja-nalog-tekst">
+              <div className="podesavanja-naslov-red">
+                <strong>{session?.user.email ?? 'Roditeljski nalog'}</strong>
+                <span className={`bedz ${jeVlasnikPlatforme ? '' : 'bedz--neutral'}`}>
+                  {jeVlasnikPlatforme ? 'Vlasnik platforme' : 'Roditelj'}
+                </span>
+              </div>
+              <p className="malo blago">Aktivan roditeljski nalog na ovom uređaju</p>
+            </div>
           </div>
-        )}
-        <h2 className="razmak-gore">Izgled</h2>
-        <p className="blago razmak-dole">Izaberi temu ili prepusti aplikaciji da prati podešavanje telefona.</p>
-        <div className="podesavanja-tema" role="radiogroup" aria-label="Tema aplikacije">
-          {([['sistem','izgled','Sistem'],['svetla','svetla','Svetla'],['tamna','tamna','Tamna']] as const).map(([vrednost,ikona,naziv]) => <button
-            key={vrednost} type="button" role="radio" aria-checked={izgled === vrednost}
-            className={izgled === vrednost ? 'aktivna' : ''}
-            onClick={() => { setIzgled(vrednost); postaviIzborTeme(vrednost) }}
-          ><Ikona ime={ikona} />{naziv}</button>)}
-        </div>
-        <div className="roditelj-sekcija">
-          <h2>Nedeljni izveštaj mejlom</h2>
-          <p className="blago razmak-dole">
-            Ponedeljkom u 08:00 na tvoju email adresu stiže jedan objedinjeni pregled za svu decu,
-            sve predmete i šah iz prethodne nedelje (ne šalje se ako nije bilo aktivnosti).
-          </p>
-          <label className="stiklir">
-            <input
-              type="checkbox"
-              checked={nedeljniIzvestaj}
-              disabled={cuvaNedeljniIzvestaj}
-              onChange={(e) => void promeniNedeljniIzvestaj(e.target.checked)}
-            />
-            Pošalji mi nedeljni izveštaj ponedeljkom u 08:00
-          </label>
-        </div>
-        {MEJL_RODITELJU_POSLE_KVIZA && (
-          <div className="roditelj-sekcija">
-            <h2>Mejl obaveštenja</h2>
-            <p className="blago razmak-dole">
-              Kada dete završi kviz, na tvoju email adresu stiže obaveštenje sa rezultatom.
-            </p>
-            <label className="stiklir">
-              <input type="checkbox" checked={ukljucena} onChange={(e) => promeniEmail(e.target.checked)} />
-              Pošalji mi mejl kada dete završi kviz
-            </label>
+          <button type="button" className="dugme dugme--senka dugme--malo" onClick={() => void odjavi()}>
+            <Ikona ime="odjava" velicina={18} />
+            <span>Odjavi se</span>
+          </button>
+        </section>
+
+        <section className="podesavanja-grupa" aria-labelledby="podesavanja-porodica-naslov">
+          <h2 id="podesavanja-porodica-naslov" className="roditelj-podnaslov">Porodica i pristup</h2>
+          <div className="roditelj-lista podesavanja-lista">
+            <Link to="/admin/deca" className="roditelj-red podesavanja-veza-red">
+              <span className="roditelj-red-ikona" aria-hidden="true">
+                <Ikona ime="deca" velicina={20} />
+              </span>
+              <div className="podesavanja-red-tekst">
+                <strong>Deca</strong>
+                <small>Profili, linkovi i QR kodovi za decu</small>
+              </div>
+              <span className="podesavanja-strelica" aria-hidden="true">
+                <Ikona ime="desno" velicina={18} />
+              </span>
+            </Link>
+            {jeVlasnikPlatforme && (
+              <Link to="/admin/roditelji" className="roditelj-red podesavanja-veza-red">
+                <span className="roditelj-red-ikona" aria-hidden="true">
+                  <Ikona ime="skola" velicina={20} />
+                </span>
+                <div className="podesavanja-red-tekst">
+                  <strong>Roditelji</strong>
+                  <small>Pozivanje roditelja i nivoi pristupa po razredima i predmetima</small>
+                </div>
+                <span className="podesavanja-strelica" aria-hidden="true">
+                  <Ikona ime="desno" velicina={18} />
+                </span>
+              </Link>
+            )}
           </div>
-        )}
-        <div className="podesavanja-push razmak-gore">
-          <h2>Obaveštenja na uređaju</h2>
-          <p className="blago razmak-dole">
-            Uključi sistemsko obaveštenje kada dete završi kviz. Podešavanje važi samo
-            za ovaj pregledač ili instaliranu aplikaciju.
-            {!MEJL_RODITELJU_POSLE_KVIZA && ' Obaveštenja stižu kao push i u aplikaciji.'}
-          </p>
-          <PushKontrole />
-        </div>
-        <div className="roditelj-sekcija">
-          <h2>Privatnost i uslovi</h2>
-          <div className="red">
-            <Link to="/privatnost" className="dugme dugme--senka">Politika privatnosti</Link>
-            <Link to="/uslovi" className="dugme dugme--senka">Uslovi korišćenja</Link>
+        </section>
+
+        <section className="podesavanja-grupa" aria-labelledby="podesavanja-izgled-naslov">
+          <h2 id="podesavanja-izgled-naslov" className="roditelj-podnaslov">Izgled aplikacije</h2>
+          <div className="kartica podesavanja-kartica">
+            <div className="podesavanja-kartica-zaglavlje">
+              <span className="podesavanja-ikona-krug" aria-hidden="true">
+                <Ikona ime="izgled" velicina={20} />
+              </span>
+              <div>
+                <h3>Tema</h3>
+                <p className="blago malo">Izaberi temu ili prepusti aplikaciji da prati podešavanje uređaja.</p>
+              </div>
+            </div>
+            <div className="podesavanja-tema" role="radiogroup" aria-label="Tema aplikacije">
+              {([['sistem', 'izgled', 'Sistem'], ['svetla', 'svetla', 'Svetla'], ['tamna', 'tamna', 'Tamna']] as const).map(([vrednost, ikona, naziv]) => (
+                <button
+                  key={vrednost}
+                  type="button"
+                  role="radio"
+                  aria-checked={izgled === vrednost}
+                  className={izgled === vrednost ? 'aktivna' : ''}
+                  onClick={() => { setIzgled(vrednost); postaviIzborTeme(vrednost) }}
+                >
+                  <Ikona ime={ikona} velicina={18} />
+                  <span>{naziv}</span>
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
-        <div className="roditelj-sekcija"><h2>Nalog</h2><button className="dugme dugme--senka" onClick={() => void odjavi()}><Ikona ime="odjava" />Odjavi se</button></div>
-        <PromenaLozinke />
-        <BrisanjeNaloga />
-      </section>
+        </section>
+
+        <section className="podesavanja-grupa" aria-labelledby="podesavanja-obavestenja-naslov">
+          <h2 id="podesavanja-obavestenja-naslov" className="roditelj-podnaslov">Obaveštenja</h2>
+          <div className="roditelj-lista podesavanja-lista">
+            <div className="roditelj-red podesavanja-prekidac-red">
+              <span className="roditelj-red-ikona" aria-hidden="true">
+                <Ikona ime="mejl" velicina={20} />
+              </span>
+              <div className="podesavanja-red-tekst">
+                <strong>Nedeljni izveštaj mejlom</strong>
+                <small>
+                  Ponedeljkom u 08:00 na tvoju email adresu stiže jedan objedinjeni pregled za svu decu,
+                  sve predmete i šah iz prethodne nedelje (ne šalje se ako nije bilo aktivnosti).
+                </small>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={nedeljniIzvestaj}
+                aria-label="Pošalji mi nedeljni izveštaj ponedeljkom u 08:00"
+                className="roditelj-prekidac"
+                disabled={cuvaNedeljniIzvestaj}
+                onClick={() => void promeniNedeljniIzvestaj(!nedeljniIzvestaj)}
+              >
+                <span />
+              </button>
+            </div>
+
+            {MEJL_RODITELJU_POSLE_KVIZA && (
+              <div className="roditelj-red podesavanja-prekidac-red">
+                <span className="roditelj-red-ikona" aria-hidden="true">
+                  <Ikona ime="mejl" velicina={20} />
+                </span>
+                <div className="podesavanja-red-tekst">
+                  <strong>Mejl posle završenog kviza</strong>
+                  <small>Kada dete završi kviz, na tvoju email adresu stiže obaveštenje sa rezultatom.</small>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={ukljucena}
+                  aria-label="Pošalji mi mejl kada dete završi kviz"
+                  className="roditelj-prekidac"
+                  onClick={() => void promeniEmail(!ukljucena)}
+                >
+                  <span />
+                </button>
+              </div>
+            )}
+
+            <div className="roditelj-red podesavanja-push-red">
+              <div className="podesavanja-push-zaglavlje">
+                <span className="roditelj-red-ikona" aria-hidden="true">
+                  <Ikona ime="uredjaj" velicina={20} />
+                </span>
+                <div className="podesavanja-red-tekst">
+                  <strong>Obaveštenja na uređaju</strong>
+                  <small>
+                    Sistemsko obaveštenje kada dete završi kviz. Podešavanje važi samo za ovaj pregledač ili
+                    instaliranu aplikaciju.{!MEJL_RODITELJU_POSLE_KVIZA && ' Obaveštenja stižu kao push i u aplikaciji.'}
+                  </small>
+                </div>
+              </div>
+              <PushKontrole />
+            </div>
+          </div>
+        </section>
+
+        <section className="podesavanja-grupa" aria-label="Bezbednost">
+          <h2 className="roditelj-podnaslov">Bezbednost</h2>
+          <PromenaLozinke />
+        </section>
+
+        <section className="podesavanja-grupa" aria-labelledby="podesavanja-pravno-naslov">
+          <h2 id="podesavanja-pravno-naslov" className="roditelj-podnaslov">Privatnost i uslovi</h2>
+          <div className="roditelj-lista podesavanja-lista">
+            <Link to="/privatnost" className="roditelj-red podesavanja-veza-red">
+              <span className="roditelj-red-ikona" aria-hidden="true">
+                <Ikona ime="privatnost" velicina={20} />
+              </span>
+              <div className="podesavanja-red-tekst">
+                <strong>Politika privatnosti</strong>
+                <small>Kako prikupljamo, čuvamo i štitimo podatke</small>
+              </div>
+              <span className="podesavanja-strelica" aria-hidden="true">
+                <Ikona ime="desno" velicina={18} />
+              </span>
+            </Link>
+            <Link to="/uslovi" className="roditelj-red podesavanja-veza-red">
+              <span className="roditelj-red-ikona" aria-hidden="true">
+                <Ikona ime="dokument" velicina={20} />
+              </span>
+              <div className="podesavanja-red-tekst">
+                <strong>Uslovi korišćenja</strong>
+                <small>Pravila korišćenja Mozgalice za roditelje i decu</small>
+              </div>
+              <span className="podesavanja-strelica" aria-hidden="true">
+                <Ikona ime="desno" velicina={18} />
+              </span>
+            </Link>
+          </div>
+        </section>
+
+        <section className="podesavanja-grupa" aria-label={jeVlasnikPlatforme ? 'Nalog i podaci' : 'Opasna zona'}>
+          <h2 className={`roditelj-podnaslov${jeVlasnikPlatforme ? '' : ' podesavanja-opasna-oznaka'}`}>
+            {jeVlasnikPlatforme ? 'Nalog i podaci' : 'Opasna zona'}
+          </h2>
+          <BrisanjeNaloga />
+        </section>
+      </div>
       )}
     </div>
   )

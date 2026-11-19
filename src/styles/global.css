@@ -55,6 +55,16 @@ a:hover { text-decoration: underline; }
 .dugme--uspeh:hover { background: var(--boja-uspeh-tamna); }
 .dugme--opasno { background: var(--boja-greska); }
 .dugme--opasno:hover { background: var(--boja-greska-tamna); }
+.dugme--opasno-okvir {
+  background: color-mix(in srgb, var(--boja-greska) 10%, transparent);
+  color: var(--boja-greska);
+  border-color: color-mix(in srgb, var(--boja-greska) 34%, transparent);
+}
+.dugme--opasno-okvir:hover {
+  background: var(--boja-greska-svetla);
+  border-color: var(--boja-greska);
+  box-shadow: none;
+}
 .dugme--senka {
   background: var(--boja-primarna-svetla);
   color: var(--boja-primarna);
@@ -304,9 +314,128 @@ table.tabela { width: 100%; border-collapse: collapse; background: var(--boja-ka
 .maskota--uspeh { animation: maskota-uspeh 480ms cubic-bezier(.2,.8,.2,1); }
 .prijava-kartica { width:min(100%,480px); margin:clamp(24px,8vh,88px) auto 0; padding:clamp(22px,6vw,38px); border-radius:24px; box-shadow:var(--senka); }
 .prijava-maskota { display:grid; place-items:center; margin-bottom:8px; }
-.podesavanja-tema { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; padding:6px; border-radius:16px; background:var(--boja-povrsina-niska); }
-.podesavanja-tema button { min-height:52px; display:flex; align-items:center; justify-content:center; gap:7px; border:0; border-radius:12px; color:var(--boja-tekst-blagi); background:transparent; font:inherit; font-weight:750; cursor:pointer; }
-.podesavanja-tema button.aktivna { color:var(--boja-primarna); background:var(--boja-kartica); box-shadow:var(--senka); }
+.podesavanja-tema {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  padding: 5px;
+  border-radius: 16px;
+  border: 1px solid var(--boja-ivica);
+  background: var(--boja-povrsina-niska);
+}
+.podesavanja-tema button {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  color: var(--boja-tekst-blagi);
+  background: transparent;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background var(--brzina), color var(--brzina), border-color var(--brzina), box-shadow var(--brzina);
+}
+.podesavanja-tema button:hover:not(.aktivna) {
+  color: var(--boja-tekst);
+  background: color-mix(in srgb, var(--boja-kartica) 55%, transparent);
+}
+.podesavanja-tema button.aktivna {
+  color: var(--boja-primarna);
+  background: var(--boja-kartica);
+  border-color: var(--boja-ivica);
+  box-shadow: var(--senka);
+}
+
+/* ---------- Forma za lozinku ---------- */
+.lozinka-forma {
+  display: grid;
+  gap: 0.9rem;
+}
+.lozinka-forma .polje {
+  margin-bottom: 0;
+}
+.lozinka-polja {
+  display: grid;
+  gap: 0.9rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.lozinka-unos-omot {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.lozinka-unos-omot input {
+  width: 100%;
+  padding-right: 3rem;
+}
+.lozinka-oko-dugme {
+  position: absolute;
+  right: 6px;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--boja-tekst-blagi);
+  cursor: pointer;
+  transition: background var(--brzina), color var(--brzina);
+}
+.lozinka-oko-dugme:hover {
+  background: var(--boja-povrsina-niska);
+  color: var(--boja-tekst);
+}
+.lozinka-poklapanje {
+  font-size: 0.82rem;
+  font-weight: 650;
+  margin-top: 0.15rem;
+}
+.lozinka-poklapanje--uspeh { color: var(--boja-uspeh-tekst); }
+.lozinka-poklapanje--greska { color: var(--boja-greska); }
+.lozinka-poklapanje--blago { color: var(--boja-tekst-blagi); }
+.lozinka-uslovi {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0;
+}
+.lozinka-uslovi li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.65rem;
+  border-radius: 999px;
+  border: 1px solid var(--boja-ivica);
+  background: var(--boja-povrsina-niska);
+  color: var(--boja-tekst-blagi);
+  font-size: 0.82rem;
+  font-weight: 650;
+  transition: background var(--brzina), color var(--brzina), border-color var(--brzina);
+}
+.lozinka-uslovi li.je-ispunjeno {
+  border-color: color-mix(in srgb, var(--boja-uspeh) 38%, transparent);
+  background: var(--boja-uspeh-svetla);
+  color: var(--boja-uspeh-tekst);
+}
+.lozinka-akcije {
+  display: flex;
+  justify-content: flex-start;
+  padding-top: 0.25rem;
+}
+@media (max-width: 640px) {
+  .lozinka-polja {
+    grid-template-columns: 1fr;
+  }
+  .lozinka-akcije .dugme {
+    width: 100%;
+  }
+}
 /* Radni listić deteta u pregledu rezultata (admin/roditelj) */
 .radni-list-prikaz {
   margin: 0.35rem 0 0; padding: 0.7rem 0.9rem;
